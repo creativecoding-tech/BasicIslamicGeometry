@@ -9,7 +9,7 @@ void ofApp::setup(){
 	ofEnableAntiAliasing();
 	ofEnableSmoothing();
 
-	circleShape = std::make_unique<CircleShape>(250);
+	circleShape = std::make_unique<CircleShape>(250,"A");
 	cartesianAxes = std::make_unique<CartesianAxes>(250);
 }
 

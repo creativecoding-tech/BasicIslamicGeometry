@@ -1,8 +1,10 @@
 #include "CircleShape.h"
 #include <ofMain.h>
 
-CircleShape::CircleShape(float r) {
+CircleShape::CircleShape(float r,std::string label) {
 	radius = r;
+	this->label = label;
+	this->font.load("C:\\Windows\\Fonts\\arial.ttf", 20);
 }
 
 void CircleShape::show() {
@@ -11,6 +13,10 @@ void CircleShape::show() {
 
 void CircleShape::hide() {
 	showing = false;
+}
+
+void CircleShape::setLabel(std::string label) {
+	this->label = label;
 }
 
 void CircleShape::update() {
@@ -40,5 +46,6 @@ void CircleShape::draw() {
 	if (showing && circleProgress >= totalSegments) {
 		ofFill();
 		ofDrawCircle(0, 0, 10);
+		font.drawString(label, 10, -5);
 	}
 }
