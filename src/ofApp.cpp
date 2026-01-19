@@ -9,17 +9,19 @@ void ofApp::setup(){
 	ofEnableAntiAliasing();
 	ofEnableSmoothing();
 
-	float radiusCircle = 250;
+	float radiusCircle = 278;
 
-	circleA = std::make_unique<CircleShape>(250,"A",0,0);
-	circleB = std::make_unique<CircleShape>(250, "B", radiusCircle, 0);
-	cartesianAxes = std::make_unique<CartesianAxes>(250);
+	circleA = std::make_unique<CircleShape>(radiusCircle,"A",0,0);
+	circleB = std::make_unique<CircleShape>(radiusCircle, "B", radiusCircle, 0);
+	circleC = std::make_unique<CircleShape>(radiusCircle, "C", -radiusCircle, 0);
+	cartesianAxes = std::make_unique<CartesianAxes>(radiusCircle);
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
 	circleA->update();
 	circleB->update();
+	circleC->update();
 	cartesianAxes->update();
 }
 
@@ -31,6 +33,7 @@ void ofApp::draw(){
 	ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
 	circleA->draw();
 	circleB->draw();
+	circleC->draw();
 	cartesianAxes->draw();
 }
 
@@ -41,12 +44,14 @@ void ofApp::keyPressed(int key){
 	if (key == 'x' || key == 'X') {
 		circleA->hide();
 		circleB->hide();
+		circleC->hide();
 		cartesianAxes->hide();
 	}
 
 	if (key == 's' || key  == 'S') {
 		circleA->show();
 		circleB->show();
+		circleC->show();
 		cartesianAxes->show();
 	}
 }
