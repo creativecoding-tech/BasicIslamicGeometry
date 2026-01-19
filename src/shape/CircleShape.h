@@ -22,7 +22,10 @@ public:
 	void setLabel(std::string label);
 	void setPosition(float x, float y);
 	void setLineWidth(float width);
+	void setThin(bool thin);  // true = tipis, false = tebal
 private:
-	ofTrueTypeFont font;
+	ofTrueTypeFont fontNormal;  // Font normal/tipis
+	ofTrueTypeFont fontBold;    // Font tebal
+	bool useThin = false;       // Flag untuk thin/bold
 };
 

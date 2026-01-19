@@ -4,7 +4,8 @@
 CircleShape::CircleShape(float r,std::string label,float posX,float posY) {
 	radius = r;
 	this->label = label;
-	this->font.load("C:\\Windows\\Fonts\\arial.ttf", 20);
+	this->fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);  // Font tipis
+	this->fontBold.load("C:\\Windows\\Fonts\\calibrib.ttf", 20);   // Font bold
 	this->posX = posX;
 	this->posY = posY;
 }
@@ -28,6 +29,10 @@ void CircleShape::setPosition(float x, float y) {
 
 void CircleShape::setLineWidth(float width) {
 	lineWidth = width;
+}
+
+void CircleShape::setThin(bool thin) {
+	useThin = thin;
 }
 
 void CircleShape::update() {
@@ -59,7 +64,12 @@ void CircleShape::draw() {
 	if (showing && circleProgress >= totalSegments) {
 		ofFill();
 		ofDrawCircle(0, 0, lineWidth*2);
-		font.drawString(label, 10, -5);
+		ofSetColor(0);
+		if (useThin) {
+			fontNormal.drawString(label, 10, -5);  // Font normal/tipis
+		} else {
+			fontBold.drawString(label, 10, -5);    // Font tebal
+		}
 	}
 	ofPopMatrix();
 }

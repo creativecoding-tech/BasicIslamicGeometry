@@ -71,16 +71,30 @@ void ofApp::keyPressed(int key){
 		circleD->setLineWidth(thinWidth);
 		circleE->setLineWidth(thinWidth);
 		cartesianAxes->setLineWidth(thinWidth);
+
+		// Font jadi tipis juga
+		circleA->setThin(true);
+		circleB->setThin(true);
+		circleC->setThin(true);
+		circleD->setThin(true);
+		circleE->setThin(true);
 	}
 
 	if (key == '+' || key == '=') {
-		float thinWidth = 4.f;
-		circleA->setLineWidth(thinWidth);
-		circleB->setLineWidth(thinWidth);
-		circleC->setLineWidth(thinWidth);
-		circleD->setLineWidth(thinWidth);
-		circleE->setLineWidth(thinWidth);
-		cartesianAxes->setLineWidth(thinWidth);
+		float thickWidth = 4.f;
+		circleA->setLineWidth(thickWidth);
+		circleB->setLineWidth(thickWidth);
+		circleC->setLineWidth(thickWidth);
+		circleD->setLineWidth(thickWidth);
+		circleE->setLineWidth(thickWidth);
+		cartesianAxes->setLineWidth(thickWidth);
+
+		// Font jadi tebal juga
+		circleA->setThin(false);
+		circleB->setThin(false);
+		circleC->setThin(false);
+		circleD->setThin(false);
+		circleE->setThin(false);
 	}
 }
 
