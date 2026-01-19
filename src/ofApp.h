@@ -7,10 +7,12 @@
 class ofApp : public ofBaseApp{
 
 	public:
+		float radiusCircle = 260;
 		std::unique_ptr<CircleShape> circleA;
 		std::unique_ptr<CircleShape> circleB;
 		std::unique_ptr<CircleShape> circleC;
 		std::unique_ptr<CircleShape> circleD;
+		std::unique_ptr<CircleShape> circleE;
 		std::unique_ptr<CartesianAxes> cartesianAxes;
 		void setup();
 		void update();
