@@ -230,11 +230,13 @@
     <ClCompile Include="src\ofApp.cpp" />
     <ClCompile Include="src\shape\CartesianAxes.cpp" />
     <ClCompile Include="src\shape\CircleShape.cpp" />
+    <ClCompile Include="src\shape\CrossLine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ofApp.h" />
     <ClInclude Include="src\shape\CartesianAxes.h" />
     <ClInclude Include="src\shape\CircleShape.h" />
+    <ClInclude Include="src\shape\CrossLine.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(OF_ROOT)\libs\openFrameworksCompiled\project\vs\openframeworksLib.vcxproj">

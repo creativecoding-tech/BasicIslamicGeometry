@@ -3,7 +3,8 @@
 #include "ofMain.h"
 #include "shape/CircleShape.h"
 #include "shape/CartesianAxes.h"
-
+#include "shape/CrossLine.h"
+using glm::vec2;
 class ofApp : public ofBaseApp{
 
 	public:
@@ -14,6 +15,7 @@ class ofApp : public ofBaseApp{
 		std::unique_ptr<CircleShape> circleD;
 		std::unique_ptr<CircleShape> circleE;
 		std::unique_ptr<CartesianAxes> cartesianAxes;
+		std::unique_ptr<CrossLine> crossLineF;
 		void setup();
 		void update();
 		void draw();
