@@ -7,7 +7,8 @@
 class ofApp : public ofBaseApp{
 
 	public:
-		std::unique_ptr<CircleShape> circleShape;
+		std::unique_ptr<CircleShape> circleA;
+		std::unique_ptr<CircleShape> circleB;
 		std::unique_ptr<CartesianAxes> cartesianAxes;
 		void setup();
 		void update();
