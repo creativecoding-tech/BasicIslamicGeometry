@@ -49,18 +49,33 @@ void CircleShape::update() {
 void CircleShape::draw() {
 	ofPushMatrix();
 	ofTranslate(posX, posY);
+
 	ofNoFill();
 	ofSetColor(0);
 	ofSetLineWidth(lineWidth);
+
 	ofPolyline polyline;
-	for (int i = 0; i <= circleProgress;i++) {
+
+	// Hitung berapa banyak segment yang harus digambar
+	int segmentsToDraw = (int)circleProgress;
+
+	// Gambar arc - dari angle 0 sampai circle progress
+	for (int i = 0; i <= segmentsToDraw; i++) {
+		// Map dari 0-100 ke 0-TWO_PI, tapi tambahkan sedikit buffer
 		float angle = ofMap(i, 0, totalSegments, 0, TWO_PI);
+
+		// Kalau ini adalah segment terakhir dan kita sudah full, pastikan angle = 0 (tutup loop)
+		if (i == totalSegments && circleProgress >= totalSegments) {
+			angle = 0;  // Kembali ke titik awal
+		}
+
 		float x = cos(angle) * radius;
 		float y = sin(angle) * radius;
 		polyline.addVertex(x, y);
 	}
 	polyline.close();
 	polyline.draw();
+
 	if (showing && circleProgress >= totalSegments) {
 		ofFill();
 		ofDrawCircle(0, 0, lineWidth*2);

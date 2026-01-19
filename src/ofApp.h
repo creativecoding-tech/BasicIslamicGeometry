@@ -7,7 +7,7 @@
 class ofApp : public ofBaseApp{
 
 	public:
-		float radiusCircle = 260;
+		float radiusCircle = 240;
 		std::unique_ptr<CircleShape> circleA;
 		std::unique_ptr<CircleShape> circleB;
 		std::unique_ptr<CircleShape> circleC;
