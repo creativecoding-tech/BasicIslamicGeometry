@@ -1,10 +1,19 @@
 #pragma once
 
 #include "ofMain.h"
+#include "shape/CircleShape.h"
+#include "shape/CartesianAxes.h"
 
 class ofApp : public ofBaseApp{
 
 	public:
+		float radiusCircle = 240;
+		std::unique_ptr<CircleShape> circleA;
+		std::unique_ptr<CircleShape> circleB;
+		std::unique_ptr<CircleShape> circleC;
+		std::unique_ptr<CircleShape> circleD;
+		std::unique_ptr<CircleShape> circleE;
+		std::unique_ptr<CartesianAxes> cartesianAxes;
 		void setup();
 		void update();
 		void draw();

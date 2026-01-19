@@ -1,0 +1,31 @@
+#pragma once
+#include <string>
+#include <ofMain.h>
+class CircleShape
+{
+public:
+	float radius;
+	float circleProgress = 0;
+	float totalSegments = 100;
+	float circleSpeed = .5f;
+	bool showing = false;
+	std::string label = "";
+	float posX = 0;
+	float posY = 0;
+	float lineWidth = 4;
+	CircleShape(float r, std::string label,float posX,float posY);
+
+	void show();
+	void hide();
+	void update();
+	void draw();
+	void setLabel(std::string label);
+	void setPosition(float x, float y);
+	void setLineWidth(float width);
+	void setThin(bool thin);  // true = tipis, false = tebal
+private:
+	ofTrueTypeFont fontNormal;  // Font normal/tipis
+	ofTrueTypeFont fontBold;    // Font tebal
+	bool useThin = false;       // Flag untuk thin/bold
+};
+
