@@ -26,6 +26,10 @@ void CircleShape::setPosition(float x, float y) {
 	this->posY = posY;
 }
 
+void CircleShape::setLineWidth(float width) {
+	lineWidth = width;
+}
+
 void CircleShape::update() {
 	if (showing) {
 		//Animasi muncul
@@ -42,7 +46,7 @@ void CircleShape::draw() {
 	ofTranslate(posX, posY);
 	ofNoFill();
 	ofSetColor(0);
-	ofSetLineWidth(4);
+	ofSetLineWidth(lineWidth);
 	ofPolyline polyline;
 	for (int i = 0; i <= circleProgress;i++) {
 		float angle = ofMap(i, 0, totalSegments, 0, TWO_PI);
@@ -54,7 +58,7 @@ void CircleShape::draw() {
 	polyline.draw();
 	if (showing && circleProgress >= totalSegments) {
 		ofFill();
-		ofDrawCircle(0, 0, 10);
+		ofDrawCircle(0, 0, lineWidth*2);
 		font.drawString(label, 10, -5);
 	}
 	ofPopMatrix();

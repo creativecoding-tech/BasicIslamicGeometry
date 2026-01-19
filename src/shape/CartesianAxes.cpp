@@ -31,7 +31,7 @@ void CartesianAxes::draw() {
 		float currentLength = radius * progress;
 		ofNoFill();
 		ofSetColor(0);
-		ofSetLineWidth(2);
+		ofSetLineWidth(lineWidth);
 		ofDrawLine(-currentLength, 0, currentLength, 0);
 		ofDrawLine(0, -currentLength, 0, currentLength);
 	}
@@ -44,6 +44,10 @@ bool CartesianAxes::isComplete() {
 	else {
 		return progress <= 0;
 	}
+}
+
+void CartesianAxes::setLineWidth(float width) {
+	lineWidth = width;
 }
 
 

@@ -12,7 +12,7 @@ public:
 	std::string label = "";
 	float posX = 0;
 	float posY = 0;
-
+	float lineWidth = 4;
 	CircleShape(float r, std::string label,float posX,float posY);
 
 	void show();
@@ -21,6 +21,7 @@ public:
 	void draw();
 	void setLabel(std::string label);
 	void setPosition(float x, float y);
+	void setLineWidth(float width);
 private:
 	ofTrueTypeFont font;
 };

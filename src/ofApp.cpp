@@ -62,6 +62,26 @@ void ofApp::keyPressed(int key){
 		circleE->show();
 		cartesianAxes->show();
 	}
+
+	if (key == '-' || key == '_') {
+		float thinWidth = .5f;
+		circleA->setLineWidth(thinWidth);
+		circleB->setLineWidth(thinWidth);
+		circleC->setLineWidth(thinWidth);
+		circleD->setLineWidth(thinWidth);
+		circleE->setLineWidth(thinWidth);
+		cartesianAxes->setLineWidth(thinWidth);
+	}
+
+	if (key == '+' || key == '=') {
+		float thinWidth = 4.f;
+		circleA->setLineWidth(thinWidth);
+		circleB->setLineWidth(thinWidth);
+		circleC->setLineWidth(thinWidth);
+		circleD->setLineWidth(thinWidth);
+		circleE->setLineWidth(thinWidth);
+		cartesianAxes->setLineWidth(thinWidth);
+	}
 }
 
 //--------------------------------------------------------------
