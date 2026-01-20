@@ -18,6 +18,7 @@ class ofApp : public ofBaseApp{
 		std::unique_ptr<CrossLine> crossLineF;
 		std::unique_ptr<CrossLine> crossLineG;
 		std::unique_ptr<CrossLine> crossLineH;
+		std::unique_ptr<CrossLine> crossLineI;
 		bool cursorVisible = false;
 		void setup();
 		void update();

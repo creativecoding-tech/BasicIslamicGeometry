@@ -23,6 +23,7 @@ void ofApp::setup(){
 	crossLineF = std::make_unique<CrossLine>(vec2(0, 0), vec2(-radiusCircle, -radiusCircle), "F");
 	crossLineG = std::make_unique<CrossLine>(vec2(0, 0), vec2(radiusCircle, -radiusCircle), "G");
 	crossLineH = std::make_unique<CrossLine>(vec2(0, 0), vec2(-radiusCircle, radiusCircle), "H");
+	crossLineI = std::make_unique<CrossLine>(vec2(0, 0), vec2(radiusCircle, radiusCircle), "I");
 }
 
 //--------------------------------------------------------------
@@ -39,6 +40,7 @@ void ofApp::update(){
 	crossLineF->update();
 	crossLineG->update();
 	crossLineH->update();
+	crossLineI->update();
 }
 
 //--------------------------------------------------------------
@@ -59,6 +61,7 @@ void ofApp::draw(){
 	crossLineF->draw();
 	crossLineG->draw();
 	crossLineH->draw();
+	crossLineI->draw();
 }
 
 //--------------------------------------------------------------
@@ -78,6 +81,7 @@ void ofApp::keyPressed(int key){
 		crossLineF->hide();
 		crossLineG->hide();
 		crossLineH->hide();
+		crossLineI->hide();
 	}
 
 	if (key == 's' || key  == 'S') {
@@ -93,6 +97,7 @@ void ofApp::keyPressed(int key){
 		crossLineF->show();
 		crossLineG->show();
 		crossLineH->show();
+		crossLineI->show();
 	}
 
 	if (key == '-' || key == '_') {
@@ -109,6 +114,7 @@ void ofApp::keyPressed(int key){
 		crossLineF->setLineWidth(thinWidth);
 		crossLineG->setLineWidth(thinWidth);
 		crossLineH->setLineWidth(thinWidth);
+		crossLineI->setLineWidth(thinWidth);
 
 		// Font jadi tipis juga
 		circleA->setThin(true);
@@ -121,6 +127,7 @@ void ofApp::keyPressed(int key){
 		crossLineF->setThin(true);
 		crossLineG->setThin(true);
 		crossLineH->setThin(true);
+		crossLineI->setThin(true);
 	}
 
 	if (key == '+' || key == '=') {
@@ -137,6 +144,7 @@ void ofApp::keyPressed(int key){
 		crossLineF->setLineWidth(thickWidth);
 		crossLineG->setLineWidth(thickWidth);
 		crossLineH->setLineWidth(thickWidth);
+		crossLineI->setLineWidth(thickWidth);
 
 		// Font jadi tebal juga
 		circleA->setThin(false);
@@ -148,6 +156,7 @@ void ofApp::keyPressed(int key){
 		crossLineF->setThin(false);
 		crossLineG->setThin(false);
 		crossLineH->setThin(false);
+		crossLineI->setThin(false);
 	}
 }
 
