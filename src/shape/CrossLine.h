@@ -13,11 +13,13 @@ public:
 	float progress = 0;
 	float totalSegements = 100;
 	float speed = .5f;
-	string label = "";
+	string label1 = "";
+	string label2 = "";
 	bool showing = false;
 	float lineWidth = 4;
-	CrossLine(vec2 start,vec2 end,string label);
-	void setLabel(string label);
+	CrossLine(vec2 start,vec2 end,string label1,string label2);
+	void setLabel1(string label1);
+	void setLabel2(string label2);
 	void show();
 	void hide();
 	void update();
