@@ -28,12 +28,22 @@ class ofApp : public ofBaseApp{
 		bool sequentialMode = false;
 		int currentShapeIndex = 0;  // 0-9 untuk 10 shapes
 		bool sequentialCompleted = false;  // Flag untuk track apakah sequential sudah selesai
+		bool labelsVisible = true;      // Flag untuk track label visibility
 
 		void setup();
 		void update();
 		void draw();
-		void startSequentialDrawing();  // Mulai sequential drawing
-		void updateSequentialDrawing(); // Update logic sequential
+
+		// Sequential drawing methods
+		void startSequentialDrawing();
+		void updateSequentialDrawing();
+
+		// Shape control methods
+		void toggleLabels();           // Toggle label visibility
+		void hideAllShapes();           // Hide all shapes
+		void showAllShapes();           // Show all shapes
+		void decreaseLineWidth();       // Kurangi line width
+		void increaseLineWidth();       // Tambah line width
 
 		void keyPressed(int key);
 		void keyReleased(int key);

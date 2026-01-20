@@ -81,144 +81,29 @@ void ofApp::keyPressed(int key){
 
 	// Toggle label visibility dengan ` atau ~
 	if (key == '`' || key == '~') {
-		// Cek apakah label sedang visible atau tidak
-		// Kita cek dari circleA
-		static bool labelsVisible = true;
-		labelsVisible = !labelsVisible;
-
-		if (labelsVisible) {
-			// Show semua labels
-			circleA->showLabel();
-			circleB->showLabel();
-			circleC->showLabel();
-			circleD->showLabel();
-			circleE->showLabel();
-			crossLineF->showLabel();
-			crossLineG->showLabel();
-			crossLineH->showLabel();
-			crossLineI->showLabel();
-		} else {
-			// Hide semua labels
-			circleA->hideLabel();
-			circleB->hideLabel();
-			circleC->hideLabel();
-			circleD->hideLabel();
-			circleE->hideLabel();
-			crossLineF->hideLabel();
-			crossLineG->hideLabel();
-			crossLineH->hideLabel();
-			crossLineI->hideLabel();
-		}
+		toggleLabels();
 	}
 
 	if (key == 'x' || key == 'X') {
 		// Hanya boleh hide jika TIDAK sedang sequential drawing
 		if (!sequentialMode) {
-			//Hide circle
-			circleA->hide();
-			circleB->hide();
-			circleC->hide();
-			circleD->hide();
-			circleE->hide();
-			//Hide cartesian
-			cartesianAxes->hide();
-			//Hide crossline
-			crossLineF->hide();
-			crossLineG->hide();
-			crossLineH->hide();
-			crossLineI->hide();
-
-			// Reset sequential completed flag agar bisa jalankan lagi
-			sequentialCompleted = false;
+			hideAllShapes();
 		}
 	}
 
 	if (key == 's' || key  == 'S') {
 		// Hanya boleh show semua jika TIDAK sedang sequential drawing
 		if (!sequentialMode) {
-			//Show Circle
-			circleA->show();
-			circleB->show();
-			circleC->show();
-			circleD->show();
-			circleE->show();
-			//Show cartesian
-			cartesianAxes->show();
-			//show crossline
-			crossLineF->show();
-			crossLineG->show();
-			crossLineH->show();
-			crossLineI->show();
-
-			// Reset sequential completed flag agar bisa jalankan lagi
-			sequentialCompleted = false;
+			showAllShapes();
 		}
 	}
 
 	if (key == '-' || key == '_') {
-		// Kurangi line width secara bertahap (step by step)
-		currentLineWidth -= 0.5f;
-
-		// Batasi minimum line width
-		if (currentLineWidth < 0.f) {
-			currentLineWidth = 0.f;
-		}
-
-		// Set line width ke semua shapes
-		circleA->setLineWidth(currentLineWidth);
-		circleB->setLineWidth(currentLineWidth);
-		circleC->setLineWidth(currentLineWidth);
-		circleD->setLineWidth(currentLineWidth);
-		circleE->setLineWidth(currentLineWidth);
-		cartesianAxes->setLineWidth(currentLineWidth);
-		crossLineF->setLineWidth(currentLineWidth);
-		crossLineG->setLineWidth(currentLineWidth);
-		crossLineH->setLineWidth(currentLineWidth);
-		crossLineI->setLineWidth(currentLineWidth);
-
-		// Font jadi tipis juga
-		circleA->setThin(true);
-		circleB->setThin(true);
-		circleC->setThin(true);
-		circleD->setThin(true);
-		circleE->setThin(true);
-		crossLineF->setThin(true);
-		crossLineG->setThin(true);
-		crossLineH->setThin(true);
-		crossLineI->setThin(true);
+		decreaseLineWidth();
 	}
 
 	if (key == '+' || key == '=') {
-		// Tambah line width secara bertahap (step by step)
-		currentLineWidth += 0.5f;
-
-		// Batasi maximum line width
-		if (currentLineWidth > 4.0f) {
-			currentLineWidth = 4.0f;
-		}
-
-		// Set line width ke semua shapes
-		circleA->setLineWidth(currentLineWidth);
-		circleB->setLineWidth(currentLineWidth);
-		circleC->setLineWidth(currentLineWidth);
-		circleD->setLineWidth(currentLineWidth);
-		circleE->setLineWidth(currentLineWidth);
-		cartesianAxes->setLineWidth(currentLineWidth);
-		crossLineF->setLineWidth(currentLineWidth);
-		crossLineG->setLineWidth(currentLineWidth);
-		crossLineH->setLineWidth(currentLineWidth);
-		crossLineI->setLineWidth(currentLineWidth);
-
-		// Font jadi tebal juga
-		circleA->setThin(false);
-		circleB->setThin(false);
-		circleC->setThin(false);
-		circleD->setThin(false);
-		circleE->setThin(false);
-		crossLineF->setThin(false);
-		crossLineG->setThin(false);
-		crossLineH->setThin(false);
-		crossLineI->setThin(false);
+		increaseLineWidth();
 	}
 }
 
@@ -370,4 +255,139 @@ void ofApp::updateSequentialDrawing() {
 		}
 	}
 }
+
+//--------------------------------------------------------------
+void ofApp::toggleLabels() {
+	// Toggle label visibility
+	labelsVisible = !labelsVisible;
+
+	if (labelsVisible) {
+		// Show semua labels
+		circleA->showLabel();
+		circleB->showLabel();
+		circleC->showLabel();
+		circleD->showLabel();
+		circleE->showLabel();
+		crossLineF->showLabel();
+		crossLineG->showLabel();
+		crossLineH->showLabel();
+		crossLineI->showLabel();
+	} else {
+		// Hide semua labels
+		circleA->hideLabel();
+		circleB->hideLabel();
+		circleC->hideLabel();
+		circleD->hideLabel();
+		circleE->hideLabel();
+		crossLineF->hideLabel();
+		crossLineG->hideLabel();
+		crossLineH->hideLabel();
+		crossLineI->hideLabel();
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::hideAllShapes() {
+	// Hide semua shapes
+	circleA->hide();
+	circleB->hide();
+	circleC->hide();
+	circleD->hide();
+	circleE->hide();
+	cartesianAxes->hide();
+	crossLineF->hide();
+	crossLineG->hide();
+	crossLineH->hide();
+	crossLineI->hide();
+
+	// Reset sequential completed flag agar bisa jalankan lagi
+	sequentialCompleted = false;
+}
+
+//--------------------------------------------------------------
+void ofApp::showAllShapes() {
+	// Show semua shapes
+	circleA->show();
+	circleB->show();
+	circleC->show();
+	circleD->show();
+	circleE->show();
+	cartesianAxes->show();
+	crossLineF->show();
+	crossLineG->show();
+	crossLineH->show();
+	crossLineI->show();
+
+	// Reset sequential completed flag agar bisa jalankan lagi
+	sequentialCompleted = false;
+}
+
+//--------------------------------------------------------------
+void ofApp::decreaseLineWidth() {
+	// Kurangi line width secara bertahap
+	currentLineWidth -= 0.5f;
+
+	// Batasi minimum line width
+	if (currentLineWidth < 0.f) {
+		currentLineWidth = 0.f;
+	}
+
+	// Set line width ke semua shapes
+	circleA->setLineWidth(currentLineWidth);
+	circleB->setLineWidth(currentLineWidth);
+	circleC->setLineWidth(currentLineWidth);
+	circleD->setLineWidth(currentLineWidth);
+	circleE->setLineWidth(currentLineWidth);
+	cartesianAxes->setLineWidth(currentLineWidth);
+	crossLineF->setLineWidth(currentLineWidth);
+	crossLineG->setLineWidth(currentLineWidth);
+	crossLineH->setLineWidth(currentLineWidth);
+	crossLineI->setLineWidth(currentLineWidth);
+
+	// Font jadi tipis juga
+	circleA->setThin(true);
+	circleB->setThin(true);
+	circleC->setThin(true);
+	circleD->setThin(true);
+	circleE->setThin(true);
+	crossLineF->setThin(true);
+	crossLineG->setThin(true);
+	crossLineH->setThin(true);
+	crossLineI->setThin(true);
+}
+
+//--------------------------------------------------------------
+void ofApp::increaseLineWidth() {
+	// Tambah line width secara bertahap
+	currentLineWidth += 0.5f;
+
+	// Batasi maximum line width
+	if (currentLineWidth > 4.0f) {
+		currentLineWidth = 4.0f;
+	}
+
+	// Set line width ke semua shapes
+	circleA->setLineWidth(currentLineWidth);
+	circleB->setLineWidth(currentLineWidth);
+	circleC->setLineWidth(currentLineWidth);
+	circleD->setLineWidth(currentLineWidth);
+	circleE->setLineWidth(currentLineWidth);
+	cartesianAxes->setLineWidth(currentLineWidth);
+	crossLineF->setLineWidth(currentLineWidth);
+	crossLineG->setLineWidth(currentLineWidth);
+	crossLineH->setLineWidth(currentLineWidth);
+	crossLineI->setLineWidth(currentLineWidth);
+
+	// Font jadi tebal juga
+	circleA->setThin(false);
+	circleB->setThin(false);
+	circleC->setThin(false);
+	circleD->setThin(false);
+	circleE->setThin(false);
+	crossLineF->setThin(false);
+	crossLineG->setThin(false);
+	crossLineH->setThin(false);
+	crossLineI->setThin(false);
+}
+
 
