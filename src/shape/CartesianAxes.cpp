@@ -3,7 +3,6 @@
 
 CartesianAxes::CartesianAxes(float r) {
 	radius = r;
-	showing = true;  // Axes showing by default
 	speed = 0.02f;
 	maxProgress = maxScale;  // Set max progress untuk isComplete()
 }
