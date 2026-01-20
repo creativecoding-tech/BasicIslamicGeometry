@@ -28,7 +28,8 @@ void ofApp::setup(){
 
 	//Parallelogram
 	parallelogramCtoE = std::make_unique<ParallelogramLine>(vec2(-radiusCircle, 0), vec2(0, -radiusCircle));
-	parallelogramEtoB = std::make_unique<ParallelogramLine>(vec2(0,-radiusCircle),vec2(radiusCircle,0));
+	parallelogramEtoB = std::make_unique<ParallelogramLine>(vec2(0, -radiusCircle), vec2(radiusCircle, 0));
+	parallelogramBtoD = std::make_unique<ParallelogramLine>(vec2(radiusCircle,0),vec2(0,radiusCircle));
 }
 
 //--------------------------------------------------------------
@@ -49,6 +50,7 @@ void ofApp::update(){
 	//Parallelogram update
 	parallelogramCtoE->update();
 	parallelogramEtoB->update();
+	parallelogramBtoD->update();
 
 	// Update sequential drawing logic
 	if (sequentialMode) {
@@ -78,6 +80,7 @@ void ofApp::draw(){
 	//Draw paralellogram
 	parallelogramCtoE->draw();
 	parallelogramEtoB->draw();
+	parallelogramBtoD->draw();
 }
 
 //--------------------------------------------------------------
@@ -177,7 +180,8 @@ void ofApp::startSequentialDrawing() {
 		circleD->showing && circleE->showing &&
 		crossLineF->showing && crossLineG->showing &&
 		crossLineH->showing && crossLineI->showing &&
-		parallelogramCtoE->showing && parallelogramEtoB->showing;
+		parallelogramCtoE->showing && parallelogramEtoB->showing &&
+		parallelogramBtoD->showing;
 
 	if (allVisible) {
 		// Semua shapes sudah visible, jangan jalankan sequential
@@ -190,7 +194,8 @@ void ofApp::startSequentialDrawing() {
 	                   !circleD->isComplete() || !circleE->isComplete() ||
 	                   !crossLineF->isComplete() || !crossLineG->isComplete() ||
 	                   !crossLineH->isComplete() || !crossLineI->isComplete() ||
-	                   !parallelogramCtoE->isComplete() || !parallelogramEtoB->isComplete();
+	                   !parallelogramCtoE->isComplete() || !parallelogramEtoB->isComplete() ||
+	                   !parallelogramBtoD->isComplete();
 
 	if (stillDrawing) {
 		// Ada shape yang masih drawing, jangan jalankan sequential
@@ -216,6 +221,7 @@ void ofApp::startSequentialDrawing() {
 	crossLineI->hide();
 	parallelogramCtoE->hide();
 	parallelogramEtoB->hide();
+	parallelogramBtoD->hide();
 
 	// Mulai sequential mode
 	sequentialMode = true;
@@ -244,6 +250,7 @@ void ofApp::updateSequentialDrawing() {
 		case 9: currentShape = crossLineI.get(); break;
 		case 10: currentShape = parallelogramCtoE.get(); break;
 		case 11: currentShape = parallelogramEtoB.get(); break;
+		case 12: currentShape = parallelogramBtoD.get(); break;
 	}
 
 	// Cek jika current shape sudah complete
@@ -252,7 +259,7 @@ void ofApp::updateSequentialDrawing() {
 		currentShapeIndex++;
 
 		// Show shape berikutnya jika masih ada
-		if (currentShapeIndex <= 11) {
+		if (currentShapeIndex <= 12) {
 			switch (currentShapeIndex) {
 				case 1: circleA->show(); break;
 				case 2: circleB->show(); break;
@@ -265,6 +272,7 @@ void ofApp::updateSequentialDrawing() {
 				case 9: crossLineI->show(); break;
 				case 10: parallelogramCtoE->show(); break;
 				case 11: parallelogramEtoB->show(); break;
+				case 12: parallelogramBtoD->show(); break;
 			}
 		} else {
 			// Semua shapes sudah complete, matikan sequential mode dan tandai selesai
@@ -319,6 +327,7 @@ void ofApp::hideAllShapes() {
 	crossLineI->hide();
 	parallelogramCtoE->hide();
 	parallelogramEtoB->hide();
+	parallelogramBtoD->hide();
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
@@ -339,6 +348,7 @@ void ofApp::showAllShapes() {
 	crossLineI->show();
 	parallelogramCtoE->show();
 	parallelogramEtoB->show();
+	parallelogramBtoD->show();
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
@@ -367,6 +377,7 @@ void ofApp::decreaseLineWidth() {
 	crossLineI->setLineWidth(currentLineWidth);
 	parallelogramCtoE->setLineWidth(currentLineWidth);
 	parallelogramEtoB->setLineWidth(currentLineWidth);
+	parallelogramBtoD->setLineWidth(currentLineWidth);
 
 	// Font jadi tipis juga
 	circleA->setThin(true);
@@ -403,6 +414,7 @@ void ofApp::increaseLineWidth() {
 	crossLineI->setLineWidth(currentLineWidth);
 	parallelogramCtoE->setLineWidth(currentLineWidth);
 	parallelogramEtoB->setLineWidth(currentLineWidth);
+	parallelogramBtoD->setLineWidth(currentLineWidth);
 
 	// Font jadi tebal juga
 	circleA->setThin(false);
