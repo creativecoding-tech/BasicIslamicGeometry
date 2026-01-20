@@ -127,7 +127,7 @@ void ofApp::keyPressed(int key){
 		}
 	}
 
-	if (key == 's' || key  == 'S') {
+	if (key == ')' && ofGetKeyPressed(OF_KEY_SHIFT)) {
 		// Hanya boleh show semua jika TIDAK sedang sequential drawing
 		if (!sequentialMode) {
 			showAllShapes();
