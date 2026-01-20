@@ -1,7 +1,9 @@
 #include "ParallelogramLine.h"
 
-ParallelogramLine::ParallelogramLine(vec2 start, vec2 end) : start(start),
-end(end) {
+ParallelogramLine::ParallelogramLine(vec2 start, vec2 end, vec2 intersecCrossLine) :
+	start(start),
+	end(end),
+	intersecCrossLine(intersecCrossLine) {
 	maxProgress = totalSegments;  // Set max progress untuk isComplete()
 }
 
@@ -11,6 +13,10 @@ void ParallelogramLine::setStart(float startX, float startY) {
 
 void ParallelogramLine::setEnd(float endX, float endY) {
 	end = vec2(endX, endY);
+}
+
+void ParallelogramLine::setIntersecCrossLine(vec2 intersec) {
+	intersecCrossLine = intersec;
 }
 
 void ParallelogramLine::update() {
@@ -38,6 +44,11 @@ void ParallelogramLine::draw() {
 	}
 	polyline.close();
 	polyline.draw();
+	if (showing && progress >= totalSegments) {
+		ofFill();
+		// Dot pada intersection dengan crossline
+		ofDrawCircle(intersecCrossLine.x, intersecCrossLine.y, lineWidth * 2);
+	}
 	ofPopMatrix();
 
 }
