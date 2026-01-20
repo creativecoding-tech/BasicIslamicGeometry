@@ -27,6 +27,7 @@ class ofApp : public ofBaseApp{
 		std::unique_ptr<ParallelogramLine> parallelogramCtoE;
 		std::unique_ptr<ParallelogramLine> parallelogramEtoB;
 		std::unique_ptr<ParallelogramLine> parallelogramBtoD;
+		std::unique_ptr<ParallelogramLine> parallelogramDtoC;
 
 		bool cursorVisible = false;
 
@@ -35,7 +36,7 @@ class ofApp : public ofBaseApp{
 
 		// Sequential drawing mode
 		bool sequentialMode = false;
-		int currentShapeIndex = 0;  // 0-12 untuk 13 shapes
+		int currentShapeIndex = 0;  // 0-13 untuk 14 shapes
 		bool sequentialCompleted = false;  // Flag untuk track apakah sequential sudah selesai
 		bool labelsVisible = true;      // Flag untuk track label visibility
 
