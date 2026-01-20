@@ -30,22 +30,22 @@ void ofApp::setup(){
 	// C→E memotong F: (-240,0)->(0,-240) dengan (0,0)->(-240,-240) = (-120,-120)
 	// Dengan radiusCircle=240, maka intersection = (-240/2, -240/2) = (-120, -120)
 	vec2 intersecC_E_F = vec2(-radiusCircle/2, -radiusCircle/2);
-	parallelogramCtoE = std::make_unique<ParallelogramLine>(vec2(-radiusCircle, 0), vec2(0, -radiusCircle), intersecC_E_F);
+	parallelogramCtoE = std::make_unique<ParallelogramLine>(vec2(-radiusCircle, 0), vec2(0, -radiusCircle), intersecC_E_F, "N");
 
 	// E→B memotong G: (0,-240)->(240,0) dengan (0,0)->(240,-240) = (120,-120)
 	// Dengan radiusCircle=240, maka intersection = (240/2, -240/2) = (120, -120)
 	vec2 intersecE_B_G = vec2(radiusCircle/2, -radiusCircle/2);
-	parallelogramEtoB = std::make_unique<ParallelogramLine>(vec2(0, -radiusCircle), vec2(radiusCircle, 0), intersecE_B_G);
+	parallelogramEtoB = std::make_unique<ParallelogramLine>(vec2(0, -radiusCircle), vec2(radiusCircle, 0), intersecE_B_G, "O");
 
 	// B→D memotong I: (240,0)->(0,240) dengan (0,0)->(240,240) = (120,120)
 	// Dengan radiusCircle=240, maka intersection = (240/2, 240/2) = (120, 120)
 	vec2 intersecB_D_I = vec2(radiusCircle/2, radiusCircle/2);
-	parallelogramBtoD = std::make_unique<ParallelogramLine>(vec2(radiusCircle, 0), vec2(0, radiusCircle), intersecB_D_I);
+	parallelogramBtoD = std::make_unique<ParallelogramLine>(vec2(radiusCircle, 0), vec2(0, radiusCircle), intersecB_D_I, "P");
 
 	// D→C memotong H: (0,240)->(-240,0) dengan (0,0)->(-240,240) = (-120,120)
 	// Dengan radiusCircle=240, maka intersection = (-240/2, 240/2) = (-120, 120)
 	vec2 intersecD_C_H = vec2(-radiusCircle/2, radiusCircle/2);
-	parallelogramDtoC = std::make_unique<ParallelogramLine>(vec2(0, radiusCircle), vec2(-radiusCircle, 0), intersecD_C_H);
+	parallelogramDtoC = std::make_unique<ParallelogramLine>(vec2(0, radiusCircle), vec2(-radiusCircle, 0), intersecD_C_H, "Q");
 }
 
 //--------------------------------------------------------------
@@ -324,6 +324,10 @@ void ofApp::toggleLabels() {
 		crossLineG->showLabel();
 		crossLineH->showLabel();
 		crossLineI->showLabel();
+		parallelogramCtoE->showLabel();
+		parallelogramEtoB->showLabel();
+		parallelogramBtoD->showLabel();
+		parallelogramDtoC->showLabel();
 	} else {
 		// Hide semua labels
 		circleA->hideLabel();
@@ -335,6 +339,10 @@ void ofApp::toggleLabels() {
 		crossLineG->hideLabel();
 		crossLineH->hideLabel();
 		crossLineI->hideLabel();
+		parallelogramCtoE->hideLabel();
+		parallelogramEtoB->hideLabel();
+		parallelogramBtoD->hideLabel();
+		parallelogramDtoC->hideLabel();
 	}
 }
 
@@ -456,6 +464,10 @@ void ofApp::decreaseLineWidth() {
 	crossLineG->setThin(true);
 	crossLineH->setThin(true);
 	crossLineI->setThin(true);
+	parallelogramCtoE->setThin(true);
+	parallelogramEtoB->setThin(true);
+	parallelogramBtoD->setThin(true);
+	parallelogramDtoC->setThin(true);
 }
 
 //--------------------------------------------------------------
@@ -494,6 +506,10 @@ void ofApp::increaseLineWidth() {
 	crossLineG->setThin(false);
 	crossLineH->setThin(false);
 	crossLineI->setThin(false);
+	parallelogramCtoE->setThin(false);
+	parallelogramEtoB->setThin(false);
+	parallelogramBtoD->setThin(false);
+	parallelogramDtoC->setThin(false);
 }
 
 

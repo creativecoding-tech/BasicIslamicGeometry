@@ -1,9 +1,11 @@
 #include "ParallelogramLine.h"
 
-ParallelogramLine::ParallelogramLine(vec2 start, vec2 end, vec2 intersecCrossLine) :
+ParallelogramLine::ParallelogramLine(vec2 start, vec2 end, vec2 intersecCrossLine, std::string label) :
 	start(start),
 	end(end),
-	intersecCrossLine(intersecCrossLine) {
+	intersecCrossLine(intersecCrossLine),
+	label(label) {
+	loadFonts();  // Load font dari AbstractShape
 	maxProgress = totalSegments;  // Set max progress untuk isComplete()
 }
 
@@ -19,12 +21,24 @@ void ParallelogramLine::setIntersecCrossLine(vec2 intersec) {
 	intersecCrossLine = intersec;
 }
 
+void ParallelogramLine::setLabel(std::string label) {
+	this->label = label;
+}
+
 void ParallelogramLine::showDot() {
 	dotVisible = true;
 }
 
 void ParallelogramLine::hideDot() {
 	dotVisible = false;
+}
+
+void ParallelogramLine::showLabel() {
+	labelVisible = true;
+}
+
+void ParallelogramLine::hideLabel() {
+	labelVisible = false;
 }
 
 void ParallelogramLine::update() {
@@ -58,6 +72,17 @@ void ParallelogramLine::draw() {
 		if (dotVisible) {
 			// Dot pada intersection dengan crossline
 			ofDrawCircle(intersecCrossLine.x, intersecCrossLine.y, lineWidth * 2);
+		}
+
+		ofSetColor(0);
+
+		// Gambar label jika labelVisible = true
+		if (labelVisible) {
+			if (useThin) {
+				fontNormal.drawString(label, intersecCrossLine.x  - 10, intersecCrossLine.y - 15);
+			} else {
+				fontBold.drawString(label, intersecCrossLine.x - 10, intersecCrossLine.y - 15);
+			}
 		}
 	}
 	ofPopMatrix();
