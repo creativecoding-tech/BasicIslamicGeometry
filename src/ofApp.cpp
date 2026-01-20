@@ -237,6 +237,30 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 //--------------------------------------------------------------
 void ofApp::startSequentialDrawing() {
+	// Cek apakah semua shapes sudah visible/showing (berarti sudah show semua dengan S)
+	bool allVisible = cartesianAxes->showing && circleA->showing &&
+	                 circleB->showing && circleC->showing &&
+	                 circleD->showing && circleE->showing &&
+	                 crossLineF->showing && crossLineG->showing &&
+	                 crossLineH->showing && crossLineI->showing;
+
+	if (allVisible) {
+		// Semua shapes sudah visible, jangan jalankan sequential
+		return;
+	}
+
+	// Cek apakah ada shape yang sedang drawing (belum complete)
+	bool stillDrawing = !cartesianAxes->isComplete() || !circleA->isComplete() ||
+	                   !circleB->isComplete() || !circleC->isComplete() ||
+	                   !circleD->isComplete() || !circleE->isComplete() ||
+	                   !crossLineF->isComplete() || !crossLineG->isComplete() ||
+	                   !crossLineH->isComplete() || !crossLineI->isComplete();
+
+	if (stillDrawing) {
+		// Ada shape yang masih drawing, jangan jalankan sequential
+		return;
+	}
+
 	// Cek apakah sequential sudah pernah selesai
 	if (sequentialCompleted) {
 		// Sequential sudah selesai sebelumnya, jangan jalankan lagi
