@@ -8,7 +8,7 @@ void ofApp::setup(){
 	ofSetBackgroundAuto(false);
 	ofEnableAntiAliasing();
 	ofEnableSmoothing();
-
+	ofHideCursor();
 	//Circle
 	circleA = std::make_unique<CircleShape>(radiusCircle,"A",0,0);
 	circleB = std::make_unique<CircleShape>(radiusCircle, "B", radiusCircle, 0);
@@ -21,6 +21,7 @@ void ofApp::setup(){
 
 	//CrossLine
 	crossLineF = std::make_unique<CrossLine>(vec2(0, 0), vec2(-radiusCircle, -radiusCircle), "F");
+	crossLineG = std::make_unique<CrossLine>(vec2(0, 0), vec2(radiusCircle, -radiusCircle), "G");
 }
 
 //--------------------------------------------------------------
@@ -35,6 +36,7 @@ void ofApp::update(){
 	cartesianAxes->update();
 	//CrossLine update
 	crossLineF->update();
+	crossLineG->update();
 }
 
 //--------------------------------------------------------------
@@ -53,6 +55,7 @@ void ofApp::draw(){
 	cartesianAxes->draw();
 	//Draw CrossLine
 	crossLineF->draw();
+	crossLineG->draw();
 }
 
 //--------------------------------------------------------------
@@ -70,6 +73,7 @@ void ofApp::keyPressed(int key){
 		cartesianAxes->hide();
 		//Hide crossline
 		crossLineF->hide();
+		crossLineG->hide();
 	}
 
 	if (key == 's' || key  == 'S') {
@@ -83,6 +87,7 @@ void ofApp::keyPressed(int key){
 		cartesianAxes->show();
 		//show crossline
 		crossLineF->show();
+		crossLineG->show();
 	}
 
 	if (key == '-' || key == '_') {
@@ -97,6 +102,7 @@ void ofApp::keyPressed(int key){
 		cartesianAxes->setLineWidth(thinWidth);
 		//bikin tipis line crossline
 		crossLineF->setLineWidth(thinWidth);
+		crossLineG->setLineWidth(thinWidth);
 
 		// Font jadi tipis juga
 		circleA->setThin(true);
@@ -107,6 +113,7 @@ void ofApp::keyPressed(int key){
 
 		//Font crossLine
 		crossLineF->setThin(true);
+		crossLineG->setThin(true);
 	}
 
 	if (key == '+' || key == '=') {
@@ -121,6 +128,7 @@ void ofApp::keyPressed(int key){
 		cartesianAxes->setLineWidth(thickWidth);
 		//bikin normal line cross line
 		crossLineF->setLineWidth(thickWidth);
+		crossLineG->setLineWidth(thickWidth);
 
 		// Font jadi tebal juga
 		circleA->setThin(false);
@@ -130,6 +138,7 @@ void ofApp::keyPressed(int key){
 		circleE->setThin(false);
 		//Font normal crossLine
 		crossLineF->setThin(false);
+		crossLineG->setThin(false);
 	}
 }
 
@@ -150,7 +159,9 @@ void ofApp::mouseDragged(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-
+	if (button == 2) cursorVisible = !cursorVisible;
+	if (cursorVisible) ofShowCursor();
+	if (!cursorVisible) ofHideCursor();
 }
 
 //--------------------------------------------------------------
