@@ -19,6 +19,14 @@ void CircleShape::setPosition(float x, float y) {
 	this->posY = y;
 }
 
+void CircleShape::showLabel() {
+	labelVisible = true;
+}
+
+void CircleShape::hideLabel() {
+	labelVisible = false;
+}
+
 void CircleShape::update() {
 	if (showing) {
 		//Animasi muncul
@@ -64,10 +72,12 @@ void CircleShape::draw() {
 		ofFill();
 		ofDrawCircle(0, 0, lineWidth*2);
 		ofSetColor(0);
-		if (useThin) {
-			fontNormal.drawString(label, 10, -5);  // Font normal/tipis
-		} else {
-			fontBold.drawString(label, 10, -5);    // Font tebal
+		if (labelVisible) {
+			if (useThin) {
+				fontNormal.drawString(label, 10, -5);  // Font normal/tipis
+			} else {
+				fontBold.drawString(label, 10, -5);    // Font tebal
+			}
 		}
 	}
 	ofPopMatrix();

@@ -79,6 +79,38 @@ void ofApp::keyPressed(int key){
 		startSequentialDrawing();
 	}
 
+	// Toggle label visibility dengan ` atau ~
+	if (key == '`' || key == '~') {
+		// Cek apakah label sedang visible atau tidak
+		// Kita cek dari circleA
+		static bool labelsVisible = true;
+		labelsVisible = !labelsVisible;
+
+		if (labelsVisible) {
+			// Show semua labels
+			circleA->showLabel();
+			circleB->showLabel();
+			circleC->showLabel();
+			circleD->showLabel();
+			circleE->showLabel();
+			crossLineF->showLabel();
+			crossLineG->showLabel();
+			crossLineH->showLabel();
+			crossLineI->showLabel();
+		} else {
+			// Hide semua labels
+			circleA->hideLabel();
+			circleB->hideLabel();
+			circleC->hideLabel();
+			circleD->hideLabel();
+			circleE->hideLabel();
+			crossLineF->hideLabel();
+			crossLineG->hideLabel();
+			crossLineH->hideLabel();
+			crossLineI->hideLabel();
+		}
+	}
+
 	if (key == 'x' || key == 'X') {
 		// Hanya boleh hide jika TIDAK sedang sequential drawing
 		if (!sequentialMode) {

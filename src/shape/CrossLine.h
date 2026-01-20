@@ -25,11 +25,16 @@ public:
 	void setLabel1(string lbl);
 	void setLabel2(string lbl);
 
+	// Label visibility control
+	void showLabel();
+	void hideLabel();
+
 	// Override pure virtual methods dari AbstractShape
 	void update() override;
 	void draw() override;
 
 private:
 	float totalSegments = 100;  // CrossLine-specific
+	bool labelVisible = true;   // Flag untuk label visibility
 };
 

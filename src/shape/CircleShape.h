@@ -19,7 +19,12 @@ public:
 	void setLabel(std::string label);
 	void setPosition(float x, float y);
 
+	// Label visibility control
+	void showLabel();
+	void hideLabel();
+
 private:
 	float totalSegments = 100;  // Circle-specific
+	bool labelVisible = true;   // Flag untuk label visibility
 };
 
