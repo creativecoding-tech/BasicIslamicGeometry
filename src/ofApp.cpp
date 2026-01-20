@@ -95,6 +95,9 @@ void ofApp::keyPressed(int key){
 			crossLineG->hide();
 			crossLineH->hide();
 			crossLineI->hide();
+
+			// Reset sequential completed flag agar bisa jalankan lagi
+			sequentialCompleted = false;
 		}
 	}
 
@@ -114,6 +117,9 @@ void ofApp::keyPressed(int key){
 			crossLineG->show();
 			crossLineH->show();
 			crossLineI->show();
+
+			// Reset sequential completed flag agar bisa jalankan lagi
+			sequentialCompleted = false;
 		}
 	}
 
@@ -231,6 +237,12 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 //--------------------------------------------------------------
 void ofApp::startSequentialDrawing() {
+	// Cek apakah sequential sudah pernah selesai
+	if (sequentialCompleted) {
+		// Sequential sudah selesai sebelumnya, jangan jalankan lagi
+		return;
+	}
+
 	// Reset semua shapes ke hidden
 	circleA->hide();
 	circleB->hide();
@@ -245,6 +257,7 @@ void ofApp::startSequentialDrawing() {
 
 	// Mulai sequential mode
 	sequentialMode = true;
+	sequentialCompleted = false;  // Reset flag
 	currentShapeIndex = 0;
 
 	// Show shape pertama (CartesianAxes)
@@ -288,8 +301,9 @@ void ofApp::updateSequentialDrawing() {
 				case 9: crossLineI->show(); break;
 			}
 		} else {
-			// Semua shapes sudah complete, matikan sequential mode
+			// Semua shapes sudah complete, matikan sequential mode dan tandai selesai
 			sequentialMode = false;
+			sequentialCompleted = true;
 		}
 	}
 }

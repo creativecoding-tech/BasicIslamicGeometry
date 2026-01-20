@@ -24,6 +24,7 @@ class ofApp : public ofBaseApp{
 		// Sequential drawing mode
 		bool sequentialMode = false;
 		int currentShapeIndex = 0;  // 0-9 untuk 10 shapes
+		bool sequentialCompleted = false;  // Flag untuk track apakah sequential sudah selesai
 
 		void setup();
 		void update();
