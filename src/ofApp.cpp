@@ -103,7 +103,7 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-	if (key == 'Q' || key == 'q') ofExit();
+	if (key == OF_KEY_END) ofExit();
 
 	// Sequential drawing dengan SHIFT+1
 	if (key == '!' && ofGetKeyPressed(OF_KEY_SHIFT)) {
