@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--five--circle-orange)
+![Branch](https://img.shields.io/badge/Branch-sketch--parallelogram-orange)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -20,29 +20,34 @@ Lihat hasilnya di YouTube: [Watch Demo](https://youtu.be/fr0wx18GXeI)
 
 ## 📺 Preview
 
-Project ini menampilkan **5 lingkaran dengan animasi drawing** yang membentuk pola geometri Islam dasar:
+Project ini menampilkan **pola geometri Islam dasar** dengan lima lingkaran yang saling berhubungan, crosslines, dan parallelogram lines:
 
-- **Circle A** - Lingkaran utama di tengah (0, 0)
-- **Circle B** - Lingkaran di sebelah kanan (radius, 0)
-- **Circle C** - Lingkaran di sebelah kiri (-radius, 0)
-- **Circle D** - Lingkaran di posisi bawah (0, radius)
-- **Circle E** - Lingkaran di posisi atas (0, -radius)
+- **5 CircleShape (A, B, C, D, E)** - Lingkaran dengan posisi kardinal
 - **Cartesian Axes** - Sistem koordinat X-Y untuk referensi posisi
+- **4 CrossLine (F, G, H, I)** - Garis diagonal dari center ke sudut dengan dot di intersection
+- **4 ParallelogramLine (N, O, P, Q)** - Garis penghubung antar circle center dengan dot di intersection
 
-Setiap lingkaran memiliki **animasi drawing** yang halus dari sudut 0 ke 360°, dengan label yang dinamis dan line width yang dapat diadjust.
+Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di posisi intersection, dan line width yang dapat diadjust.
 
 ---
 
 ## ✨ Fitur & Teknik
 
-- **Five Circle Pattern** - 5 lingkaran dengan radius 240px yang saling berhubungan
-- **Animated Drawing** - Lingkaran digambar dengan animasi smooth dari 0° ke 360° (100 segments)
+- **Five Circle Pattern** - 5 lingkaran dengan radius dinamis yang saling berhubungan
+- **CrossLine System** - 4 garis diagonal dari center ke sudut dengan dot di intersection point
+- **Parallelogram Lines** - 4 garis penghubung antar circle center membentuk diamond/rhombus
+- **Sequential Drawing Mode** - Animasi drawing berurutan dari satu shape ke shape berikutnya
+- **Animated Drawing** - Semua shape digambar dengan animasi smooth (100 segments, 0.5 speed)
 - **Bidirectional Animation** - Animasi muncul (show) dan hilang (hide) dengan smoothing
 - **Cartesian Coordinate System** - Sumbu X-Y dengan animasi scaling (0 to 2.5x radius)
-- **Dynamic Line Width** - Ketebalan garis yang dapat diadjust secara realtime
+- **Dynamic Line Width** - Ketebalan garis yang dapat diadjust secara realtime (0.5px - 4px)
 - **Dynamic Font System** - Font yang berubah otomatis (bold/normal) berdasarkan line width
-- **Show/Hide Controls** - Toggle visibility untuk semua lingkaran dan axes
-- **Anti-Aliasing & Smoothing** - Garis lingkaran yang smooth untuk visual yang lebih baik
+- **Label Toggle** - Show/hide label untuk semua shapes (A-E, F-M, N-Q)
+- **Dot Toggle** - Show/hide dot di intersection points (17 dot total)
+- **Individual Controls** - Toggle CartesianAxes terpisah dari shapes lain
+- **Trigonometry-Based Positioning** - Perhitungan posisi dot menggunakan atan2(), cos(), sin()
+- **AbstractShape Base Class** - Arsitektur OOP dengan inheritance untuk code reusability
+- **Anti-Aliasing & Smoothing** - Garis yang smooth untuk visual yang lebih baik
 - **Trails Effect** - Semi-transparent overlay untuk efek jejak visual yang menarik
 - **Modular Design** - Terpisah dalam kategori: `shape/`
 
@@ -52,11 +57,22 @@ Setiap lingkaran memiliki **animasi drawing** yang halus dari sudut 0 ke 360°, 
 
 | Input | Action |
 | --- | --- |
-| **Key 'S'** | Tampilkan semua lingkaran dan sumbu cartesian (Show) |
-| **Key 'X'** | Sembunyikan semua lingkaran dan sumbu cartesian (Hide) |
-| **Key '+' / '='** | Tambah ketebalan garis (line width tebal, font bold) |
-| **Key '-' / '_'** | Kurangi ketebalan garis (line width tipis, font normal) |
-| **Key 'Q'** | Keluar dari aplikasi |
+| **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan (CartesianAxes → Circle A-E → CrossLine F-I → Parallelogram N-Q) |
+| **SHIFT + )** | Show semua shapes (Circle, CrossLine, Parallelogram, CartesianAxes) |
+| **DEL** | Hide semua shapes (termasuk CartesianAxes) |
+| **BACKSPACE** | Toggle CartesianAxes saja (hide/show) |
+| **\`** atau **~** | Toggle label visibility (semua label A-E, F-M, N-Q) |
+| **.** atau **>** | Toggle dot visibility (17 dot di intersection points) |
+| **+** atau **=** | Increase line width (+0.5px, max 4px, font jadi bold) |
+| **-** atau **_** | Decrease line width (-0.5px, min 0px, font jadi normal) |
+| **END** | Keluar dari aplikasi |
+
+**Shape Count:**
+- 5 CircleShape (A, B, C, D, E)
+- 1 CartesianAxes
+- 4 CrossLine (F, G, H, I) dengan 2 dot per line
+- 4 ParallelogramLine (N, O, P, Q) dengan 1 dot per line
+- **Total: 14 shapes dengan 17 dot**
 
 ---
 
@@ -64,7 +80,7 @@ Setiap lingkaran memiliki **animasi drawing** yang halus dari sudut 0 ke 360°, 
 
 - **[OpenFrameworks 0.12.1](https://openframeworks.cc/)**
 - **C++17**
-- **Visual Studio 2022** (v143 toolset)
+- **Visual Studio 2022 Community**
 - **Geometric Construction Algorithms** untuk Islamic patterns
 
 ---
@@ -82,8 +98,8 @@ Setiap lingkaran memiliki **animasi drawing** yang halus dari sudut 0 ke 360°, 
 # Clone repository ini
 git clone https://github.com/username/BasicIslamicGeometry.git
 
-# Checkout branch sketch-five-circle
-git checkout sketch-five-circle
+# Checkout branch sketch-parallelogram
+git checkout sketch-parallelogram
 
 # Buka Visual Studio
 # Double-click: BasicIslamicGeometry.sln
@@ -211,9 +227,9 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **sketch-five-circle**
+## 📝 Current Status: **sketch-parallelogram**
 
-Branch ini adalah **pengembangan** BasicIslamicGeometry dengan fokus pada **five circle pattern** yang fundamental dalam geometri Islam. Fitur yang tersedia:
+Branch ini adalah **pengembangan** BasicIslamicGeometry dengan fokus pada **parallelogram lines** yang membentuk pola diamond/rhombus dalam geometri Islam. Fitur yang tersedia:
 
 ✅ **Five Circle Pattern**: 5 lingkaran (A, B, C, D, E) dengan konfigurasi posisi yang saling berhubungan
 ✅ **Animated Drawing**: Lingkaran digambar dengan animasi smooth (100 segments, 0.5 speed)
