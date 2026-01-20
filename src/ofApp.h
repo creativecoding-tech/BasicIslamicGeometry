@@ -17,6 +17,7 @@ class ofApp : public ofBaseApp{
 		std::unique_ptr<CartesianAxes> cartesianAxes;
 		std::unique_ptr<CrossLine> crossLineF;
 		std::unique_ptr<CrossLine> crossLineG;
+		std::unique_ptr<CrossLine> crossLineH;
 		bool cursorVisible = false;
 		void setup();
 		void update();

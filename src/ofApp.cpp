@@ -22,6 +22,7 @@ void ofApp::setup(){
 	//CrossLine
 	crossLineF = std::make_unique<CrossLine>(vec2(0, 0), vec2(-radiusCircle, -radiusCircle), "F");
 	crossLineG = std::make_unique<CrossLine>(vec2(0, 0), vec2(radiusCircle, -radiusCircle), "G");
+	crossLineH = std::make_unique<CrossLine>(vec2(0, 0), vec2(-radiusCircle, radiusCircle), "H");
 }
 
 //--------------------------------------------------------------
@@ -37,6 +38,7 @@ void ofApp::update(){
 	//CrossLine update
 	crossLineF->update();
 	crossLineG->update();
+	crossLineH->update();
 }
 
 //--------------------------------------------------------------
@@ -56,6 +58,7 @@ void ofApp::draw(){
 	//Draw CrossLine
 	crossLineF->draw();
 	crossLineG->draw();
+	crossLineH->draw();
 }
 
 //--------------------------------------------------------------
@@ -74,6 +77,7 @@ void ofApp::keyPressed(int key){
 		//Hide crossline
 		crossLineF->hide();
 		crossLineG->hide();
+		crossLineH->hide();
 	}
 
 	if (key == 's' || key  == 'S') {
@@ -88,6 +92,7 @@ void ofApp::keyPressed(int key){
 		//show crossline
 		crossLineF->show();
 		crossLineG->show();
+		crossLineH->show();
 	}
 
 	if (key == '-' || key == '_') {
@@ -103,6 +108,7 @@ void ofApp::keyPressed(int key){
 		//bikin tipis line crossline
 		crossLineF->setLineWidth(thinWidth);
 		crossLineG->setLineWidth(thinWidth);
+		crossLineH->setLineWidth(thinWidth);
 
 		// Font jadi tipis juga
 		circleA->setThin(true);
@@ -114,6 +120,7 @@ void ofApp::keyPressed(int key){
 		//Font crossLine
 		crossLineF->setThin(true);
 		crossLineG->setThin(true);
+		crossLineH->setThin(true);
 	}
 
 	if (key == '+' || key == '=') {
@@ -129,6 +136,7 @@ void ofApp::keyPressed(int key){
 		//bikin normal line cross line
 		crossLineF->setLineWidth(thickWidth);
 		crossLineG->setLineWidth(thickWidth);
+		crossLineH->setLineWidth(thickWidth);
 
 		// Font jadi tebal juga
 		circleA->setThin(false);
@@ -139,6 +147,7 @@ void ofApp::keyPressed(int key){
 		//Font normal crossLine
 		crossLineF->setThin(false);
 		crossLineG->setThin(false);
+		crossLineH->setThin(false);
 	}
 }
 
