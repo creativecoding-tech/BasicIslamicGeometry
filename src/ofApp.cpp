@@ -25,6 +25,9 @@ void ofApp::setup(){
 	crossLineG = std::make_unique<CrossLine>(vec2(0, 0), vec2(radiusCircle, -radiusCircle), "G","K");
 	crossLineH = std::make_unique<CrossLine>(vec2(0, 0), vec2(-radiusCircle, radiusCircle), "H","L");
 	crossLineI = std::make_unique<CrossLine>(vec2(0, 0), vec2(radiusCircle, radiusCircle), "I","M");
+
+	//Parallelogram
+	parallelogramCtoE = std::make_unique<ParallelogramLine>(vec2(-radiusCircle,0),vec2(0,-radiusCircle));
 }
 
 //--------------------------------------------------------------
@@ -42,6 +45,8 @@ void ofApp::update(){
 	crossLineG->update();
 	crossLineH->update();
 	crossLineI->update();
+	//Parallelogram
+	parallelogramCtoE->update();
 
 	// Update sequential drawing logic
 	if (sequentialMode) {
@@ -68,6 +73,8 @@ void ofApp::draw(){
 	crossLineG->draw();
 	crossLineH->draw();
 	crossLineI->draw();
+	//Draw paralellogram
+	parallelogramCtoE->draw();
 }
 
 //--------------------------------------------------------------
@@ -163,10 +170,11 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 void ofApp::startSequentialDrawing() {
 	// Cek apakah semua shapes sudah visible/showing (berarti sudah show semua dengan S)
 	bool allVisible = cartesianAxes->showing && circleA->showing &&
-	                 circleB->showing && circleC->showing &&
-	                 circleD->showing && circleE->showing &&
-	                 crossLineF->showing && crossLineG->showing &&
-	                 crossLineH->showing && crossLineI->showing;
+		circleB->showing && circleC->showing &&
+		circleD->showing && circleE->showing &&
+		crossLineF->showing && crossLineG->showing &&
+		crossLineH->showing && crossLineI->showing &&
+		parallelogramCtoE->showing;
 
 	if (allVisible) {
 		// Semua shapes sudah visible, jangan jalankan sequential
@@ -178,7 +186,8 @@ void ofApp::startSequentialDrawing() {
 	                   !circleB->isComplete() || !circleC->isComplete() ||
 	                   !circleD->isComplete() || !circleE->isComplete() ||
 	                   !crossLineF->isComplete() || !crossLineG->isComplete() ||
-	                   !crossLineH->isComplete() || !crossLineI->isComplete();
+	                   !crossLineH->isComplete() || !crossLineI->isComplete() ||
+						!parallelogramCtoE->isComplete();
 
 	if (stillDrawing) {
 		// Ada shape yang masih drawing, jangan jalankan sequential
@@ -202,6 +211,7 @@ void ofApp::startSequentialDrawing() {
 	crossLineG->hide();
 	crossLineH->hide();
 	crossLineI->hide();
+	parallelogramCtoE->hide();
 
 	// Mulai sequential mode
 	sequentialMode = true;
@@ -228,6 +238,7 @@ void ofApp::updateSequentialDrawing() {
 		case 7: currentShape = crossLineG.get(); break;
 		case 8: currentShape = crossLineH.get(); break;
 		case 9: currentShape = crossLineI.get(); break;
+		case 10: currentShape = parallelogramCtoE.get(); break;
 	}
 
 	// Cek jika current shape sudah complete
@@ -236,7 +247,7 @@ void ofApp::updateSequentialDrawing() {
 		currentShapeIndex++;
 
 		// Show shape berikutnya jika masih ada
-		if (currentShapeIndex <= 9) {
+		if (currentShapeIndex <= 10) {
 			switch (currentShapeIndex) {
 				case 1: circleA->show(); break;
 				case 2: circleB->show(); break;
@@ -247,6 +258,7 @@ void ofApp::updateSequentialDrawing() {
 				case 7: crossLineG->show(); break;
 				case 8: crossLineH->show(); break;
 				case 9: crossLineI->show(); break;
+				case 10: parallelogramCtoE->show(); break;
 			}
 		} else {
 			// Semua shapes sudah complete, matikan sequential mode dan tandai selesai
@@ -299,6 +311,7 @@ void ofApp::hideAllShapes() {
 	crossLineG->hide();
 	crossLineH->hide();
 	crossLineI->hide();
+	parallelogramCtoE->hide();
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
@@ -317,6 +330,7 @@ void ofApp::showAllShapes() {
 	crossLineG->show();
 	crossLineH->show();
 	crossLineI->show();
+	parallelogramCtoE->show();
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
@@ -343,6 +357,7 @@ void ofApp::decreaseLineWidth() {
 	crossLineG->setLineWidth(currentLineWidth);
 	crossLineH->setLineWidth(currentLineWidth);
 	crossLineI->setLineWidth(currentLineWidth);
+	parallelogramCtoE->setLineWidth(currentLineWidth);
 
 	// Font jadi tipis juga
 	circleA->setThin(true);
@@ -377,6 +392,7 @@ void ofApp::increaseLineWidth() {
 	crossLineG->setLineWidth(currentLineWidth);
 	crossLineH->setLineWidth(currentLineWidth);
 	crossLineI->setLineWidth(currentLineWidth);
+	parallelogramCtoE->setLineWidth(currentLineWidth);
 
 	// Font jadi tebal juga
 	circleA->setThin(false);

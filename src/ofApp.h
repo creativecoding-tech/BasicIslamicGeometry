@@ -4,21 +4,28 @@
 #include "shape/CircleShape.h"
 #include "shape/CartesianAxes.h"
 #include "shape/CrossLine.h"
+#include "shape/ParallelogramLine.h"
 using glm::vec2;
 class ofApp : public ofBaseApp{
 
 	public:
 		float radiusCircle = 240;
+		//circle attribute
 		std::unique_ptr<CircleShape> circleA;
 		std::unique_ptr<CircleShape> circleB;
 		std::unique_ptr<CircleShape> circleC;
 		std::unique_ptr<CircleShape> circleD;
 		std::unique_ptr<CircleShape> circleE;
+		//cartesian attribute
 		std::unique_ptr<CartesianAxes> cartesianAxes;
+		//crossline attribute
 		std::unique_ptr<CrossLine> crossLineF;
 		std::unique_ptr<CrossLine> crossLineG;
 		std::unique_ptr<CrossLine> crossLineH;
 		std::unique_ptr<CrossLine> crossLineI;
+		//parallelogram attribute
+		std::unique_ptr<ParallelogramLine> parallelogramCtoE;
+
 		bool cursorVisible = false;
 
 		// Line width control
