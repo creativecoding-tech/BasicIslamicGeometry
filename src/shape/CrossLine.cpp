@@ -1,11 +1,12 @@
 #include "CrossLine.h"
 #include <ofMain.h>
 
-CrossLine::CrossLine(vec2 start, vec2 end, string label1, string label2):
+CrossLine::CrossLine(vec2 start, vec2 end, string label1, string label2, float radius):
 	start(start),
 	end(end),
 	label1(label1),
-	label2(label2)
+	label2(label2),
+	radius(radius)
 {
 	loadFonts();  // Load font dari AbstractShape
 	maxProgress = totalSegments;  // Set max progress untuk isComplete()
@@ -65,11 +66,11 @@ void CrossLine::draw() {
 	if (showing && progress >= totalSegments) {
 		ofFill();
 		//dot or circle posisi pada intersection crossline and circle A
-		// Hitung posisi dot pada perpotongan lingkaran A (radius 240) dengan garis
+		// Hitung posisi dot pada perpotongan lingkaran A dengan garis
 		//Koordinate polar trigonometri
 		float angle = atan2(end.y - start.y, end.x - start.x);
-		float dotX = cos(angle) * 240;
-		float dotY = sin(angle) * 240;
+		float dotX = cos(angle) * radius;
+		float dotY = sin(angle) * radius;
 		ofDrawCircle(dotX, dotY, lineWidth * 2);
 
 		//Dot or circle end x and y

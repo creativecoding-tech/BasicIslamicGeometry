@@ -14,8 +14,9 @@ public:
 	vec2 end;
 	string label1 = "";
 	string label2 = "";
+	float radius;  // Radius untuk dot position
 
-	CrossLine(vec2 start, vec2 end, string label1, string label2);
+	CrossLine(vec2 start, vec2 end, string label1, string label2, float radius);
 
 	// Helper method position
 	void setStart(float startX, float startY);
