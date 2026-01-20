@@ -4,18 +4,10 @@
 CircleShape::CircleShape(float r,std::string label,float posX,float posY) {
 	radius = r;
 	this->label = label;
-	this->fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);  // Font tipis
-	this->fontBold.load("C:\\Windows\\Fonts\\calibrib.ttf", 20);   // Font bold
+	loadFonts();  // Load font dari AbstractShape
 	this->posX = posX;
 	this->posY = posY;
-}
-
-void CircleShape::show() {
-	showing = true;
-}
-
-void CircleShape::hide() {
-	showing = false;
+	maxProgress = totalSegments;  // Set max progress untuk isComplete()
 }
 
 void CircleShape::setLabel(std::string label) {
@@ -23,26 +15,18 @@ void CircleShape::setLabel(std::string label) {
 }
 
 void CircleShape::setPosition(float x, float y) {
-	this->posX = posX;
-	this->posY = posY;
-}
-
-void CircleShape::setLineWidth(float width) {
-	lineWidth = width;
-}
-
-void CircleShape::setThin(bool thin) {
-	useThin = thin;
+	this->posX = x;
+	this->posY = y;
 }
 
 void CircleShape::update() {
 	if (showing) {
 		//Animasi muncul
-		if (circleProgress < totalSegments) circleProgress += circleSpeed;
+		if (progress < totalSegments) progress += speed;
 	}
 	else {
 		//Animasi hilang (reverse)
-		if (circleProgress > 0) circleProgress -= circleSpeed;
+		if (progress > 0) progress -= speed;
 	}
 }
 
@@ -57,7 +41,7 @@ void CircleShape::draw() {
 	ofPolyline polyline;
 
 	// Hitung berapa banyak segment yang harus digambar
-	int segmentsToDraw = (int)circleProgress;
+	int segmentsToDraw = (int)progress;
 
 	// Gambar arc - dari angle 0 sampai circle progress
 	for (int i = 0; i <= segmentsToDraw; i++) {
@@ -65,7 +49,7 @@ void CircleShape::draw() {
 		float angle = ofMap(i, 0, totalSegments, 0, TWO_PI);
 
 		// Kalau ini adalah segment terakhir dan kita sudah full, pastikan angle = 0 (tutup loop)
-		if (i == totalSegments && circleProgress >= totalSegments) {
+		if (i == totalSegments && progress >= totalSegments) {
 			angle = 0;  // Kembali ke titik awal
 		}
 
@@ -76,7 +60,7 @@ void CircleShape::draw() {
 	polyline.close();
 	polyline.draw();
 
-	if (showing && circleProgress >= totalSegments) {
+	if (showing && progress >= totalSegments) {
 		ofFill();
 		ofDrawCircle(0, 0, lineWidth*2);
 		ofSetColor(0);

@@ -3,14 +3,9 @@
 
 CartesianAxes::CartesianAxes(float r) {
 	radius = r;
-}
-
-void CartesianAxes::show() {
-	showing = true;
-}
-
-void CartesianAxes::hide() {
-	showing = false;
+	showing = true;  // Axes showing by default
+	speed = 0.02f;
+	maxProgress = maxScale;  // Set max progress untuk isComplete()
 }
 
 void CartesianAxes::update() {
@@ -44,10 +39,6 @@ bool CartesianAxes::isComplete() {
 	else {
 		return progress <= 0;
 	}
-}
-
-void CartesianAxes::setLineWidth(float width) {
-	lineWidth = width;
 }
 
 

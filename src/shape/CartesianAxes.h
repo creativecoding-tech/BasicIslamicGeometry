@@ -1,19 +1,20 @@
 #pragma once
-class CartesianAxes
+#include "AbstractShape.h"
+
+class CartesianAxes : public AbstractShape
 {
 public:
 	float radius;
-	float progress = 0;
-	float maxScale = 2.5;
-	float speed = 0.02;
-	bool showing = true;
-	float lineWidth = 2;
 	CartesianAxes(float r);
-	void show();
-	void hide();
-	void update();
-	void draw();
-	bool isComplete();
-	void setLineWidth(float width);
+
+	// Override pure virtual methods dari AbstractShape
+	void update() override;
+	void draw() override;
+
+	// Override isComplete untuk custom logic
+	bool isComplete() override;
+
+private:
+	float maxScale = 2.5;  // Axes-specific
 };
 
