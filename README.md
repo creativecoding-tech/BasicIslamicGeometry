@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--five--circle-orange)
+![Branch](https://img.shields.io/badge/Branch-master-green)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -211,7 +211,7 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **sketch-five-circle**
+## 📝 Current Status: **master**
 
 Branch ini adalah **pengembangan** BasicIslamicGeometry dengan fokus pada **five circle pattern** yang fundamental dalam geometri Islam. Fitur yang tersedia:
 
