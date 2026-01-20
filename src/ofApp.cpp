@@ -80,35 +80,41 @@ void ofApp::keyPressed(int key){
 	}
 
 	if (key == 'x' || key == 'X') {
-		//Hide circle
-		circleA->hide();
-		circleB->hide();
-		circleC->hide();
-		circleD->hide();
-		circleE->hide();
-		//Hide cartesian
-		cartesianAxes->hide();
-		//Hide crossline
-		crossLineF->hide();
-		crossLineG->hide();
-		crossLineH->hide();
-		crossLineI->hide();
+		// Hanya boleh hide jika TIDAK sedang sequential drawing
+		if (!sequentialMode) {
+			//Hide circle
+			circleA->hide();
+			circleB->hide();
+			circleC->hide();
+			circleD->hide();
+			circleE->hide();
+			//Hide cartesian
+			cartesianAxes->hide();
+			//Hide crossline
+			crossLineF->hide();
+			crossLineG->hide();
+			crossLineH->hide();
+			crossLineI->hide();
+		}
 	}
 
 	if (key == 's' || key  == 'S') {
-		//Show Circle
-		circleA->show();
-		circleB->show();
-		circleC->show();
-		circleD->show();
-		circleE->show();
-		//Show cartesian
-		cartesianAxes->show();
-		//show crossline
-		crossLineF->show();
-		crossLineG->show();
-		crossLineH->show();
-		crossLineI->show();
+		// Hanya boleh show semua jika TIDAK sedang sequential drawing
+		if (!sequentialMode) {
+			//Show Circle
+			circleA->show();
+			circleB->show();
+			circleC->show();
+			circleD->show();
+			circleE->show();
+			//Show cartesian
+			cartesianAxes->show();
+			//show crossline
+			crossLineF->show();
+			crossLineG->show();
+			crossLineH->show();
+			crossLineI->show();
+		}
 	}
 
 	if (key == '-' || key == '_') {
