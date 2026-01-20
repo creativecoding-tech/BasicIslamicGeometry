@@ -74,13 +74,8 @@ void ofApp::draw(){
 void ofApp::keyPressed(int key){
 	if (key == 'Q' || key == 'q') ofExit();
 
-	// Debug dengan ofLog
-	ofLogNotice("keyPressed") << "Key: " << key << " char: " << (char)key << " SHIFT: " << ofGetKeyPressed(OF_KEY_SHIFT);
-
 	// Sequential drawing dengan SHIFT+1
-	// SHIFT+1 menghasilkan karakter '!' (ASCII 33)
 	if (key == '!' && ofGetKeyPressed(OF_KEY_SHIFT)) {
-		ofLogNotice("Sequential") << "SHIFT+1 detected! Starting sequential drawing...";
 		startSequentialDrawing();
 	}
 
