@@ -120,7 +120,7 @@ void ofApp::keyPressed(int key){
 		toggleDots();
 	}
 
-	if (key == 'x' || key == 'X') {
+	if (key == OF_KEY_DEL) {
 		// Hanya boleh hide jika TIDAK sedang sequential drawing
 		if (!sequentialMode) {
 			hideAllShapes();
