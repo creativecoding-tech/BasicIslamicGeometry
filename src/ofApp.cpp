@@ -156,20 +156,25 @@ void ofApp::keyPressed(int key){
 	}
 
 	if (key == '-' || key == '_') {
-		float thinWidth = .5f;
-		//bikin tipis line circle
-		circleA->setLineWidth(thinWidth);
-		circleB->setLineWidth(thinWidth);
-		circleC->setLineWidth(thinWidth);
-		circleD->setLineWidth(thinWidth);
-		circleE->setLineWidth(thinWidth);
-		//bikin tipis line cartesian
-		cartesianAxes->setLineWidth(thinWidth);
-		//bikin tipis line crossline
-		crossLineF->setLineWidth(thinWidth);
-		crossLineG->setLineWidth(thinWidth);
-		crossLineH->setLineWidth(thinWidth);
-		crossLineI->setLineWidth(thinWidth);
+		// Kurangi line width secara bertahap (step by step)
+		currentLineWidth -= 0.5f;
+
+		// Batasi minimum line width
+		if (currentLineWidth < 0.f) {
+			currentLineWidth = 0.f;
+		}
+
+		// Set line width ke semua shapes
+		circleA->setLineWidth(currentLineWidth);
+		circleB->setLineWidth(currentLineWidth);
+		circleC->setLineWidth(currentLineWidth);
+		circleD->setLineWidth(currentLineWidth);
+		circleE->setLineWidth(currentLineWidth);
+		cartesianAxes->setLineWidth(currentLineWidth);
+		crossLineF->setLineWidth(currentLineWidth);
+		crossLineG->setLineWidth(currentLineWidth);
+		crossLineH->setLineWidth(currentLineWidth);
+		crossLineI->setLineWidth(currentLineWidth);
 
 		// Font jadi tipis juga
 		circleA->setThin(true);
@@ -177,8 +182,6 @@ void ofApp::keyPressed(int key){
 		circleC->setThin(true);
 		circleD->setThin(true);
 		circleE->setThin(true);
-
-		//Font crossLine
 		crossLineF->setThin(true);
 		crossLineG->setThin(true);
 		crossLineH->setThin(true);
@@ -186,20 +189,25 @@ void ofApp::keyPressed(int key){
 	}
 
 	if (key == '+' || key == '=') {
-		float thickWidth = 4.f;
-		//bikin nomral line circle
-		circleA->setLineWidth(thickWidth);
-		circleB->setLineWidth(thickWidth);
-		circleC->setLineWidth(thickWidth);
-		circleD->setLineWidth(thickWidth);
-		circleE->setLineWidth(thickWidth);
-		//bikin normal line cartesian
-		cartesianAxes->setLineWidth(thickWidth);
-		//bikin normal line cross line
-		crossLineF->setLineWidth(thickWidth);
-		crossLineG->setLineWidth(thickWidth);
-		crossLineH->setLineWidth(thickWidth);
-		crossLineI->setLineWidth(thickWidth);
+		// Tambah line width secara bertahap (step by step)
+		currentLineWidth += 0.5f;
+
+		// Batasi maximum line width
+		if (currentLineWidth > 4.0f) {
+			currentLineWidth = 4.0f;
+		}
+
+		// Set line width ke semua shapes
+		circleA->setLineWidth(currentLineWidth);
+		circleB->setLineWidth(currentLineWidth);
+		circleC->setLineWidth(currentLineWidth);
+		circleD->setLineWidth(currentLineWidth);
+		circleE->setLineWidth(currentLineWidth);
+		cartesianAxes->setLineWidth(currentLineWidth);
+		crossLineF->setLineWidth(currentLineWidth);
+		crossLineG->setLineWidth(currentLineWidth);
+		crossLineH->setLineWidth(currentLineWidth);
+		crossLineI->setLineWidth(currentLineWidth);
 
 		// Font jadi tebal juga
 		circleA->setThin(false);
@@ -207,7 +215,6 @@ void ofApp::keyPressed(int key){
 		circleC->setThin(false);
 		circleD->setThin(false);
 		circleE->setThin(false);
-		//Font normal crossLine
 		crossLineF->setThin(false);
 		crossLineG->setThin(false);
 		crossLineH->setThin(false);

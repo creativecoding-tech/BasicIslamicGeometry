@@ -21,6 +21,9 @@ class ofApp : public ofBaseApp{
 		std::unique_ptr<CrossLine> crossLineI;
 		bool cursorVisible = false;
 
+		// Line width control
+		float currentLineWidth = 4.0f;  // Current line width
+
 		// Sequential drawing mode
 		bool sequentialMode = false;
 		int currentShapeIndex = 0;  // 0-9 untuk 10 shapes
