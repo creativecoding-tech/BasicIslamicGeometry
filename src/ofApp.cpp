@@ -127,6 +127,15 @@ void ofApp::keyPressed(int key){
 		}
 	}
 
+	if (key == OF_KEY_BACKSPACE) {
+		// Toggle CartesianAxes visibility
+		if (cartesianAxes->showing) {
+			cartesianAxes->hide();
+		} else {
+			cartesianAxes->show();
+		}
+	}
+
 	if (key == ')' && ofGetKeyPressed(OF_KEY_SHIFT)) {
 		// Hanya boleh show semua jika TIDAK sedang sequential drawing
 		if (!sequentialMode) {
