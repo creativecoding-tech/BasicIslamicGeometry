@@ -115,6 +115,11 @@ void ofApp::keyPressed(int key){
 		toggleLabels();
 	}
 
+	// Toggle dot visibility dengan . atau >
+	if (key == '.' || key == '>') {
+		toggleDots();
+	}
+
 	if (key == 'x' || key == 'X') {
 		// Hanya boleh hide jika TIDAK sedang sequential drawing
 		if (!sequentialMode) {
@@ -330,6 +335,44 @@ void ofApp::toggleLabels() {
 		crossLineG->hideLabel();
 		crossLineH->hideLabel();
 		crossLineI->hideLabel();
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::toggleDots() {
+	// Toggle dot visibility
+	dotsVisible = !dotsVisible;
+
+	if (dotsVisible) {
+		// Show semua dots
+		circleA->showDot();
+		circleB->showDot();
+		circleC->showDot();
+		circleD->showDot();
+		circleE->showDot();
+		crossLineF->showDot();
+		crossLineG->showDot();
+		crossLineH->showDot();
+		crossLineI->showDot();
+		parallelogramCtoE->showDot();
+		parallelogramEtoB->showDot();
+		parallelogramBtoD->showDot();
+		parallelogramDtoC->showDot();
+	} else {
+		// Hide semua dots
+		circleA->hideDot();
+		circleB->hideDot();
+		circleC->hideDot();
+		circleD->hideDot();
+		circleE->hideDot();
+		crossLineF->hideDot();
+		crossLineG->hideDot();
+		crossLineH->hideDot();
+		crossLineI->hideDot();
+		parallelogramCtoE->hideDot();
+		parallelogramEtoB->hideDot();
+		parallelogramBtoD->hideDot();
+		parallelogramDtoC->hideDot();
 	}
 }
 

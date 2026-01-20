@@ -23,8 +23,13 @@ public:
 	void showLabel();
 	void hideLabel();
 
+	// Dot visibility control
+	void showDot();
+	void hideDot();
+
 private:
 	float totalSegments = 100;  // Circle-specific
 	bool labelVisible = true;   // Flag untuk label visibility
+	bool dotVisible = true;     // Flag untuk dot visibility
 };
 

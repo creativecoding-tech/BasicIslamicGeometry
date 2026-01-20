@@ -18,12 +18,17 @@ class ParallelogramLine : public AbstractShape
 		void setEnd(float endX, float endY);
 		void setIntersecCrossLine(vec2 intersec);  // Setter untuk intersection point
 
+		// Dot visibility control
+		void showDot();
+		void hideDot();
+
 		// Override pure virtual methods dari AbstractShape
 		void update() override;
 		void draw() override;
 
 private:
 	float totalSegments = 100;  // specific
+	bool dotVisible = true;     // Flag untuk dot visibility
 
 };
 

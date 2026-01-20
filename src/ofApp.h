@@ -39,6 +39,7 @@ class ofApp : public ofBaseApp{
 		int currentShapeIndex = 0;  // 0-13 untuk 14 shapes
 		bool sequentialCompleted = false;  // Flag untuk track apakah sequential sudah selesai
 		bool labelsVisible = true;      // Flag untuk track label visibility
+		bool dotsVisible = true;        // Flag untuk track dot visibility
 
 		void setup();
 		void update();
@@ -50,6 +51,7 @@ class ofApp : public ofBaseApp{
 
 		// Shape control methods
 		void toggleLabels();           // Toggle label visibility
+		void toggleDots();             // Toggle dot visibility
 		void hideAllShapes();           // Hide all shapes
 		void showAllShapes();           // Show all shapes
 		void decreaseLineWidth();       // Kurangi line width

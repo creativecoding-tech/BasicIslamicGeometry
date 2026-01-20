@@ -36,6 +36,14 @@ void CrossLine::hideLabel() {
 	labelVisible = false;
 }
 
+void CrossLine::showDot() {
+	dotVisible = true;
+}
+
+void CrossLine::hideDot() {
+	dotVisible = false;
+}
+
 void CrossLine::update() {
 	if (showing) {
 		if (progress < totalSegments) progress += speed;
@@ -71,10 +79,13 @@ void CrossLine::draw() {
 		float angle = atan2(end.y - start.y, end.x - start.x);
 		float dotX = cos(angle) * radius;
 		float dotY = sin(angle) * radius;
-		ofDrawCircle(dotX, dotY, lineWidth * 2);
 
-		//Dot or circle end x and y
-		ofDrawCircle(end.x, end.y, lineWidth * 2);
+		// Gambar dot hanya jika dotVisible = true
+		if (dotVisible) {
+			ofDrawCircle(dotX, dotY, lineWidth * 2);
+			//Dot or circle end x and y
+			ofDrawCircle(end.x, end.y, lineWidth * 2);
+		}
 
 		ofSetColor(0);
 

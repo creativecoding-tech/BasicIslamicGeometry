@@ -30,6 +30,10 @@ public:
 	void showLabel();
 	void hideLabel();
 
+	// Dot visibility control
+	void showDot();
+	void hideDot();
+
 	// Override pure virtual methods dari AbstractShape
 	void update() override;
 	void draw() override;
@@ -37,5 +41,6 @@ public:
 private:
 	float totalSegments = 100;  // CrossLine-specific
 	bool labelVisible = true;   // Flag untuk label visibility
+	bool dotVisible = true;     // Flag untuk dot visibility
 };
 

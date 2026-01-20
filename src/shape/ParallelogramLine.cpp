@@ -19,6 +19,14 @@ void ParallelogramLine::setIntersecCrossLine(vec2 intersec) {
 	intersecCrossLine = intersec;
 }
 
+void ParallelogramLine::showDot() {
+	dotVisible = true;
+}
+
+void ParallelogramLine::hideDot() {
+	dotVisible = false;
+}
+
 void ParallelogramLine::update() {
 	if (showing) {
 		if (progress < totalSegments) progress += speed;
@@ -46,8 +54,11 @@ void ParallelogramLine::draw() {
 	polyline.draw();
 	if (showing && progress >= totalSegments) {
 		ofFill();
-		// Dot pada intersection dengan crossline
-		ofDrawCircle(intersecCrossLine.x, intersecCrossLine.y, lineWidth * 2);
+		// Gambar dot hanya jika dotVisible = true
+		if (dotVisible) {
+			// Dot pada intersection dengan crossline
+			ofDrawCircle(intersecCrossLine.x, intersecCrossLine.y, lineWidth * 2);
+		}
 	}
 	ofPopMatrix();
 

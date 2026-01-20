@@ -27,6 +27,14 @@ void CircleShape::hideLabel() {
 	labelVisible = false;
 }
 
+void CircleShape::showDot() {
+	dotVisible = true;
+}
+
+void CircleShape::hideDot() {
+	dotVisible = false;
+}
+
 void CircleShape::update() {
 	if (showing) {
 		//Animasi muncul
@@ -70,7 +78,10 @@ void CircleShape::draw() {
 
 	if (showing && progress >= totalSegments) {
 		ofFill();
-		ofDrawCircle(0, 0, lineWidth*2);
+		// Gambar dot hanya jika dotVisible = true
+		if (dotVisible) {
+			ofDrawCircle(0, 0, lineWidth*2);
+		}
 		ofSetColor(0);
 		if (labelVisible) {
 			if (useThin) {
