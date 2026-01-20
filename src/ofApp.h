@@ -20,9 +20,16 @@ class ofApp : public ofBaseApp{
 		std::unique_ptr<CrossLine> crossLineH;
 		std::unique_ptr<CrossLine> crossLineI;
 		bool cursorVisible = false;
+
+		// Sequential drawing mode
+		bool sequentialMode = false;
+		int currentShapeIndex = 0;  // 0-9 untuk 10 shapes
+
 		void setup();
 		void update();
 		void draw();
+		void startSequentialDrawing();  // Mulai sequential drawing
+		void updateSequentialDrawing(); // Update logic sequential
 
 		void keyPressed(int key);
 		void keyReleased(int key);

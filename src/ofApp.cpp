@@ -1,4 +1,5 @@
 #include "ofApp.h"
+#include "shape/AbstractShape.h"
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -41,6 +42,11 @@ void ofApp::update(){
 	crossLineG->update();
 	crossLineH->update();
 	crossLineI->update();
+
+	// Update sequential drawing logic
+	if (sequentialMode) {
+		updateSequentialDrawing();
+	}
 }
 
 //--------------------------------------------------------------
@@ -67,6 +73,11 @@ void ofApp::draw(){
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
 	if (key == 'Q' || key == 'q') ofExit();
+
+	// Sequential drawing dengan CTRL+1
+	if (key == '1' && (ofGetKeyPressed(OF_KEY_CONTROL) || ofGetKeyPressed(OF_KEY_COMMAND))) {
+		startSequentialDrawing();
+	}
 
 	if (key == 'x' || key == 'X') {
 		//Hide circle
@@ -208,6 +219,72 @@ void ofApp::gotMessage(ofMessage msg){
 }
 
 //--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
+void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
+
+//--------------------------------------------------------------
+void ofApp::startSequentialDrawing() {
+	// Reset semua shapes ke hidden
+	circleA->hide();
+	circleB->hide();
+	circleC->hide();
+	circleD->hide();
+	circleE->hide();
+	cartesianAxes->hide();
+	crossLineF->hide();
+	crossLineG->hide();
+	crossLineH->hide();
+	crossLineI->hide();
+
+	// Mulai sequential mode
+	sequentialMode = true;
+	currentShapeIndex = 0;
+
+	// Show shape pertama (CartesianAxes)
+	cartesianAxes->show();
+}
+
+//--------------------------------------------------------------
+void ofApp::updateSequentialDrawing() {
+	AbstractShape* currentShape = nullptr;
+
+	// Tentukan shape berdasarkan index
+	switch (currentShapeIndex) {
+		case 0: currentShape = cartesianAxes.get(); break;
+		case 1: currentShape = circleA.get(); break;
+		case 2: currentShape = circleB.get(); break;
+		case 3: currentShape = circleC.get(); break;
+		case 4: currentShape = circleD.get(); break;
+		case 5: currentShape = circleE.get(); break;
+		case 6: currentShape = crossLineF.get(); break;
+		case 7: currentShape = crossLineG.get(); break;
+		case 8: currentShape = crossLineH.get(); break;
+		case 9: currentShape = crossLineI.get(); break;
+	}
+
+	// Cek jika current shape sudah complete
+	if (currentShape && currentShape->isComplete()) {
+		// Pindah ke shape berikutnya
+		currentShapeIndex++;
+
+		// Show shape berikutnya jika masih ada
+		if (currentShapeIndex <= 9) {
+			switch (currentShapeIndex) {
+				case 1: circleA->show(); break;
+				case 2: circleB->show(); break;
+				case 3: circleC->show(); break;
+				case 4: circleD->show(); break;
+				case 5: circleE->show(); break;
+				case 6: crossLineF->show(); break;
+				case 7: crossLineG->show(); break;
+				case 8: crossLineH->show(); break;
+				case 9: crossLineI->show(); break;
+			}
+		} else {
+			// Semua shapes sudah complete, matikan sequential mode
+			sequentialMode = false;
+		}
+	}
+}
+
