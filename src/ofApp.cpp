@@ -121,6 +121,29 @@ void ofApp::setupRectangleLine(){
 		"R",         // Label1
 		"S"          // Label2
 	);
+
+	float angleI= PI / 4; //45°
+	vec2 posI = vec2(cos(angleI) * radiusCircle, sin(angleI) * radiusCircle);
+
+	// Hitung intersection G→I ∩ B→E (Dot T) dengan polar thinking
+	// Garis B→E: y = x - r, G→I vertical di x = r*√2/2
+	// Jadi: y = r*√2/2 - r = r(√2/2 - 1)
+	vec2 intersecT = vec2(radiusCircle * sqrt(2) / 2, radiusCircle * (sqrt(2) / 2 - 1));
+
+	// Hitung intersection G→I ∩ B→D (Dot U) dengan polar thinking
+	// Garis B→D: y = -x + r, G→I vertical di x = r*√2/2
+	// Jadi: y = -r*√2/2 + r = r(1 - √2/2)
+	vec2 intersecU = vec2(radiusCircle * sqrt(2) / 2, radiusCircle * (1 - sqrt(2) / 2));
+
+	rectangleLineGtoI = std::make_unique<RectangleLine>(
+		posG,        // Start: G
+		posI,        // End:   I
+		intersecT,   // Intersec1: G→I ∩ B→E (SCALABLE!)
+		intersecU,   // Intersec2: G→I ∩ B→D (SCALABLE!)
+		"T",         // Label1
+		"U"          // Label2
+	);
+
 }
 
 //--------------------------------------------------------------
@@ -145,6 +168,7 @@ void ofApp::update(){
 	parallelogramDtoC->update();
 	//RectangleLine update
 	rectangleLineFtoG->update();
+	rectangleLineGtoI->update();
 
 	// Update sequential drawing logic
 	if (sequentialMode) {
@@ -178,6 +202,7 @@ void ofApp::draw(){
 	parallelogramDtoC->draw();
 	//Draw RectangleLine
 	rectangleLineFtoG->draw();
+	rectangleLineGtoI->draw();
 }
 
 //--------------------------------------------------------------
@@ -293,7 +318,7 @@ void ofApp::startSequentialDrawing() {
 		crossLineH->showing && crossLineI->showing &&
 		parallelogramCtoE->showing && parallelogramEtoB->showing &&
 		parallelogramBtoD->showing && parallelogramDtoC->showing &&
-		rectangleLineFtoG->showing;
+		rectangleLineFtoG->showing && rectangleLineGtoI->showing;
 
 	if (allVisible) {
 		// Semua shapes sudah visible, jangan jalankan sequential
@@ -308,7 +333,7 @@ void ofApp::startSequentialDrawing() {
 	                   !crossLineH->isComplete() || !crossLineI->isComplete() ||
 	                   !parallelogramCtoE->isComplete() || !parallelogramEtoB->isComplete() ||
 	                   !parallelogramBtoD->isComplete() || !parallelogramDtoC->isComplete() ||
-	                   !rectangleLineFtoG->isComplete();
+	                   !rectangleLineFtoG->isComplete() || !rectangleLineGtoI->isComplete();
 
 	if (stillDrawing) {
 		// Ada shape yang masih drawing, jangan jalankan sequential
@@ -337,6 +362,7 @@ void ofApp::startSequentialDrawing() {
 	parallelogramBtoD->hide();
 	parallelogramDtoC->hide();
 	rectangleLineFtoG->hide();
+	rectangleLineGtoI->hide();
 
 	// Mulai sequential mode
 	sequentialMode = true;
@@ -368,6 +394,7 @@ void ofApp::updateSequentialDrawing() {
 		case 12: currentShape = parallelogramBtoD.get(); break;
 		case 13: currentShape = parallelogramDtoC.get(); break;
 		case 14: currentShape = rectangleLineFtoG.get(); break;
+		case 15: currentShape = rectangleLineGtoI.get(); break;
 	}
 
 	// Cek jika current shape sudah complete
@@ -376,7 +403,7 @@ void ofApp::updateSequentialDrawing() {
 		currentShapeIndex++;
 
 		// Show shape berikutnya jika masih ada
-		if (currentShapeIndex <= 14) {
+		if (currentShapeIndex <= 15) {
 			switch (currentShapeIndex) {
 				case 1: circleA->show(); break;
 				case 2: circleB->show(); break;
@@ -392,6 +419,7 @@ void ofApp::updateSequentialDrawing() {
 				case 12: parallelogramBtoD->show(); break;
 				case 13: parallelogramDtoC->show(); break;
 				case 14: rectangleLineFtoG->show(); break;
+				case 15: rectangleLineGtoI->show(); break;
 			}
 		} else {
 			// Semua shapes sudah complete, matikan sequential mode dan tandai selesai
@@ -423,6 +451,7 @@ void ofApp::toggleLabels() {
 		parallelogramBtoD->showLabel();
 		parallelogramDtoC->showLabel();
 		rectangleLineFtoG->showLabel();
+		rectangleLineGtoI->showLabel();
 	} else {
 		// Hide semua labels
 		circleA->hideLabel();
@@ -440,6 +469,7 @@ void ofApp::toggleLabels() {
 		parallelogramBtoD->hideLabel();
 		parallelogramDtoC->hideLabel();
 		rectangleLineFtoG->hideLabel();
+		rectangleLineGtoI->hideLabel();
 	}
 }
 
@@ -464,6 +494,7 @@ void ofApp::toggleDots() {
 		parallelogramBtoD->showDot();
 		parallelogramDtoC->showDot();
 		rectangleLineFtoG->showDot();
+		rectangleLineGtoI->showDot();
 	} else {
 		// Hide semua dots
 		circleA->hideDot();
@@ -480,6 +511,7 @@ void ofApp::toggleDots() {
 		parallelogramBtoD->hideDot();
 		parallelogramDtoC->hideDot();
 		rectangleLineFtoG->hideDot();
+		rectangleLineGtoI->hideDot();
 	}
 }
 
@@ -501,6 +533,7 @@ void ofApp::hideAllShapes() {
 	parallelogramBtoD->hide();
 	parallelogramDtoC->hide();
 	rectangleLineFtoG->hide();
+	rectangleLineGtoI->hide();
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
@@ -524,6 +557,7 @@ void ofApp::showAllShapes() {
 	parallelogramBtoD->show();
 	parallelogramDtoC->show();
 	rectangleLineFtoG->show();
+	rectangleLineGtoI->show();
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
@@ -555,6 +589,7 @@ void ofApp::decreaseLineWidth() {
 	parallelogramBtoD->setLineWidth(currentLineWidth);
 	parallelogramDtoC->setLineWidth(currentLineWidth);
 	rectangleLineFtoG->setLineWidth(currentLineWidth);
+	rectangleLineGtoI->setLineWidth(currentLineWidth);
 }
 
 //--------------------------------------------------------------
@@ -583,6 +618,7 @@ void ofApp::increaseLineWidth() {
 	parallelogramBtoD->setLineWidth(currentLineWidth);
 	parallelogramDtoC->setLineWidth(currentLineWidth);
 	rectangleLineFtoG->setLineWidth(currentLineWidth);
+	rectangleLineGtoI->setLineWidth(currentLineWidth);
 }
 
 
