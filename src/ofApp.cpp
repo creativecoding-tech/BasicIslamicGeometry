@@ -273,6 +273,19 @@ void ofApp::setupOctagramLine(){
 		posH,
 		"4"           
 	);
+
+	vec2 posC = vec2(-radiusCircle, 0);
+	float angle5 = angle4;  // 135°
+	vec2 posEnd5 = vec2(
+		posC.x + cos(angle5) * radiusCircle,
+		posC.y + sin(angle5) * radiusCircle
+	);
+	octagramLine5 = std::make_unique<OctagramLine>(
+		posH,         // Start: posH crossLine H
+		posEnd5,
+		posC,
+		"5"
+	);
 }
 
 //--------------------------------------------------------------
@@ -306,6 +319,7 @@ void ofApp::update(){
 	octagramLine2->update();
 	octagramLine3->update();
 	octagramLine4->update();
+	octagramLine5->update();
 
 
 	// Update sequential drawing logic
@@ -349,6 +363,7 @@ void ofApp::draw(){
 	octagramLine2->draw();
 	octagramLine3->draw();
 	octagramLine4->draw();
+	octagramLine5->draw();
 }
 
 //--------------------------------------------------------------
@@ -466,7 +481,7 @@ void ofApp::startSequentialDrawing() {
 		parallelogramBtoD->showing && parallelogramDtoC->showing &&
 		rectangleLineFtoG->showing && rectangleLineGtoI->showing &&
 		rectangleLineItoH->showing && rectangleLineHtoF->showing &&
-		octagramLine0->showing && octagramLine1->showing && octagramLine2->showing && octagramLine3->showing && octagramLine4->showing;
+		octagramLine0->showing && octagramLine1->showing && octagramLine2->showing && octagramLine3->showing && octagramLine4->showing && octagramLine5->showing;
 
 	if (allVisible) {
 		// Semua shapes sudah visible, jangan jalankan sequential
@@ -483,7 +498,7 @@ void ofApp::startSequentialDrawing() {
 	                   !parallelogramBtoD->isComplete() || !parallelogramDtoC->isComplete() ||
 	                   !rectangleLineFtoG->isComplete() || !rectangleLineGtoI->isComplete() ||
 						!rectangleLineItoH->isComplete() || !rectangleLineHtoF->isComplete() ||
-						!octagramLine0->isComplete() || !octagramLine1->isComplete() || !octagramLine2->isComplete() || !octagramLine3->isComplete() || !octagramLine4->isComplete();
+						!octagramLine0->isComplete() || !octagramLine1->isComplete() || !octagramLine2->isComplete() || !octagramLine3->isComplete() || !octagramLine4->isComplete() || !octagramLine5->isComplete();
 
 	if (stillDrawing) {
 		// Ada shape yang masih drawing, jangan jalankan sequential
@@ -520,6 +535,7 @@ void ofApp::startSequentialDrawing() {
 	octagramLine2->hide();
 	octagramLine3->hide();
 	octagramLine4->hide();
+	octagramLine5->hide();
 
 	// Set sequential mode untuk octagramLine
 	octagramLine0->setSequentialMode(true);
@@ -527,6 +543,7 @@ void ofApp::startSequentialDrawing() {
 	octagramLine2->setSequentialMode(true);
 	octagramLine3->setSequentialMode(true);
 	octagramLine4->setSequentialMode(true);
+	octagramLine5->setSequentialMode(true);
 
 	// Mulai sequential mode
 	sequentialMode = true;
@@ -566,6 +583,7 @@ void ofApp::updateSequentialDrawing() {
 		case 20: currentShape = octagramLine2.get(); break;
 		case 21: currentShape = octagramLine3.get(); break;
 		case 22: currentShape = octagramLine4.get(); break;
+		case 23: currentShape = octagramLine5.get(); break;
 	}
 
 	// Cek jika current shape sudah complete
@@ -574,7 +592,7 @@ void ofApp::updateSequentialDrawing() {
 		currentShapeIndex++;
 
 		// Show shape berikutnya jika masih ada
-		if (currentShapeIndex <= 22) {
+		if (currentShapeIndex <= 23) {
 			switch (currentShapeIndex) {
 				case 1: circleA->show(); break;
 				case 2: circleB->show(); break;
@@ -598,6 +616,7 @@ void ofApp::updateSequentialDrawing() {
 				case 20: octagramLine2->show(); break;
 				case 21: octagramLine3->show(); break;
 				case 22: octagramLine4->show(); break;
+				case 23: octagramLine5->show(); break;
 			}
 		} else {
 			// Semua shapes sudah complete, matikan sequential mode dan tandai selesai
@@ -637,6 +656,7 @@ void ofApp::toggleLabels() {
 		octagramLine2->showLabel();
 		octagramLine3->showLabel();
 		octagramLine4->showLabel();
+		octagramLine5->showLabel();
 	} else {
 		// Hide semua labels
 		circleA->hideLabel();
@@ -662,6 +682,7 @@ void ofApp::toggleLabels() {
 		octagramLine2->hideLabel();
 		octagramLine3->hideLabel();
 		octagramLine4->hideLabel();
+		octagramLine5->hideLabel();
 	}
 }
 
@@ -694,6 +715,7 @@ void ofApp::toggleDots() {
 		octagramLine2->showDot();
 		octagramLine3->showDot();
 		octagramLine4->showDot();
+		octagramLine5->showDot();
 	} else {
 		// Hide semua dots
 		circleA->hideDot();
@@ -718,6 +740,7 @@ void ofApp::toggleDots() {
 		octagramLine2->hideDot();
 		octagramLine3->hideDot();
 		octagramLine4->hideDot();
+		octagramLine5->hideDot();
 	}
 }
 
@@ -729,6 +752,7 @@ void ofApp::hideAllShapes() {
 	octagramLine2->setSequentialMode(false);
 	octagramLine3->setSequentialMode(false);
 	octagramLine4->setSequentialMode(false);
+	octagramLine5->setSequentialMode(false);
 
 	// Hide semua shapes
 	circleA->hide();
@@ -754,6 +778,7 @@ void ofApp::hideAllShapes() {
 	octagramLine2->hide();
 	octagramLine3->hide();
 	octagramLine4->hide();
+	octagramLine5->hide();
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
@@ -767,6 +792,7 @@ void ofApp::showAllShapes() {
 	octagramLine2->setSequentialMode(false);
 	octagramLine3->setSequentialMode(false);
 	octagramLine4->setSequentialMode(false);
+	octagramLine5->setSequentialMode(false);
 
 	// Show semua shapes
 	circleA->show();
@@ -792,6 +818,7 @@ void ofApp::showAllShapes() {
 	octagramLine2->show();
 	octagramLine3->show();
 	octagramLine4->show();
+	octagramLine5->show();
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
@@ -831,6 +858,7 @@ void ofApp::decreaseLineWidth() {
 	octagramLine2->setLineWidth(currentLineWidth);
 	octagramLine3->setLineWidth(currentLineWidth);
 	octagramLine4->setLineWidth(currentLineWidth);
+	octagramLine5->setLineWidth(currentLineWidth);
 }
 
 //--------------------------------------------------------------
@@ -867,6 +895,7 @@ void ofApp::increaseLineWidth() {
 	octagramLine2->setLineWidth(currentLineWidth);
 	octagramLine3->setLineWidth(currentLineWidth);
 	octagramLine4->setLineWidth(currentLineWidth);
+	octagramLine5->setLineWidth(currentLineWidth);
 }
 
 
