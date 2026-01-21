@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <optional>
 #include "ofMain.h"
 #include "AbstractShape.h"
 // namespace alias
@@ -10,8 +11,9 @@ class OctagramLine : public AbstractShape
 public:
 	vec2 start;
 	vec2 end;
+	std::optional<vec2> nextPoint;  // Optional titik lanjutan (jika ada, gambar 2 garis)
 	std::string label = "";
-	OctagramLine(vec2 start, vec2 end, string label);
+	OctagramLine(vec2 start, vec2 end, std::optional<vec2> nextPoint, string label);
 	// Helper method position
 	void setStart(float startX, float startY);
 	void setEnd(float endX, float endY);

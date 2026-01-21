@@ -1,7 +1,8 @@
 #include "OctagramLine.h"
-OctagramLine::OctagramLine(vec2 start, vec2 end, string label) :
+OctagramLine::OctagramLine(vec2 start, vec2 end, std::optional<vec2> nextPoint, string label) :
 	start(start),
 	end(end),
+	nextPoint(nextPoint),
 	label(label){
 	loadFonts();  // Load font dari AbstractShape
 	maxProgress = totalSegments;  // Set max progress untuk isComplete()
@@ -38,8 +39,7 @@ void OctagramLine::draw() {
 	ofSetColor(0);
 	ofSetLineWidth(lineWidth);
 
-	// Polar Thinking untuk line drawing
-	// Hitung angle dan distance dari start ke end
+	// === PHASE 1: Main line (start → end) - SELALU DIGAMBAR ===
 	float totalAngle = atan2(end.y - start.y, end.x - start.x);
 	float totalDistance = sqrt(pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
 
@@ -58,6 +58,26 @@ void OctagramLine::draw() {
 	polyline.close();
 	polyline.draw();
 
+	// === PHASE 2: Extension line (end → nextPoint) - HANYA jika nextPoint ada ===
+	if (nextPoint.has_value() && progress >= totalSegments) {
+		vec2 np = nextPoint.value();
+
+		float totalAngle2 = atan2(np.y - end.y, np.x - end.x);
+		float totalDistance2 = sqrt(pow(np.x - end.x, 2) + pow(np.y - end.y, 2));
+
+		ofPolyline polyline2;
+		for (int i = 0; i <= progress; i++) {
+			float t = ofMap(i, 0, totalSegments, 0, 1);
+			float currentDist = totalDistance2 * t;
+			float x = end.x + cos(totalAngle2) * currentDist;
+			float y = end.y + sin(totalAngle2) * currentDist;
+			polyline2.addVertex(x, y);
+		}
+		polyline2.close();
+		polyline2.draw();
+	}
+
+	// === DOT & LABEL ===
 	if (showing && progress >= totalSegments) {
 		ofFill();
 		// Gambar dot di end point
