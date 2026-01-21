@@ -144,6 +144,18 @@ void ofApp::setupRectangleLine(){
 		"U"          // Label2
 	);
 
+	float angleH = 3 * PI / 4; //135°
+	vec2 posH = vec2(cos(angleH) * radiusCircle, sin(angleH) * radiusCircle);
+	vec2 intersecV = vec2(radiusCircle * (1 - sqrt(2) / 2), posH.y);
+	vec2 intersecW = vec2(-radiusCircle * (1 - sqrt(2) / 2), posH.y);
+	rectangleLineItoH = std::make_unique<RectangleLine>(
+		posI,        // Start: I
+		posH,        // End:   H
+		intersecV,   // Intersec1: I→H ∩ B→D (SCALABLE!)
+		intersecW,   // Intersec2: I→H ∩ D→C (SCALABLE!)
+		"V",         // Label1
+		"W"          // Label2
+	);
 }
 
 //--------------------------------------------------------------
@@ -169,6 +181,8 @@ void ofApp::update(){
 	//RectangleLine update
 	rectangleLineFtoG->update();
 	rectangleLineGtoI->update();
+	rectangleLineItoH->update();
+
 
 	// Update sequential drawing logic
 	if (sequentialMode) {
@@ -203,6 +217,7 @@ void ofApp::draw(){
 	//Draw RectangleLine
 	rectangleLineFtoG->draw();
 	rectangleLineGtoI->draw();
+	rectangleLineItoH->draw();
 }
 
 //--------------------------------------------------------------
@@ -311,14 +326,15 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 //--------------------------------------------------------------
 void ofApp::startSequentialDrawing() {
 	// Cek apakah semua shapes sudah visible/showing (berarti sudah show semua dengan S)
-	bool allVisible = cartesianAxes->showing && circleA->showing &&
+	bool allVisible = circleA->showing &&
 		circleB->showing && circleC->showing &&
 		circleD->showing && circleE->showing &&
 		crossLineF->showing && crossLineG->showing &&
 		crossLineH->showing && crossLineI->showing &&
 		parallelogramCtoE->showing && parallelogramEtoB->showing &&
 		parallelogramBtoD->showing && parallelogramDtoC->showing &&
-		rectangleLineFtoG->showing && rectangleLineGtoI->showing;
+		rectangleLineFtoG->showing && rectangleLineGtoI->showing &&
+		rectangleLineItoH->showing;
 
 	if (allVisible) {
 		// Semua shapes sudah visible, jangan jalankan sequential
@@ -326,14 +342,15 @@ void ofApp::startSequentialDrawing() {
 	}
 
 	// Cek apakah ada shape yang sedang drawing (belum complete)
-	bool stillDrawing = !cartesianAxes->isComplete() || !circleA->isComplete() ||
+	bool stillDrawing = !circleA->isComplete() ||
 	                   !circleB->isComplete() || !circleC->isComplete() ||
 	                   !circleD->isComplete() || !circleE->isComplete() ||
 	                   !crossLineF->isComplete() || !crossLineG->isComplete() ||
 	                   !crossLineH->isComplete() || !crossLineI->isComplete() ||
 	                   !parallelogramCtoE->isComplete() || !parallelogramEtoB->isComplete() ||
 	                   !parallelogramBtoD->isComplete() || !parallelogramDtoC->isComplete() ||
-	                   !rectangleLineFtoG->isComplete() || !rectangleLineGtoI->isComplete();
+	                   !rectangleLineFtoG->isComplete() || !rectangleLineGtoI->isComplete() ||
+						!rectangleLineItoH->isComplete();
 
 	if (stillDrawing) {
 		// Ada shape yang masih drawing, jangan jalankan sequential
@@ -363,6 +380,7 @@ void ofApp::startSequentialDrawing() {
 	parallelogramDtoC->hide();
 	rectangleLineFtoG->hide();
 	rectangleLineGtoI->hide();
+	rectangleLineItoH->hide();
 
 	// Mulai sequential mode
 	sequentialMode = true;
@@ -395,6 +413,7 @@ void ofApp::updateSequentialDrawing() {
 		case 13: currentShape = parallelogramDtoC.get(); break;
 		case 14: currentShape = rectangleLineFtoG.get(); break;
 		case 15: currentShape = rectangleLineGtoI.get(); break;
+		case 16: currentShape = rectangleLineItoH.get(); break;
 	}
 
 	// Cek jika current shape sudah complete
@@ -403,7 +422,7 @@ void ofApp::updateSequentialDrawing() {
 		currentShapeIndex++;
 
 		// Show shape berikutnya jika masih ada
-		if (currentShapeIndex <= 15) {
+		if (currentShapeIndex <= 16) {
 			switch (currentShapeIndex) {
 				case 1: circleA->show(); break;
 				case 2: circleB->show(); break;
@@ -420,6 +439,7 @@ void ofApp::updateSequentialDrawing() {
 				case 13: parallelogramDtoC->show(); break;
 				case 14: rectangleLineFtoG->show(); break;
 				case 15: rectangleLineGtoI->show(); break;
+				case 16: rectangleLineItoH->show(); break;
 			}
 		} else {
 			// Semua shapes sudah complete, matikan sequential mode dan tandai selesai
@@ -452,6 +472,7 @@ void ofApp::toggleLabels() {
 		parallelogramDtoC->showLabel();
 		rectangleLineFtoG->showLabel();
 		rectangleLineGtoI->showLabel();
+		rectangleLineItoH->showLabel();
 	} else {
 		// Hide semua labels
 		circleA->hideLabel();
@@ -470,6 +491,7 @@ void ofApp::toggleLabels() {
 		parallelogramDtoC->hideLabel();
 		rectangleLineFtoG->hideLabel();
 		rectangleLineGtoI->hideLabel();
+		rectangleLineItoH->hideLabel();
 	}
 }
 
@@ -495,6 +517,7 @@ void ofApp::toggleDots() {
 		parallelogramDtoC->showDot();
 		rectangleLineFtoG->showDot();
 		rectangleLineGtoI->showDot();
+		rectangleLineItoH->showDot();
 	} else {
 		// Hide semua dots
 		circleA->hideDot();
@@ -512,6 +535,7 @@ void ofApp::toggleDots() {
 		parallelogramDtoC->hideDot();
 		rectangleLineFtoG->hideDot();
 		rectangleLineGtoI->hideDot();
+		rectangleLineItoH->hideDot();
 	}
 }
 
@@ -534,6 +558,7 @@ void ofApp::hideAllShapes() {
 	parallelogramDtoC->hide();
 	rectangleLineFtoG->hide();
 	rectangleLineGtoI->hide();
+	rectangleLineItoH->hide();
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
@@ -558,6 +583,7 @@ void ofApp::showAllShapes() {
 	parallelogramDtoC->show();
 	rectangleLineFtoG->show();
 	rectangleLineGtoI->show();
+	rectangleLineItoH->show();
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
@@ -590,6 +616,7 @@ void ofApp::decreaseLineWidth() {
 	parallelogramDtoC->setLineWidth(currentLineWidth);
 	rectangleLineFtoG->setLineWidth(currentLineWidth);
 	rectangleLineGtoI->setLineWidth(currentLineWidth);
+	rectangleLineItoH->setLineWidth(currentLineWidth);
 }
 
 //--------------------------------------------------------------
@@ -619,6 +646,7 @@ void ofApp::increaseLineWidth() {
 	parallelogramDtoC->setLineWidth(currentLineWidth);
 	rectangleLineFtoG->setLineWidth(currentLineWidth);
 	rectangleLineGtoI->setLineWidth(currentLineWidth);
+	rectangleLineItoH->setLineWidth(currentLineWidth);
 }
 
 

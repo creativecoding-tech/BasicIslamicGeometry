@@ -32,6 +32,7 @@ class ofApp : public ofBaseApp{
 		//rectangle attribute
 		std::unique_ptr<RectangleLine> rectangleLineFtoG;
 		std::unique_ptr<RectangleLine> rectangleLineGtoI;
+		std::unique_ptr<RectangleLine> rectangleLineItoH;
 
 		bool cursorVisible = false;
 
