@@ -37,6 +37,7 @@ class ofApp : public ofBaseApp{
 		std::unique_ptr<RectangleLine> rectangleLineHtoF;
 		//octagram attribute
 		std::unique_ptr<OctagramLine> octagramLine0;
+		std::unique_ptr<OctagramLine> octagramLine1;
 
 		bool cursorVisible = false;
 
