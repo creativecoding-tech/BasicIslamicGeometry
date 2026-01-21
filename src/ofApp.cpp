@@ -329,6 +329,7 @@ void ofApp::toggleLabels() {
 		circleC->showLabel();
 		circleD->showLabel();
 		circleE->showLabel();
+		cartesianAxes->showLabel();
 		crossLineF->showLabel();
 		crossLineG->showLabel();
 		crossLineH->showLabel();
@@ -344,6 +345,7 @@ void ofApp::toggleLabels() {
 		circleC->hideLabel();
 		circleD->hideLabel();
 		circleE->hideLabel();
+		cartesianAxes->hideLabel();
 		crossLineF->hideLabel();
 		crossLineG->hideLabel();
 		crossLineH->hideLabel();
@@ -469,6 +471,7 @@ void ofApp::decreaseLineWidth() {
 	circleC->setThin(true);
 	circleD->setThin(true);
 	circleE->setThin(true);
+	cartesianAxes->setThin(true);
 	crossLineF->setThin(true);
 	crossLineG->setThin(true);
 	crossLineH->setThin(true);
@@ -511,6 +514,7 @@ void ofApp::increaseLineWidth() {
 	circleC->setThin(false);
 	circleD->setThin(false);
 	circleE->setThin(false);
+	cartesianAxes->setThin(false);
 	crossLineF->setThin(false);
 	crossLineG->setThin(false);
 	crossLineH->setThin(false);
