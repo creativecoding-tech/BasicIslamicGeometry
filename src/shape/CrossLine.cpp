@@ -59,12 +59,20 @@ void CrossLine::draw() {
 	ofSetColor(0);
 	ofSetLineWidth(lineWidth);
 
+	// Polar Thinking untuk line drawing
+	// Hitung angle dan distance dari start ke end
+	float totalAngle = atan2(end.y - start.y, end.x - start.x);
+	float totalDistance = sqrt(pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
+
 	ofPolyline polyline;
-	//Gambar garis secara progressif
+	//Gambar garis secara progressif menggunakan polar coordinates
 	for (int i = 0; i <= progress; i++) {
 		float t = ofMap(i, 0, totalSegments, 0, 1);
-		float x = ofLerp(start.x, end.x, t);
-		float y = ofLerp(start.y, end.y, t);
+		// Interpolate distance sepanjang angle yang sama
+		float currentDist = totalDistance * t;
+		// Konversi polar ke cartesian: x = start + cos(angle) * distance
+		float x = start.x + cos(totalAngle) * currentDist;
+		float y = start.y + sin(totalAngle) * currentDist;
 
 		polyline.addVertex(x, y);
 	}
@@ -73,12 +81,10 @@ void CrossLine::draw() {
 
 	if (showing && progress >= totalSegments) {
 		ofFill();
-		//dot or circle posisi pada intersection crossline and circle A
-		// Hitung posisi dot pada perpotongan lingkaran A dengan garis
-		//Koordinate polar trigonometri
-		float angle = atan2(end.y - start.y, end.x - start.x);
-		float dotX = cos(angle) * radius;
-		float dotY = sin(angle) * radius;
+		//dot or circle posisi pada intersection crossline
+		// Gunakan totalAngle yang sudah dihitung untuk efisiensi
+		float dotX = cos(totalAngle) * radius;
+		float dotY = sin(totalAngle) * radius;
 
 		// Gambar dot hanya jika dotVisible = true
 		if (dotVisible) {
