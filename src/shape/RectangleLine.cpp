@@ -83,7 +83,7 @@ void RectangleLine::draw() {
 		// Gambar 2 label
 		if (labelVisible) {
 			fontNormal.drawString(label1, intersec1.x - 10, intersec1.y - 15);  
-			fontNormal.drawString(label2, intersec2.x + 10, intersec2.y - 15); 
+			fontNormal.drawString(label2, intersec2.x - 10, intersec2.y - 15); 
 		}
 	}
 	ofPopMatrix();
