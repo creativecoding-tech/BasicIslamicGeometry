@@ -6,6 +6,7 @@
 #include "shape/CrossLine.h"
 #include "shape/ParallelogramLine.h"
 #include "shape/RectangleLine.h"
+#include "shape/OctagramLine.h"
 using glm::vec2;
 class ofApp : public ofBaseApp{
 
@@ -34,6 +35,8 @@ class ofApp : public ofBaseApp{
 		std::unique_ptr<RectangleLine> rectangleLineGtoI;
 		std::unique_ptr<RectangleLine> rectangleLineItoH;
 		std::unique_ptr<RectangleLine> rectangleLineHtoF;
+		//octagram attribute
+		std::unique_ptr<OctagramLine> octagramLine0;
 
 		bool cursorVisible = false;
 
@@ -53,6 +56,7 @@ class ofApp : public ofBaseApp{
 		void setupCrossLines();
 		void setupParallelograms();
 		void setupRectangleLine();
+		void setupOctagramLine();
 		void update();
 		void draw();
 

@@ -5,22 +5,16 @@
 // namespace alias
 using glm::vec2;
 using std::string;
-class RectangleLine : public AbstractShape
+class OctagramLine : public AbstractShape
 {
 public:
 	vec2 start;
 	vec2 end;
-	vec2 intersec1;  // Intersection pertama 
-	vec2 intersec2;  // Intersection kedua
-	std::string label1 = "";  // Label untuk dot pertama
-	std::string label2 = "";  // Label untuk dot kedua
-	RectangleLine(vec2 start, vec2 end, vec2 intersec1, vec2 intersec2, string label1, string label2);
-
+	std::string label = "";
+	OctagramLine(vec2 start, vec2 end, string label);
 	// Helper method position
 	void setStart(float startX, float startY);
 	void setEnd(float endX, float endY);
-	void setIntersec1(vec2 intersec1);
-	void setIntersec2(vec2 intersec2);
 
 	// Dot visibility control
 	void showDot();
