@@ -5,6 +5,7 @@
 #include "shape/CartesianAxes.h"
 #include "shape/CrossLine.h"
 #include "shape/ParallelogramLine.h"
+#include "shape/RectangleLine.h"
 using glm::vec2;
 class ofApp : public ofBaseApp{
 
@@ -28,6 +29,8 @@ class ofApp : public ofBaseApp{
 		std::unique_ptr<ParallelogramLine> parallelogramEtoB;
 		std::unique_ptr<ParallelogramLine> parallelogramBtoD;
 		std::unique_ptr<ParallelogramLine> parallelogramDtoC;
+		//rectangle attribute
+		std::unique_ptr<RectangleLine> rectangleLineFtoG;
 
 		bool cursorVisible = false;
 
