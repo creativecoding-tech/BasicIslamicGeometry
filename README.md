@@ -23,7 +23,7 @@ Lihat hasilnya di YouTube: [Watch Demo](https://youtu.be/fr0wx18GXeI)
 Project ini menampilkan **pola geometri Islam dasar** dengan lima lingkaran yang saling berhubungan, crosslines, dan parallelogram lines:
 
 - **5 CircleShape (A, B, C, D, E)** - Lingkaran dengan posisi kardinal
-- **Cartesian Axes** - Sistem koordinat X-Y untuk referensi posisi
+- **Cartesian Axes** - Sistem koordinat X-Y dengan label sudut (radians & degrees)
 - **4 CrossLine (F, G, H, I)** - Garis diagonal dari center ke sudut dengan dot di intersection
 - **4 ParallelogramLine (N, O, P, Q)** - Garis penghubung antar circle center dengan dot di intersection
 
@@ -39,10 +39,11 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Sequential Drawing Mode** - Animasi drawing berurutan dari satu shape ke shape berikutnya
 - **Animated Drawing** - Semua shape digambar dengan animasi smooth (100 segments, 0.5 speed)
 - **Bidirectional Animation** - Animasi muncul (show) dan hilang (hide) dengan smoothing
-- **Cartesian Coordinate System** - Sumbu X-Y dengan animasi scaling (0 to 2.5x radius)
+- **Cartesian Coordinate System** - Sumbu X-Y dengan animasi scaling (0 to 2.5x radius) dan label sudut (radians & degrees)
 - **Dynamic Line Width** - Ketebalan garis yang dapat diadjust secara realtime (0.5px - 4px)
-- **Dynamic Font System** - Font yang berubah otomatis (bold/normal) berdasarkan line width
-- **Label Toggle** - Show/hide label untuk semua shapes (A-E, F-M, N-Q)
+- **Static Font System** - Semua label menggunakan font normal (Calibri 15px) untuk konsistensi visual
+- **Angle Labels** - Label sudut pada CartesianAxes menampilkan format "radians (degrees)" di setiap ujung sumbu
+- **Label Toggle** - Show/hide label untuk semua shapes (Circle A-E, CrossLine F-M, Parallelogram N-Q, CartesianAxes angles)
 - **Dot Toggle** - Show/hide dot di intersection points (17 dot total)
 - **Individual Controls** - Toggle CartesianAxes terpisah dari shapes lain
 - **Trigonometry-Based Positioning** - Perhitungan posisi dot menggunakan atan2(), cos(), sin()
@@ -61,10 +62,10 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **SHIFT + )** | Show semua shapes (Circle, CrossLine, Parallelogram, CartesianAxes) |
 | **DEL** | Hide semua shapes (termasuk CartesianAxes) |
 | **BACKSPACE** | Toggle CartesianAxes saja (hide/show) |
-| **\`** atau **~** | Toggle label visibility (semua label A-E, F-M, N-Q) |
+| **\`** atau **~** | Toggle label visibility (semua label: Circle A-E, CrossLine F-M, Parallelogram N-Q, CartesianAxes angles) |
 | **.** atau **>** | Toggle dot visibility (17 dot di intersection points) |
-| **+** atau **=** | Increase line width (+0.5px, max 4px, font jadi bold) |
-| **-** atau **_** | Decrease line width (-0.5px, min 0px, font jadi normal) |
+| **+** atau **=** | Increase line width (+0.5px, max 4px) |
+| **-** atau **_** | Decrease line width (-0.5px, min 0px) |
 | **END** | Keluar dari aplikasi |
 
 **Shape Count:**
@@ -168,21 +169,37 @@ circleD = CircleShape(radius, "D", 0, radius);
 circleE = CircleShape(radius, "E", 0, -radius);
 ```
 
-### Dynamic Font System
+### Static Font System
 
-Font berubah otomatis berdasarkan **line width**:
+Semua label menggunakan **font normal** untuk konsistensi visual:
 
 ```cpp
-// Tipis (lineWidth < 2)
+// Semua label pakai font normal
 fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
-
-// Tebal (lineWidth >= 2)
-fontBold.load("C:\\Windows\\Fonts\\calibrib.ttf", 20);
 ```
 
-**Rumus Mapping:**
-- **Thin mode**: `lineWidth = 0.5px`, font = Calibri 15px (Regular)
-- **Thick mode**: `lineWidth = 4px`, font = Calibri 20px (Bold)
+**Font Configuration:**
+- **All labels**: Calibri 15px (Regular)
+- **Consistency**: Font tidak berubah saat line width di-adjust
+- **Clean & Simple**: Visual yang konsisten di seluruh aplikasi
+
+### Angle Labels pada CartesianAxes
+
+CartesianAxes menampilkan label sudut di setiap ujung sumbu dengan format **radians (degrees)**:
+
+```cpp
+// Label sudut di 4 ujung sumbu
+fontNormal.drawString("0 (0°)", currentLength + 10, 5);              // Kanan
+fontNormal.drawString("PI/2 (90°)", -90, currentLength - 100);        // Bawah
+fontNormal.drawString("PI (180°)", -currentLength - 80, 5);          // Kiri
+fontNormal.drawString("-PI/2 (270°)", -100, -currentLength + 100);   // Atas
+```
+
+**Screen Coordinates Reference:**
+- 0° (0 rad) = Timur (kanan) = X positif
+- 90° (PI/2) = Selatan (bawah) = Y positif
+- 180° (PI) = Barat (kiri) = X negatif
+- 270° (-PI/2) = Utara (atas) = Y negatif
 
 ---
 
@@ -194,8 +211,11 @@ BasicIslamicGeometry/
 │   ├── main.cpp              # Entry point aplikasi
 │   ├── ofApp.cpp/h           # Main application class
 │   └── shape/                # Shape implementations
-│       ├── CircleShape.cpp/h # Circle class dengan animasi drawing
-│       └── CartesianAxes.cpp/h # Cartesian axes dengan animasi scaling
+│       ├── AbstractShape.cpp/h         # Base class untuk semua shapes
+│       ├── CircleShape.cpp/h           # Circle dengan animasi drawing
+│       ├── CartesianAxes.cpp/h         # Sumbu X-Y dengan scaling & angle labels
+│       ├── CrossLine.cpp/h             # Garis diagonal dengan 2 dot & 2 label
+│       └── ParallelogramLine.cpp/h     # Garis penghubung dengan 1 dot & 1 label
 ├── bin/                      # Compiled executable
 ├── dll/                      # OF dependencies
 ├── obj/                      # Intermediate files (gitignored)
@@ -233,15 +253,19 @@ Branch ini adalah **pengembangan** BasicIslamicGeometry dengan fokus pada **para
 
 ✅ **Five Circle Pattern**: 5 lingkaran (A, B, C, D, E) dengan konfigurasi posisi yang saling berhubungan
 ✅ **Animated Drawing**: Lingkaran digambar dengan animasi smooth (100 segments, 0.5 speed)
-✅ **Cartesian Axes**: Sistem koordinat X-Y dengan animasi scaling (0 to 2.5x radius)
+✅ **Cartesian Axes**: Sistem koordinat X-Y dengan animasi scaling (0 to 2.5x radius) dan label sudut (radians & degrees)
+✅ **CrossLine System**: 4 garis diagonal dari center ke sudut dengan dot di intersection
+✅ **Parallelogram Lines**: 4 garis penghubung antar circle center dengan dot di intersection
 ✅ **Bidirectional Animation**: Animasi muncul (show) dan hilang (hide) dengan smoothing
 ✅ **Dynamic Line Width**: Ketebalan garis yang dapat diadjust (0.5px - 4px)
-✅ **Dynamic Font System**: Font yang berubah otomatis (bold/normal) berdasarkan line width
-✅ **Show/Hide Controls**: Toggle visibility untuk semua lingkaran dan axes
-✅ **Label System**: Setiap lingkaran memiliki label (A, B, C, D, E) yang dinamis
-✅ Trails effect untuk visual impact
-✅ Anti-aliased rendering untuk kualitas visual tinggi
-✅ Memory-safe implementation dengan `std::unique_ptr`
+✅ **Static Font System**: Semua label menggunakan font normal (Calibri 15px) untuk konsistensi visual
+✅ **Angle Labels**: Label sudut CartesianAxes dengan format "radians (degrees)" di setiap ujung sumbu
+✅ **Show/Hide Controls**: Toggle visibility untuk semua shapes
+✅ **Label System**: Label untuk Circle (A-E), CrossLine (F-M), Parallelogram (N-Q), dan CartesianAxes angles
+✅ **Dot System**: 17 dot di intersection points dengan toggle visibility
+✅ **Trails Effect**: Semi-transparent overlay untuk efek jejak visual yang menarik
+✅ **Anti-aliased Rendering**: Garis yang smooth untuk kualitas visual tinggi
+✅ **Memory-safe Implementation**: Menggunakan `std::unique_ptr` untuk resource management
 
 ### Configuration:
 
@@ -262,6 +286,16 @@ Branch ini adalah **pengembangan** BasicIslamicGeometry dengan fokus pada **para
 - **maxScale**: 2.5 (sumbu memanjang 2.5x radius = 600px)
 - **speed**: 0.02 per frame
 - **lineWidth**: 2px (default)
+- **Angle Labels**: Format "radians (degrees)" di setiap ujung sumbu
+  - Kanan: "0 (0°)"
+  - Bawah: "PI/2 (90°)"
+  - Kiri: "PI (180°)"
+  - Atas: "-PI/2 (270°)"
+
+**Font System:**
+- **All Labels**: Calibri 15px (Regular)
+- **Consistency**: Font tidak berubah saat line width di-adjust
+- **Clean & Simple**: Visual yang konsisten di seluruh aplikasi
 
 🎨 **Creative Freedom**: Project ini terbuka untuk eksplorasi dan improvisasi tanpa batas. Seni digital adalah tentang ekspresi, bukan checklist.
 
