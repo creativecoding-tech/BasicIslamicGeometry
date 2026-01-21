@@ -26,25 +26,47 @@ void ofApp::setup(){
 	crossLineH = std::make_unique<CrossLine>(vec2(0, 0), vec2(-radiusCircle, radiusCircle), "H","L", radiusCircle);
 	crossLineI = std::make_unique<CrossLine>(vec2(0, 0), vec2(radiusCircle, radiusCircle), "I","M", radiusCircle);
 
-	//Parallelogram
-	// C→E memotong F: (-240,0)->(0,-240) dengan (0,0)->(-240,-240) = (-120,-120)
-	// Dengan radiusCircle=240, maka intersection = (-240/2, -240/2) = (-120, -120)
-	vec2 intersecC_E_F = vec2(-radiusCircle/2, -radiusCircle/2);
+	//Parallelogram dengan Polar Thinking
+	// Intersection point dihitung menggunakan trigonometri: x = cos(angle) * distance, y = sin(angle) * distance
+
+	// C→E memotong F: Northwest (-120, -120)
+	// Polar: angle = -3*PI/4 (-135°), distance = r*√2/2
+	// Contoh: radiusCircle = 240, maka distance = 240 * √2 / 2 = 169.68
+	// x = cos(-135°) × 169.68 = -0.707 × 169.68 = -120
+	// y = sin(-135°) × 169.68 = -0.707 × 169.68 = -120
+	float angleC_E_F = -3 * PI / 4;  // -135 derajat (Northwest)
+	float distC_E_F = radiusCircle * sqrt(2) / 2;
+	vec2 intersecC_E_F = vec2(cos(angleC_E_F) * distC_E_F, sin(angleC_E_F) * distC_E_F);
 	parallelogramCtoE = std::make_unique<ParallelogramLine>(vec2(-radiusCircle, 0), vec2(0, -radiusCircle), intersecC_E_F, "N");
 
-	// E→B memotong G: (0,-240)->(240,0) dengan (0,0)->(240,-240) = (120,-120)
-	// Dengan radiusCircle=240, maka intersection = (240/2, -240/2) = (120, -120)
-	vec2 intersecE_B_G = vec2(radiusCircle/2, -radiusCircle/2);
+	// E→B memotong G: Northeast (120, -120)
+	// Polar: angle = -PI/4 (-45°), distance = r*√2/2
+	// Contoh: radiusCircle = 240, maka distance = 240 * √2 / 2 = 169.68
+	// x = cos(-45°) × 169.68 = 0.707 × 169.68 = 120
+	// y = sin(-45°) × 169.68 = -0.707 × 169.68 = -120
+	float angleE_B_G = -PI / 4;  // -45 derajat (Northeast)
+	float distE_B_G = radiusCircle * sqrt(2) / 2;
+	vec2 intersecE_B_G = vec2(cos(angleE_B_G) * distE_B_G, sin(angleE_B_G) * distE_B_G);
 	parallelogramEtoB = std::make_unique<ParallelogramLine>(vec2(0, -radiusCircle), vec2(radiusCircle, 0), intersecE_B_G, "O");
 
-	// B→D memotong I: (240,0)->(0,240) dengan (0,0)->(240,240) = (120,120)
-	// Dengan radiusCircle=240, maka intersection = (240/2, 240/2) = (120, 120)
-	vec2 intersecB_D_I = vec2(radiusCircle/2, radiusCircle/2);
+	// B→D memotong I: Southeast (120, 120)
+	// Polar: angle = PI/4 (45°), distance = r*√2/2
+	// Contoh: radiusCircle = 240, maka distance = 240 * √2 / 2 = 169.68
+	// x = cos(45°) × 169.68 = 0.707 × 169.68 = 120
+	// y = sin(45°) × 169.68 = 0.707 × 169.68 = 120
+	float angleB_D_I = PI / 4;  // 45 derajat (Southeast)
+	float distB_D_I = radiusCircle * sqrt(2) / 2;
+	vec2 intersecB_D_I = vec2(cos(angleB_D_I) * distB_D_I, sin(angleB_D_I) * distB_D_I);
 	parallelogramBtoD = std::make_unique<ParallelogramLine>(vec2(radiusCircle, 0), vec2(0, radiusCircle), intersecB_D_I, "P");
 
-	// D→C memotong H: (0,240)->(-240,0) dengan (0,0)->(-240,240) = (-120,120)
-	// Dengan radiusCircle=240, maka intersection = (-240/2, 240/2) = (-120, 120)
-	vec2 intersecD_C_H = vec2(-radiusCircle/2, radiusCircle/2);
+	// D→C memotong H: Southwest (-120, 120)
+	// Polar: angle = 3*PI/4 (135°), distance = r*√2/2
+	// Contoh: radiusCircle = 240, maka distance = 240 * √2 / 2 = 169.68
+	// x = cos(135°) × 169.68 = -0.707 × 169.68 = -120
+	// y = sin(135°) × 169.68 = 0.707 × 169.68 = 120
+	float angleD_C_H = 3 * PI / 4;  // 135 derajat (Southwest)
+	float distD_C_H = radiusCircle * sqrt(2) / 2;
+	vec2 intersecD_C_H = vec2(cos(angleD_C_H) * distD_C_H, sin(angleD_C_H) * distD_C_H);
 	parallelogramDtoC = std::make_unique<ParallelogramLine>(vec2(0, radiusCircle), vec2(-radiusCircle, 0), intersecD_C_H, "Q");
 }
 
