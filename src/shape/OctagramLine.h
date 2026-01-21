@@ -30,8 +30,13 @@ public:
 	void update() override;
 	void draw() override;
 
+	// Mode control untuk animation
+	void setSequentialMode(bool sequential) { isSequentialMode = sequential; }
+
 private:
 	float totalSegments = 100;  // specific
+	float extensionProgress = 0;  // Progress untuk extension line (phase 2)
+	bool isSequentialMode = false;  // Flag untuk sequential vs paralel mode
 	bool dotVisible = true;     // Flag untuk dot visibility
 	bool labelVisible = true;   // Flag untuk label visibility
 };

@@ -26,10 +26,44 @@ void OctagramLine::hideLabel() {
 
 void OctagramLine::update() {
 	if (showing) {
-		if (progress < totalSegments) progress += speed;
+		if (isSequentialMode) {
+			// SEQUENTIAL MODE: Phase 1 dulu, baru Phase 2
+			if (progress < totalSegments) {
+				progress += speed;
+			}
+			else if (nextPoint.has_value() && extensionProgress < totalSegments) {
+				extensionProgress += speed;
+			}
+		}
+		else {
+			// PARALEL MODE: Kedua line berjalan barengan
+			if (progress < totalSegments) {
+				progress += speed;
+			}
+			if (nextPoint.has_value() && extensionProgress < totalSegments) {
+				extensionProgress += speed;
+			}
+		}
 	}
 	else {
-		if (progress > 0) progress -= speed;
+		if (isSequentialMode) {
+			// SEQUENTIAL MODE: Hide extension dulu, baru main line
+			if (extensionProgress > 0) {
+				extensionProgress -= speed;
+			}
+			else if (progress > 0) {
+				progress -= speed;
+			}
+		}
+		else {
+			// PARALEL MODE: Kedua line hide barengan
+			if (extensionProgress > 0) {
+				extensionProgress -= speed;
+			}
+			if (progress > 0) {
+				progress -= speed;
+			}
+		}
 	}
 }
 
@@ -59,14 +93,15 @@ void OctagramLine::draw() {
 	polyline.draw();
 
 	// === PHASE 2: Extension line (end → nextPoint) - HANYA jika nextPoint ada ===
-	if (nextPoint.has_value() && progress >= totalSegments) {
+	if (nextPoint.has_value()) {
 		vec2 np = nextPoint.value();
 
 		float totalAngle2 = atan2(np.y - end.y, np.x - end.x);
 		float totalDistance2 = sqrt(pow(np.x - end.x, 2) + pow(np.y - end.y, 2));
 
 		ofPolyline polyline2;
-		for (int i = 0; i <= progress; i++) {
+		// Gambar extension line secara progressif menggunakan extensionProgress
+		for (int i = 0; i <= extensionProgress; i++) {
 			float t = ofMap(i, 0, totalSegments, 0, 1);
 			float currentDist = totalDistance2 * t;
 			float x = end.x + cos(totalAngle2) * currentDist;

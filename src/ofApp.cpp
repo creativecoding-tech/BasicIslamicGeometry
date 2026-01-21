@@ -434,6 +434,9 @@ void ofApp::startSequentialDrawing() {
 	rectangleLineHtoF->hide();
 	octagramLine0->hide();
 
+	// Set sequential mode untuk octagramLine0
+	octagramLine0->setSequentialMode(true);
+
 	// Mulai sequential mode
 	sequentialMode = true;
 	sequentialCompleted = false;  // Reset flag
@@ -605,6 +608,9 @@ void ofApp::toggleDots() {
 
 //--------------------------------------------------------------
 void ofApp::hideAllShapes() {
+	// Set paralel mode untuk octagramLine0 (kedua line hide barengan)
+	octagramLine0->setSequentialMode(false);
+
 	// Hide semua shapes
 	circleA->hide();
 	circleB->hide();
@@ -632,6 +638,9 @@ void ofApp::hideAllShapes() {
 
 //--------------------------------------------------------------
 void ofApp::showAllShapes() {
+	// Set paralel mode untuk octagramLine0 (kedua line berjalan barengan)
+	octagramLine0->setSequentialMode(false);
+
 	// Show semua shapes
 	circleA->show();
 	circleB->show();
