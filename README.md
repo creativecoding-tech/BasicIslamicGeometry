@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--parallelogram-orange)
+![Branch](https://img.shields.io/badge/Branch-sketch--rectangle-orange)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -20,12 +20,13 @@ Lihat hasilnya di YouTube: [Watch Demo](https://youtu.be/fr0wx18GXeI)
 
 ## 📺 Preview
 
-Project ini menampilkan **pola geometri Islam dasar** dengan lima lingkaran yang saling berhubungan, crosslines, dan parallelogram lines:
+Project ini menampilkan **pola geometri Islam dasar** dengan lima lingkaran yang saling berhubungan, crosslines, parallelogram lines, dan rectangle lines:
 
 - **5 CircleShape (A, B, C, D, E)** - Lingkaran dengan posisi kardinal
 - **Cartesian Axes** - Sistem koordinat X-Y dengan label sudut (radians & degrees)
 - **4 CrossLine (F, G, H, I)** - Garis diagonal dari center ke sudut dengan dot di intersection
 - **4 ParallelogramLine (N, O, P, Q)** - Garis penghubung antar circle center dengan dot di intersection
+- **4 RectangleLine (F→G, G→I, I→H, H→F)** - Garis pembentuk rectangle dengan 2 dot di intersection
 
 Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di posisi intersection, dan line width yang dapat diadjust.
 
@@ -36,6 +37,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Five Circle Pattern** - 5 lingkaran dengan radius dinamis yang saling berhubungan
 - **CrossLine System** - 4 garis diagonal dari center ke sudut dengan dot di intersection point
 - **Parallelogram Lines** - 4 garis penghubung antar circle center membentuk diamond/rhombus
+- **Rectangle Lines** - 4 garis pembentuk rectangle (F→G, G→I, I→H, H→F) dengan 2 dot di intersection
+- **Polar Thinking** - Perhitungan posisi menggunakan trigonometri (cos, sin, atan2) untuk scalability
 - **Sequential Drawing Mode** - Animasi drawing berurutan dari satu shape ke shape berikutnya
 - **Animated Drawing** - Semua shape digambar dengan animasi smooth (100 segments, 0.5 speed)
 - **Bidirectional Animation** - Animasi muncul (show) dan hilang (hide) dengan smoothing
@@ -43,10 +46,11 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Dynamic Line Width** - Ketebalan garis yang dapat diadjust secara realtime (0.5px - 4px)
 - **Static Font System** - Semua label menggunakan font normal (Calibri 15px) untuk konsistensi visual
 - **Angle Labels** - Label sudut pada CartesianAxes menampilkan format "radians (degrees)" di setiap ujung sumbu
-- **Label Toggle** - Show/hide label untuk semua shapes (Circle A-E, CrossLine F-M, Parallelogram N-Q, CartesianAxes angles)
-- **Dot Toggle** - Show/hide dot di intersection points (17 dot total)
+- **Label Toggle** - Show/hide label untuk semua shapes (Circle A-E, CrossLine F-M, Parallelogram N-Q, Rectangle R-Y, CartesianAxes angles)
+- **Dot Toggle** - Show/hide dot di intersection points (25 dot total)
 - **Individual Controls** - Toggle CartesianAxes terpisah dari shapes lain
 - **Trigonometry-Based Positioning** - Perhitungan posisi dot menggunakan atan2(), cos(), sin()
+- **Scalable Intersection Points** - Semua intersection dihitung dengan rumus geometric yang scalable terhadap radiusCircle
 - **AbstractShape Base Class** - Arsitektur OOP dengan inheritance untuk code reusability
 - **Anti-Aliasing & Smoothing** - Garis yang smooth untuk visual yang lebih baik
 - **Trails Effect** - Semi-transparent overlay untuk efek jejak visual yang menarik
@@ -58,12 +62,12 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 | Input | Action |
 | --- | --- |
-| **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan (CartesianAxes → Circle A-E → CrossLine F-I → Parallelogram N-Q) |
-| **SHIFT + )** | Show semua shapes (Circle, CrossLine, Parallelogram, CartesianAxes) |
+| **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan (CartesianAxes → Circle A-E → CrossLine F-I → Parallelogram N-Q → Rectangle R-Y) |
+| **SHIFT + )** | Show semua shapes (Circle, CrossLine, Parallelogram, Rectangle, CartesianAxes) |
 | **DEL** | Hide semua shapes (termasuk CartesianAxes) |
 | **BACKSPACE** | Toggle CartesianAxes saja (hide/show) |
-| **\`** atau **~** | Toggle label visibility (semua label: Circle A-E, CrossLine F-M, Parallelogram N-Q, CartesianAxes angles) |
-| **.** atau **>** | Toggle dot visibility (17 dot di intersection points) |
+| **\`** atau **~** | Toggle label visibility (semua label: Circle A-E, CrossLine F-M, Parallelogram N-Q, Rectangle R-Y, CartesianAxes angles) |
+| **.** atau **>** | Toggle dot visibility (25 dot di intersection points) |
 | **+** atau **=** | Increase line width (+0.5px, max 4px) |
 | **-** atau **_** | Decrease line width (-0.5px, min 0px) |
 | **END** | Keluar dari aplikasi |
@@ -73,7 +77,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - 1 CartesianAxes
 - 4 CrossLine (F, G, H, I) dengan 2 dot per line
 - 4 ParallelogramLine (N, O, P, Q) dengan 1 dot per line
-- **Total: 14 shapes dengan 17 dot**
+- 4 RectangleLine (F→G, G→I, I→H, H→F) dengan 2 dot per line
+- **Total: 18 shapes dengan 25 dot**
 
 ---
 
@@ -99,8 +104,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 # Clone repository ini
 git clone https://github.com/username/BasicIslamicGeometry.git
 
-# Checkout branch sketch-parallelogram
-git checkout sketch-parallelogram
+# Checkout branch sketch-rectangle
+git checkout sketch-rectangle
 
 # Buka Visual Studio
 # Double-click: BasicIslamicGeometry.sln
@@ -201,6 +206,35 @@ fontNormal.drawString("-PI/2 (270°)", -100, -currentLength + 100);   // Atas
 - 180° (PI) = Barat (kiri) = X negatif
 - 270° (-PI/2) = Utara (atas) = Y negatif
 
+### Polar Thinking untuk RectangleLine
+
+RectangleLine menggunakan **polar thinking** untuk perhitungan posisi dan intersection yang scalable:
+
+```cpp
+// Hitung posisi F dan G dengan polar (SCALABLE!)
+float angleF = -3 * PI / 4;  // -135°
+vec2 posF = vec2(cos(angleF) * radiusCircle, sin(angleF) * radiusCircle);
+
+float angleG = -PI / 4;  // -45°
+vec2 posG = vec2(cos(angleG) * radiusCircle, sin(angleG) * radiusCircle);
+
+// Hitung intersection dengan rumus geometric yang scalable
+vec2 intersecR = vec2(-radiusCircle * (1 - sqrt(2) / 2), posF.y);  // F→G ∩ C→E
+vec2 intersecS = vec2(radiusCircle * (1 - sqrt(2) / 2), posF.y);   // F→G ∩ B→E
+```
+
+**Keuntungan Polar Thinking:**
+- **Scalable**: Semua posisi otomatis menyesuaikan jika radiusCircle berubah
+- **Geometric Intuitive**: Menggunakan angle dan distance sesuai nature Islamic geometry
+- **Rotation-Friendly**: Mudah di-rotate dengan menambah offset angle
+- **Compass-Based**: Sesuai dengan compass construction technique
+
+**4 RectangleLine Configuration:**
+- **F→G**: Horizontal di y = -170, dengan intersection R (-70, -170) dan S (70, -170)
+- **G→I**: Vertical di x = 170, dengan intersection T (170, -70) dan U (170, 70)
+- **I→H**: Horizontal di y = 170, dengan intersection V (70, 170) dan W (-70, 170)
+- **H→F**: Vertical di x = -170, dengan intersection X (-170, 70) dan Y (-170, -70)
+
 ---
 
 ## 📁 Project Structure
@@ -215,7 +249,8 @@ BasicIslamicGeometry/
 │       ├── CircleShape.cpp/h           # Circle dengan animasi drawing
 │       ├── CartesianAxes.cpp/h         # Sumbu X-Y dengan scaling & angle labels
 │       ├── CrossLine.cpp/h             # Garis diagonal dengan 2 dot & 2 label
-│       └── ParallelogramLine.cpp/h     # Garis penghubung dengan 1 dot & 1 label
+│       ├── ParallelogramLine.cpp/h     # Garis penghubung dengan 1 dot & 1 label
+│       └── RectangleLine.cpp/h         # Garis rectangle dengan 2 dot & 2 label
 ├── bin/                      # Compiled executable
 ├── dll/                      # OF dependencies
 ├── obj/                      # Intermediate files (gitignored)
@@ -247,25 +282,29 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **sketch-parallelogram**
+## 📝 Current Status: **sketch-rectangle**
 
-Branch ini adalah **pengembangan** BasicIslamicGeometry dengan fokus pada **parallelogram lines** yang membentuk pola diamond/rhombus dalam geometri Islam. Fitur yang tersedia:
+Branch ini adalah **pengembangan** BasicIslamicGeometry dengan fokus pada **rectangle lines** yang membentuk pola rectangle dalam geometri Islam. Fitur yang tersedia:
 
 ✅ **Five Circle Pattern**: 5 lingkaran (A, B, C, D, E) dengan konfigurasi posisi yang saling berhubungan
 ✅ **Animated Drawing**: Lingkaran digambar dengan animasi smooth (100 segments, 0.5 speed)
 ✅ **Cartesian Axes**: Sistem koordinat X-Y dengan animasi scaling (0 to 2.5x radius) dan label sudut (radians & degrees)
 ✅ **CrossLine System**: 4 garis diagonal dari center ke sudut dengan dot di intersection
 ✅ **Parallelogram Lines**: 4 garis penghubung antar circle center dengan dot di intersection
+✅ **Rectangle Lines**: 4 garis pembentuk rectangle (F→G, G→I, I→H, H→F) dengan 2 dot di intersection
+✅ **Polar Thinking**: Perhitungan posisi dan intersection menggunakan trigonometri untuk scalability
+✅ **Scalable Intersections**: Semua intersection point dihitung dengan rumus geometric yang scalable terhadap radiusCircle
 ✅ **Bidirectional Animation**: Animasi muncul (show) dan hilang (hide) dengan smoothing
 ✅ **Dynamic Line Width**: Ketebalan garis yang dapat diadjust (0.5px - 4px)
 ✅ **Static Font System**: Semua label menggunakan font normal (Calibri 15px) untuk konsistensi visual
 ✅ **Angle Labels**: Label sudut CartesianAxes dengan format "radians (degrees)" di setiap ujung sumbu
 ✅ **Show/Hide Controls**: Toggle visibility untuk semua shapes
-✅ **Label System**: Label untuk Circle (A-E), CrossLine (F-M), Parallelogram (N-Q), dan CartesianAxes angles
-✅ **Dot System**: 17 dot di intersection points dengan toggle visibility
+✅ **Label System**: Label untuk Circle (A-E), CrossLine (F-M), Parallelogram (N-Q), Rectangle (R-Y), dan CartesianAxes angles
+✅ **Dot System**: 25 dot di intersection points dengan toggle visibility
 ✅ **Trails Effect**: Semi-transparent overlay untuk efek jejak visual yang menarik
 ✅ **Anti-aliased Rendering**: Garis yang smooth untuk kualitas visual tinggi
 ✅ **Memory-safe Implementation**: Menggunakan `std::unique_ptr` untuk resource management
+✅ **Modular Setup Methods**: setup() terbagi menjadi setupCircles(), setupCartesianAxes(), setupCrossLines(), setupParallelograms(), setupRectangleLine()
 
 ### Configuration:
 
