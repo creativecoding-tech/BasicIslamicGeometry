@@ -90,14 +90,8 @@ void CrossLine::draw() {
 		ofSetColor(0);
 
 		if (labelVisible) {
-			if (useThin) {
-				fontNormal.drawString(label1, dotX, dotY-10);  // Font normal/tipis
-				fontNormal.drawString(label2, end.x - 20, end.y - 5);
-			}
-			else {
-				fontBold.drawString(label1, dotX, dotY-10);    // Font tebal
-				fontBold.drawString(label2, end.x - 20, end.y - 5);
-			}
+			fontNormal.drawString(label1, dotX, dotY-10);
+			fontNormal.drawString(label2, end.x - 20, end.y - 5);
 		}
 	}
 	ofPopMatrix();

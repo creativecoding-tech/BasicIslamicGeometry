@@ -35,25 +35,14 @@ void CartesianAxes::draw() {
 			ofFill();
 			ofSetColor(0);
 
-			if (useThin) {
-				// Ujung kanan (0°)
-				fontNormal.drawString("0 (0°)", currentLength + 10, 5);
-				// Ujung bawah (PI/2 = 90°)
-				fontNormal.drawString("PI/2 (90°)", -130, currentLength - 100);
-				// Ujung kiri (PI = 180°)
-				fontNormal.drawString("PI (180°)", -currentLength - 90, 5);
-				// Ujung atas (-PI/2 = 270°)
-				fontNormal.drawString("-PI/2 (270°)", -135, -currentLength + 100);
-			} else {
-				// Ujung kanan (0°)
-				fontBold.drawString("0 (0°)", currentLength + 10, 5);
-				// Ujung bawah (PI/2 = 90°)
-				fontBold.drawString("PI/2 (90°)", -130, currentLength - 100);
-				// Ujung kiri (PI = 180°)
-				fontBold.drawString("PI (180°)", -currentLength - 90, 5);
-				// Ujung atas (-PI/2 = 270°)
-				fontBold.drawString("-PI/2 (270°)", -135, -currentLength + 100);
-			}
+			// Ujung kanan (0°)
+			fontNormal.drawString("0 (0°)", currentLength + 10, 5);
+			// Ujung bawah (PI/2 = 90°)
+			fontNormal.drawString("PI/2 (90°)", -90, currentLength - 100);
+			// Ujung kiri (PI = 180°)
+			fontNormal.drawString("PI (180°)", -currentLength - 80, 5);
+			// Ujung atas (-PI/2 = 270°)
+			fontNormal.drawString("-PI/2 (270°)", -100, -currentLength + 100);
 		}
 	}
 }

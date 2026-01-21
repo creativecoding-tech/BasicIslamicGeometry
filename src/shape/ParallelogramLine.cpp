@@ -78,11 +78,7 @@ void ParallelogramLine::draw() {
 
 		// Gambar label jika labelVisible = true
 		if (labelVisible) {
-			if (useThin) {
-				fontNormal.drawString(label, intersecCrossLine.x  - 10, intersecCrossLine.y - 15);
-			} else {
-				fontBold.drawString(label, intersecCrossLine.x - 10, intersecCrossLine.y - 15);
-			}
+			fontNormal.drawString(label, intersecCrossLine.x - 10, intersecCrossLine.y - 15);
 		}
 	}
 	ofPopMatrix();

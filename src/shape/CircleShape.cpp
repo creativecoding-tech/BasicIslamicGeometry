@@ -84,11 +84,7 @@ void CircleShape::draw() {
 		}
 		ofSetColor(0);
 		if (labelVisible) {
-			if (useThin) {
-				fontNormal.drawString(label, 10, -5);  // Font normal/tipis
-			} else {
-				fontBold.drawString(label, 10, -5);    // Font tebal
-			}
+			fontNormal.drawString(label, 10, -5);
 		}
 	}
 	ofPopMatrix();

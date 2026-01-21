@@ -464,22 +464,6 @@ void ofApp::decreaseLineWidth() {
 	parallelogramEtoB->setLineWidth(currentLineWidth);
 	parallelogramBtoD->setLineWidth(currentLineWidth);
 	parallelogramDtoC->setLineWidth(currentLineWidth);
-
-	// Font jadi tipis juga
-	circleA->setThin(true);
-	circleB->setThin(true);
-	circleC->setThin(true);
-	circleD->setThin(true);
-	circleE->setThin(true);
-	cartesianAxes->setThin(true);
-	crossLineF->setThin(true);
-	crossLineG->setThin(true);
-	crossLineH->setThin(true);
-	crossLineI->setThin(true);
-	parallelogramCtoE->setThin(true);
-	parallelogramEtoB->setThin(true);
-	parallelogramBtoD->setThin(true);
-	parallelogramDtoC->setThin(true);
 }
 
 //--------------------------------------------------------------
@@ -507,22 +491,6 @@ void ofApp::increaseLineWidth() {
 	parallelogramEtoB->setLineWidth(currentLineWidth);
 	parallelogramBtoD->setLineWidth(currentLineWidth);
 	parallelogramDtoC->setLineWidth(currentLineWidth);
-
-	// Font jadi tebal juga
-	circleA->setThin(false);
-	circleB->setThin(false);
-	circleC->setThin(false);
-	circleD->setThin(false);
-	circleE->setThin(false);
-	cartesianAxes->setThin(false);
-	crossLineF->setThin(false);
-	crossLineG->setThin(false);
-	crossLineH->setThin(false);
-	crossLineI->setThin(false);
-	parallelogramCtoE->setThin(false);
-	parallelogramEtoB->setThin(false);
-	parallelogramBtoD->setThin(false);
-	parallelogramDtoC->setThin(false);
 }
 
 
