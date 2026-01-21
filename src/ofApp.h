@@ -45,6 +45,11 @@ class ofApp : public ofBaseApp{
 		bool dotsVisible = true;        // Flag untuk track dot visibility
 
 		void setup();
+		void setupCircles();
+		void setupCartesianAxes();
+		void setupCrossLines();
+		void setupParallelograms();
+		void setupRectangleLine();
 		void update();
 		void draw();
 

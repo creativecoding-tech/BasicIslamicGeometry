@@ -10,22 +10,42 @@ void ofApp::setup(){
 	ofEnableAntiAliasing();
 	ofEnableSmoothing();
 	ofHideCursor();
+
+	// Call modular setup methods
+	setupCircles();
+	setupCartesianAxes();
+	setupCrossLines();
+	setupParallelograms();
+	setupRectangleLine();
+}
+
+//--------------------------------------------------------------
+void ofApp::setupCircles(){
 	//Circle
 	circleA = std::make_unique<CircleShape>(radiusCircle,"A",0,0);
 	circleB = std::make_unique<CircleShape>(radiusCircle, "B", radiusCircle, 0);
 	circleC = std::make_unique<CircleShape>(radiusCircle, "C", -radiusCircle, 0);
 	circleD = std::make_unique<CircleShape>(radiusCircle, "D", 0, radiusCircle);
 	circleE = std::make_unique<CircleShape>(radiusCircle, "E", 0, -radiusCircle);
+}
 
+//--------------------------------------------------------------
+void ofApp::setupCartesianAxes(){
 	//Cartesian
 	cartesianAxes = std::make_unique<CartesianAxes>(radiusCircle);
+}
 
+//--------------------------------------------------------------
+void ofApp::setupCrossLines(){
 	//CrossLine
 	crossLineF = std::make_unique<CrossLine>(vec2(0, 0), vec2(-radiusCircle, -radiusCircle), "F","J", radiusCircle);
 	crossLineG = std::make_unique<CrossLine>(vec2(0, 0), vec2(radiusCircle, -radiusCircle), "G","K", radiusCircle);
 	crossLineH = std::make_unique<CrossLine>(vec2(0, 0), vec2(-radiusCircle, radiusCircle), "H","L", radiusCircle);
 	crossLineI = std::make_unique<CrossLine>(vec2(0, 0), vec2(radiusCircle, radiusCircle), "I","M", radiusCircle);
+}
 
+//--------------------------------------------------------------
+void ofApp::setupParallelograms(){
 	//Parallelogram dengan Polar Thinking
 	// Intersection point dihitung menggunakan trigonometri: x = cos(angle) * distance, y = sin(angle) * distance
 
@@ -68,7 +88,10 @@ void ofApp::setup(){
 	float distD_C_H = radiusCircle * sqrt(2) / 2;
 	vec2 intersecD_C_H = vec2(cos(angleD_C_H) * distD_C_H, sin(angleD_C_H) * distD_C_H);
 	parallelogramDtoC = std::make_unique<ParallelogramLine>(vec2(0, radiusCircle), vec2(-radiusCircle, 0), intersecD_C_H, "Q");
+}
 
+//--------------------------------------------------------------
+void ofApp::setupRectangleLine(){
 	//RectangleLine dari F ke G dengan intersection points
 	// F = dot pertama CrossLine F: cos(-135°) * radius
 	// G = dot pertama CrossLine G: cos(-45°) * radius
