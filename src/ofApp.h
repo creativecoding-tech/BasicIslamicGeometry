@@ -39,6 +39,7 @@ class ofApp : public ofBaseApp{
 		std::unique_ptr<OctagramLine> octagramLine0;
 		std::unique_ptr<OctagramLine> octagramLine1;
 		std::unique_ptr<OctagramLine> octagramLine2;
+		std::unique_ptr<OctagramLine> octagramLine3;
 
 		bool cursorVisible = false;
 
