@@ -30,6 +30,9 @@ public:
 	void update() override;
 	void draw() override;
 
+	// Override isComplete untuk ngecek kedua progress (main + extension)
+	bool isComplete() override;
+
 	// Mode control untuk animation
 	void setSequentialMode(bool sequential) { isSequentialMode = sequential; }
 

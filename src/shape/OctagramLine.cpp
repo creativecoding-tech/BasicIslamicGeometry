@@ -67,6 +67,28 @@ void OctagramLine::update() {
 	}
 }
 
+bool OctagramLine::isComplete() {
+	if (showing) {
+		// Jika ada nextPoint, harus ngecek kedua progress (main + extension)
+		if (nextPoint.has_value()) {
+			return (progress >= totalSegments) && (extensionProgress >= totalSegments);
+		}
+		// Jika tidak ada nextPoint, cuma ngecek main progress
+		else {
+			return progress >= totalSegments;
+		}
+	}
+	else {
+		// Saat hiding, complete jika kedua progress sudah 0
+		if (nextPoint.has_value()) {
+			return (progress <= 0) && (extensionProgress <= 0);
+		}
+		else {
+			return progress <= 0;
+		}
+	}
+}
+
 void OctagramLine::draw() {
 	ofPushMatrix();
 	ofNoFill();
