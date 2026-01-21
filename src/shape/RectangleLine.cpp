@@ -1,23 +1,22 @@
 #include "RectangleLine.h"
 
-RectangleLine::RectangleLine(vec2 start, vec2 end,string label):
+RectangleLine::RectangleLine(vec2 start, vec2 end, vec2 intersec1, vec2 intersec2, string label1, string label2):
 start(start),
 end(end),
-label(label){
+intersec1(intersec1),
+intersec2(intersec2),
+label1(label1),
+label2(label2){
 	loadFonts();  // Load font dari AbstractShape
 	maxProgress = totalSegments;  // Set max progress untuk isComplete()
 }
 
-void RectangleLine::setStart(float startX, float startY) {
-	start = vec2(startX, startY);
+void RectangleLine::setIntersec1(vec2 intersec1) {
+	this->intersec1 = intersec1;
 }
 
-void RectangleLine::setEnd(float endX, float endY) {
-	end = vec2(endX, endY);
-}
-
-void RectangleLine::setLabel(std::string label) {
-	this->label = label;
+void RectangleLine::setIntersec2(vec2 intersec2) {
+	this->intersec2 = intersec2;
 }
 
 void RectangleLine::showDot() {
@@ -72,13 +71,19 @@ void RectangleLine::draw() {
 
 	if (showing && progress >= totalSegments) {
 		ofFill();
+		// Gambar 2 dot di intersection points
 		if (dotVisible) {
-			ofDrawCircle(end.x, end.y, lineWidth * 2);
+			// Dot pertama di intersection F→G ∩ C→E
+			ofDrawCircle(intersec1.x, intersec1.y, lineWidth * 2);
+			// Dot kedua di intersection F→G ∩ B→E
+			ofDrawCircle(intersec2.x, intersec2.y, lineWidth * 2);
 		}
 
 		ofSetColor(0);
+		// Gambar 2 label
 		if (labelVisible) {
-			fontNormal.drawString(label, end.x + 10, end.y - 10);
+			fontNormal.drawString(label1, intersec1.x - 10, intersec1.y - 15);  
+			fontNormal.drawString(label2, intersec2.x + 10, intersec2.y - 15); 
 		}
 	}
 	ofPopMatrix();

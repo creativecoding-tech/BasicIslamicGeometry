@@ -69,20 +69,34 @@ void ofApp::setup(){
 	vec2 intersecD_C_H = vec2(cos(angleD_C_H) * distD_C_H, sin(angleD_C_H) * distD_C_H);
 	parallelogramDtoC = std::make_unique<ParallelogramLine>(vec2(0, radiusCircle), vec2(-radiusCircle, 0), intersecD_C_H, "Q");
 
-	//RectangleLine dari F ke G (dot pertama dari CrossLine)
-	// F = dot pertama CrossLine F: cos(-135°) * 240 ≈ (-170, -170)
-	// G = dot pertama CrossLine G: cos(-45°) * 240 ≈ (170, -170)
-	// Hitung dengan polar thinking
-	float angleF = -3 * PI / 4;  // -135° (CrossLine F angle)
+	//RectangleLine dari F ke G dengan intersection points
+	// F = dot pertama CrossLine F: cos(-135°) * radius
+	// G = dot pertama CrossLine G: cos(-45°) * radius
+
+	// Hitung posisi F dan G dengan polar (SCALABLE!)
+	float angleF = -3 * PI / 4;  // -135°
 	vec2 posF = vec2(cos(angleF) * radiusCircle, sin(angleF) * radiusCircle);
 
-	float angleG = -PI / 4;  // -45° (CrossLine G angle)
+	float angleG = -PI / 4;  // -45°
 	vec2 posG = vec2(cos(angleG) * radiusCircle, sin(angleG) * radiusCircle);
 
+	// Hitung intersection F→G ∩ C→E (Dot R) dengan polar thinking
+	// Garis C→E memotong F→G di y = posF.y
+	// Dari geometri: x = -radiusCircle * (1 - √2/2)
+	vec2 intersecR = vec2(-radiusCircle * (1 - sqrt(2) / 2), posF.y);
+
+	// Hitung intersection F→G ∩ B→E (Dot S) dengan polar thinking
+	// Garis B→E memotong F→G di y = posF.y
+	// Dari geometri: x = radiusCircle * (√2/2)
+	vec2 intersecS = vec2(radiusCircle * (1-sqrt(2) / 2), posF.y);
+
 	rectangleLineFtoG = std::make_unique<RectangleLine>(
-		posF,
-		posG,
-		"F-G"
+		posF,        // Start: F
+		posG,        // End:   G
+		intersecR,   // Intersec1: F→G ∩ C→E (SCALABLE!)
+		intersecS,   // Intersec2: F→G ∩ B→E (SCALABLE!)
+		"R",         // Label1
+		"S"          // Label2
 	);
 }
 

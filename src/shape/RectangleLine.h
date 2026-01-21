@@ -10,13 +10,17 @@ class RectangleLine : public AbstractShape
 public:
 	vec2 start;
 	vec2 end;
-	std::string label = "";
-	RectangleLine(vec2 start,vec2 end,string label);
+	vec2 intersec1;  // Intersection pertama (F→G ∩ C→E)
+	vec2 intersec2;  // Intersection kedua (F→G ∩ B→E)
+	std::string label1 = "";  // Label untuk dot pertama (R)
+	std::string label2 = "";  // Label untuk dot kedua (S)
+	RectangleLine(vec2 start, vec2 end, vec2 intersec1, vec2 intersec2, string label1, string label2);
 
 	// Helper method position
 	void setStart(float startX, float startY);
 	void setEnd(float endX, float endY);
-	void setLabel(std::string label);          // Setter untuk label
+	void setIntersec1(vec2 intersec1);
+	void setIntersec2(vec2 intersec2);
 
 	// Dot visibility control
 	void showDot();
