@@ -27,7 +27,7 @@ Project ini menampilkan **pola geometri Islam dasar** dengan lima lingkaran yang
 - **4 CrossLine (F, G, H, I)** - Garis diagonal dari center ke sudut dengan dot di intersection
 - **4 ParallelogramLine (N, O, P, Q)** - Garis penghubung antar circle center dengan dot di intersection
 - **4 RectangleLine (F→G, G→I, I→H, H→F)** - Garis pembentuk rectangle dengan 2 dot di intersection
-- **4 OctagramLine (0, 1, 2, 3)** - Garis pembentuk pola octagram (8-point star) dengan 2 garis per line
+- **8 OctagramLine (0, 1, 2, 3, 4, 5, 6, 7)** - Garis pembentuk pola octagram (8-point star) dengan 2 garis per line
 
 Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di posisi intersection, dan line width yang dapat diadjust.
 
@@ -39,7 +39,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **CrossLine System** - 4 garis diagonal dari center ke sudut dengan dot di intersection point
 - **Parallelogram Lines** - 4 garis penghubung antar circle center membentuk diamond/rhombus
 - **Rectangle Lines** - 4 garis pembentuk rectangle (F→G, G→I, I→H, H→F) dengan 2 dot di intersection
-- **Octagram Lines** - 4 garis pembentuk pola octagram (8-point star) dengan 2 segment per line (main + extension)
+- **Octagram Lines** - 8 garis pembentuk pola octagram (8-point star) dengan 2 segment per line (main + extension)
 - **Polar Thinking** - Perhitungan posisi menggunakan trigonometri (cos, sin, atan2) untuk scalability
 - **Sequential Drawing Mode** - Animasi drawing berurutan dari satu shape ke shape berikutnya
 - **Animated Drawing** - Semua shape digambar dengan animasi smooth (100 segments, 0.5 speed)
@@ -65,7 +65,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 | Input | Action |
 | --- | --- |
-| **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan (CartesianAxes → Circle A-E → CrossLine F-I → Parallelogram N-Q → Rectangle R-Y → OctagramLine 0-3) |
+| **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan (CartesianAxes → Circle A-E → CrossLine F-I → Parallelogram N-Q → Rectangle R-Y → OctagramLine 0-7) |
 | **SHIFT + )** | Show semua shapes (Circle, CrossLine, Parallelogram, Rectangle, OctagramLine, CartesianAxes) |
 | **DEL** | Hide semua shapes (termasuk CartesianAxes) |
 | **BACKSPACE** | Toggle CartesianAxes saja (hide/show) |
@@ -81,8 +81,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - 4 CrossLine (F, G, H, I) dengan 2 dot per line
 - 4 ParallelogramLine (N, O, P, Q) dengan 1 dot per line
 - 4 RectangleLine (F→G, G→I, I→H, H→F) dengan 2 dot per line
-- 4 OctagramLine (0, 1, 2, 3) dengan 1 dot di end point
-- **Total: 22 shapes**
+- 8 OctagramLine (0, 1, 2, 3, 4, 5, 6, 7) dengan 1 dot di end point
+- **Total: 26 shapes**
 
 ---
 
@@ -255,7 +255,7 @@ BasicIslamicGeometry/
 │       ├── CrossLine.cpp/h             # Garis diagonal dengan 2 dot & 2 label
 │       ├── ParallelogramLine.cpp/h     # Garis penghubung dengan 1 dot & 1 label
 │       ├── RectangleLine.cpp/h         # Garis rectangle dengan 2 dot & 2 label
-│       └── OctagramLine.cpp/h          # Garis octagram dengan 2 segment & 1 dot
+│       └── OctagramLine.cpp/h          # Garis octagram dengan 2 segment & 1 dot (0-7)
 ├── bin/                      # Compiled executable
 ├── dll/                      # OF dependencies
 ├── obj/                      # Intermediate files (gitignored)
@@ -297,7 +297,7 @@ Branch ini adalah **pengembangan** BasicIslamicGeometry dengan fokus pada **octa
 ✅ **CrossLine System**: 4 garis diagonal dari center ke sudut dengan dot di intersection
 ✅ **Parallelogram Lines**: 4 garis penghubung antar circle center dengan dot di intersection
 ✅ **Rectangle Lines**: 4 garis pembentuk rectangle (F→G, G→I, I→H, H→F) dengan 2 dot di intersection
-✅ **Octagram Lines**: 4 garis pembentuk pola octagram (0, 1, 2, 3) dengan 2 segment per line
+✅ **Octagram Lines**: 8 garis pembentuk pola octagram (0, 1, 2, 3, 4, 5, 6, 7) dengan 2 segment per line
 ✅ **Polar Thinking**: Perhitungan posisi dan intersection menggunakan trigonometri untuk scalability
 ✅ **Scalable Intersections**: Semua intersection point dihitung dengan rumus geometric yang scalable terhadap radiusCircle
 ✅ **Bidirectional Animation**: Animasi muncul (show) dan hilang (hide) dengan smoothing
