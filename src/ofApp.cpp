@@ -286,6 +286,23 @@ void ofApp::setupOctagramLine(){
 		posC,
 		"5"
 	);
+
+
+	float angle6 = -angle5;  // -135°
+	vec2 posEnd6 = vec2(
+		posC.x + cos(angle6) * radiusCircle,
+		posC.y + sin(angle6) * radiusCircle
+	);
+	vec2 posF = vec2(cos(angle6) * radiusCircle, sin(angle6) * radiusCircle);
+	octagramLine6 = std::make_unique<OctagramLine>(
+		posC,         // Start: circle C
+		posEnd6,
+		posF,
+		"6"
+	);
+
+
+
 }
 
 //--------------------------------------------------------------
@@ -320,6 +337,7 @@ void ofApp::update(){
 	octagramLine3->update();
 	octagramLine4->update();
 	octagramLine5->update();
+	octagramLine6->update();
 
 
 	// Update sequential drawing logic
@@ -364,6 +382,7 @@ void ofApp::draw(){
 	octagramLine3->draw();
 	octagramLine4->draw();
 	octagramLine5->draw();
+	octagramLine6->draw();
 }
 
 //--------------------------------------------------------------
@@ -481,7 +500,7 @@ void ofApp::startSequentialDrawing() {
 		parallelogramBtoD->showing && parallelogramDtoC->showing &&
 		rectangleLineFtoG->showing && rectangleLineGtoI->showing &&
 		rectangleLineItoH->showing && rectangleLineHtoF->showing &&
-		octagramLine0->showing && octagramLine1->showing && octagramLine2->showing && octagramLine3->showing && octagramLine4->showing && octagramLine5->showing;
+		octagramLine0->showing && octagramLine1->showing && octagramLine2->showing && octagramLine3->showing && octagramLine4->showing && octagramLine5->showing && octagramLine6->showing;
 
 	if (allVisible) {
 		// Semua shapes sudah visible, jangan jalankan sequential
@@ -498,7 +517,7 @@ void ofApp::startSequentialDrawing() {
 	                   !parallelogramBtoD->isComplete() || !parallelogramDtoC->isComplete() ||
 	                   !rectangleLineFtoG->isComplete() || !rectangleLineGtoI->isComplete() ||
 						!rectangleLineItoH->isComplete() || !rectangleLineHtoF->isComplete() ||
-						!octagramLine0->isComplete() || !octagramLine1->isComplete() || !octagramLine2->isComplete() || !octagramLine3->isComplete() || !octagramLine4->isComplete() || !octagramLine5->isComplete();
+						!octagramLine0->isComplete() || !octagramLine1->isComplete() || !octagramLine2->isComplete() || !octagramLine3->isComplete() || !octagramLine4->isComplete() || !octagramLine5->isComplete() || !octagramLine6->isComplete();
 
 	if (stillDrawing) {
 		// Ada shape yang masih drawing, jangan jalankan sequential
@@ -536,6 +555,7 @@ void ofApp::startSequentialDrawing() {
 	octagramLine3->hide();
 	octagramLine4->hide();
 	octagramLine5->hide();
+	octagramLine6->hide();
 
 	// Set sequential mode untuk octagramLine
 	octagramLine0->setSequentialMode(true);
@@ -544,6 +564,7 @@ void ofApp::startSequentialDrawing() {
 	octagramLine3->setSequentialMode(true);
 	octagramLine4->setSequentialMode(true);
 	octagramLine5->setSequentialMode(true);
+	octagramLine6->setSequentialMode(true);
 
 	// Mulai sequential mode
 	sequentialMode = true;
@@ -584,6 +605,7 @@ void ofApp::updateSequentialDrawing() {
 		case 21: currentShape = octagramLine3.get(); break;
 		case 22: currentShape = octagramLine4.get(); break;
 		case 23: currentShape = octagramLine5.get(); break;
+		case 24: currentShape = octagramLine6.get(); break;
 	}
 
 	// Cek jika current shape sudah complete
@@ -592,7 +614,7 @@ void ofApp::updateSequentialDrawing() {
 		currentShapeIndex++;
 
 		// Show shape berikutnya jika masih ada
-		if (currentShapeIndex <= 23) {
+		if (currentShapeIndex <= 24) {
 			switch (currentShapeIndex) {
 				case 1: circleA->show(); break;
 				case 2: circleB->show(); break;
@@ -617,6 +639,7 @@ void ofApp::updateSequentialDrawing() {
 				case 21: octagramLine3->show(); break;
 				case 22: octagramLine4->show(); break;
 				case 23: octagramLine5->show(); break;
+				case 24: octagramLine6->show(); break;
 			}
 		} else {
 			// Semua shapes sudah complete, matikan sequential mode dan tandai selesai
@@ -657,6 +680,7 @@ void ofApp::toggleLabels() {
 		octagramLine3->showLabel();
 		octagramLine4->showLabel();
 		octagramLine5->showLabel();
+		octagramLine6->showLabel();
 	} else {
 		// Hide semua labels
 		circleA->hideLabel();
@@ -683,6 +707,7 @@ void ofApp::toggleLabels() {
 		octagramLine3->hideLabel();
 		octagramLine4->hideLabel();
 		octagramLine5->hideLabel();
+		octagramLine6->hideLabel();
 	}
 }
 
@@ -716,6 +741,7 @@ void ofApp::toggleDots() {
 		octagramLine3->showDot();
 		octagramLine4->showDot();
 		octagramLine5->showDot();
+		octagramLine6->showDot();
 	} else {
 		// Hide semua dots
 		circleA->hideDot();
@@ -741,6 +767,7 @@ void ofApp::toggleDots() {
 		octagramLine3->hideDot();
 		octagramLine4->hideDot();
 		octagramLine5->hideDot();
+		octagramLine6->hideDot();
 	}
 }
 
@@ -753,6 +780,7 @@ void ofApp::hideAllShapes() {
 	octagramLine3->setSequentialMode(false);
 	octagramLine4->setSequentialMode(false);
 	octagramLine5->setSequentialMode(false);
+	octagramLine6->setSequentialMode(false);
 
 	// Hide semua shapes
 	circleA->hide();
@@ -779,6 +807,7 @@ void ofApp::hideAllShapes() {
 	octagramLine3->hide();
 	octagramLine4->hide();
 	octagramLine5->hide();
+	octagramLine6->hide();
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
@@ -793,6 +822,7 @@ void ofApp::showAllShapes() {
 	octagramLine3->setSequentialMode(false);
 	octagramLine4->setSequentialMode(false);
 	octagramLine5->setSequentialMode(false);
+	octagramLine6->setSequentialMode(false);
 
 	// Show semua shapes
 	circleA->show();
@@ -819,6 +849,7 @@ void ofApp::showAllShapes() {
 	octagramLine3->show();
 	octagramLine4->show();
 	octagramLine5->show();
+	octagramLine6->show();
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
@@ -859,6 +890,7 @@ void ofApp::decreaseLineWidth() {
 	octagramLine3->setLineWidth(currentLineWidth);
 	octagramLine4->setLineWidth(currentLineWidth);
 	octagramLine5->setLineWidth(currentLineWidth);
+	octagramLine6->setLineWidth(currentLineWidth);
 }
 
 //--------------------------------------------------------------
@@ -896,6 +928,7 @@ void ofApp::increaseLineWidth() {
 	octagramLine3->setLineWidth(currentLineWidth);
 	octagramLine4->setLineWidth(currentLineWidth);
 	octagramLine5->setLineWidth(currentLineWidth);
+	octagramLine6->setLineWidth(currentLineWidth);
 }
 
 
