@@ -405,11 +405,7 @@ void ofApp::draw(){
 		ofSetLineWidth(line.lineWidth);
 		ofDrawLine(line.fromPos, line.toPos);
 
-		// Draw label di tengah line
 		vec2 midPoint = (line.fromPos + line.toPos) / 2.0f;
-		ofSetColor(0);
-		fontNormal.drawString(line.fromLabel + "→" + line.toLabel,
-		                     midPoint.x + 10, midPoint.y);
 		ofPopStyle();
 	}
 
@@ -435,10 +431,6 @@ void ofApp::draw(){
 			ofPushStyle();
 			ofSetColor(255, 255, 0, 200);  // Yellow highlight
 			ofDrawCircle(dot.position, 15);  // Larger circle
-			ofSetColor(0);
-			fontNormal.drawString(dot.label,
-			                     dot.position.x + 15,
-			                     dot.position.y - 15);
 			ofPopStyle();
 		}
 	}
@@ -501,49 +493,49 @@ vector<ofApp::DotInfo> ofApp::getAllDots() {
 	vector<DotInfo> dots;
 
 	// Circle centers
-	dots.push_back({"A", vec2(0, 0), "Circle"});
-	dots.push_back({"B", vec2(radiusCircle, 0), "Circle"});
-	dots.push_back({"C", vec2(-radiusCircle, 0), "Circle"});
-	dots.push_back({"D", vec2(0, radiusCircle), "Circle"});
-	dots.push_back({"E", vec2(0, -radiusCircle), "Circle"});
+	dots.push_back({vec2(0, 0), "Circle"});
+	dots.push_back({vec2(radiusCircle, 0), "Circle"});
+	dots.push_back({vec2(-radiusCircle, 0), "Circle"});
+	dots.push_back({vec2(0, radiusCircle), "Circle"});
+	dots.push_back({vec2(0, -radiusCircle), "Circle"});
 
 	// CrossLine dots (F, G, H, I - pada radius)
-	dots.push_back({"F", vec2(-170, -170), "CrossLine"});
-	dots.push_back({"G", vec2(170, -170), "CrossLine"});
-	dots.push_back({"H", vec2(170, 170), "CrossLine"});
-	dots.push_back({"I", vec2(-170, 170), "CrossLine"});
+	dots.push_back({vec2(-170, -170), "CrossLine"});
+	dots.push_back({vec2(170, -170), "CrossLine"});
+	dots.push_back({vec2(170, 170), "CrossLine"});
+	dots.push_back({vec2(-170, 170), "CrossLine"});
 
 	// CrossLine ends (J, K, L, M)
-	dots.push_back({"J", vec2(-240, -240), "CrossLine"});
-	dots.push_back({"K", vec2(240, -240), "CrossLine"});
-	dots.push_back({"L", vec2(240, 240), "CrossLine"});
-	dots.push_back({"M", vec2(-240, 240), "CrossLine"});
+	dots.push_back({vec2(-240, -240), "CrossLine"});
+	dots.push_back({vec2(240, -240), "CrossLine"});
+	dots.push_back({vec2(240, 240), "CrossLine"});
+	dots.push_back({vec2(-240, 240), "CrossLine"});
 
 	// Parallelogram intersections
-	dots.push_back({"N", vec2(-120, -120), "Parallelogram"});
-	dots.push_back({"O", vec2(120, -120), "Parallelogram"});
-	dots.push_back({"P", vec2(120, 120), "Parallelogram"});
-	dots.push_back({"Q", vec2(-120, 120), "Parallelogram"});
+	dots.push_back({vec2(-120, -120), "Parallelogram"});
+	dots.push_back({vec2(120, -120), "Parallelogram"});
+	dots.push_back({vec2(120, 120), "Parallelogram"});
+	dots.push_back({vec2(-120, 120), "Parallelogram"});
 
 	// Rectangle intersections
-	dots.push_back({"R", vec2(-70, -170), "Rectangle"});
-	dots.push_back({"S", vec2(70, -170), "Rectangle"});
-	dots.push_back({"T", vec2(170, -70), "Rectangle"});
-	dots.push_back({"U", vec2(170, 70), "Rectangle"});
-	dots.push_back({"V", vec2(70, 170), "Rectangle"});
-	dots.push_back({"W", vec2(-70, 170), "Rectangle"});
-	dots.push_back({"X", vec2(-170, 70), "Rectangle"});
-	dots.push_back({"Y", vec2(-170, -70), "Rectangle"});
+	dots.push_back({vec2(-70, -170), "Rectangle"});
+	dots.push_back({vec2(70, -170), "Rectangle"});
+	dots.push_back({vec2(170, -70), "Rectangle"});
+	dots.push_back({vec2(170, 70), "Rectangle"});
+	dots.push_back({vec2(70, 170), "Rectangle"});
+	dots.push_back({vec2(-70, 170), "Rectangle"});
+	dots.push_back({vec2(-170, 70), "Rectangle"});
+	dots.push_back({vec2(-170, -70), "Rectangle"});
 
 	// Octagram endpoints
-	dots.push_back({"0", vec2(170, -410), "Octagram"});
-	dots.push_back({"1", vec2(410, -170), "Octagram"});
-	dots.push_back({"2", vec2(410, 170), "Octagram"});
-	dots.push_back({"3", vec2(170, 410), "Octagram"});
-	dots.push_back({"4", vec2(-170, 410), "Octagram"});
-	dots.push_back({"5", vec2(-410, 170), "Octagram"});
-	dots.push_back({"6", vec2(-410, -170), "Octagram"});
-	dots.push_back({"7", vec2(-170, -410), "Octagram"});
+	dots.push_back({vec2(170, -410), "Octagram"});
+	dots.push_back({vec2(410, -170), "Octagram"});
+	dots.push_back({vec2(410, 170), "Octagram"});
+	dots.push_back({vec2(170, 410), "Octagram"});
+	dots.push_back({vec2(-170, 410), "Octagram"});
+	dots.push_back({vec2(-410, 170), "Octagram"});
+	dots.push_back({vec2(-410, -170), "Octagram"});
+	dots.push_back({vec2(-170, -410), "Octagram"});
 
 	return dots;
 }
@@ -553,10 +545,10 @@ bool ofApp::isMouseOverDot(vec2 mousePos, vec2 dotPos, float threshold) {
 	return distance <= threshold;
 }
 
-bool ofApp::lineExists(string from, string to) {
+bool ofApp::lineExists(vec2 from, vec2 to) {
 	for (auto& line : customLines) {
-		if ((line.fromLabel == from && line.toLabel == to) ||
-			(line.fromLabel == to && line.toLabel == from)) {
+		if ((glm::length(line.fromPos - from) < 1.0f && glm::length(line.toPos - to) < 1.0f) ||
+			(glm::length(line.fromPos - to) < 1.0f && glm::length(line.toPos - from) < 1.0f)) {
 			return true;
 		}
 	}
@@ -598,9 +590,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 		for (auto& dot : dots) {
 			if (isMouseOverDot(adjustedMousePos, dot.position)) {
 				drawState = DRAGGING;
-				startDotLabel = dot.label;
 				startDotPos = dot.position;
-				ofLog() << "Started drawing from: " << dot.label;
 				return;
 			}
 		}
@@ -624,37 +614,21 @@ void ofApp::mouseReleased(int x, int y, int button) {
 	// Check jika release di atas valid dot
 	for (auto& dot : dots) {
 		if (isMouseOverDot(releasePos, dot.position)) {
-			// JANGAN buat line ke diri sendiri
-			if (dot.label == startDotLabel) {
-				ofLog() << "Cannot create line to same dot!";
-				break;
-			}
-
-			// JANGAN buat duplicate line
-			if (lineExists(startDotLabel, dot.label)) {
-				ofLog() << "Line already exists: " << startDotLabel << " → " << dot.label;
-				break;
-			}
 
 			// Create custom line
 			CustomLine newLine;
-			newLine.fromLabel = startDotLabel;
-			newLine.toLabel = dot.label;
 			newLine.fromPos = startDotPos;
 			newLine.toPos = dot.position;
 			newLine.color = ofColor(255, 0, 255);  // Magenta
-			newLine.lineWidth = 3.0f;
+			newLine.lineWidth = 4.0f;
 
 			customLines.push_back(newLine);
-
-			ofLog() << "Created line: " << startDotLabel << " → " << dot.label;
 			break;
 		}
 	}
 
 	// Reset state
 	drawState = IDLE;
-	startDotLabel = "";
 	startDotPos = vec2(0, 0);
 }
 

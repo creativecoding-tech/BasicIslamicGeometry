@@ -51,8 +51,6 @@ class ofApp : public ofBaseApp{
 
 		// Interactive Line Creation
 		struct CustomLine {
-			string fromLabel;
-			string toLabel;
 			vec2 fromPos;
 			vec2 toPos;
 			ofColor color;
@@ -60,7 +58,6 @@ class ofApp : public ofBaseApp{
 		};
 
 		struct DotInfo {
-			string label;
 			vec2 position;
 			string shapeType;
 		};
@@ -71,7 +68,6 @@ class ofApp : public ofBaseApp{
 		};
 
 		DrawState drawState = IDLE;
-		string startDotLabel = "";
 		vec2 startDotPos = vec2(0, 0);
 		vec2 mousePos = vec2(0, 0);
 		vector<CustomLine> customLines;
@@ -111,7 +107,7 @@ class ofApp : public ofBaseApp{
 		// Interactive Line Creation helpers
 		vector<DotInfo> getAllDots();
 		bool isMouseOverDot(vec2 mousePos, vec2 dotPos, float threshold = 15.0f);
-		bool lineExists(string from, string to);
+		bool lineExists(vec2 from, vec2 to);
 		void drawDashedLine(vec2 start, vec2 end, int numDashes = 10);
 
 		void keyPressed(int key);
