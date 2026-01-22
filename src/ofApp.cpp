@@ -11,6 +11,9 @@ void ofApp::setup(){
 	ofEnableSmoothing();
 	ofHideCursor();
 
+	// Load font untuk custom line labels
+	fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
+
 	// Call modular setup methods
 	setupCircles();
 	setupCartesianAxes();
@@ -394,6 +397,51 @@ void ofApp::draw(){
 	octagramLine5->draw();
 	octagramLine6->draw();
 	octagramLine7->draw();
+
+	// Draw custom lines (user-created connections)
+	for (auto& line : customLines) {
+		ofPushStyle();
+		ofSetColor(line.color);
+		ofSetLineWidth(line.lineWidth);
+		ofDrawLine(line.fromPos, line.toPos);
+
+		// Draw label di tengah line
+		vec2 midPoint = (line.fromPos + line.toPos) / 2.0f;
+		ofSetColor(0);
+		fontNormal.drawString(line.fromLabel + "→" + line.toLabel,
+		                     midPoint.x + 10, midPoint.y);
+		ofPopStyle();
+	}
+
+	// Draw preview line (sedang drag)
+	if (drawState == DRAGGING) {
+		ofPushStyle();
+		ofSetColor(255, 0, 0, 150);  // Semi-transparent red
+		ofSetLineWidth(2);
+		ofDrawLine(startDotPos, mousePos);
+
+		// Draw dashed preview
+		ofSetColor(100, 100, 100, 100);
+		ofSetLineWidth(1);
+		drawDashedLine(startDotPos, mousePos);
+		ofPopStyle();
+	}
+
+	// Draw dot highlights (hover state)
+	vector<DotInfo> dots = getAllDots();
+	for (auto& dot : dots) {
+		if (isMouseOverDot(mousePos, dot.position)) {
+			// Highlight dot
+			ofPushStyle();
+			ofSetColor(255, 255, 0, 200);  // Yellow highlight
+			ofDrawCircle(dot.position, 15);  // Larger circle
+			ofSetColor(0);
+			fontNormal.drawString(dot.label,
+			                     dot.position.x + 15,
+			                     dot.position.y - 15);
+			ofPopStyle();
+		}
+	}
 }
 
 //--------------------------------------------------------------
@@ -448,56 +496,185 @@ void ofApp::keyPressed(int key){
 }
 
 //--------------------------------------------------------------
+// Interactive Line Creation Helpers
+vector<ofApp::DotInfo> ofApp::getAllDots() {
+	vector<DotInfo> dots;
+
+	// Circle centers
+	dots.push_back({"A", vec2(0, 0), "Circle"});
+	dots.push_back({"B", vec2(radiusCircle, 0), "Circle"});
+	dots.push_back({"C", vec2(-radiusCircle, 0), "Circle"});
+	dots.push_back({"D", vec2(0, radiusCircle), "Circle"});
+	dots.push_back({"E", vec2(0, -radiusCircle), "Circle"});
+
+	// CrossLine dots (F, G, H, I - pada radius)
+	dots.push_back({"F", vec2(-170, -170), "CrossLine"});
+	dots.push_back({"G", vec2(170, -170), "CrossLine"});
+	dots.push_back({"H", vec2(170, 170), "CrossLine"});
+	dots.push_back({"I", vec2(-170, 170), "CrossLine"});
+
+	// CrossLine ends (J, K, L, M)
+	dots.push_back({"J", vec2(-240, -240), "CrossLine"});
+	dots.push_back({"K", vec2(240, -240), "CrossLine"});
+	dots.push_back({"L", vec2(240, 240), "CrossLine"});
+	dots.push_back({"M", vec2(-240, 240), "CrossLine"});
+
+	// Parallelogram intersections
+	dots.push_back({"N", vec2(-120, -120), "Parallelogram"});
+	dots.push_back({"O", vec2(120, -120), "Parallelogram"});
+	dots.push_back({"P", vec2(120, 120), "Parallelogram"});
+	dots.push_back({"Q", vec2(-120, 120), "Parallelogram"});
+
+	// Rectangle intersections
+	dots.push_back({"R", vec2(-70, -170), "Rectangle"});
+	dots.push_back({"S", vec2(70, -170), "Rectangle"});
+	dots.push_back({"T", vec2(170, -70), "Rectangle"});
+	dots.push_back({"U", vec2(170, 70), "Rectangle"});
+	dots.push_back({"V", vec2(70, 170), "Rectangle"});
+	dots.push_back({"W", vec2(-70, 170), "Rectangle"});
+	dots.push_back({"X", vec2(-170, 70), "Rectangle"});
+	dots.push_back({"Y", vec2(-170, -70), "Rectangle"});
+
+	// Octagram endpoints
+	dots.push_back({"0", vec2(170, -410), "Octagram"});
+	dots.push_back({"1", vec2(410, -170), "Octagram"});
+	dots.push_back({"2", vec2(410, 170), "Octagram"});
+	dots.push_back({"3", vec2(170, 410), "Octagram"});
+	dots.push_back({"4", vec2(-170, 410), "Octagram"});
+	dots.push_back({"5", vec2(-410, 170), "Octagram"});
+	dots.push_back({"6", vec2(-410, -170), "Octagram"});
+	dots.push_back({"7", vec2(-170, -410), "Octagram"});
+
+	return dots;
+}
+
+bool ofApp::isMouseOverDot(vec2 mousePos, vec2 dotPos, float threshold) {
+	float distance = glm::length(mousePos - dotPos);
+	return distance <= threshold;
+}
+
+bool ofApp::lineExists(string from, string to) {
+	for (auto& line : customLines) {
+		if ((line.fromLabel == from && line.toLabel == to) ||
+			(line.fromLabel == to && line.toLabel == from)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void ofApp::drawDashedLine(vec2 start, vec2 end, int numDashes) {
+	vec2 diff = end - start;
+	float length = glm::length(diff);
+	if (length == 0) return;
+
+	vec2 dir = diff / length;
+
+	for (int i = 0; i < numDashes; i += 2) {
+		float t1 = (float)i / numDashes;
+		float t2 = (float)(i + 1) / numDashes;
+		ofDrawLine(start + dir * length * t1, start + dir * length * t2);
+	}
+}
+
+//--------------------------------------------------------------
+// Mouse Event Handlers
+void ofApp::mousePressed(int x, int y, int button) {
+	// Logic lama: Cursor toggle dengan right click (button 2)
+	if (button == 2) {
+		cursorVisible = !cursorVisible;
+		if (cursorVisible) ofShowCursor();
+		if (!cursorVisible) ofHideCursor();
+		return;  // Jangan lanjut ke interactive line creation untuk right click
+	}
+
+	// Logic baru: Interactive line creation dengan left click (button 0)
+	if (button == 0) {
+		// Adjust mouse position untuk center translation
+		vec2 adjustedMousePos(x - ofGetWidth()/2, y - ofGetHeight()/2);
+		vector<DotInfo> dots = getAllDots();
+
+		// Check jika klik di atas dot
+		for (auto& dot : dots) {
+			if (isMouseOverDot(adjustedMousePos, dot.position)) {
+				drawState = DRAGGING;
+				startDotLabel = dot.label;
+				startDotPos = dot.position;
+				ofLog() << "Started drawing from: " << dot.label;
+				return;
+			}
+		}
+	}
+}
+
+void ofApp::mouseDragged(int x, int y, int button) {
+	// Adjust mouse position untuk center translation
+	mousePos = vec2(x - ofGetWidth()/2, y - ofGetHeight()/2);
+}
+
+void ofApp::mouseReleased(int x, int y, int button) {
+	if (drawState != DRAGGING) {
+		return;
+	}
+
+	// Adjust mouse position untuk center translation
+	vec2 releasePos(x - ofGetWidth()/2, y - ofGetHeight()/2);
+	vector<DotInfo> dots = getAllDots();
+
+	// Check jika release di atas valid dot
+	for (auto& dot : dots) {
+		if (isMouseOverDot(releasePos, dot.position)) {
+			// JANGAN buat line ke diri sendiri
+			if (dot.label == startDotLabel) {
+				ofLog() << "Cannot create line to same dot!";
+				break;
+			}
+
+			// JANGAN buat duplicate line
+			if (lineExists(startDotLabel, dot.label)) {
+				ofLog() << "Line already exists: " << startDotLabel << " → " << dot.label;
+				break;
+			}
+
+			// Create custom line
+			CustomLine newLine;
+			newLine.fromLabel = startDotLabel;
+			newLine.toLabel = dot.label;
+			newLine.fromPos = startDotPos;
+			newLine.toPos = dot.position;
+			newLine.color = ofColor(255, 0, 255);  // Magenta
+			newLine.lineWidth = 3.0f;
+
+			customLines.push_back(newLine);
+
+			ofLog() << "Created line: " << startDotLabel << " → " << dot.label;
+			break;
+		}
+	}
+
+	// Reset state
+	drawState = IDLE;
+	startDotLabel = "";
+	startDotPos = vec2(0, 0);
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseMoved(int x, int y) {
+	// Update mouse position untuk hover detection (adjust untuk center translation)
+	mousePos = vec2(x - ofGetWidth()/2, y - ofGetHeight()/2);
+}
+
+//--------------------------------------------------------------
 void ofApp::keyReleased(int key){
 
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button){
-	if (button == 2) cursorVisible = !cursorVisible;
-	if (cursorVisible) ofShowCursor();
-	if (!cursorVisible) ofHideCursor();
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseEntered(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseExited(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::windowResized(int w, int h){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){
-
-}
+void ofApp::mouseEntered(int x, int y) {}
+void ofApp::mouseExited(int x, int y) {}
+void ofApp::windowResized(int w, int h) {}
+void ofApp::gotMessage(ofMessage msg) {}
+void ofApp::dragEvent(ofDragInfo dragInfo) {}
 
 //--------------------------------------------------------------
 void ofApp::startSequentialDrawing() {

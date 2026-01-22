@@ -47,6 +47,35 @@ class ofApp : public ofBaseApp{
 
 		bool cursorVisible = false;
 
+		ofTrueTypeFont fontNormal;  // Font untuk custom line labels
+
+		// Interactive Line Creation
+		struct CustomLine {
+			string fromLabel;
+			string toLabel;
+			vec2 fromPos;
+			vec2 toPos;
+			ofColor color;
+			float lineWidth;
+		};
+
+		struct DotInfo {
+			string label;
+			vec2 position;
+			string shapeType;
+		};
+
+		enum DrawState {
+			IDLE,
+			DRAGGING
+		};
+
+		DrawState drawState = IDLE;
+		string startDotLabel = "";
+		vec2 startDotPos = vec2(0, 0);
+		vec2 mousePos = vec2(0, 0);
+		vector<CustomLine> customLines;
+
 		// Line width control
 		float currentLineWidth = 4.0f;  // Current line width
 
@@ -78,6 +107,12 @@ class ofApp : public ofBaseApp{
 		void showAllShapes();           // Show all shapes
 		void decreaseLineWidth();       // Kurangi line width
 		void increaseLineWidth();       // Tambah line width
+
+		// Interactive Line Creation helpers
+		vector<DotInfo> getAllDots();
+		bool isMouseOverDot(vec2 mousePos, vec2 dotPos, float threshold = 15.0f);
+		bool lineExists(string from, string to);
+		void drawDashedLine(vec2 start, vec2 end, int numDashes = 10);
 
 		void keyPressed(int key);
 		void keyReleased(int key);
