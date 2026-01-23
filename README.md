@@ -14,7 +14,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 
 ## 📺 Demo Video
 
-Lihat hasilnya di YouTube: [Watch Demo](https://youtu.be/fr0wx18GXeI)
+Lihat hasilnya di YouTube: [Watch Demo](https://youtu.be/PZQPKV97S1o)
 
 ---
 
@@ -106,10 +106,10 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 ```bash
 # Clone repository ini
-git clone https://github.com/username/BasicIslamicGeometry.git
+git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 
-# Checkout branch sketch-rectangle
-git checkout sketch-rectangle
+# Checkout branch sketch-octagram
+git checkout sketch-octagram
 
 # Buka Visual Studio
 # Double-click: BasicIslamicGeometry.sln
@@ -371,7 +371,7 @@ This project is licensed under the **Apache License 2.0** - see the LICENSE file
 ## 🔗 Links
 
 - **[OpenFrameworks](https://openframeworks.cc/)** - openframeworks.cc
-- **[Watch Demo](https://youtu.be/fr0wx18GXeI)** - YouTube demonstration
+- **[Watch Demo](https://youtu.be/PZQPKV97S1o)** - YouTube demonstration
 - **[SandyKurt Tutorials](https://sandykurt.com/free-tutorials)** - Free Islamic geometric patterns tutorials
 - **[Support Me](https://sociabuzz.com/abdkdhni)** - Fund the experiments ☕
 
