@@ -111,6 +111,15 @@ git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 # Checkout branch sketch-octagram
 git checkout sketch-octagram
 
+# Jalankan OpenFrameworks Project Generator
+# Buka: openFrameworks/apps/projectGenerator/projectGenerator.exe
+
+# Import project yang sudah diclone
+# 1. Click "Import" pada Project Generator
+# 2. Navigate ke folder BasicIslamicGeometry yang sudah diclone
+# 3. Select folder dan klik "Select Current Folder"
+# 4. Click "Update" atau "Generate"
+
 # Buka Visual Studio
 # Double-click: BasicIslamicGeometry.sln
 
