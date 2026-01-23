@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--octagram-orange)
+![Branch](https://img.shields.io/badge/Branch-master-brightgreen)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -108,8 +108,14 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 # Clone repository ini
 git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 
-# Checkout branch sketch-octagram
-git checkout sketch-octagram
+# Jalankan OpenFrameworks Project Generator
+# Buka: openFrameworks/apps/projectGenerator/projectGenerator.exe
+
+# Import project yang sudah diclone
+# 1. Click "Import" pada Project Generator
+# 2. Navigate ke folder BasicIslamicGeometry yang sudah diclone
+# 3. Select folder dan klik "Select Current Folder"
+# 4. Click "Update" atau "Generate"
 
 # Buka Visual Studio
 # Double-click: BasicIslamicGeometry.sln
@@ -287,9 +293,9 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **sketch-octagram**
+## 📝 Current Status: **master**
 
-Branch ini adalah **pengembangan** BasicIslamicGeometry dengan fokus pada **octagram lines** yang membentuk pola 8-point star dalam geometri Islam. Fitur yang tersedia:
+Branch ini adalah **versi stabil** BasicIslamicGeometry yang menggabungkan semua fitur dari eksplorasi geometri Islam, termasuk five circle pattern, crosslines, parallelogram lines, rectangle lines, dan octagram lines yang membentuk pola 8-point star. Fitur yang tersedia:
 
 ✅ **Five Circle Pattern**: 5 lingkaran (A, B, C, D, E) dengan konfigurasi posisi yang saling berhubungan
 ✅ **Animated Drawing**: Lingkaran digambar dengan animasi smooth (100 segments, 0.5 speed)
