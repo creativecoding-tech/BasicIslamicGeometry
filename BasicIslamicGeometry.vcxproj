@@ -228,13 +228,23 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ofApp.cpp" />
+    <ClCompile Include="src\shape\AbstractShape.cpp" />
     <ClCompile Include="src\shape\CartesianAxes.cpp" />
     <ClCompile Include="src\shape\CircleShape.cpp" />
+    <ClCompile Include="src\shape\CrossLine.cpp" />
+    <ClCompile Include="src\shape\OctagramLine.cpp" />
+    <ClCompile Include="src\shape\ParallelogramLine.cpp" />
+    <ClCompile Include="src\shape\RectangleLine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ofApp.h" />
+    <ClInclude Include="src\shape\AbstractShape.h" />
     <ClInclude Include="src\shape\CartesianAxes.h" />
     <ClInclude Include="src\shape\CircleShape.h" />
+    <ClInclude Include="src\shape\CrossLine.h" />
+    <ClInclude Include="src\shape\OctagramLine.h" />
+    <ClInclude Include="src\shape\ParallelogramLine.h" />
+    <ClInclude Include="src\shape\RectangleLine.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(OF_ROOT)\libs\openFrameworksCompiled\project\vs\openframeworksLib.vcxproj">

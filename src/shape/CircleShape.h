@@ -1,31 +1,35 @@
 #pragma once
 #include <string>
-#include <ofMain.h>
-class CircleShape
+#include "ofMain.h"
+#include "AbstractShape.h"
+
+class CircleShape : public AbstractShape
 {
 public:
 	float radius;
-	float circleProgress = 0;
-	float totalSegments = 100;
-	float circleSpeed = .5f;
-	bool showing = false;
 	std::string label = "";
 	float posX = 0;
 	float posY = 0;
-	float lineWidth = 4;
 	CircleShape(float r, std::string label,float posX,float posY);
 
-	void show();
-	void hide();
-	void update();
-	void draw();
+	// Override pure virtual methods dari AbstractShape
+	void update() override;
+	void draw() override;
+
 	void setLabel(std::string label);
 	void setPosition(float x, float y);
-	void setLineWidth(float width);
-	void setThin(bool thin);  // true = tipis, false = tebal
+
+	// Label visibility control
+	void showLabel();
+	void hideLabel();
+
+	// Dot visibility control
+	void showDot();
+	void hideDot();
+
 private:
-	ofTrueTypeFont fontNormal;  // Font normal/tipis
-	ofTrueTypeFont fontBold;    // Font tebal
-	bool useThin = false;       // Flag untuk thin/bold
+	float totalSegments = 100;  // Circle-specific
+	bool labelVisible = true;   // Flag untuk label visibility
+	bool dotVisible = true;     // Flag untuk dot visibility
 };
 
