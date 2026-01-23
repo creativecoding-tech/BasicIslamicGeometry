@@ -80,7 +80,7 @@ Setiap lingkaran memiliki **animasi drawing** yang halus dari sudut 0 ke 360°, 
 
 ```bash
 # Clone repository ini
-git clone https://github.com/username/BasicIslamicGeometry.git
+git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 
 # Checkout branch sketch-five-circle
 git checkout sketch-five-circle
