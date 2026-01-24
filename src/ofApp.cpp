@@ -458,15 +458,17 @@ void ofApp::draw(){
 		ofPopStyle();
 	}
 
-	// Draw dot highlights (hover state)
-	vector<DotInfo> dots = getAllDots();
-	for (auto& dot : dots) {
-		if (isMouseOverDot(mousePos, dot.position)) {
-			// Highlight dot
-			ofPushStyle();
-			ofSetColor(255, 0, 0, 200);  // Red highlight
-			ofDrawCircle(dot.position, threshold);  // Larger circle
-			ofPopStyle();
+	// Draw dot highlights (hover state) - HANYA ketika TIDAK sedang drag DAN dots visible
+	if (drawState != DRAGGING && dotsVisible) {
+		vector<DotInfo> dots = getAllDots();
+		for (auto& dot : dots) {
+			if (isMouseOverDot(mousePos, dot.position)) {
+				// Highlight dot
+				ofPushStyle();
+				ofSetColor(255, 0, 0, 200);  // Red highlight
+				ofDrawCircle(dot.position, threshold);  // Larger circle
+				ofPopStyle();
+			}
 		}
 	}
 }
@@ -733,8 +735,6 @@ void ofApp::mouseReleased(int x, int y, int button) {
 	// Clear dan reset state
 	currentPolylinePoints.clear();
 	drawState = IDLE;
-	startDotPos = vec2(0, 0);
-	mousePos = vec2(0, 0);
 }
 
 //--------------------------------------------------------------
