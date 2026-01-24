@@ -485,6 +485,23 @@ void ofApp::keyPressed(int key){
 	if (key == '+' || key == '=') {
 		increaseLineWidth();
 	}
+
+	// Handle CTRL key ditekan
+	if (key == 3683 || key == OF_KEY_CONTROL) {  // 3683 = CTRL pada Windows
+		isCtrlPressed = true;
+		return;  // Jangan lanjut ke logic lain
+	}
+
+	// Handle Z ditekan saat CTRL aktif - gunakan switch-case
+	if (isCtrlPressed) {
+		switch(key) {
+			case 'z':
+			case 'Z':
+			case 26:  // CTRL+Z combination (ASCII 26)
+				undoLastLine();
+				break;
+		}
+	}
 }
 
 //--------------------------------------------------------------
@@ -572,6 +589,14 @@ void ofApp::drawDashedLine(vec2 start, vec2 end, int numDashes) {
 }
 
 //--------------------------------------------------------------
+void ofApp::undoLastLine() {
+	// Hapus garis terakhir yang dibuat user
+	if (!customLines.empty()) {
+		customLines.pop_back();
+	}
+}
+
+//--------------------------------------------------------------
 // Mouse Event Handlers
 void ofApp::mousePressed(int x, int y, int button) {
 	// Logic lama: Cursor toggle dengan right click (button 2)
@@ -642,7 +667,7 @@ void ofApp::mouseMoved(int x, int y) {
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key){
-
+	if (key == OF_KEY_CONTROL) isCtrlPressed = false;
 }
 
 //--------------------------------------------------------------
