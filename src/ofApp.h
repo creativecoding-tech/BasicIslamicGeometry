@@ -67,6 +67,9 @@ class ofApp : public ofBaseApp{
 		vector<vec2> currentPolylinePoints;  // Capture points saat drag untuk polyline
 		vector<CustomLine> customLines;  // CustomLine dari FileManager
 
+		// Line selection
+		int selectedLineIndex = -1;  // -1 = tidak ada yang dipilih
+
 		// Line width control
 		float currentLineWidth = 4.0f;  // Current line width untuk shapes
 		float mouseLineWidth = 3.f;    // Line width khusus untuk mouse drag lines
@@ -107,6 +110,9 @@ class ofApp : public ofBaseApp{
 		// Interactive Line Creation helpers
 		vector<DotInfo> getAllDots();
 		bool isMouseOverDot(vec2 mousePos, vec2 dotPos);
+		bool isMouseOverLine(vec2 mousePos, vec2 lineStart, vec2 lineEnd, float lineWidth);
+		float distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd);
+		int getLineIndexAtPosition(vec2 pos);  // Get index line di posisi mouse (-1 jika tidak ada)
 		bool lineExists(vec2 from, vec2 to);
 		void undoLastLine();  // Undo last custom line (CTRL+Z)
 

@@ -402,15 +402,22 @@ void ofApp::draw(){
 	octagramLine7->draw();
 
 	// Draw custom lines (user-created connections dengan polyline progressive)
-	for (auto& line : customLines) {
+	for (int i = 0; i < customLines.size(); i++) {
 		ofPushStyle();
-		ofSetColor(line.color);
-		ofSetLineWidth(line.lineWidth);
+
+		// Jika line ini dipilih, pakai warna MERAH untuk highlight
+		if (i == selectedLineIndex) {
+			ofSetColor(255, 0, 0);  // Merah - selected line
+		} else {
+			ofSetColor(customLines[i].color);
+		}
+
+		ofSetLineWidth(customLines[i].lineWidth);
 
 		// Progressive drawing seperti CrossLine
-		if (line.points.size() >= 2) {
-			vec2 start = line.points[0];
-			vec2 end = line.points[1];
+		if (customLines[i].points.size() >= 2) {
+			vec2 start = customLines[i].points[0];
+			vec2 end = customLines[i].points[1];
 
 			// Hitung angle dan distance untuk polar coordinates
 			float totalAngle = atan2(end.y - start.y, end.x - start.x);
@@ -421,10 +428,10 @@ void ofApp::draw(){
 
 			// Gambar polyline secara progressif
 			ofPolyline polyline;
-			int segmentsToDraw = static_cast<int>(totalSegments * line.progress);
+			int segmentsToDraw = static_cast<int>(totalSegments * customLines[i].progress);
 
-			for (int i = 0; i <= segmentsToDraw; i++) {
-				float t = ofMap(i, 0, totalSegments, 0, 1);
+			for (int j = 0; j <= segmentsToDraw; j++) {
+				float t = ofMap(j, 0, totalSegments, 0, 1);
 				float currentDist = totalDistance * t;
 
 				// Konversi polar ke cartesian
@@ -641,6 +648,83 @@ bool ofApp::lineExists(vec2 from, vec2 to) {
 }
 
 //--------------------------------------------------------------
+bool ofApp::isMouseOverLine(vec2 mousePos, vec2 lineStart, vec2 lineEnd, float lineWidth) {
+	// Hitung jarak dari titik ke garis (point-to-line distance)
+	// Formula: jarak = |(end - start) × (start - point)| / |end - start|
+	vec2 lineVec = lineEnd - lineStart;
+	vec2 pointVec = mousePos - lineStart;
+	float lineLength = glm::length(lineVec);
+
+	if (lineLength == 0) return false;
+
+	// Project pointVec ke lineVec
+	float projection = glm::dot(pointVec, lineVec) / lineLength;
+	vec2 closestPoint = lineStart + (lineVec / lineLength) * projection;
+
+	// Clamp projection ke line segment (biar tidak extend)
+	if (projection < 0) closestPoint = lineStart;
+	if (projection > 1) closestPoint = lineEnd;
+
+	// Hitung jarak dari mousePos ke closestPoint di garis
+	float distance = glm::length(mousePos - closestPoint);
+
+	// Threshold = setengah line width + sedikit buffer
+	return distance <= (lineWidth / 2.0f) + 2.0f;
+}
+
+//--------------------------------------------------------------
+float ofApp::distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd) {
+	// Hitung jarak terpendek dari point ke garis
+	vec2 lineVec = lineEnd - lineStart;
+	vec2 pointVec = point - lineStart;
+	float lineLengthSq = glm::dot(lineVec, lineVec);  // lineLength squared
+
+	if (lineLengthSq == 0) return 0.0f;
+
+	// Project pointVec ke lineVec (hasilnya parameter t dalam [0,1])
+	float projection = glm::dot(pointVec, lineVec) / lineLengthSq;
+
+	// Clamp projection ke line segment (biar tidak extend)
+	projection = ofClamp(projection, 0.0f, 1.0f);
+
+	vec2 closestPoint = lineStart + lineVec * projection;
+
+	// Hitung jarak dari point ke closestPoint
+	return glm::length(point - closestPoint);
+}
+
+//--------------------------------------------------------------
+int ofApp::getLineIndexAtPosition(vec2 pos) {
+	// Cari garis dengan JARAK TERDEKAT
+	int closestLineIndex = -1;
+	float closestDistance = 999999.0f;
+
+	for (int i = 0; i < customLines.size(); i++) {
+		const CustomLine& line = customLines[i];
+		if (line.points.size() >= 2) {
+			vec2 start = line.points[0];
+			vec2 end = line.points[1];
+
+			// Hitung jarak ke garis ini
+			float distance = distanceToLine(pos, start, end);
+
+			// Update jika lebih dekat
+			if (distance < closestDistance) {
+				closestDistance = distance;
+				closestLineIndex = i;
+			}
+		}
+	}
+
+	// Return line terdekat (jika dalam threshold)
+	if (closestDistance <= (mouseLineWidth / 2.0f) + 2.0f) {
+		return closestLineIndex;
+	}
+
+	return -1;  // Tidak ada yang diklik
+}
+
+//--------------------------------------------------------------
 void ofApp::undoLastLine() {
 	// Hapus garis terakhir yang dibuat user
 	if (!customLines.empty()) {
@@ -662,13 +746,14 @@ void ofApp::mousePressed(int x, int y, int button) {
 		return;  // Jangan lanjut ke interactive line creation untuk right click
 	}
 
-	// Logic untuk interactive line creation: HANYA bisa drag antar dot
+	// Logic untuk interactive line creation & line selection
 	if (button == 0) {
 		// Adjust mouse position untuk center translation
 		vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
 		vector<DotInfo> dots = getAllDots();
 
 		// Check jika klik di atas dot - HANYA bisa mulai dari dot
+		bool clickedOnDot = false;
 		for (auto& dot : dots) {
 			if (isMouseOverDot(adjustedMousePos, dot.position)) {
 				drawState = DRAGGING;
@@ -676,7 +761,24 @@ void ofApp::mousePressed(int x, int y, int button) {
 				currentPolylinePoints.push_back(dot.position);  // Start dari dot
 				startDotPos = dot.position;
 				mousePos = adjustedMousePos;
+				clickedOnDot = true;
+
+				// Deselect line yang mungkin terpilih
+				selectedLineIndex = -1;
+
 				return;
+			}
+		}
+
+		// Kalau tidak klik di dot, cek apakah klik di garis untuk SELECT
+		if (!clickedOnDot) {
+			int lineIndex = getLineIndexAtPosition(adjustedMousePos);
+			if (lineIndex >= 0) {
+				// Select garis ini
+				selectedLineIndex = lineIndex;
+			} else {
+				// Klik di tempat kosong → deselect
+				selectedLineIndex = -1;
 			}
 		}
 	}
