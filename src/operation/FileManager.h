@@ -6,8 +6,7 @@ using glm::vec2;
 
 // Struct untuk CustomLine
 struct CustomLine {
-    vec2 fromPos;
-    vec2 toPos;
+    vector<vec2> points;  // Polyline dengan banyak titik (bukan cuma fromPos/toPos)
     ofColor color;
     float lineWidth;
 };

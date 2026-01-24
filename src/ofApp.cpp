@@ -401,28 +401,35 @@ void ofApp::draw(){
 	octagramLine6->draw();
 	octagramLine7->draw();
 
-	// Draw custom lines (user-created connections)
+	// Draw custom lines (user-created connections dengan polyline)
 	for (auto& line : customLines) {
 		ofPushStyle();
 		ofSetColor(line.color);
 		ofSetLineWidth(line.lineWidth);
-		ofDrawLine(line.fromPos, line.toPos);
 
-		vec2 midPoint = (line.fromPos + line.toPos) / 2.0f;
+		// Gambar polyline untuk smooth curve
+		ofPolyline polyline;
+		for (auto& point : line.points) {
+			polyline.addVertex(point.x, point.y);
+		}
+		polyline.draw();
+
 		ofPopStyle();
 	}
 
-	// Draw preview line (sedang drag)
-	if (drawState == DRAGGING) {
+	// Draw preview polyline (sedang drag)
+	if (drawState == DRAGGING && currentPolylinePoints.size() > 1) {
 		ofPushStyle();
-		ofSetColor(255, 0, 0, 150);  // Semi-transparent red
-		ofSetLineWidth(2);
-		ofDrawLine(startDotPos, mousePos);
+		ofSetColor(0, 0, 255, 150);  // Biru transparan
+		ofSetLineWidth(mouseLineWidth);  // Pakai mouseLineWidth untuk preview
 
-		// Draw dashed preview
-		ofSetColor(100, 100, 100, 100);
-		ofSetLineWidth(1);
-		drawDashedLine(startDotPos, mousePos);
+		// Gambar preview polyline
+		ofPolyline previewPolyline;
+		for (auto& point : currentPolylinePoints) {
+			previewPolyline.addVertex(point.x, point.y);
+		}
+		previewPolyline.draw();
+
 		ofPopStyle();
 	}
 
@@ -591,10 +598,16 @@ bool ofApp::isMouseOverDot(vec2 mousePos, vec2 dotPos) {
 }
 
 bool ofApp::lineExists(vec2 from, vec2 to) {
+	// Cek apakah ada line dengan titik awal dan akhir yang sama
 	for (auto& line : customLines) {
-		if ((glm::length(line.fromPos - from) < 1.0f && glm::length(line.toPos - to) < 1.0f) ||
-			(glm::length(line.fromPos - to) < 1.0f && glm::length(line.toPos - from) < 1.0f)) {
-			return true;
+		if (line.points.size() >= 2) {
+			vec2 lineStart = line.points.front();
+			vec2 lineEnd = line.points.back();
+
+			if ((glm::length(lineStart - from) < 1.0f && glm::length(lineEnd - to) < 1.0f) ||
+				(glm::length(lineStart - to) < 1.0f && glm::length(lineEnd - from) < 1.0f)) {
+				return true;
+			}
 		}
 	}
 	return false;
@@ -636,17 +649,20 @@ void ofApp::mousePressed(int x, int y, int button) {
 		return;  // Jangan lanjut ke interactive line creation untuk right click
 	}
 
-	// Logic baru: Interactive line creation dengan left click (button 0)
+	// Logic untuk interactive line creation: HANYA bisa drag antar dot
 	if (button == 0) {
 		// Adjust mouse position untuk center translation
-		vec2 adjustedMousePos(x - ofGetWidth()/2, y - ofGetHeight()/2);
+		vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
 		vector<DotInfo> dots = getAllDots();
 
-		// Check jika klik di atas dot
+		// Check jika klik di atas dot - HANYA bisa mulai dari dot
 		for (auto& dot : dots) {
 			if (isMouseOverDot(adjustedMousePos, dot.position)) {
 				drawState = DRAGGING;
+				currentPolylinePoints.clear();
+				currentPolylinePoints.push_back(dot.position);  // Start dari dot
 				startDotPos = dot.position;
+				mousePos = adjustedMousePos;
 				return;
 			}
 		}
@@ -654,8 +670,20 @@ void ofApp::mousePressed(int x, int y, int button) {
 }
 
 void ofApp::mouseDragged(int x, int y, int button) {
-	// Adjust mouse position untuk center translation
-	mousePos = vec2(x - ofGetWidth()/2, y - ofGetHeight()/2);
+	if (drawState == DRAGGING) {
+		// Adjust mouse position untuk center translation
+		vec2 currentPos = vec2(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+		mousePos = currentPos;
+
+		// Untuk garis lurus, kita hanya perlu 2 titik: start dan end
+		// currentPolylinePoints[0] = start (diset di mousePressed)
+		// currentPolylinePoints[1] = end (diupdate setiap drag)
+		if (currentPolylinePoints.size() < 2) {
+			currentPolylinePoints.push_back(currentPos);  // Add end point
+		} else {
+			currentPolylinePoints[1] = currentPos;  // Update end point
+		}
+	}
 }
 
 void ofApp::mouseReleased(int x, int y, int button) {
@@ -664,28 +692,38 @@ void ofApp::mouseReleased(int x, int y, int button) {
 	}
 
 	// Adjust mouse position untuk center translation
-	vec2 releasePos(x - ofGetWidth()/2, y - ofGetHeight()/2);
+	vec2 releasePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
 	vector<DotInfo> dots = getAllDots();
 
-	// Check jika release di atas valid dot
+	// Check jika release di atas valid dot - HANYA bisa selesai di dot
 	for (auto& dot : dots) {
 		if (isMouseOverDot(releasePos, dot.position)) {
+			// Cek apakah line sudah ada (duplicate check)
+			if (!lineExists(startDotPos, dot.position)) {
+				// Update end point ke posisi dot yang dilepas
+				if (currentPolylinePoints.size() < 2) {
+					currentPolylinePoints.push_back(dot.position);
+				} else {
+					currentPolylinePoints[1] = dot.position;
+				}
 
-			// Create custom line
-			CustomLine newLine;
-			newLine.fromPos = startDotPos;
-			newLine.toPos = dot.position;
-			newLine.color = ofColor(255, 0, 255);  // Magenta
-			newLine.lineWidth = 4.0f;
+				// Simpan polyline dengan 2 points (start dan end)
+				CustomLine newLine;
+				newLine.points = currentPolylinePoints;  // 2 titik: start dan end
+				newLine.color = ofColor(0, 0, 255);      // Biru
+				newLine.lineWidth = mouseLineWidth;      // Pakai mouseLineWidth, bukan currentLineWidth
 
-			customLines.push_back(newLine);
+				customLines.push_back(newLine);
+			}
 			break;
 		}
 	}
 
-	// Reset state
+	// Clear dan reset state
+	currentPolylinePoints.clear();
 	drawState = IDLE;
 	startDotPos = vec2(0, 0);
+	mousePos = vec2(0, 0);
 }
 
 //--------------------------------------------------------------

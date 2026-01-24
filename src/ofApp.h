@@ -64,10 +64,12 @@ class ofApp : public ofBaseApp{
 		DrawState drawState = IDLE;
 		vec2 startDotPos = vec2(0, 0);
 		vec2 mousePos = vec2(0, 0);
+		vector<vec2> currentPolylinePoints;  // Capture points saat drag untuk polyline
 		vector<CustomLine> customLines;  // CustomLine dari FileManager
 
 		// Line width control
-		float currentLineWidth = 4.0f;  // Current line width
+		float currentLineWidth = 4.0f;  // Current line width untuk shapes
+		float mouseLineWidth = 4.0f;    // Line width khusus untuk mouse drag lines
 
 		bool sequentialMode = false; // Sequential drawing mode
 		int currentShapeIndex = 0;

@@ -21,13 +21,21 @@ void FileManager::saveCustomLines(const std::vector<CustomLine>& customLines) {
     ofBuffer buffer;
 
     // Write jumlah line dulu
-    int size = static_cast<int>(customLines.size());
-    buffer.append(reinterpret_cast<const char*>(&size), sizeof(int));
+    int numLines = static_cast<int>(customLines.size());
+    buffer.append(reinterpret_cast<const char*>(&numLines), sizeof(int));
 
     // Write setiap line dalam binary format
     for (const auto& line : customLines) {
-        buffer.append(reinterpret_cast<const char*>(&line.fromPos), sizeof(vec2));
-        buffer.append(reinterpret_cast<const char*>(&line.toPos), sizeof(vec2));
+        // Write jumlah points dalam line ini
+        int numPoints = static_cast<int>(line.points.size());
+        buffer.append(reinterpret_cast<const char*>(&numPoints), sizeof(int));
+
+        // Write semua points
+        for (const auto& point : line.points) {
+            buffer.append(reinterpret_cast<const char*>(&point), sizeof(vec2));
+        }
+
+        // Write color dan lineWidth
         buffer.append(reinterpret_cast<const char*>(&line.color), sizeof(ofColor));
         buffer.append(reinterpret_cast<const char*>(&line.lineWidth), sizeof(float));
     }
@@ -54,23 +62,26 @@ bool FileManager::loadCustomLines(std::vector<CustomLine>& customLines) {
     char* data = buffer.getData();
 
     // Read jumlah line
-    int size = *reinterpret_cast<int*>(data);
+    int numLines = *reinterpret_cast<int*>(data);
     data += sizeof(int);
 
     // Clear existing lines
     customLines.clear();
 
     // Read setiap line
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < numLines; i++) {
         CustomLine line;
 
-        // Read fromPos
-        line.fromPos = *reinterpret_cast<vec2*>(data);
-        data += sizeof(vec2);
+        // Read jumlah points
+        int numPoints = *reinterpret_cast<int*>(data);
+        data += sizeof(int);
 
-        // Read toPos
-        line.toPos = *reinterpret_cast<vec2*>(data);
-        data += sizeof(vec2);
+        // Read semua points
+        for (int j = 0; j < numPoints; j++) {
+            vec2 point = *reinterpret_cast<vec2*>(data);
+            data += sizeof(vec2);
+            line.points.push_back(point);
+        }
 
         // Read color
         line.color = *reinterpret_cast<ofColor*>(data);
@@ -105,22 +116,25 @@ void FileManager::loadCustomLinesSequential(std::vector<CustomLine>& customLines
     char* data = buffer.getData();
 
     // Read jumlah line
-    int size = *reinterpret_cast<int*>(data);
+    int numLines = *reinterpret_cast<int*>(data);
     data += sizeof(int);
 
     // Simpan SEMUA lines ke loadedLinesBuffer
     loadedLinesBuffer.clear();
 
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < numLines; i++) {
         CustomLine line;
 
-        // Read fromPos
-        line.fromPos = *reinterpret_cast<vec2*>(data);
-        data += sizeof(vec2);
+        // Read jumlah points
+        int numPoints = *reinterpret_cast<int*>(data);
+        data += sizeof(int);
 
-        // Read toPos
-        line.toPos = *reinterpret_cast<vec2*>(data);
-        data += sizeof(vec2);
+        // Read semua points
+        for (int j = 0; j < numPoints; j++) {
+            vec2 point = *reinterpret_cast<vec2*>(data);
+            data += sizeof(vec2);
+            line.points.push_back(point);
+        }
 
         // Read color
         line.color = *reinterpret_cast<ofColor*>(data);
