@@ -734,6 +734,11 @@ int ofApp::getLineIndexAtPosition(vec2 pos) {
 			vec2 start = points[0];
 			vec2 end = points[1];
 
+			// Skip invalid lines (start == end)
+			if (glm::length(start - end) < 1.0f) {
+				continue;
+			}
+
 			// Hitung jarak ke garis ini (dengan curve support)
 			float distance = distanceToLine(pos, start, end, line.getCurve());
 
@@ -844,16 +849,19 @@ void ofApp::mouseReleased(int x, int y, int button) {
 		if (isMouseOverDot(releasePos, dot.position)) {
 			// Cek apakah line sudah ada (duplicate check)
 			if (!lineExists(startDotPos, dot.position)) {
-				// Update end point ke posisi dot yang dilepas
-				if (currentPolylinePoints.size() < 2) {
-					currentPolylinePoints.push_back(dot.position);
-				} else {
-					currentPolylinePoints[1] = dot.position;
-				}
+				// Cek apakah start != end (bukan garis panjang 0)
+				if (glm::length(startDotPos - dot.position) > 1.0f) {
+					// Update end point ke posisi dot yang dilepas
+					if (currentPolylinePoints.size() < 2) {
+						currentPolylinePoints.push_back(dot.position);
+					} else {
+						currentPolylinePoints[1] = dot.position;
+					}
 
-				// Simpan polyline dengan 2 points (start dan end)
-				CustomLine newLine(currentPolylinePoints, ofColor(0, 0, 255), mouseLineWidth);
-				customLines.push_back(newLine);
+					// Simpan polyline dengan 2 points (start dan end)
+					CustomLine newLine(currentPolylinePoints, ofColor(0, 0, 255), mouseLineWidth);
+					customLines.push_back(newLine);
+				}
 			}
 			break;
 		}
