@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--octagram-orange)
+![Branch](https://img.shields.io/badge/Branch-sketch--mouse--line-orange)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -106,10 +106,19 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 ```bash
 # Clone repository ini
-git clone https://github.com/username/BasicIslamicGeometry.git
+git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 
-# Checkout branch sketch-rectangle
-git checkout sketch-rectangle
+# Checkout branch sketch-mouse-line
+git checkout sketch-mouse-line
+
+# Jalankan OpenFrameworks Project Generator
+# Buka: openFrameworks/apps/projectGenerator/projectGenerator.exe
+
+# Import project yang sudah diclone
+# 1. Click "Import" pada Project Generator
+# 2. Navigate ke folder BasicIslamicGeometry yang sudah diclone
+# 3. Select folder dan klik "Select Current Folder"
+# 4. Click "Update" atau "Generate"
 
 # Buka Visual Studio
 # Double-click: BasicIslamicGeometry.sln
@@ -287,10 +296,11 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **sketch-octagram**
+## 📝 Current Status: **sketch-mouse-line**
 
-Branch ini adalah **pengembangan** BasicIslamicGeometry dengan fokus pada **octagram lines** yang membentuk pola 8-point star dalam geometri Islam. Fitur yang tersedia:
+Branch ini adalah **eksperimen mouse interaction** pada BasicIslamicGeometry dengan fokus pada **mouse drag untuk draw line**. Fitur yang tersedia:
 
+✅ **Mouse Interaction**: Mouse drag untuk menggambar line secara interaktif
 ✅ **Five Circle Pattern**: 5 lingkaran (A, B, C, D, E) dengan konfigurasi posisi yang saling berhubungan
 ✅ **Animated Drawing**: Lingkaran digambar dengan animasi smooth (100 segments, 0.5 speed)
 ✅ **Cartesian Axes**: Sistem koordinat X-Y dengan animasi scaling (0 to 2.5x radius) dan label sudut (radians & degrees)
