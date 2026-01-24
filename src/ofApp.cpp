@@ -552,8 +552,10 @@ void ofApp::keyPressed(int key){
 
 	if (key == OF_KEY_DEL) {
 		if (isCtrlPressed) {
-			// CTRL+DEL: Clear semua custom lines
-			FileManager::clearCustomLines(customLines);
+			// CTRL+DEL: Clear semua custom lines - HANYA jika TIDAK sedang sequential load
+			if (!fileManager.isLoadSequentialMode()) {
+				FileManager::clearCustomLines(customLines);
+			}
 			return;  // Jangan lanjut ke hideAllShapes()
 		} else {
 			// DEL saja: Hide semua shapes (hanya jika TIDAK sequential drawing)
