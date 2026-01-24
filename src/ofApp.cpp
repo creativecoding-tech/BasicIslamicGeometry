@@ -357,6 +357,31 @@ void ofApp::update(){
 	if (sequentialMode) {
 		updateSequentialDrawing();
 	}
+
+	// Update sequential load logic
+	if (loadSequentialMode) {
+		// Akumulasi speed
+		loadAccumulator += loadSpeed;
+
+		// Ambil bagian integer dari accumulator
+		int linesToLoad = static_cast<int>(loadAccumulator);
+
+		// Kurangi accumulator dengan yang sudah diambil
+		loadAccumulator -= linesToLoad;
+
+		// Load lines
+		for (int i = 0; i < linesToLoad && currentLoadIndex < loadedLinesBuffer.size(); i++) {
+			customLines.push_back(loadedLinesBuffer[currentLoadIndex]);
+			currentLoadIndex++;
+		}
+
+		// Cek apakah sudah selesai
+		if (currentLoadIndex >= loadedLinesBuffer.size()) {
+			loadSequentialMode = false;  // Selesai
+			loadedLinesBuffer.clear();     // Bersihkan buffer
+			loadAccumulator = 0.0f;        // Reset accumulator
+		}
+	}
 }
 
 //--------------------------------------------------------------
@@ -516,7 +541,12 @@ void ofApp::keyPressed(int key){
 			case 'o':
 			case 'O':
 			case 15:  // CTRL+O (ASCII 15)
-				loadCustomLines();
+				// Cek apakah SHIFT juga ditekan
+				if (ofGetKeyPressed(OF_KEY_SHIFT)) {
+					loadCustomLinesSequential();  // Sequential load dengan animasi
+				} else {
+					loadCustomLines();  // Load semua sekaligus
+				}
 				break;
 		}
 	}
@@ -688,6 +718,57 @@ void ofApp::loadCustomLines() {
 //--------------------------------------------------------------
 void ofApp::clearCustomLines() {
 	customLines.clear();
+}
+
+//--------------------------------------------------------------
+void ofApp::loadCustomLinesSequential() {
+	// Cek apakah ada isinya dulu (proteksi kerjaan yang sudah dibuat)
+	if (!customLines.empty()) {
+		return;
+	}
+
+	// Cek apakah file exists
+	ofFile file("custom_lines.bin");
+	if (!file.exists()) return;
+
+	// Baca file ke buffer
+	ofBuffer buffer = ofBufferFromFile("custom_lines.bin");
+	char* data = buffer.getData();
+
+	// Read jumlah line
+	int size = *reinterpret_cast<int*>(data);
+	data += sizeof(int);
+
+	// Simpan SEMUA lines ke loadedLinesBuffer
+	loadedLinesBuffer.clear();
+
+	for (int i = 0; i < size; i++) {
+		CustomLine line;
+
+		// Read fromPos
+		line.fromPos = *reinterpret_cast<vec2*>(data);
+		data += sizeof(vec2);
+
+		// Read toPos
+		line.toPos = *reinterpret_cast<vec2*>(data);
+		data += sizeof(vec2);
+
+		// Read color
+		line.color = *reinterpret_cast<ofColor*>(data);
+		data += sizeof(ofColor);
+
+		// Read lineWidth
+		line.lineWidth = *reinterpret_cast<float*>(data);
+		data += sizeof(float);
+
+		// Add ke buffer (BUKAN ke customLines!)
+		loadedLinesBuffer.push_back(line);
+	}
+
+	// Reset index dan mulai mode sequential
+	currentLoadIndex = 0;
+	loadAccumulator = 0.0f;  // Reset accumulator
+	loadSequentialMode = true;
 }
 
 //--------------------------------------------------------------

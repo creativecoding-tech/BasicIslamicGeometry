@@ -75,14 +75,20 @@ class ofApp : public ofBaseApp{
 		// Line width control
 		float currentLineWidth = 4.0f;  // Current line width
 
-		
 		bool sequentialMode = false; // Sequential drawing mode
-		int currentShapeIndex = 0;  
+		int currentShapeIndex = 0;
 		bool sequentialCompleted = false;  // Flag untuk track apakah sequential sudah selesai
 		bool labelsVisible = true;      // Flag untuk track label visibility
 		bool dotsVisible = true;        // Flag untuk track dot visibility
 		float threshold = 10.0f; //radius atau besaran saat mouse hover pada dot
 		bool isCtrlPressed = false;
+
+		// Sequential load from file (CTRL+SHIFT+O)
+		bool loadSequentialMode = false;           // Mode sequential load
+		vector<CustomLine> loadedLinesBuffer;       // Buffer untuk menyimpan lines dari file
+		int currentLoadIndex = 0;                   // Index line yang sedang di-load
+		float loadSpeed = 0.05f;                     // Speed untuk sequential load (lines per frame)
+		float loadAccumulator = 0.0f;              // Akumulator untuk presisi speed
 
 		void setup();
 		void setupCircles();
@@ -114,6 +120,7 @@ class ofApp : public ofBaseApp{
 		void undoLastLine();  // Undo last custom line (CTRL+Z)
 		void saveCustomLines();  // Save custom lines to binary file (CTRL+S)
 		void loadCustomLines();  // Load custom lines from binary file (CTRL+O)
+		void loadCustomLinesSequential();  // Load custom lines sequentially with animation (CTRL+SHIFT+O)
 		void clearCustomLines();  // Clear all custom lines (CTRL+DEL)
 
 		void keyPressed(int key);
