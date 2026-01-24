@@ -111,7 +111,7 @@ class ofApp : public ofBaseApp{
 		vector<DotInfo> getAllDots();
 		bool isMouseOverDot(vec2 mousePos, vec2 dotPos);
 		bool isMouseOverLine(vec2 mousePos, vec2 lineStart, vec2 lineEnd, float lineWidth);
-		float distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd);
+		float distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd, float curve = 0.0f);
 		int getLineIndexAtPosition(vec2 pos);  // Get index line di posisi mouse (-1 jika tidak ada)
 		bool lineExists(vec2 from, vec2 to);
 		void undoLastLine();  // Undo last custom line (CTRL+Z)

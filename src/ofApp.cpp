@@ -705,24 +705,59 @@ bool ofApp::isMouseOverLine(vec2 mousePos, vec2 lineStart, vec2 lineEnd, float l
 }
 
 //--------------------------------------------------------------
-float ofApp::distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd) {
-	// Hitung jarak terpendek dari point ke garis
-	vec2 lineVec = lineEnd - lineStart;
-	vec2 pointVec = point - lineStart;
-	float lineLengthSq = glm::dot(lineVec, lineVec);  // lineLength squared
+float ofApp::distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd, float curve) {
+	// Hitung jarak terpendek dari point ke garis/lengkungan
 
-	if (lineLengthSq == 0) return 0.0f;
+	// Jika curve != 0, hitung jarak ke bezier curve
+	if (curve != 0.0f) {
+		// Hitung control point
+		vec2 midPoint = (lineStart + lineEnd) / 2.0f;
+		vec2 dir = lineEnd - lineStart;
+		vec2 perp = vec2(-dir.y, dir.x);
+		float perpLen = glm::length(perp);
+		if (perpLen > 0) {
+			perp = perp / perpLen;
+		}
+		vec2 controlPoint = midPoint + perp * curve;
 
-	// Project pointVec ke lineVec (hasilnya parameter t dalam [0,1])
-	float projection = glm::dot(pointVec, lineVec) / lineLengthSq;
+		// Sampling bezier curve untuk cari jarak minimum
+		float minDistance = 999999.0f;
+		int samples = 50;
 
-	// Clamp projection ke line segment (biar tidak extend)
-	projection = ofClamp(projection, 0.0f, 1.0f);
+		for (int i = 0; i <= samples; i++) {
+			float t = (float)i / samples;
+			// Quadratic bezier
+			vec2 curvePoint =
+				lineStart * (1 - t) * (1 - t) +
+				controlPoint * 2 * (1 - t) * t +
+				lineEnd * t * t;
 
-	vec2 closestPoint = lineStart + lineVec * projection;
+			float distance = glm::length(point - curvePoint);
+			if (distance < minDistance) {
+				minDistance = distance;
+			}
+		}
 
-	// Hitung jarak dari point ke closestPoint
-	return glm::length(point - closestPoint);
+		return minDistance;
+	} else {
+		// Hitung jarak ke garis lurus (original code)
+		vec2 lineVec = lineEnd - lineStart;
+		vec2 pointVec = point - lineStart;
+		float lineLengthSq = glm::dot(lineVec, lineVec);
+
+		if (lineLengthSq == 0) return 0.0f;
+
+		// Project pointVec ke lineVec (hasilnya parameter t dalam [0,1])
+		float projection = glm::dot(pointVec, lineVec) / lineLengthSq;
+
+		// Clamp projection ke line segment (biar tidak extend)
+		projection = ofClamp(projection, 0.0f, 1.0f);
+
+		vec2 closestPoint = lineStart + lineVec * projection;
+
+		// Hitung jarak dari point ke closestPoint
+		return glm::length(point - closestPoint);
+	}
 }
 
 //--------------------------------------------------------------
@@ -737,8 +772,8 @@ int ofApp::getLineIndexAtPosition(vec2 pos) {
 			vec2 start = line.points[0];
 			vec2 end = line.points[1];
 
-			// Hitung jarak ke garis ini
-			float distance = distanceToLine(pos, start, end);
+			// Hitung jarak ke garis ini (dengan curve support)
+			float distance = distanceToLine(pos, start, end, line.curve);
 
 			// Update jika lebih dekat
 			if (distance < closestDistance) {
