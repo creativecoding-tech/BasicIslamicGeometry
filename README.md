@@ -201,6 +201,44 @@ fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
 - **Consistency**: Font tidak berubah saat line width di-adjust
 - **Clean & Simple**: Visual yang konsisten di seluruh aplikasi
 
+### Quadratic Bezier Curve untuk CustomLine
+
+CustomLine menggunakan **Quadratic Bezier Curve** untuk membuat garis melengkung:
+
+```cpp
+// Rumus Quadratic Bezier: (1-t)²p0 + 2(1-t)t*p1 + t²p2
+vec2 point = start * (1-t) * (1-t) +           // (1-t)²·P0 (weight ke start)
+             controlPoint * 2 * (1-t) * t +    // 2(1-t)t·P1 (weight ke control)
+             end * t * t;                      // t²·P2 (weight ke end)
+```
+
+**Parameter Curve:**
+- **curve = 0**: Garis lurus (control point di tengah garis)
+- **curve > 0**: Melengkung satu arah (control point bergeser perpendicular)
+- **curve < 0**: Melengkung arah sebaliknya
+- **Sampling**: 100 segments untuk smooth curve
+- **Progress t**: 0.0 (start) → 1.0 (end)
+
+**Control Point Calculation:**
+```cpp
+// Hitung midpoint antara start dan end
+vec2 midPoint = (start + end) / 2.0f;
+
+// Hitung perpendicular vector (-y, x)
+vec2 dir = end - start;
+vec2 perp = vec2(-dir.y, dir.x);
+perp = perp / glm::length(perp);  // Normalize
+
+// Control point = midpoint + curve * perpendicular
+vec2 controlPoint = midPoint + perp * curve;
+```
+
+**Keuntungan Quadratic Bezier:**
+- **Smooth**: Curve yang halus dan natural
+- **Simple**: Cukup 3 titik (P0, P1, P2) untuk buat curve
+- **Flexible**: Dengan adjust control point, bisa buat berbagai bentuk lengkungan
+- **Parametric**: Mudah di-animate dengan parameter t (0 → 1)
+
 ### Angle Labels pada CartesianAxes
 
 CartesianAxes menampilkan label sudut di setiap ujung sumbu dengan format **radians (degrees)**:
@@ -257,14 +295,17 @@ BasicIslamicGeometry/
 ├── src/
 │   ├── main.cpp              # Entry point aplikasi
 │   ├── ofApp.cpp/h           # Main application class
-│   └── shape/                # Shape implementations
-│       ├── AbstractShape.cpp/h         # Base class untuk semua shapes
-│       ├── CircleShape.cpp/h           # Circle dengan animasi drawing
-│       ├── CartesianAxes.cpp/h         # Sumbu X-Y dengan scaling & angle labels
-│       ├── CrossLine.cpp/h             # Garis diagonal dengan 2 dot & 2 label
-│       ├── ParallelogramLine.cpp/h     # Garis penghubung dengan 1 dot & 1 label
-│       ├── RectangleLine.cpp/h         # Garis rectangle dengan 2 dot & 2 label
-│       └── OctagramLine.cpp/h          # Garis octagram dengan 2 segment & 1 dot (0-7)
+│   ├── shape/                # Shape implementations
+│   │   ├── AbstractShape.cpp/h         # Base class untuk semua shapes
+│   │   ├── CircleShape.cpp/h           # Circle dengan animasi drawing
+│   │   ├── CartesianAxes.cpp/h         # Sumbu X-Y dengan scaling & angle labels
+│   │   ├── CrossLine.cpp/h             # Garis diagonal dengan 2 dot & 2 label
+│   │   ├── ParallelogramLine.cpp/h     # Garis penghubung dengan 1 dot & 1 label
+│   │   ├── RectangleLine.cpp/h         # Garis rectangle dengan 2 dot & 2 label
+│   │   ├── OctagramLine.cpp/h          # Garis octagram dengan 2 segment & 1 dot (0-7)
+│   │   └── CustomLine.cpp/h            # Custom user-created lines dengan bezier curve support
+│   └── operation/            # File operations & utilities
+│       └── FileManager.cpp/h           # Save/load custom lines ke binary file
 ├── bin/                      # Compiled executable
 ├── dll/                      # OF dependencies
 ├── obj/                      # Intermediate files (gitignored)
@@ -300,7 +341,17 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 Branch ini adalah **eksperimen mouse interaction** pada BasicIslamicGeometry dengan fokus pada **mouse drag untuk draw line**. Fitur yang tersedia:
 
-✅ **Mouse Interaction**: Mouse drag untuk menggambar line secara interaktif
+✅ **Mouse Interaction**: Mouse drag untuk menggambar line secara interaktif antar dots
+✅ **CustomLine System**: Garis custom yang bisa dibuat user dengan mouse drag (start dot → end dot)
+✅ **Bezier Curve Support**: Garis bisa dibuat melengkung dengan scroll mouse (curve parameter)
+✅ **Line Selection**: Klik garis untuk select, visual feedback dengan warna merah
+✅ **Parallel Load Mode (CTRL+O)**: Load semua garis dengan animasi parallel (barengan seperti OctagramLine)
+✅ **Sequential Load Mode (CTRL+SHIFT+O)**: Load garis satu per satu dengan delay
+✅ **Save/Load System**: Simpan dan load custom lines ke binary file
+✅ **Undo System**: CTRL+Z untuk undo garis terakhir
+✅ **Clear Protection**: CTRL+DEL tidak jalan saat sedang loading
+✅ **Curve Label**: Display nilai curve saat garis di-select
+✅ **Invalid Line Filter**: Filter garis yang start == end (panjang 0)
 ✅ **Five Circle Pattern**: 5 lingkaran (A, B, C, D, E) dengan konfigurasi posisi yang saling berhubungan
 ✅ **Animated Drawing**: Lingkaran digambar dengan animasi smooth (100 segments, 0.5 speed)
 ✅ **Cartesian Axes**: Sistem koordinat X-Y dengan animasi scaling (0 to 2.5x radius) dan label sudut (radians & degrees)
@@ -322,6 +373,34 @@ Branch ini adalah **eksperimen mouse interaction** pada BasicIslamicGeometry den
 ✅ **Anti-aliased Rendering**: Garis yang smooth untuk kualitas visual tinggi
 ✅ **Memory-safe Implementation**: Menggunakan `std::unique_ptr` untuk resource management
 ✅ **Modular Setup Methods**: setup() terbagi menjadi setupCircles(), setupCartesianAxes(), setupCrossLines(), setupParallelograms(), setupRectangleLine(), setupOctagramLine()
+✅ **CustomLine Class**: Encapsulated class untuk custom line dengan curve support, progressive animation, dan selection state
+
+### Keyboard Shortcuts
+
+**Shape Controls:**
+| Input | Action |
+| --- | --- |
+| **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan (CartesianAxes → Circle A-E → CrossLine F-I → Parallelogram N-Q → Rectangle R-Y → OctagramLine 0-7) |
+| **SHIFT + )** | Show semua shapes (Circle, CrossLine, Parallelogram, Rectangle, OctagramLine, CartesianAxes) |
+| **DEL** | Hide semua shapes (termasuk CartesianAxes) |
+| **BACKSPACE** | Toggle CartesianAxes saja (hide/show) |
+| **\`** atau **~** | Toggle label visibility (semua label) |
+| **.** atau **>** | Toggle dot visibility (semua dot di intersection points) |
+| **+** atau **=** | Increase line width (+0.5px, max 4px) |
+| **-** atau **_** | Decrease line width (-0.5px, min 0px) |
+
+**CustomLine Controls:**
+| Input | Action |
+| --- | --- |
+| **Mouse Drag** | Buat garis custom dari dot ke dot (hanya bisa mulai dan akhir di dot) |
+| **Mouse Click** | Select garis custom (berubah jadi merah) |
+| **Mouse Scroll** | Adjust curvature garis yang sedang di-select (scroll up = melengkung satu arah, scroll down = melengkung arah sebaliknya, 0 = lurus) |
+| **CTRL + Z** | Undo garis terakhir yang dibuat |
+| **CTRL + S** | Simpan semua custom lines ke file (binary format) |
+| **CTRL + O** | Load semua custom lines dengan animasi parallel (semua garis animate barengan) |
+| **CTRL + SHIFT + O** | Load semua custom lines dengan animasi sequential (satu per satu dengan delay) |
+| **CTRL + DEL** | Hapus semua custom lines (tidak jalan saat sedang loading) |
+| **END** | Keluar dari aplikasi |
 
 ### Configuration:
 
