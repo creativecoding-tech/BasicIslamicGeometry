@@ -80,7 +80,7 @@ class ofApp : public ofBaseApp{
 		bool sequentialCompleted = false;  // Flag untuk track apakah sequential sudah selesai
 		bool labelsVisible = true;      // Flag untuk track label visibility
 		bool dotsVisible = true;        // Flag untuk track dot visibility
-		float threshold = 10.0f; //radius atau besaran saat mouse hover pada dot
+		float threshold = 10.0f; //dalam radius saat mouse hover pada dot
 		bool isCtrlPressed = false;
 
 		// File Manager untuk save/load custom lines
