@@ -481,6 +481,19 @@ void ofApp::draw(){
 		ofPopStyle();
 	}
 
+	// Draw curve value label untuk garis yang selected
+	if (selectedLineIndex >= 0 && selectedLineIndex < customLines.size()) {
+		const CustomLine& line = customLines[selectedLineIndex];
+		if (line.points.size() >= 2) {
+			vec2 midPoint = (line.points[0] + line.points[1]) / 2.0f;
+
+			ofPushStyle();
+			ofSetColor(0, 0, 0);  // Hitam untuk label
+			fontNormal.drawString("Curve: " + ofToString(line.curve, 1), midPoint.x + 10, midPoint.y - 10);
+			ofPopStyle();
+		}
+	}
+
 	// Draw preview polyline (sedang drag)
 	if (drawState == DRAGGING && currentPolylinePoints.size() > 1) {
 		ofPushStyle();
