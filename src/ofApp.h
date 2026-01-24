@@ -81,6 +81,7 @@ class ofApp : public ofBaseApp{
 		bool sequentialCompleted = false;  // Flag untuk track apakah sequential sudah selesai
 		bool labelsVisible = true;      // Flag untuk track label visibility
 		bool dotsVisible = true;        // Flag untuk track dot visibility
+		float threshold = 10.0f; //radius atau besaran saat mouse hover pada dot
 
 		void setup();
 		void setupCircles();
@@ -106,7 +107,7 @@ class ofApp : public ofBaseApp{
 
 		// Interactive Line Creation helpers
 		vector<DotInfo> getAllDots();
-		bool isMouseOverDot(vec2 mousePos, vec2 dotPos, float threshold = 15.0f);
+		bool isMouseOverDot(vec2 mousePos, vec2 dotPos);
 		bool lineExists(vec2 from, vec2 to);
 		void drawDashedLine(vec2 start, vec2 end, int numDashes = 10);
 

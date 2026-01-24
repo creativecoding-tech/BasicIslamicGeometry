@@ -429,8 +429,8 @@ void ofApp::draw(){
 		if (isMouseOverDot(mousePos, dot.position)) {
 			// Highlight dot
 			ofPushStyle();
-			ofSetColor(255, 255, 0, 200);  // Yellow highlight
-			ofDrawCircle(dot.position, 15);  // Larger circle
+			ofSetColor(255, 0, 0, 200);  // Red highlight
+			ofDrawCircle(dot.position, threshold);  // Larger circle
 			ofPopStyle();
 		}
 	}
@@ -540,9 +540,11 @@ vector<ofApp::DotInfo> ofApp::getAllDots() {
 	return dots;
 }
 
-bool ofApp::isMouseOverDot(vec2 mousePos, vec2 dotPos, float threshold) {
+bool ofApp::isMouseOverDot(vec2 mousePos, vec2 dotPos) {
+	//Euclidean distance
+	//ukuran jarak antara 2 titik
 	float distance = glm::length(mousePos - dotPos);
-	return distance <= threshold;
+	return distance <= this->threshold;
 }
 
 bool ofApp::lineExists(vec2 from, vec2 to) {
