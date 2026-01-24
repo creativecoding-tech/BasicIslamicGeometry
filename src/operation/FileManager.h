@@ -1,21 +1,8 @@
 #pragma once
 
 #include "ofMain.h"
-#include "../shape/AbstractShape.h"
+#include "../shape/CustomLine.h"
 using glm::vec2;
-
-// Struct untuk CustomLine
-struct CustomLine {
-    vector<vec2> points;  // Polyline dengan banyak titik (bukan cuma fromPos/toPos)
-    ofColor color;
-    float lineWidth;
-    float curve = 0.0f;   // Curvature untuk bezier curve (0 = lurus)
-
-    // Animation progress (0.0 - 1.0) untuk sequential drawing
-    // Tidak disimpan ke file, hanya untuk runtime
-    float progress = 1.0f;  // Default 1.0 = sudah lengkap
-    float speed = 0.02f;    // Kecepatan animasi per line
-};
 
 class FileManager {
 public:

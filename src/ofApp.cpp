@@ -407,95 +407,21 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::drawCustomLinesAndUI() {
-	// Draw custom lines
+	// Update selection state dan draw semua custom lines
 	for (int i = 0; i < customLines.size(); i++) {
-		ofPushStyle();
-
-		// Jika line ini dipilih, pakai warna MERAH untuk highlight
-		if (i == selectedLineIndex) {
-			ofSetColor(255, 0, 0);  // Merah - selected line
-		} else {
-			ofSetColor(customLines[i].color);
-		}
-
-		ofSetLineWidth(customLines[i].lineWidth);
-
-		// Gambar line (lurus atau curved)
-		if (customLines[i].points.size() >= 2) {
-			vec2 start = customLines[i].points[0];
-			vec2 end = customLines[i].points[1];
-
-			// Jika curve != 0, gambar bezier curve
-			if (customLines[i].curve != 0.0f) {
-				// Hitung control point untuk quadratic bezier
-				vec2 midPoint = (start + end) / 2.0f;
-				vec2 dir = end - start;
-				// Perpendicular vector (-y, x)
-				vec2 perp = vec2(-dir.y, dir.x);
-				// Normalize perpendicular
-				float perpLen = glm::length(perp);
-				if (perpLen > 0) {
-					perp = perp / perpLen;
-				}
-				// Control point = midpoint + curve * perpendicular
-				vec2 controlPoint = midPoint + perp * customLines[i].curve;
-
-				// Gambar bezier curve
-				ofPolyline bezierPoly;
-				int segments = 100;
-				int segmentsToDraw = static_cast<int>(segments * customLines[i].progress);
-
-				for (int j = 0; j <= segmentsToDraw; j++) {
-					float t = (float)j / segments;
-					// Quadratic bezier formula: (1-t)²p0 + 2(1-t)t*p1 + t²p2
-					vec2 point =
-						start * (1 - t) * (1 - t) +
-						controlPoint * 2 * (1 - t) * t +
-						end * t * t;
-					bezierPoly.addVertex(point.x, point.y);
-				}
-
-				if (!bezierPoly.getVertices().empty()) {
-					bezierPoly.draw();
-				}
-			} else {
-				// Gambar lurus (polar coordinates)
-				float totalAngle = atan2(end.y - start.y, end.x - start.x);
-				float totalDistance = sqrt(pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
-
-				float totalSegments = 100.0f;
-
-				ofPolyline polyline;
-				int segmentsToDraw = static_cast<int>(totalSegments * customLines[i].progress);
-
-				for (int j = 0; j <= segmentsToDraw; j++) {
-					float t = ofMap(j, 0, totalSegments, 0, 1);
-					float currentDist = totalDistance * t;
-
-					float x = start.x + cos(totalAngle) * currentDist;
-					float y = start.y + sin(totalAngle) * currentDist;
-
-					polyline.addVertex(x, y);
-				}
-
-				if (!polyline.getVertices().empty()) {
-					polyline.draw();
-				}
-			}
-		}
-
-		ofPopStyle();
+		customLines[i].setSelected(i == selectedLineIndex);
+		customLines[i].draw();
 	}
 
 	// Draw curve value label untuk garis yang selected
 	if (selectedLineIndex >= 0 && selectedLineIndex < customLines.size()) {
 		const CustomLine& line = customLines[selectedLineIndex];
-		if (line.points.size() >= 2) {
-			vec2 midPoint = (line.points[0] + line.points[1]) / 2.0f;
+		if (line.getPoints().size() >= 2) {
+			vec2 midPoint = (line.getPoints()[0] + line.getPoints()[1]) / 2.0f;
 
 			ofPushStyle();
 			ofSetColor(0, 0, 0);  // Hitam untuk label
-			fontNormal.drawString("Curve: " + ofToString(line.curve, 1), midPoint.x + 10, midPoint.y - 10);
+			fontNormal.drawString("Curve: " + ofToString(line.getCurve(), 1), midPoint.x + 10, midPoint.y - 10);
 			ofPopStyle();
 		}
 	}
@@ -700,9 +626,10 @@ bool ofApp::isMouseOverDot(vec2 mousePos, vec2 dotPos) {
 bool ofApp::lineExists(vec2 from, vec2 to) {
 	// Cek apakah ada line dengan titik awal dan akhir yang sama
 	for (auto& line : customLines) {
-		if (line.points.size() >= 2) {
-			vec2 lineStart = line.points.front();
-			vec2 lineEnd = line.points.back();
+		const vector<vec2>& points = line.getPoints();
+		if (points.size() >= 2) {
+			vec2 lineStart = points.front();
+			vec2 lineEnd = points.back();
 
 			if ((glm::length(lineStart - from) < 1.0f && glm::length(lineEnd - to) < 1.0f) ||
 				(glm::length(lineStart - to) < 1.0f && glm::length(lineEnd - from) < 1.0f)) {
@@ -802,12 +729,13 @@ int ofApp::getLineIndexAtPosition(vec2 pos) {
 
 	for (int i = 0; i < customLines.size(); i++) {
 		const CustomLine& line = customLines[i];
-		if (line.points.size() >= 2) {
-			vec2 start = line.points[0];
-			vec2 end = line.points[1];
+		const vector<vec2>& points = line.getPoints();
+		if (points.size() >= 2) {
+			vec2 start = points[0];
+			vec2 end = points[1];
 
 			// Hitung jarak ke garis ini (dengan curve support)
-			float distance = distanceToLine(pos, start, end, line.curve);
+			float distance = distanceToLine(pos, start, end, line.getCurve());
 
 			// Update jika lebih dekat
 			if (distance < closestDistance) {
@@ -924,11 +852,7 @@ void ofApp::mouseReleased(int x, int y, int button) {
 				}
 
 				// Simpan polyline dengan 2 points (start dan end)
-				CustomLine newLine;
-				newLine.points = currentPolylinePoints;  // 2 titik: start dan end
-				newLine.color = ofColor(0, 0, 255);      // Biru
-				newLine.lineWidth = mouseLineWidth;      // Pakai mouseLineWidth, bukan currentLineWidth
-
+				CustomLine newLine(currentPolylinePoints, ofColor(0, 0, 255), mouseLineWidth);
 				customLines.push_back(newLine);
 			}
 			break;
@@ -946,7 +870,8 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
 	if (selectedLineIndex >= 0 && selectedLineIndex < customLines.size()) {
 		// scrollY positif = scroll up, scrollY negatif = scroll down
 		float curveSpeed = 5.0f;  // Kecepatan perubahan curve
-		customLines[selectedLineIndex].curve += scrollY * curveSpeed;
+		float newCurve = customLines[selectedLineIndex].getCurve() + scrollY * curveSpeed;
+		customLines[selectedLineIndex].setCurve(newCurve);
 	}
 }
 

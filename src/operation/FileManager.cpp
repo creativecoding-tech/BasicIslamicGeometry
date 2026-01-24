@@ -27,18 +27,22 @@ void FileManager::saveCustomLines(const std::vector<CustomLine>& customLines) {
     // Write setiap line dalam binary format
     for (const auto& line : customLines) {
         // Write jumlah points dalam line ini
-        int numPoints = static_cast<int>(line.points.size());
+        const vector<vec2>& points = line.getPoints();
+        int numPoints = static_cast<int>(points.size());
         buffer.append(reinterpret_cast<const char*>(&numPoints), sizeof(int));
 
         // Write semua points
-        for (const auto& point : line.points) {
+        for (const auto& point : points) {
             buffer.append(reinterpret_cast<const char*>(&point), sizeof(vec2));
         }
 
         // Write color, lineWidth, dan curve
-        buffer.append(reinterpret_cast<const char*>(&line.color), sizeof(ofColor));
-        buffer.append(reinterpret_cast<const char*>(&line.lineWidth), sizeof(float));
-        buffer.append(reinterpret_cast<const char*>(&line.curve), sizeof(float));
+        ofColor color = line.getColor();
+        float lineWidth = line.getLineWidth();
+        float curve = line.getCurve();
+        buffer.append(reinterpret_cast<const char*>(&color), sizeof(ofColor));
+        buffer.append(reinterpret_cast<const char*>(&lineWidth), sizeof(float));
+        buffer.append(reinterpret_cast<const char*>(&curve), sizeof(float));
     }
 
     // Write buffer ke file (selalu replace/overwrite)
@@ -78,26 +82,31 @@ bool FileManager::loadCustomLines(std::vector<CustomLine>& customLines) {
         data += sizeof(int);
 
         // Read semua points
+        vector<vec2> points;
         for (int j = 0; j < numPoints; j++) {
             vec2 point = *reinterpret_cast<vec2*>(data);
             data += sizeof(vec2);
-            line.points.push_back(point);
+            points.push_back(point);
         }
+        line.setPoints(points);
 
         // Read color
-        line.color = *reinterpret_cast<ofColor*>(data);
+        ofColor color = *reinterpret_cast<ofColor*>(data);
         data += sizeof(ofColor);
+        line.setColor(color);
 
         // Read lineWidth
-        line.lineWidth = *reinterpret_cast<float*>(data);
+        float lineWidth = *reinterpret_cast<float*>(data);
         data += sizeof(float);
+        line.setLineWidth(lineWidth);
 
         // Read curve
-        line.curve = *reinterpret_cast<float*>(data);
+        float curve = *reinterpret_cast<float*>(data);
         data += sizeof(float);
+        line.setCurve(curve);
 
         // Set progress ke 1.0 (langsung lengkap, bukan animasi)
-        line.progress = 1.0f;
+        line.setProgress(1.0f);
 
         // Add ke vector
         customLines.push_back(line);
@@ -138,27 +147,32 @@ void FileManager::loadCustomLinesSequential(std::vector<CustomLine>& customLines
         data += sizeof(int);
 
         // Read semua points
+        vector<vec2> points;
         for (int j = 0; j < numPoints; j++) {
             vec2 point = *reinterpret_cast<vec2*>(data);
             data += sizeof(vec2);
-            line.points.push_back(point);
+            points.push_back(point);
         }
+        line.setPoints(points);
 
         // Read color
-        line.color = *reinterpret_cast<ofColor*>(data);
+        ofColor color = *reinterpret_cast<ofColor*>(data);
         data += sizeof(ofColor);
+        line.setColor(color);
 
         // Read lineWidth
-        line.lineWidth = *reinterpret_cast<float*>(data);
+        float lineWidth = *reinterpret_cast<float*>(data);
         data += sizeof(float);
+        line.setLineWidth(lineWidth);
 
         // Read curve
-        line.curve = *reinterpret_cast<float*>(data);
+        float curve = *reinterpret_cast<float*>(data);
         data += sizeof(float);
+        line.setCurve(curve);
 
         // Set initial animation state
-        line.progress = 0.0f;  // Mulai dari 0 (belum tergambar)
-        line.speed = 0.02f;     // Kecepatan animasi
+        line.setProgress(0.0f);  // Mulai dari 0 (belum tergambar)
+        line.setSpeed(0.02f);     // Kecepatan animasi
 
         // Add ke buffer (BUKAN ke customLines!)
         loadedLinesBuffer.push_back(line);
@@ -188,7 +202,7 @@ void FileManager::updateSequentialLoad(std::vector<CustomLine>& customLines) {
     } else {
         // Cek apakah line terakhir sudah complete
         CustomLine& lastLine = customLines.back();
-        if (lastLine.progress >= 1.0f && currentLoadIndex < static_cast<int>(loadedLinesBuffer.size())) {
+        if (lastLine.getProgress() >= 1.0f && currentLoadIndex < static_cast<int>(loadedLinesBuffer.size())) {
             canAddNewLine = true;
         }
     }
@@ -205,12 +219,7 @@ void FileManager::updateSequentialLoad(std::vector<CustomLine>& customLines) {
 
     // Update progress untuk semua lines yang belum complete
     for (auto& line : customLines) {
-        if (line.progress < 1.0f) {
-            line.progress += line.speed;
-            if (line.progress > 1.0f) {
-                line.progress = 1.0f;  // Cap di 1.0
-            }
-        }
+        line.updateProgress();
     }
 
     // Cek apakah sudah selesai (semua lines loaded dan semua complete)
@@ -220,7 +229,7 @@ void FileManager::updateSequentialLoad(std::vector<CustomLine>& customLines) {
     } else {
         // Cek apakah semua lines sudah complete
         for (const auto& line : customLines) {
-            if (line.progress < 1.0f) {
+            if (line.getProgress() < 1.0f) {
                 allComplete = false;
                 break;
             }

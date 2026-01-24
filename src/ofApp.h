@@ -7,6 +7,7 @@
 #include "shape/ParallelogramLine.h"
 #include "shape/RectangleLine.h"
 #include "shape/OctagramLine.h"
+#include "shape/CustomLine.h"
 #include "operation/FileManager.h"
 using glm::vec2;
 class ofApp : public ofBaseApp{
