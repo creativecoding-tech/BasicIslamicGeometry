@@ -621,50 +621,63 @@ void ofApp::keyPressed(int key){
 vector<ofApp::DotInfo> ofApp::getAllDots() {
 	vector<DotInfo> dots;
 
-	// Circle centers
-	dots.push_back({vec2(0, 0), "Circle"});
-	dots.push_back({vec2(radiusCircle, 0), "Circle"});
-	dots.push_back({vec2(-radiusCircle, 0), "Circle"});
-	dots.push_back({vec2(0, radiusCircle), "Circle"});
-	dots.push_back({vec2(0, -radiusCircle), "Circle"});
+	// Hanya tambahkan dots jika shape-nya visible (showing == true)
 
-	// CrossLine dots (F, G, H, I - pada radius)
-	dots.push_back({vec2(-170, -170), "CrossLine"});
-	dots.push_back({vec2(170, -170), "CrossLine"});
-	dots.push_back({vec2(170, 170), "CrossLine"});
-	dots.push_back({vec2(-170, 170), "CrossLine"});
+	// Circle centers - cek visibility salah satu circle
+	if (circleA && circleA->showing) {
+		dots.push_back({vec2(0, 0), "Circle"});
+		dots.push_back({vec2(radiusCircle, 0), "Circle"});
+		dots.push_back({vec2(-radiusCircle, 0), "Circle"});
+		dots.push_back({vec2(0, radiusCircle), "Circle"});
+		dots.push_back({vec2(0, -radiusCircle), "Circle"});
+	}
 
-	// CrossLine ends (J, K, L, M)
-	dots.push_back({vec2(-240, -240), "CrossLine"});
-	dots.push_back({vec2(240, -240), "CrossLine"});
-	dots.push_back({vec2(240, 240), "CrossLine"});
-	dots.push_back({vec2(-240, 240), "CrossLine"});
+	// CrossLine dots - cek visibility salah satu crossLine
+	if (crossLineF && crossLineF->showing) {
+		// F, G, H, I pada radius
+		dots.push_back({vec2(-170, -170), "CrossLine"});
+		dots.push_back({vec2(170, -170), "CrossLine"});
+		dots.push_back({vec2(170, 170), "CrossLine"});
+		dots.push_back({vec2(-170, 170), "CrossLine"});
 
-	// Parallelogram intersections
-	dots.push_back({vec2(-120, -120), "Parallelogram"});
-	dots.push_back({vec2(120, -120), "Parallelogram"});
-	dots.push_back({vec2(120, 120), "Parallelogram"});
-	dots.push_back({vec2(-120, 120), "Parallelogram"});
+		// J, K, L, M ends
+		dots.push_back({vec2(-240, -240), "CrossLine"});
+		dots.push_back({vec2(240, -240), "CrossLine"});
+		dots.push_back({vec2(240, 240), "CrossLine"});
+		dots.push_back({vec2(-240, 240), "CrossLine"});
+	}
 
-	// Rectangle intersections
-	dots.push_back({vec2(-70, -170), "Rectangle"});
-	dots.push_back({vec2(70, -170), "Rectangle"});
-	dots.push_back({vec2(170, -70), "Rectangle"});
-	dots.push_back({vec2(170, 70), "Rectangle"});
-	dots.push_back({vec2(70, 170), "Rectangle"});
-	dots.push_back({vec2(-70, 170), "Rectangle"});
-	dots.push_back({vec2(-170, 70), "Rectangle"});
-	dots.push_back({vec2(-170, -70), "Rectangle"});
+	// Parallelogram intersections - cek visibility salah satu parallelogram
+	if (parallelogramCtoE && parallelogramCtoE->showing) {
+		dots.push_back({vec2(-120, -120), "Parallelogram"});
+		dots.push_back({vec2(120, -120), "Parallelogram"});
+		dots.push_back({vec2(120, 120), "Parallelogram"});
+		dots.push_back({vec2(-120, 120), "Parallelogram"});
+	}
 
-	// Octagram endpoints
-	dots.push_back({vec2(170, -410), "Octagram"});
-	dots.push_back({vec2(410, -170), "Octagram"});
-	dots.push_back({vec2(410, 170), "Octagram"});
-	dots.push_back({vec2(170, 410), "Octagram"});
-	dots.push_back({vec2(-170, 410), "Octagram"});
-	dots.push_back({vec2(-410, 170), "Octagram"});
-	dots.push_back({vec2(-410, -170), "Octagram"});
-	dots.push_back({vec2(-170, -410), "Octagram"});
+	// Rectangle intersections - cek visibility salah satu rectangle
+	if (rectangleLineFtoG && rectangleLineFtoG->showing) {
+		dots.push_back({vec2(-70, -170), "Rectangle"});
+		dots.push_back({vec2(70, -170), "Rectangle"});
+		dots.push_back({vec2(170, -70), "Rectangle"});
+		dots.push_back({vec2(170, 70), "Rectangle"});
+		dots.push_back({vec2(70, 170), "Rectangle"});
+		dots.push_back({vec2(-70, 170), "Rectangle"});
+		dots.push_back({vec2(-170, 70), "Rectangle"});
+		dots.push_back({vec2(-170, -70), "Rectangle"});
+	}
+
+	// Octagram endpoints - cek visibility salah satu octagram
+	if (octagramLine0 && octagramLine0->showing) {
+		dots.push_back({vec2(170, -410), "Octagram"});
+		dots.push_back({vec2(410, -170), "Octagram"});
+		dots.push_back({vec2(410, 170), "Octagram"});
+		dots.push_back({vec2(170, 410), "Octagram"});
+		dots.push_back({vec2(-170, 410), "Octagram"});
+		dots.push_back({vec2(-410, 170), "Octagram"});
+		dots.push_back({vec2(-410, -170), "Octagram"});
+		dots.push_back({vec2(-170, -410), "Octagram"});
+	}
 
 	return dots;
 }
