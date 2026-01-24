@@ -478,8 +478,8 @@ void ofApp::keyPressed(int key){
 
 	if (key == OF_KEY_DEL) {
 		if (isCtrlPressed) {
-			// CTRL+DEL: Clear semua custom lines - HANYA jika TIDAK sedang sequential load
-			if (!fileManager.isLoadSequentialMode()) {
+			// CTRL+DEL: Clear semua custom lines - HANYA jika TIDAK sedang load
+			if (!fileManager.isLoadSequentialMode() && !fileManager.isLoadParallelMode()) {
 				FileManager::clearCustomLines(customLines);
 			}
 			return;  // Jangan lanjut ke hideAllShapes()

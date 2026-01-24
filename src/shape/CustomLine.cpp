@@ -93,6 +93,7 @@ void CustomLine::drawCurvedLine(vec2 start, vec2 end) const {
 	for (int j = 0; j <= segmentsToDraw; j++) {
 		float t = (float)j / segments;
 		// Quadratic bezier formula: (1-t)²p0 + 2(1-t)t*p1 + t²p2
+		// untuk curva yang smooth
 		vec2 point =
 			start * (1 - t) * (1 - t) +
 			controlPoint * 2 * (1 - t) * t +

@@ -6,6 +6,7 @@ const std::string FileManager::FILENAME = "custom_lines.bin";
 //--------------------------------------------------------------
 FileManager::FileManager()
     : loadSequentialMode(false)
+    , loadParallelMode(false)
     , currentLoadIndex(0)
     , loadSpeed(0.05f)
     , loadAccumulator(0.0f) {
@@ -105,12 +106,16 @@ bool FileManager::loadCustomLines(std::vector<CustomLine>& customLines) {
         data += sizeof(float);
         line.setCurve(curve);
 
-        // Set progress ke 1.0 (langsung lengkap, bukan animasi)
-        line.setProgress(1.0f);
+        // Set progress ke 0.0 untuk animasi parallel
+        line.setProgress(0.0f);
+        line.setSpeed(0.005f);  // Kecepatan animasi
 
         // Add ke vector
         customLines.push_back(line);
     }
+
+    // Enable parallel mode untuk animate semua lines barengan
+    loadParallelMode = true;
 
     return true;
 }
@@ -191,6 +196,27 @@ void FileManager::clearCustomLines(std::vector<CustomLine>& customLines) {
 
 //--------------------------------------------------------------
 void FileManager::updateSequentialLoad(std::vector<CustomLine>& customLines) {
+    // PARALLEL MODE: Update semua lines barengan
+    if (loadParallelMode) {
+        bool allComplete = true;
+
+        // Update progress semua lines
+        for (auto& line : customLines) {
+            line.updateProgress();
+            if (line.getProgress() < 1.0f) {
+                allComplete = false;
+            }
+        }
+
+        // Selesai parallel mode
+        if (allComplete) {
+            loadParallelMode = false;
+        }
+
+        return;
+    }
+
+    // SEQUENTIAL MODE: Update satu per satu (original logic)
     if (!loadSequentialMode) {
         return;
     }
@@ -246,6 +272,11 @@ void FileManager::updateSequentialLoad(std::vector<CustomLine>& customLines) {
 //--------------------------------------------------------------
 bool FileManager::isLoadSequentialMode() const {
     return loadSequentialMode;
+}
+
+//--------------------------------------------------------------
+bool FileManager::isLoadParallelMode() const {
+    return loadParallelMode;
 }
 
 //--------------------------------------------------------------

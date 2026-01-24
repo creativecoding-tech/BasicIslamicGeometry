@@ -26,6 +26,7 @@ public:
 
     // Getter untuk state
     bool isLoadSequentialMode() const;
+    bool isLoadParallelMode() const;
     int getCurrentLoadIndex() const;
     int getTotalLoadedLines() const;
 
@@ -34,8 +35,11 @@ public:
     float getLoadSpeed() const;
 
 private:
-    // Sequential load state
+    // Load state flags
     bool loadSequentialMode;
+    bool loadParallelMode;
+
+    // Sequential load state
     std::vector<CustomLine> loadedLinesBuffer;
     int currentLoadIndex;
     float loadSpeed;
