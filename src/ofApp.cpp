@@ -456,9 +456,15 @@ void ofApp::keyPressed(int key){
 	}
 
 	if (key == OF_KEY_DEL) {
-		// Hanya boleh hide jika TIDAK sedang sequential drawing
-		if (!sequentialMode) {
-			hideAllShapes();
+		if (isCtrlPressed) {
+			// CTRL+DEL: Clear semua custom lines
+			clearCustomLines();
+			return;  // Jangan lanjut ke hideAllShapes()
+		} else {
+			// DEL saja: Hide semua shapes (hanya jika TIDAK sequential drawing)
+			if (!sequentialMode) {
+				hideAllShapes();
+			}
 		}
 	}
 
@@ -634,6 +640,11 @@ void ofApp::saveCustomLines() {
 
 //--------------------------------------------------------------
 void ofApp::loadCustomLines() {
+	// Jangan load jika customLines sudah ada isinya (proteksi kerjaan yang sudah dibuat)
+	if (!customLines.empty()) {
+		return;
+	}
+
 	// Cek apakah file exists
 	ofFile file("custom_lines.bin");
 	if (!file.exists()) return;
@@ -672,6 +683,11 @@ void ofApp::loadCustomLines() {
 		// Add ke vector
 		customLines.push_back(line);
 	}
+}
+
+//--------------------------------------------------------------
+void ofApp::clearCustomLines() {
+	customLines.clear();
 }
 
 //--------------------------------------------------------------

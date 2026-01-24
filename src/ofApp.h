@@ -114,6 +114,7 @@ class ofApp : public ofBaseApp{
 		void undoLastLine();  // Undo last custom line (CTRL+Z)
 		void saveCustomLines();  // Save custom lines to binary file (CTRL+S)
 		void loadCustomLines();  // Load custom lines from binary file (CTRL+O)
+		void clearCustomLines();  // Clear all custom lines (CTRL+DEL)
 
 		void keyPressed(int key);
 		void keyReleased(int key);
