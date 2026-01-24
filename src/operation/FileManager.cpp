@@ -35,9 +35,10 @@ void FileManager::saveCustomLines(const std::vector<CustomLine>& customLines) {
             buffer.append(reinterpret_cast<const char*>(&point), sizeof(vec2));
         }
 
-        // Write color dan lineWidth
+        // Write color, lineWidth, dan curve
         buffer.append(reinterpret_cast<const char*>(&line.color), sizeof(ofColor));
         buffer.append(reinterpret_cast<const char*>(&line.lineWidth), sizeof(float));
+        buffer.append(reinterpret_cast<const char*>(&line.curve), sizeof(float));
     }
 
     // Write buffer ke file (selalu replace/overwrite)
@@ -89,6 +90,10 @@ bool FileManager::loadCustomLines(std::vector<CustomLine>& customLines) {
 
         // Read lineWidth
         line.lineWidth = *reinterpret_cast<float*>(data);
+        data += sizeof(float);
+
+        // Read curve
+        line.curve = *reinterpret_cast<float*>(data);
         data += sizeof(float);
 
         // Set progress ke 1.0 (langsung lengkap, bukan animasi)
@@ -145,6 +150,10 @@ void FileManager::loadCustomLinesSequential(std::vector<CustomLine>& customLines
 
         // Read lineWidth
         line.lineWidth = *reinterpret_cast<float*>(data);
+        data += sizeof(float);
+
+        // Read curve
+        line.curve = *reinterpret_cast<float*>(data);
         data += sizeof(float);
 
         // Set initial animation state

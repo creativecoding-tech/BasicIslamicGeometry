@@ -414,35 +414,67 @@ void ofApp::draw(){
 
 		ofSetLineWidth(customLines[i].lineWidth);
 
-		// Progressive drawing seperti CrossLine
+		// Gambar line (lurus atau curved)
 		if (customLines[i].points.size() >= 2) {
 			vec2 start = customLines[i].points[0];
 			vec2 end = customLines[i].points[1];
 
-			// Hitung angle dan distance untuk polar coordinates
-			float totalAngle = atan2(end.y - start.y, end.x - start.x);
-			float totalDistance = sqrt(pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
+			// Jika curve != 0, gambar bezier curve
+			if (customLines[i].curve != 0.0f) {
+				// Hitung control point untuk quadratic bezier
+				vec2 midPoint = (start + end) / 2.0f;
+				vec2 dir = end - start;
+				// Perpendicular vector (-y, x)
+				vec2 perp = vec2(-dir.y, dir.x);
+				// Normalize perpendicular
+				float perpLen = glm::length(perp);
+				if (perpLen > 0) {
+					perp = perp / perpLen;
+				}
+				// Control point = midpoint + curve * perpendicular
+				vec2 controlPoint = midPoint + perp * customLines[i].curve;
 
-			// Total segments untuk smooth animation
-			float totalSegments = 100.0f;
+				// Gambar bezier curve
+				ofPolyline bezierPoly;
+				int segments = 100;
+				int segmentsToDraw = static_cast<int>(segments * customLines[i].progress);
 
-			// Gambar polyline secara progressif
-			ofPolyline polyline;
-			int segmentsToDraw = static_cast<int>(totalSegments * customLines[i].progress);
+				for (int j = 0; j <= segmentsToDraw; j++) {
+					float t = (float)j / segments;
+					// Quadratic bezier formula: (1-t)²p0 + 2(1-t)t*p1 + t²p2
+					vec2 point =
+						start * (1 - t) * (1 - t) +
+						controlPoint * 2 * (1 - t) * t +
+						end * t * t;
+					bezierPoly.addVertex(point.x, point.y);
+				}
 
-			for (int j = 0; j <= segmentsToDraw; j++) {
-				float t = ofMap(j, 0, totalSegments, 0, 1);
-				float currentDist = totalDistance * t;
+				if (!bezierPoly.getVertices().empty()) {
+					bezierPoly.draw();
+				}
+			} else {
+				// Gambar lurus (polar coordinates)
+				float totalAngle = atan2(end.y - start.y, end.x - start.x);
+				float totalDistance = sqrt(pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
 
-				// Konversi polar ke cartesian
-				float x = start.x + cos(totalAngle) * currentDist;
-				float y = start.y + sin(totalAngle) * currentDist;
+				float totalSegments = 100.0f;
 
-				polyline.addVertex(x, y);
-			}
+				ofPolyline polyline;
+				int segmentsToDraw = static_cast<int>(totalSegments * customLines[i].progress);
 
-			if (!polyline.getVertices().empty()) {
-				polyline.draw();
+				for (int j = 0; j <= segmentsToDraw; j++) {
+					float t = ofMap(j, 0, totalSegments, 0, 1);
+					float currentDist = totalDistance * t;
+
+					float x = start.x + cos(totalAngle) * currentDist;
+					float y = start.y + sin(totalAngle) * currentDist;
+
+					polyline.addVertex(x, y);
+				}
+
+				if (!polyline.getVertices().empty()) {
+					polyline.draw();
+				}
 			}
 		}
 
@@ -837,6 +869,16 @@ void ofApp::mouseReleased(int x, int y, int button) {
 	// Clear dan reset state
 	currentPolylinePoints.clear();
 	drawState = IDLE;
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
+	// Update curve untuk garis yang sedang dipilih
+	if (selectedLineIndex >= 0 && selectedLineIndex < customLines.size()) {
+		// scrollY positif = scroll up, scrollY negatif = scroll down
+		float curveSpeed = 5.0f;  // Kecepatan perubahan curve
+		customLines[selectedLineIndex].curve += scrollY * curveSpeed;
+	}
 }
 
 //--------------------------------------------------------------

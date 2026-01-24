@@ -9,6 +9,7 @@ struct CustomLine {
     vector<vec2> points;  // Polyline dengan banyak titik (bukan cuma fromPos/toPos)
     ofColor color;
     float lineWidth;
+    float curve = 0.0f;   // Curvature untuk bezier curve (0 = lurus)
 
     // Animation progress (0.0 - 1.0) untuk sequential drawing
     // Tidak disimpan ke file, hanya untuk runtime
