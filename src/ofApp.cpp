@@ -401,7 +401,13 @@ void ofApp::draw(){
 	octagramLine6->draw();
 	octagramLine7->draw();
 
-	// Draw custom lines (user-created connections dengan polyline progressive)
+	// Draw custom lines dan UI elements
+	drawCustomLinesAndUI();
+}
+
+//--------------------------------------------------------------
+void ofApp::drawCustomLinesAndUI() {
+	// Draw custom lines
 	for (int i = 0; i < customLines.size(); i++) {
 		ofPushStyle();
 

@@ -94,6 +94,7 @@ class ofApp : public ofBaseApp{
 		void setupOctagramLine();
 		void update();
 		void draw();
+		void drawCustomLinesAndUI();  // Draw custom lines, curve label, preview, dan dot highlights
 
 		// Sequential drawing methods
 		void startSequentialDrawing();
