@@ -91,6 +91,9 @@ bool FileManager::loadCustomLines(std::vector<CustomLine>& customLines) {
         line.lineWidth = *reinterpret_cast<float*>(data);
         data += sizeof(float);
 
+        // Set progress ke 1.0 (langsung lengkap, bukan animasi)
+        line.progress = 1.0f;
+
         // Add ke vector
         customLines.push_back(line);
     }
@@ -144,6 +147,10 @@ void FileManager::loadCustomLinesSequential(std::vector<CustomLine>& customLines
         line.lineWidth = *reinterpret_cast<float*>(data);
         data += sizeof(float);
 
+        // Set initial animation state
+        line.progress = 0.0f;  // Mulai dari 0 (belum tergambar)
+        line.speed = 0.02f;     // Kecepatan animasi
+
         // Add ke buffer (BUKAN ke customLines!)
         loadedLinesBuffer.push_back(line);
     }
@@ -165,23 +172,53 @@ void FileManager::updateSequentialLoad(std::vector<CustomLine>& customLines) {
         return;
     }
 
-    // Akumulasi speed
-    loadAccumulator += loadSpeed;
-
-    // Ambil bagian integer dari accumulator
-    int linesToLoad = static_cast<int>(loadAccumulator);
-
-    // Kurangi accumulator dengan yang sudah diambil
-    loadAccumulator -= linesToLoad;
-
-    // Load lines
-    for (int i = 0; i < linesToLoad && currentLoadIndex < loadedLinesBuffer.size(); i++) {
-        customLines.push_back(loadedLinesBuffer[currentLoadIndex]);
-        currentLoadIndex++;
+    // Add line baru jika line terakhir sudah complete
+    bool canAddNewLine = false;
+    if (customLines.empty()) {
+        canAddNewLine = true;
+    } else {
+        // Cek apakah line terakhir sudah complete
+        CustomLine& lastLine = customLines.back();
+        if (lastLine.progress >= 1.0f && currentLoadIndex < static_cast<int>(loadedLinesBuffer.size())) {
+            canAddNewLine = true;
+        }
     }
 
-    // Cek apakah sudah selesai
-    if (currentLoadIndex >= static_cast<int>(loadedLinesBuffer.size())) {
+    // Add line baru dengan delay
+    if (canAddNewLine) {
+        loadAccumulator += loadSpeed;
+        if (loadAccumulator >= 1.0f && currentLoadIndex < static_cast<int>(loadedLinesBuffer.size())) {
+            customLines.push_back(loadedLinesBuffer[currentLoadIndex]);
+            currentLoadIndex++;
+            loadAccumulator = 0.0f;
+        }
+    }
+
+    // Update progress untuk semua lines yang belum complete
+    for (auto& line : customLines) {
+        if (line.progress < 1.0f) {
+            line.progress += line.speed;
+            if (line.progress > 1.0f) {
+                line.progress = 1.0f;  // Cap di 1.0
+            }
+        }
+    }
+
+    // Cek apakah sudah selesai (semua lines loaded dan semua complete)
+    bool allComplete = true;
+    if (currentLoadIndex < static_cast<int>(loadedLinesBuffer.size())) {
+        allComplete = false;  // Masih ada lines yang belum di-load
+    } else {
+        // Cek apakah semua lines sudah complete
+        for (const auto& line : customLines) {
+            if (line.progress < 1.0f) {
+                allComplete = false;
+                break;
+            }
+        }
+    }
+
+    if (allComplete) {
         loadSequentialMode = false;  // Selesai
         loadedLinesBuffer.clear();     // Bersihkan buffer
         loadAccumulator = 0.0f;        // Reset accumulator

@@ -401,18 +401,43 @@ void ofApp::draw(){
 	octagramLine6->draw();
 	octagramLine7->draw();
 
-	// Draw custom lines (user-created connections dengan polyline)
+	// Draw custom lines (user-created connections dengan polyline progressive)
 	for (auto& line : customLines) {
 		ofPushStyle();
 		ofSetColor(line.color);
 		ofSetLineWidth(line.lineWidth);
 
-		// Gambar polyline untuk smooth curve
-		ofPolyline polyline;
-		for (auto& point : line.points) {
-			polyline.addVertex(point.x, point.y);
+		// Progressive drawing seperti CrossLine
+		if (line.points.size() >= 2) {
+			vec2 start = line.points[0];
+			vec2 end = line.points[1];
+
+			// Hitung angle dan distance untuk polar coordinates
+			float totalAngle = atan2(end.y - start.y, end.x - start.x);
+			float totalDistance = sqrt(pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
+
+			// Total segments untuk smooth animation
+			float totalSegments = 100.0f;
+
+			// Gambar polyline secara progressif
+			ofPolyline polyline;
+			int segmentsToDraw = static_cast<int>(totalSegments * line.progress);
+
+			for (int i = 0; i <= segmentsToDraw; i++) {
+				float t = ofMap(i, 0, totalSegments, 0, 1);
+				float currentDist = totalDistance * t;
+
+				// Konversi polar ke cartesian
+				float x = start.x + cos(totalAngle) * currentDist;
+				float y = start.y + sin(totalAngle) * currentDist;
+
+				polyline.addVertex(x, y);
+			}
+
+			if (!polyline.getVertices().empty()) {
+				polyline.draw();
+			}
 		}
-		polyline.draw();
 
 		ofPopStyle();
 	}
@@ -611,20 +636,6 @@ bool ofApp::lineExists(vec2 from, vec2 to) {
 		}
 	}
 	return false;
-}
-
-void ofApp::drawDashedLine(vec2 start, vec2 end, int numDashes) {
-	vec2 diff = end - start;
-	float length = glm::length(diff);
-	if (length == 0) return;
-
-	vec2 dir = diff / length;
-
-	for (int i = 0; i < numDashes; i += 2) {
-		float t1 = (float)i / numDashes;
-		float t2 = (float)(i + 1) / numDashes;
-		ofDrawLine(start + dir * length * t1, start + dir * length * t2);
-	}
 }
 
 //--------------------------------------------------------------

@@ -108,7 +108,6 @@ class ofApp : public ofBaseApp{
 		vector<DotInfo> getAllDots();
 		bool isMouseOverDot(vec2 mousePos, vec2 dotPos);
 		bool lineExists(vec2 from, vec2 to);
-		void drawDashedLine(vec2 start, vec2 end, int numDashes = 10);
 		void undoLastLine();  // Undo last custom line (CTRL+Z)
 
 		void keyPressed(int key);

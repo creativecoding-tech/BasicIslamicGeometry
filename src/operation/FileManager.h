@@ -9,6 +9,11 @@ struct CustomLine {
     vector<vec2> points;  // Polyline dengan banyak titik (bukan cuma fromPos/toPos)
     ofColor color;
     float lineWidth;
+
+    // Animation progress (0.0 - 1.0) untuk sequential drawing
+    // Tidak disimpan ke file, hanya untuk runtime
+    float progress = 1.0f;  // Default 1.0 = sudah lengkap
+    float speed = 0.02f;    // Kecepatan animasi per line
 };
 
 class FileManager {
