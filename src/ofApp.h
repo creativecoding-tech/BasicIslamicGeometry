@@ -112,6 +112,8 @@ class ofApp : public ofBaseApp{
 		bool lineExists(vec2 from, vec2 to);
 		void drawDashedLine(vec2 start, vec2 end, int numDashes = 10);
 		void undoLastLine();  // Undo last custom line (CTRL+Z)
+		void saveCustomLines();  // Save custom lines to binary file (CTRL+S)
+		void loadCustomLines();  // Load custom lines from binary file (CTRL+O)
 
 		void keyPressed(int key);
 		void keyReleased(int key);

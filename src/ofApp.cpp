@@ -492,13 +492,25 @@ void ofApp::keyPressed(int key){
 		return;  // Jangan lanjut ke logic lain
 	}
 
-	// Handle Z ditekan saat CTRL aktif - gunakan switch-case
+	// Handle tombol saat CTRL aktif - gunakan switch-case
 	if (isCtrlPressed) {
 		switch(key) {
 			case 'z':
 			case 'Z':
-			case 26:  // CTRL+Z combination (ASCII 26)
+			case 26:  // CTRL+Z (ASCII 26)
 				undoLastLine();
+				break;
+
+			case 's':
+			case 'S':
+			case 19:  // CTRL+S (ASCII 19)
+				saveCustomLines();
+				break;
+
+			case 'o':
+			case 'O':
+			case 15:  // CTRL+O (ASCII 15)
+				loadCustomLines();
 				break;
 		}
 	}
@@ -593,6 +605,72 @@ void ofApp::undoLastLine() {
 	// Hapus garis terakhir yang dibuat user
 	if (!customLines.empty()) {
 		customLines.pop_back();
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::saveCustomLines() {
+	// Cek apakah ada lines untuk disimpan
+	if (customLines.empty()) return;  // Tidak create file jika kosong
+	
+
+	ofBuffer buffer;
+
+	// Write jumlah line dulu
+	int size = static_cast<int>(customLines.size());
+	buffer.append(reinterpret_cast<char*>(&size), sizeof(int));
+
+	// Write setiap line dalam binary format
+	for (auto& line : customLines) {
+		buffer.append(reinterpret_cast<char*>(&line.fromPos), sizeof(vec2));
+		buffer.append(reinterpret_cast<char*>(&line.toPos), sizeof(vec2));
+		buffer.append(reinterpret_cast<char*>(&line.color), sizeof(ofColor));
+		buffer.append(reinterpret_cast<char*>(&line.lineWidth), sizeof(float));
+	}
+
+	// Write buffer ke file (selalu replace/overwrite)
+	ofBufferToFile("custom_lines.bin", buffer);
+}
+
+//--------------------------------------------------------------
+void ofApp::loadCustomLines() {
+	// Cek apakah file exists
+	ofFile file("custom_lines.bin");
+	if (!file.exists()) return;
+
+	// Read file ke buffer
+	ofBuffer buffer = ofBufferFromFile("custom_lines.bin");
+	char* data = buffer.getData();
+
+	// Read jumlah line
+	int size = *reinterpret_cast<int*>(data);
+	data += sizeof(int);
+
+	// Clear existing lines
+	customLines.clear();
+
+	// Read setiap line
+	for (int i = 0; i < size; i++) {
+		CustomLine line;
+
+		// Read fromPos
+		line.fromPos = *reinterpret_cast<vec2*>(data);
+		data += sizeof(vec2);
+
+		// Read toPos
+		line.toPos = *reinterpret_cast<vec2*>(data);
+		data += sizeof(vec2);
+
+		// Read color
+		line.color = *reinterpret_cast<ofColor*>(data);
+		data += sizeof(ofColor);
+
+		// Read lineWidth
+		line.lineWidth = *reinterpret_cast<float*>(data);
+		data += sizeof(float);
+
+		// Add ke vector
+		customLines.push_back(line);
 	}
 }
 
