@@ -358,30 +358,8 @@ void ofApp::update(){
 		updateSequentialDrawing();
 	}
 
-	// Update sequential load logic
-	if (loadSequentialMode) {
-		// Akumulasi speed
-		loadAccumulator += loadSpeed;
-
-		// Ambil bagian integer dari accumulator
-		int linesToLoad = static_cast<int>(loadAccumulator);
-
-		// Kurangi accumulator dengan yang sudah diambil
-		loadAccumulator -= linesToLoad;
-
-		// Load lines
-		for (int i = 0; i < linesToLoad && currentLoadIndex < loadedLinesBuffer.size(); i++) {
-			customLines.push_back(loadedLinesBuffer[currentLoadIndex]);
-			currentLoadIndex++;
-		}
-
-		// Cek apakah sudah selesai
-		if (currentLoadIndex >= loadedLinesBuffer.size()) {
-			loadSequentialMode = false;  // Selesai
-			loadedLinesBuffer.clear();     // Bersihkan buffer
-			loadAccumulator = 0.0f;        // Reset accumulator
-		}
-	}
+	// Update sequential load logic dari FileManager
+	fileManager.updateSequentialLoad(customLines);
 }
 
 //--------------------------------------------------------------
@@ -483,7 +461,7 @@ void ofApp::keyPressed(int key){
 	if (key == OF_KEY_DEL) {
 		if (isCtrlPressed) {
 			// CTRL+DEL: Clear semua custom lines
-			clearCustomLines();
+			FileManager::clearCustomLines(customLines);
 			return;  // Jangan lanjut ke hideAllShapes()
 		} else {
 			// DEL saja: Hide semua shapes (hanya jika TIDAK sequential drawing)
@@ -535,7 +513,7 @@ void ofApp::keyPressed(int key){
 			case 's':
 			case 'S':
 			case 19:  // CTRL+S (ASCII 19)
-				saveCustomLines();
+				fileManager.saveCustomLines(customLines);
 				break;
 
 			case 'o':
@@ -543,9 +521,9 @@ void ofApp::keyPressed(int key){
 			case 15:  // CTRL+O (ASCII 15)
 				// Cek apakah SHIFT juga ditekan
 				if (ofGetKeyPressed(OF_KEY_SHIFT)) {
-					loadCustomLinesSequential();  // Sequential load dengan animasi
+					fileManager.loadCustomLinesSequential(customLines);  // Sequential load dengan animasi
 				} else {
-					loadCustomLines();  // Load semua sekaligus
+					fileManager.loadCustomLines(customLines);  // Load semua sekaligus
 				}
 				break;
 		}
@@ -645,131 +623,7 @@ void ofApp::undoLastLine() {
 }
 
 //--------------------------------------------------------------
-void ofApp::saveCustomLines() {
-	// Cek apakah ada lines untuk disimpan
-	if (customLines.empty()) return;  // Tidak create file jika kosong
-	
-
-	ofBuffer buffer;
-
-	// Write jumlah line dulu
-	int size = static_cast<int>(customLines.size());
-	buffer.append(reinterpret_cast<char*>(&size), sizeof(int));
-
-	// Write setiap line dalam binary format
-	for (auto& line : customLines) {
-		buffer.append(reinterpret_cast<char*>(&line.fromPos), sizeof(vec2));
-		buffer.append(reinterpret_cast<char*>(&line.toPos), sizeof(vec2));
-		buffer.append(reinterpret_cast<char*>(&line.color), sizeof(ofColor));
-		buffer.append(reinterpret_cast<char*>(&line.lineWidth), sizeof(float));
-	}
-
-	// Write buffer ke file (selalu replace/overwrite)
-	ofBufferToFile("custom_lines.bin", buffer);
-}
-
-//--------------------------------------------------------------
-void ofApp::loadCustomLines() {
-	// Jangan load jika customLines sudah ada isinya (proteksi kerjaan yang sudah dibuat)
-	if (!customLines.empty()) {
-		return;
-	}
-
-	// Cek apakah file exists
-	ofFile file("custom_lines.bin");
-	if (!file.exists()) return;
-
-	// Read file ke buffer
-	ofBuffer buffer = ofBufferFromFile("custom_lines.bin");
-	char* data = buffer.getData();
-
-	// Read jumlah line
-	int size = *reinterpret_cast<int*>(data);
-	data += sizeof(int);
-
-	// Clear existing lines
-	customLines.clear();
-
-	// Read setiap line
-	for (int i = 0; i < size; i++) {
-		CustomLine line;
-
-		// Read fromPos
-		line.fromPos = *reinterpret_cast<vec2*>(data);
-		data += sizeof(vec2);
-
-		// Read toPos
-		line.toPos = *reinterpret_cast<vec2*>(data);
-		data += sizeof(vec2);
-
-		// Read color
-		line.color = *reinterpret_cast<ofColor*>(data);
-		data += sizeof(ofColor);
-
-		// Read lineWidth
-		line.lineWidth = *reinterpret_cast<float*>(data);
-		data += sizeof(float);
-
-		// Add ke vector
-		customLines.push_back(line);
-	}
-}
-
-//--------------------------------------------------------------
-void ofApp::clearCustomLines() {
-	customLines.clear();
-}
-
-//--------------------------------------------------------------
-void ofApp::loadCustomLinesSequential() {
-	// Cek apakah ada isinya dulu (proteksi kerjaan yang sudah dibuat)
-	if (!customLines.empty()) {
-		return;
-	}
-
-	// Cek apakah file exists
-	ofFile file("custom_lines.bin");
-	if (!file.exists()) return;
-
-	// Baca file ke buffer
-	ofBuffer buffer = ofBufferFromFile("custom_lines.bin");
-	char* data = buffer.getData();
-
-	// Read jumlah line
-	int size = *reinterpret_cast<int*>(data);
-	data += sizeof(int);
-
-	// Simpan SEMUA lines ke loadedLinesBuffer
-	loadedLinesBuffer.clear();
-
-	for (int i = 0; i < size; i++) {
-		CustomLine line;
-
-		// Read fromPos
-		line.fromPos = *reinterpret_cast<vec2*>(data);
-		data += sizeof(vec2);
-
-		// Read toPos
-		line.toPos = *reinterpret_cast<vec2*>(data);
-		data += sizeof(vec2);
-
-		// Read color
-		line.color = *reinterpret_cast<ofColor*>(data);
-		data += sizeof(ofColor);
-
-		// Read lineWidth
-		line.lineWidth = *reinterpret_cast<float*>(data);
-		data += sizeof(float);
-
-		// Add ke buffer (BUKAN ke customLines!)
-		loadedLinesBuffer.push_back(line);
-	}
-
-	// Reset index dan mulai mode sequential
-	currentLoadIndex = 0;
-	loadAccumulator = 0.0f;  // Reset accumulator
-	loadSequentialMode = true;
-}
+// File operations sekarang ditangani oleh FileManager class
 
 //--------------------------------------------------------------
 // Mouse Event Handlers

@@ -7,6 +7,7 @@
 #include "shape/ParallelogramLine.h"
 #include "shape/RectangleLine.h"
 #include "shape/OctagramLine.h"
+#include "operation/FileManager.h"
 using glm::vec2;
 class ofApp : public ofBaseApp{
 
@@ -50,13 +51,6 @@ class ofApp : public ofBaseApp{
 		ofTrueTypeFont fontNormal;  // Font untuk custom line labels
 
 		// Interactive Line Creation
-		struct CustomLine {
-			vec2 fromPos;
-			vec2 toPos;
-			ofColor color;
-			float lineWidth;
-		};
-
 		struct DotInfo {
 			vec2 position;
 			string shapeType;
@@ -70,7 +64,7 @@ class ofApp : public ofBaseApp{
 		DrawState drawState = IDLE;
 		vec2 startDotPos = vec2(0, 0);
 		vec2 mousePos = vec2(0, 0);
-		vector<CustomLine> customLines;
+		vector<CustomLine> customLines;  // CustomLine dari FileManager
 
 		// Line width control
 		float currentLineWidth = 4.0f;  // Current line width
@@ -83,12 +77,8 @@ class ofApp : public ofBaseApp{
 		float threshold = 10.0f; //radius atau besaran saat mouse hover pada dot
 		bool isCtrlPressed = false;
 
-		// Sequential load from file (CTRL+SHIFT+O)
-		bool loadSequentialMode = false;           // Mode sequential load
-		vector<CustomLine> loadedLinesBuffer;       // Buffer untuk menyimpan lines dari file
-		int currentLoadIndex = 0;                   // Index line yang sedang di-load
-		float loadSpeed = 0.05f;                     // Speed untuk sequential load (lines per frame)
-		float loadAccumulator = 0.0f;              // Akumulator untuk presisi speed
+		// File Manager untuk save/load custom lines
+		FileManager fileManager;
 
 		void setup();
 		void setupCircles();
@@ -118,10 +108,6 @@ class ofApp : public ofBaseApp{
 		bool lineExists(vec2 from, vec2 to);
 		void drawDashedLine(vec2 start, vec2 end, int numDashes = 10);
 		void undoLastLine();  // Undo last custom line (CTRL+Z)
-		void saveCustomLines();  // Save custom lines to binary file (CTRL+S)
-		void loadCustomLines();  // Load custom lines from binary file (CTRL+O)
-		void loadCustomLinesSequential();  // Load custom lines sequentially with animation (CTRL+SHIFT+O)
-		void clearCustomLines();  // Clear all custom lines (CTRL+DEL)
 
 		void keyPressed(int key);
 		void keyReleased(int key);
@@ -134,5 +120,5 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-		
+
 };
