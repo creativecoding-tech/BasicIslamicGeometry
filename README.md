@@ -41,6 +41,9 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Rectangle Lines** - 4 garis pembentuk rectangle (F→G, G→I, I→H, H→F) dengan 2 dot di intersection
 - **Octagram Lines** - 8 garis pembentuk pola octagram (8-point star) dengan 2 segment per line (main + extension)
 - **Polar Thinking** - Perhitungan posisi menggunakan trigonometri (cos, sin, atan2) untuk scalability
+- **Scalable Dot Positions System** - Semua dot positions diambil langsung dari shape objects (Circle.posX/Y, CrossLine.radiusDot, Parallelogram.intersecCrossLine, Rectangle.intersec1/2, Octagram.end) tanpa hardcoded values
+- **Performance Optimization - Cached Dots** - Sistem lazy cache untuk getAllDots() dengan dirty flag, hanya rebuild saat visibility berubah (reduce dari 180 vector copies/detik menjadi 0)
+- **CrossLine radiusDot Attribute** - CrossLine menyimpan posisi dot pada radius di `vec2 radiusDot`, dihitung sekali di constructor, auto-sync saat setStart/setEnd
 - **Sequential Drawing Mode** - Animasi drawing berurutan dari satu shape ke shape berikutnya
 - **Animated Drawing** - Semua shape digambar dengan animasi smooth (100 segments, 0.5 speed)
 - **Bidirectional Animation** - Animasi muncul (show) dan hilang (hide) dengan smoothing
@@ -239,6 +242,62 @@ vec2 controlPoint = midPoint + perp * curve;
 - **Flexible**: Dengan adjust control point, bisa buat berbagai bentuk lengkungan
 - **Parametric**: Mudah di-animate dengan parameter t (0 → 1)
 
+### Scalable Dot Positions System
+
+Semua dot positions (intersection points) sekarang **fully scalable** dan diambil langsung dari shape objects, **TANPA hardcoded values**. Ini memastikan ketika `radiusCircle` berubah, semua posisi dot otomatis menyesuaikan.
+
+**Circle Centers:**
+```cpp
+// Ambil langsung dari CircleShape objects (SCALABLE!)
+cachedDots.push_back({vec2(circleA->posX, circleA->posY), "Circle"});
+cachedDots.push_back({vec2(circleB->posX, circleB->posY), "Circle"});
+// ... dan seterusnya
+```
+
+**CrossLine Dots:**
+```cpp
+// CrossLine sekarang punya attribute `radiusDot` untuk posisi dot pada radius
+class CrossLine {
+    vec2 start;
+    vec2 end;
+    float radius;
+    vec2 radiusDot;  // ← Posisi dot pada radius (SCALABLE!)
+};
+
+// Di constructor, hitung radiusDot sekali saja:
+float totalAngle = atan2(end.y - start.y, end.x - start.x);
+radiusDot = vec2(cos(totalAngle) * radius, sin(totalAngle) * radius);
+
+// Ambil langsung dari CrossLine objects (SCALABLE!)
+cachedDots.push_back({crossLineF->radiusDot, "CrossLine"});  // Dot pada radius
+cachedDots.push_back({crossLineF->end, "CrossLine"});        // Dot endpoint
+```
+
+**Parallelogram Intersections:**
+```cpp
+// Ambil langsung dari ParallelogramLine objects (SCALABLE!)
+cachedDots.push_back({parallelogramCtoE->intersecCrossLine, "Parallelogram"});
+```
+
+**Rectangle Intersections:**
+```cpp
+// Ambil langsung dari RectangleLine objects (SCALABLE!)
+cachedDots.push_back({rectangleLineFtoG->intersec1, "Rectangle"});
+cachedDots.push_back({rectangleLineFtoG->intersec2, "Rectangle"});
+```
+
+**Octagram Endpoints:**
+```cpp
+// Ambil langsung dari OctagramLine objects (SCALABLE!)
+cachedDots.push_back({octagramLine0->end, "Octagram"});
+```
+
+**Keuntungan Scalable System:**
+- **No Hardcoded Values**: Semua posisi diambil dari shape object attributes
+- **Automatic Adjustment**: Ketika `radiusCircle` berubah, semua dot positions ikut berubah
+- **Future-Proof**: Mudah untuk mengubah posisi shape tanpa update hardcoded values
+- **Consistent**: Semua shapes follow pattern yang sama untuk dot positions
+
 ### Angle Labels pada CartesianAxes
 
 CartesianAxes menampilkan label sudut di setiap ujung sumbu dengan format **radians (degrees)**:
@@ -360,6 +419,9 @@ Branch ini adalah **eksperimen mouse interaction** pada BasicIslamicGeometry den
 ✅ **Rectangle Lines**: 4 garis pembentuk rectangle (F→G, G→I, I→H, H→F) dengan 2 dot di intersection
 ✅ **Octagram Lines**: 8 garis pembentuk pola octagram (0, 1, 2, 3, 4, 5, 6, 7) dengan 2 segment per line
 ✅ **Polar Thinking**: Perhitungan posisi dan intersection menggunakan trigonometri untuk scalability
+✅ **Scalable Dot Positions**: Semua dot positions diambil langsung dari shape objects, TANPA hardcoded values (fully scalable terhadap radiusCircle)
+✅ **CrossLine radiusDot Attribute**: CrossLine sekarang punya `vec2 radiusDot` untuk menyimpan posisi dot pada radius (computed once in constructor, auto-sync dengan setStart/setEnd)
+✅ **Performance Optimization - Cached Dots**: Sistem cache untuk getAllDots() mengurangi vector copy dari 180x per detik menjadi 0x (hanya rebuild saat visibility berubah)
 ✅ **Scalable Intersections**: Semua intersection point dihitung dengan rumus geometric yang scalable terhadap radiusCircle
 ✅ **Bidirectional Animation**: Animasi muncul (show) dan hilang (hide) dengan smoothing
 ✅ **Two-Phase Animation System**: OctagramLine memiliki 2 mode animation (sequential & paralel)

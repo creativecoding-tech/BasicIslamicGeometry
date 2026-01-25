@@ -495,11 +495,17 @@ void ofApp::keyPressed(int key){
 	}
 
 	if (key == OF_KEY_BACKSPACE) {
-		// Toggle CartesianAxes visibility
-		if (cartesianAxes->showing) {
-			cartesianAxes->hide();
+		// Jika ada customLine yang terselect, hapus customLine tersebut
+		if (selectedLineIndex != -1) {
+			customLines.erase(customLines.begin() + selectedLineIndex);
+			selectedLineIndex = -1;  // Reset selection
 		} else {
-			cartesianAxes->show();
+			// Jika tidak ada customLine terselect, toggle CartesianAxes
+			if (cartesianAxes->showing) {
+				cartesianAxes->hide();
+			} else {
+				cartesianAxes->show();
+			}
 		}
 	}
 
