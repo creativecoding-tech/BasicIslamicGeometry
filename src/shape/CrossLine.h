@@ -15,6 +15,7 @@ public:
 	string label1 = "";
 	string label2 = "";
 	float radius;  // Radius untuk dot position
+	vec2 radiusDot;  // Posisi dot pada radius (intersection point)
 
 	CrossLine(vec2 start, vec2 end, string label1, string label2, float radius);
 

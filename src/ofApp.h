@@ -83,6 +83,10 @@ class ofApp : public ofBaseApp{
 		float threshold = 10.0f; //dalam radius saat mouse hover pada dot
 		bool isCtrlPressed = false;
 
+		// Cached dots untuk performance
+		vector<DotInfo> cachedDots;
+		bool dotsCacheDirty = true;  // Flag untuk rebuild cache
+
 		// File Manager untuk save/load custom lines
 		FileManager fileManager;
 
@@ -110,7 +114,8 @@ class ofApp : public ofBaseApp{
 		void increaseLineWidth();       // Tambah line width
 
 		// Interactive Line Creation helpers
-		vector<DotInfo> getAllDots();
+		const vector<DotInfo>& getAllDots();  // Return cached dots by reference
+		void updateDotsCache();  // Rebuild dots cache saat visibility berubah
 		bool isMouseOverDot(vec2 mousePos, vec2 dotPos);
 		bool isMouseOverLine(vec2 mousePos, vec2 lineStart, vec2 lineEnd, float lineWidth);
 		float distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd, float curve = 0.0f);

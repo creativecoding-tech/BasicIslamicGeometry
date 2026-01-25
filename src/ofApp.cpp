@@ -21,6 +21,9 @@ void ofApp::setup(){
 	setupParallelograms();
 	setupRectangleLine();
 	setupOctagramLine();
+
+	// Initial dots cache build (cache di-build saat pertama kali getAllDots() dipanggil)
+	dotsCacheDirty = true;
 }
 
 //--------------------------------------------------------------
@@ -552,70 +555,81 @@ void ofApp::keyPressed(int key){
 
 //--------------------------------------------------------------
 // Interactive Line Creation Helpers
-vector<ofApp::DotInfo> ofApp::getAllDots() {
-	vector<DotInfo> dots;
+void ofApp::updateDotsCache() {
+	cachedDots.clear();
 
 	// Hanya tambahkan dots jika shape-nya visible (showing == true)
 
-	// Circle centers - cek visibility salah satu circle
+	// Circle centers - ambil langsung dari CircleShape objects
 	if (circleA && circleA->showing) {
-		dots.push_back({vec2(0, 0), "Circle"});
-		dots.push_back({vec2(radiusCircle, 0), "Circle"});
-		dots.push_back({vec2(-radiusCircle, 0), "Circle"});
-		dots.push_back({vec2(0, radiusCircle), "Circle"});
-		dots.push_back({vec2(0, -radiusCircle), "Circle"});
+		cachedDots.push_back({vec2(circleA->posX, circleA->posY), "Circle"});
+		cachedDots.push_back({vec2(circleB->posX, circleB->posY), "Circle"});
+		cachedDots.push_back({vec2(circleC->posX, circleC->posY), "Circle"});
+		cachedDots.push_back({vec2(circleD->posX, circleD->posY), "Circle"});
+		cachedDots.push_back({vec2(circleE->posX, circleE->posY), "Circle"});
 	}
 
-	// CrossLine dots - cek visibility salah satu crossLine
+	// CrossLine dots - ambil radiusDot yang sudah dihitung di draw() (SCALABLE!)
 	if (crossLineF && crossLineF->showing) {
 		// F, G, H, I pada radius
-		dots.push_back({vec2(-170, -170), "CrossLine"});
-		dots.push_back({vec2(170, -170), "CrossLine"});
-		dots.push_back({vec2(170, 170), "CrossLine"});
-		dots.push_back({vec2(-170, 170), "CrossLine"});
+		cachedDots.push_back({crossLineF->radiusDot, "CrossLine"});
+		cachedDots.push_back({crossLineG->radiusDot, "CrossLine"});
+		cachedDots.push_back({crossLineH->radiusDot, "CrossLine"});
+		cachedDots.push_back({crossLineI->radiusDot, "CrossLine"});
 
 		// J, K, L, M ends
-		dots.push_back({vec2(-240, -240), "CrossLine"});
-		dots.push_back({vec2(240, -240), "CrossLine"});
-		dots.push_back({vec2(240, 240), "CrossLine"});
-		dots.push_back({vec2(-240, 240), "CrossLine"});
+		cachedDots.push_back({crossLineF->end, "CrossLine"});
+		cachedDots.push_back({crossLineG->end, "CrossLine"});
+		cachedDots.push_back({crossLineH->end, "CrossLine"});
+		cachedDots.push_back({crossLineI->end, "CrossLine"});
 	}
 
-	// Parallelogram intersections - cek visibility salah satu parallelogram
+	// Parallelogram intersections - ambil langsung dari ParallelogramLine objects (SCALABLE!)
 	if (parallelogramCtoE && parallelogramCtoE->showing) {
-		dots.push_back({vec2(-120, -120), "Parallelogram"});
-		dots.push_back({vec2(120, -120), "Parallelogram"});
-		dots.push_back({vec2(120, 120), "Parallelogram"});
-		dots.push_back({vec2(-120, 120), "Parallelogram"});
+		cachedDots.push_back({parallelogramCtoE->intersecCrossLine, "Parallelogram"});
+		cachedDots.push_back({parallelogramEtoB->intersecCrossLine, "Parallelogram"});
+		cachedDots.push_back({parallelogramBtoD->intersecCrossLine, "Parallelogram"});
+		cachedDots.push_back({parallelogramDtoC->intersecCrossLine, "Parallelogram"});
 	}
 
-	// Rectangle intersections - cek visibility salah satu rectangle
+	// Rectangle intersections - ambil langsung dari RectangleLine objects (SCALABLE!)
 	if (rectangleLineFtoG && rectangleLineFtoG->showing) {
-		dots.push_back({vec2(-70, -170), "Rectangle"});
-		dots.push_back({vec2(70, -170), "Rectangle"});
-		dots.push_back({vec2(170, -70), "Rectangle"});
-		dots.push_back({vec2(170, 70), "Rectangle"});
-		dots.push_back({vec2(70, 170), "Rectangle"});
-		dots.push_back({vec2(-70, 170), "Rectangle"});
-		dots.push_back({vec2(-170, 70), "Rectangle"});
-		dots.push_back({vec2(-170, -70), "Rectangle"});
+		cachedDots.push_back({rectangleLineFtoG->intersec1, "Rectangle"});
+		cachedDots.push_back({rectangleLineFtoG->intersec2, "Rectangle"});
+		cachedDots.push_back({rectangleLineGtoI->intersec1, "Rectangle"});
+		cachedDots.push_back({rectangleLineGtoI->intersec2, "Rectangle"});
+		cachedDots.push_back({rectangleLineItoH->intersec1, "Rectangle"});
+		cachedDots.push_back({rectangleLineItoH->intersec2, "Rectangle"});
+		cachedDots.push_back({rectangleLineHtoF->intersec1, "Rectangle"});
+		cachedDots.push_back({rectangleLineHtoF->intersec2, "Rectangle"});
 	}
 
-	// Octagram endpoints - cek visibility salah satu octagram
+	// Octagram endpoints - ambil langsung dari OctagramLine objects (SCALABLE!)
 	if (octagramLine0 && octagramLine0->showing) {
-		dots.push_back({vec2(170, -410), "Octagram"});
-		dots.push_back({vec2(410, -170), "Octagram"});
-		dots.push_back({vec2(410, 170), "Octagram"});
-		dots.push_back({vec2(170, 410), "Octagram"});
-		dots.push_back({vec2(-170, 410), "Octagram"});
-		dots.push_back({vec2(-410, 170), "Octagram"});
-		dots.push_back({vec2(-410, -170), "Octagram"});
-		dots.push_back({vec2(-170, -410), "Octagram"});
+		cachedDots.push_back({octagramLine0->end, "Octagram"});
+		cachedDots.push_back({octagramLine1->end, "Octagram"});
+		cachedDots.push_back({octagramLine2->end, "Octagram"});
+		cachedDots.push_back({octagramLine3->end, "Octagram"});
+		cachedDots.push_back({octagramLine4->end, "Octagram"});
+		cachedDots.push_back({octagramLine5->end, "Octagram"});
+		cachedDots.push_back({octagramLine6->end, "Octagram"});
+		cachedDots.push_back({octagramLine7->end, "Octagram"});
 	}
 
-	return dots;
+	dotsCacheDirty = false;
 }
 
+//--------------------------------------------------------------
+const vector<ofApp::DotInfo>& ofApp::getAllDots() {
+	// Lazy update cache kalau dirty
+	if (dotsCacheDirty) {
+		updateDotsCache();
+	}
+
+	return cachedDots;  // Return reference, tidak copy
+}
+
+//--------------------------------------------------------------
 bool ofApp::isMouseOverDot(vec2 mousePos, vec2 dotPos) {
 	//Euclidean distance
 	//ukuran jarak antara 2 titik
@@ -1240,6 +1254,9 @@ void ofApp::hideAllShapes() {
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
+
+	// Mark dots cache dirty karena visibility berubah
+	dotsCacheDirty = true;
 }
 
 //--------------------------------------------------------------
@@ -1284,6 +1301,9 @@ void ofApp::showAllShapes() {
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
+
+	// Mark dots cache dirty karena visibility berubah
+	dotsCacheDirty = true;
 }
 
 //--------------------------------------------------------------
