@@ -11,6 +11,9 @@ void ofApp::setup(){
 	ofEnableSmoothing();
 	ofHideCursor();
 
+	// Load font untuk custom line labels
+	fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
+
 	// Call modular setup methods
 	setupCircles();
 	setupCartesianAxes();
@@ -18,6 +21,9 @@ void ofApp::setup(){
 	setupParallelograms();
 	setupRectangleLine();
 	setupOctagramLine();
+
+	// Initial dots cache build (cache di-build saat pertama kali getAllDots() dipanggil)
+	dotsCacheDirty = true;
 }
 
 //--------------------------------------------------------------
@@ -354,6 +360,9 @@ void ofApp::update(){
 	if (sequentialMode) {
 		updateSequentialDrawing();
 	}
+
+	// Update sequential load logic dari FileManager
+	fileManager.updateSequentialLoad(customLines);
 }
 
 //--------------------------------------------------------------
@@ -394,6 +403,61 @@ void ofApp::draw(){
 	octagramLine5->draw();
 	octagramLine6->draw();
 	octagramLine7->draw();
+
+	// Draw custom lines dan UI elements
+	drawCustomLinesAndUI();
+}
+
+//--------------------------------------------------------------
+void ofApp::drawCustomLinesAndUI() {
+	// Update selection state dan draw semua custom lines
+	for (int i = 0; i < customLines.size(); i++) {
+		customLines[i].setSelected(i == selectedLineIndex);
+		customLines[i].draw();
+	}
+
+	// Draw curve value label untuk garis yang selected
+	if (selectedLineIndex >= 0 && selectedLineIndex < customLines.size()) {
+		const CustomLine& line = customLines[selectedLineIndex];
+		if (line.getPoints().size() >= 2) {
+			vec2 midPoint = (line.getPoints()[0] + line.getPoints()[1]) / 2.0f;
+
+			ofPushStyle();
+			ofSetColor(0, 0, 0);  // Hitam untuk label
+			fontNormal.drawString("Curve: " + ofToString(line.getCurve(), 1), midPoint.x + 10, midPoint.y - 10);
+			ofPopStyle();
+		}
+	}
+
+	// Draw preview polyline (sedang drag)
+	if (drawState == DRAGGING && currentPolylinePoints.size() > 1) {
+		ofPushStyle();
+		ofSetColor(0, 0, 255, 150);  // Biru transparan
+		ofSetLineWidth(mouseLineWidth);  // Pakai mouseLineWidth untuk preview
+
+		// Gambar preview polyline
+		ofPolyline previewPolyline;
+		for (auto& point : currentPolylinePoints) {
+			previewPolyline.addVertex(point.x, point.y);
+		}
+		previewPolyline.draw();
+
+		ofPopStyle();
+	}
+
+	// Draw dot highlights (hover state) - HANYA ketika TIDAK sedang drag DAN dots visible
+	if (drawState != DRAGGING && dotsVisible) {
+		vector<DotInfo> dots = getAllDots();
+		for (auto& dot : dots) {
+			if (isMouseOverDot(mousePos, dot.position)) {
+				// Highlight dot
+				ofPushStyle();
+				ofSetColor(255, 0, 0, 200);  // Red highlight
+				ofDrawCircle(dot.position, threshold);  // Larger circle
+				ofPopStyle();
+			}
+		}
+	}
 }
 
 //--------------------------------------------------------------
@@ -416,18 +480,32 @@ void ofApp::keyPressed(int key){
 	}
 
 	if (key == OF_KEY_DEL) {
-		// Hanya boleh hide jika TIDAK sedang sequential drawing
-		if (!sequentialMode) {
-			hideAllShapes();
+		if (isCtrlPressed) {
+			// CTRL+DEL: Clear semua custom lines - HANYA jika TIDAK sedang load
+			if (!fileManager.isLoadSequentialMode() && !fileManager.isLoadParallelMode()) {
+				FileManager::clearCustomLines(customLines);
+			}
+			return;  // Jangan lanjut ke hideAllShapes()
+		} else {
+			// DEL saja: Hide semua shapes (hanya jika TIDAK sequential drawing)
+			if (!sequentialMode) {
+				hideAllShapes();
+			}
 		}
 	}
 
 	if (key == OF_KEY_BACKSPACE) {
-		// Toggle CartesianAxes visibility
-		if (cartesianAxes->showing) {
-			cartesianAxes->hide();
+		// Jika ada customLine yang terselect, hapus customLine tersebut
+		if (selectedLineIndex != -1) {
+			customLines.erase(customLines.begin() + selectedLineIndex);
+			selectedLineIndex = -1;  // Reset selection
 		} else {
-			cartesianAxes->show();
+			// Jika tidak ada customLine terselect, toggle CartesianAxes
+			if (cartesianAxes->showing) {
+				cartesianAxes->hide();
+			} else {
+				cartesianAxes->show();
+			}
 		}
 	}
 
@@ -445,59 +523,403 @@ void ofApp::keyPressed(int key){
 	if (key == '+' || key == '=') {
 		increaseLineWidth();
 	}
+
+	// Handle CTRL key ditekan
+	if (key == 3683 || key == OF_KEY_CONTROL) {  // 3683 = CTRL pada Windows
+		isCtrlPressed = true;
+		return;  // Jangan lanjut ke logic lain
+	}
+
+	// Handle tombol saat CTRL aktif - gunakan switch-case
+	if (isCtrlPressed) {
+		switch(key) {
+			case 'z':
+			case 'Z':
+			case 26:  // CTRL+Z (ASCII 26)
+				undoLastLine();
+				break;
+
+			case 's':
+			case 'S':
+			case 19:  // CTRL+S (ASCII 19)
+				fileManager.saveCustomLines(customLines);
+				break;
+
+			case 'o':
+			case 'O':
+			case 15:  // CTRL+O (ASCII 15)
+				// Cek apakah SHIFT juga ditekan
+				if (ofGetKeyPressed(OF_KEY_SHIFT)) {
+					fileManager.loadCustomLinesSequential(customLines);  // Sequential load dengan animasi
+				} else {
+					fileManager.loadCustomLines(customLines);  // Load semua sekaligus
+				}
+				break;
+		}
+	}
+}
+
+//--------------------------------------------------------------
+// Interactive Line Creation Helpers
+void ofApp::updateDotsCache() {
+	cachedDots.clear();
+
+	// Hanya tambahkan dots jika shape-nya visible (showing == true)
+
+	// Circle centers - ambil langsung dari CircleShape objects
+	if (circleA && circleA->showing) {
+		cachedDots.push_back({vec2(circleA->posX, circleA->posY), "Circle"});
+		cachedDots.push_back({vec2(circleB->posX, circleB->posY), "Circle"});
+		cachedDots.push_back({vec2(circleC->posX, circleC->posY), "Circle"});
+		cachedDots.push_back({vec2(circleD->posX, circleD->posY), "Circle"});
+		cachedDots.push_back({vec2(circleE->posX, circleE->posY), "Circle"});
+	}
+
+	// CrossLine dots - ambil radiusDot yang sudah dihitung di draw() (SCALABLE!)
+	if (crossLineF && crossLineF->showing) {
+		// F, G, H, I pada radius
+		cachedDots.push_back({crossLineF->radiusDot, "CrossLine"});
+		cachedDots.push_back({crossLineG->radiusDot, "CrossLine"});
+		cachedDots.push_back({crossLineH->radiusDot, "CrossLine"});
+		cachedDots.push_back({crossLineI->radiusDot, "CrossLine"});
+
+		// J, K, L, M ends
+		cachedDots.push_back({crossLineF->end, "CrossLine"});
+		cachedDots.push_back({crossLineG->end, "CrossLine"});
+		cachedDots.push_back({crossLineH->end, "CrossLine"});
+		cachedDots.push_back({crossLineI->end, "CrossLine"});
+	}
+
+	// Parallelogram intersections - ambil langsung dari ParallelogramLine objects (SCALABLE!)
+	if (parallelogramCtoE && parallelogramCtoE->showing) {
+		cachedDots.push_back({parallelogramCtoE->intersecCrossLine, "Parallelogram"});
+		cachedDots.push_back({parallelogramEtoB->intersecCrossLine, "Parallelogram"});
+		cachedDots.push_back({parallelogramBtoD->intersecCrossLine, "Parallelogram"});
+		cachedDots.push_back({parallelogramDtoC->intersecCrossLine, "Parallelogram"});
+	}
+
+	// Rectangle intersections - ambil langsung dari RectangleLine objects (SCALABLE!)
+	if (rectangleLineFtoG && rectangleLineFtoG->showing) {
+		cachedDots.push_back({rectangleLineFtoG->intersec1, "Rectangle"});
+		cachedDots.push_back({rectangleLineFtoG->intersec2, "Rectangle"});
+		cachedDots.push_back({rectangleLineGtoI->intersec1, "Rectangle"});
+		cachedDots.push_back({rectangleLineGtoI->intersec2, "Rectangle"});
+		cachedDots.push_back({rectangleLineItoH->intersec1, "Rectangle"});
+		cachedDots.push_back({rectangleLineItoH->intersec2, "Rectangle"});
+		cachedDots.push_back({rectangleLineHtoF->intersec1, "Rectangle"});
+		cachedDots.push_back({rectangleLineHtoF->intersec2, "Rectangle"});
+	}
+
+	// Octagram endpoints - ambil langsung dari OctagramLine objects (SCALABLE!)
+	if (octagramLine0 && octagramLine0->showing) {
+		cachedDots.push_back({octagramLine0->end, "Octagram"});
+		cachedDots.push_back({octagramLine1->end, "Octagram"});
+		cachedDots.push_back({octagramLine2->end, "Octagram"});
+		cachedDots.push_back({octagramLine3->end, "Octagram"});
+		cachedDots.push_back({octagramLine4->end, "Octagram"});
+		cachedDots.push_back({octagramLine5->end, "Octagram"});
+		cachedDots.push_back({octagramLine6->end, "Octagram"});
+		cachedDots.push_back({octagramLine7->end, "Octagram"});
+	}
+
+	dotsCacheDirty = false;
+}
+
+//--------------------------------------------------------------
+const vector<ofApp::DotInfo>& ofApp::getAllDots() {
+	// Lazy update cache kalau dirty
+	if (dotsCacheDirty) {
+		updateDotsCache();
+	}
+
+	return cachedDots;  // Return reference, tidak copy
+}
+
+//--------------------------------------------------------------
+bool ofApp::isMouseOverDot(vec2 mousePos, vec2 dotPos) {
+	//Euclidean distance
+	//ukuran jarak antara 2 titik
+	float distance = glm::length(mousePos - dotPos);
+	return distance <= this->threshold;
+}
+
+bool ofApp::lineExists(vec2 from, vec2 to) {
+	// Cek apakah ada line dengan titik awal dan akhir yang sama
+	for (auto& line : customLines) {
+		const vector<vec2>& points = line.getPoints();
+		if (points.size() >= 2) {
+			vec2 lineStart = points.front();
+			vec2 lineEnd = points.back();
+
+			if ((glm::length(lineStart - from) < 1.0f && glm::length(lineEnd - to) < 1.0f) ||
+				(glm::length(lineStart - to) < 1.0f && glm::length(lineEnd - from) < 1.0f)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+//--------------------------------------------------------------
+bool ofApp::isMouseOverLine(vec2 mousePos, vec2 lineStart, vec2 lineEnd, float lineWidth) {
+	// Hitung jarak dari titik ke garis (point-to-line distance)
+	// Formula: jarak = |(end - start) × (start - point)| / |end - start|
+	vec2 lineVec = lineEnd - lineStart;
+	vec2 pointVec = mousePos - lineStart;
+	float lineLength = glm::length(lineVec);
+
+	if (lineLength == 0) return false;
+
+	// Project pointVec ke lineVec
+	float projection = glm::dot(pointVec, lineVec) / lineLength;
+	vec2 closestPoint = lineStart + (lineVec / lineLength) * projection;
+
+	// Clamp projection ke line segment (biar tidak extend)
+	if (projection < 0) closestPoint = lineStart;
+	if (projection > 1) closestPoint = lineEnd;
+
+	// Hitung jarak dari mousePos ke closestPoint di garis
+	float distance = glm::length(mousePos - closestPoint);
+
+	// Threshold = setengah line width + sedikit buffer
+	return distance <= (lineWidth / 2.0f) + 2.0f;
+}
+
+//--------------------------------------------------------------
+float ofApp::distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd, float curve) {
+	// Hitung jarak terpendek dari point ke garis/lengkungan
+
+	// Jika curve != 0, hitung jarak ke bezier curve
+	if (curve != 0.0f) {
+		// Hitung control point
+		vec2 midPoint = (lineStart + lineEnd) / 2.0f;
+		vec2 dir = lineEnd - lineStart;
+		vec2 perp = vec2(-dir.y, dir.x);
+		float perpLen = glm::length(perp);
+		if (perpLen > 0) {
+			perp = perp / perpLen;
+		}
+		vec2 controlPoint = midPoint + perp * curve;
+
+		// Sampling bezier curve untuk cari jarak minimum
+		float minDistance = 999999.0f;
+		int samples = 50;
+
+		for (int i = 0; i <= samples; i++) {
+			float t = (float)i / samples;
+			// Quadratic bezier
+			vec2 curvePoint =
+				lineStart * (1 - t) * (1 - t) +
+				controlPoint * 2 * (1 - t) * t +
+				lineEnd * t * t;
+
+			float distance = glm::length(point - curvePoint);
+			if (distance < minDistance) {
+				minDistance = distance;
+			}
+		}
+
+		return minDistance;
+	} else {
+		// Hitung jarak ke garis lurus (original code)
+		vec2 lineVec = lineEnd - lineStart;
+		vec2 pointVec = point - lineStart;
+		float lineLengthSq = glm::dot(lineVec, lineVec);
+
+		if (lineLengthSq == 0) return 0.0f;
+
+		// Project pointVec ke lineVec (hasilnya parameter t dalam [0,1])
+		float projection = glm::dot(pointVec, lineVec) / lineLengthSq;
+
+		// Clamp projection ke line segment (biar tidak extend)
+		projection = ofClamp(projection, 0.0f, 1.0f);
+
+		vec2 closestPoint = lineStart + lineVec * projection;
+
+		// Hitung jarak dari point ke closestPoint
+		return glm::length(point - closestPoint);
+	}
+}
+
+//--------------------------------------------------------------
+int ofApp::getLineIndexAtPosition(vec2 pos) {
+	// Cari garis dengan JARAK TERDEKAT
+	int closestLineIndex = -1;
+	float closestDistance = 999999.0f;
+
+	for (int i = 0; i < customLines.size(); i++) {
+		const CustomLine& line = customLines[i];
+		const vector<vec2>& points = line.getPoints();
+		if (points.size() >= 2) {
+			vec2 start = points[0];
+			vec2 end = points[1];
+
+			// Skip invalid lines (start == end)
+			if (glm::length(start - end) < 1.0f) {
+				continue;
+			}
+
+			// Hitung jarak ke garis ini (dengan curve support)
+			float distance = distanceToLine(pos, start, end, line.getCurve());
+
+			// Update jika lebih dekat
+			if (distance < closestDistance) {
+				closestDistance = distance;
+				closestLineIndex = i;
+			}
+		}
+	}
+
+	// Return line terdekat (jika dalam threshold)
+	if (closestDistance <= (mouseLineWidth / 2.0f) + 2.0f) {
+		return closestLineIndex;
+	}
+
+	return -1;  // Tidak ada yang diklik
+}
+
+//--------------------------------------------------------------
+void ofApp::undoLastLine() {
+	// Hapus garis terakhir yang dibuat user
+	if (!customLines.empty()) {
+		customLines.pop_back();
+	}
+}
+
+//--------------------------------------------------------------
+// File operations sekarang ditangani oleh FileManager class
+
+//--------------------------------------------------------------
+// Mouse Event Handlers
+void ofApp::mousePressed(int x, int y, int button) {
+	// Logic lama: Cursor toggle dengan right click (button 2)
+	if (button == 2) {
+		cursorVisible = !cursorVisible;
+		if (cursorVisible) ofShowCursor();
+		if (!cursorVisible) ofHideCursor();
+		return;  // Jangan lanjut ke interactive line creation untuk right click
+	}
+
+	// Logic untuk interactive line creation & line selection
+	if (button == 0) {
+		// Adjust mouse position untuk center translation
+		vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+		vector<DotInfo> dots = getAllDots();
+
+		// Check jika klik di atas dot - HANYA bisa mulai dari dot
+		bool clickedOnDot = false;
+		for (auto& dot : dots) {
+			if (isMouseOverDot(adjustedMousePos, dot.position)) {
+				drawState = DRAGGING;
+				currentPolylinePoints.clear();
+				currentPolylinePoints.push_back(dot.position);  // Start dari dot
+				startDotPos = dot.position;
+				mousePos = adjustedMousePos;
+				clickedOnDot = true;
+
+				// Deselect line yang mungkin terpilih
+				selectedLineIndex = -1;
+
+				return;
+			}
+		}
+
+		// Kalau tidak klik di dot, cek apakah klik di garis untuk SELECT
+		if (!clickedOnDot) {
+			int lineIndex = getLineIndexAtPosition(adjustedMousePos);
+			if (lineIndex >= 0) {
+				// Select garis ini
+				selectedLineIndex = lineIndex;
+			} else {
+				// Klik di tempat kosong → deselect
+				selectedLineIndex = -1;
+			}
+		}
+	}
+}
+
+void ofApp::mouseDragged(int x, int y, int button) {
+	if (drawState == DRAGGING) {
+		// Adjust mouse position untuk center translation
+		vec2 currentPos = vec2(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+		mousePos = currentPos;
+
+		// Untuk garis lurus, kita hanya perlu 2 titik: start dan end
+		// currentPolylinePoints[0] = start (diset di mousePressed)
+		// currentPolylinePoints[1] = end (diupdate setiap drag)
+		if (currentPolylinePoints.size() < 2) {
+			currentPolylinePoints.push_back(currentPos);  // Add end point
+		} else {
+			currentPolylinePoints[1] = currentPos;  // Update end point
+		}
+	}
+}
+
+void ofApp::mouseReleased(int x, int y, int button) {
+	if (drawState != DRAGGING) {
+		return;
+	}
+
+	// Adjust mouse position untuk center translation
+	vec2 releasePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+	vector<DotInfo> dots = getAllDots();
+
+	// Check jika release di atas valid dot - HANYA bisa selesai di dot
+	for (auto& dot : dots) {
+		if (isMouseOverDot(releasePos, dot.position)) {
+			// Cek apakah line sudah ada (duplicate check)
+			if (!lineExists(startDotPos, dot.position)) {
+				// Cek apakah start != end (bukan garis panjang 0)
+				if (glm::length(startDotPos - dot.position) > 1.0f) {
+					// Update end point ke posisi dot yang dilepas
+					if (currentPolylinePoints.size() < 2) {
+						currentPolylinePoints.push_back(dot.position);
+					} else {
+						currentPolylinePoints[1] = dot.position;
+					}
+
+					// Simpan polyline dengan 2 points (start dan end)
+					CustomLine newLine(currentPolylinePoints, ofColor(0, 0, 255), mouseLineWidth);
+					customLines.push_back(newLine);
+				}
+			}
+			break;
+		}
+	}
+
+	// Clear dan reset state
+	currentPolylinePoints.clear();
+	drawState = IDLE;
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
+	// Update curve untuk garis yang sedang dipilih
+	if (selectedLineIndex >= 0 && selectedLineIndex < customLines.size()) {
+		// scrollY positif = scroll up, scrollY negatif = scroll down
+		float curveSpeed = 5.0f;  // Kecepatan perubahan curve
+		float newCurve = customLines[selectedLineIndex].getCurve() + scrollY * curveSpeed;
+		customLines[selectedLineIndex].setCurve(newCurve);
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseMoved(int x, int y) {
+	// Update mouse position untuk hover detection (adjust untuk center translation)
+	mousePos = vec2(x - ofGetWidth()/2, y - ofGetHeight()/2);
 }
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key){
-
+	if (key == OF_KEY_CONTROL) isCtrlPressed = false;
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button){
-	if (button == 2) cursorVisible = !cursorVisible;
-	if (cursorVisible) ofShowCursor();
-	if (!cursorVisible) ofHideCursor();
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseEntered(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseExited(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::windowResized(int w, int h){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){
-
-}
+void ofApp::mouseEntered(int x, int y) {}
+void ofApp::mouseExited(int x, int y) {}
+void ofApp::windowResized(int w, int h) {}
+void ofApp::gotMessage(ofMessage msg) {}
+void ofApp::dragEvent(ofDragInfo dragInfo) {}
 
 //--------------------------------------------------------------
 void ofApp::startSequentialDrawing() {
@@ -838,6 +1260,9 @@ void ofApp::hideAllShapes() {
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
+
+	// Mark dots cache dirty karena visibility berubah
+	dotsCacheDirty = true;
 }
 
 //--------------------------------------------------------------
@@ -882,6 +1307,9 @@ void ofApp::showAllShapes() {
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;
+
+	// Mark dots cache dirty karena visibility berubah
+	dotsCacheDirty = true;
 }
 
 //--------------------------------------------------------------

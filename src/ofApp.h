@@ -7,6 +7,8 @@
 #include "shape/ParallelogramLine.h"
 #include "shape/RectangleLine.h"
 #include "shape/OctagramLine.h"
+#include "shape/CustomLine.h"
+#include "operation/FileManager.h"
 using glm::vec2;
 class ofApp : public ofBaseApp{
 
@@ -47,15 +49,46 @@ class ofApp : public ofBaseApp{
 
 		bool cursorVisible = false;
 
-		// Line width control
-		float currentLineWidth = 4.0f;  // Current line width
+		ofTrueTypeFont fontNormal;  // Font untuk custom line labels
 
-		// Sequential drawing mode
-		bool sequentialMode = false;
-		int currentShapeIndex = 0;  
+		// Interactive Line Creation
+		struct DotInfo {
+			vec2 position;
+			string shapeType;
+		};
+
+		enum DrawState {
+			IDLE,
+			DRAGGING
+		};
+
+		DrawState drawState = IDLE;
+		vec2 startDotPos = vec2(0, 0);
+		vec2 mousePos = vec2(9999, 9999);
+		vector<vec2> currentPolylinePoints;  // Capture points saat drag untuk polyline
+		vector<CustomLine> customLines;  // CustomLine dari FileManager
+
+		// Line selection
+		int selectedLineIndex = -1;  // -1 = tidak ada yang dipilih
+
+		// Line width control
+		float currentLineWidth = 4.0f;  // Current line width untuk shapes
+		float mouseLineWidth = 3.f;    // Line width khusus untuk mouse drag lines
+
+		bool sequentialMode = false; // Sequential drawing mode
+		int currentShapeIndex = 0;
 		bool sequentialCompleted = false;  // Flag untuk track apakah sequential sudah selesai
 		bool labelsVisible = true;      // Flag untuk track label visibility
 		bool dotsVisible = true;        // Flag untuk track dot visibility
+		float threshold = 10.0f; //dalam radius saat mouse hover pada dot
+		bool isCtrlPressed = false;
+
+		// Cached dots untuk performance
+		vector<DotInfo> cachedDots;
+		bool dotsCacheDirty = true;  // Flag untuk rebuild cache
+
+		// File Manager untuk save/load custom lines
+		FileManager fileManager;
 
 		void setup();
 		void setupCircles();
@@ -66,6 +99,7 @@ class ofApp : public ofBaseApp{
 		void setupOctagramLine();
 		void update();
 		void draw();
+		void drawCustomLinesAndUI();  // Draw custom lines, curve label, preview, dan dot highlights
 
 		// Sequential drawing methods
 		void startSequentialDrawing();
@@ -79,16 +113,27 @@ class ofApp : public ofBaseApp{
 		void decreaseLineWidth();       // Kurangi line width
 		void increaseLineWidth();       // Tambah line width
 
+		// Interactive Line Creation helpers
+		const vector<DotInfo>& getAllDots();  // Return cached dots by reference
+		void updateDotsCache();  // Rebuild dots cache saat visibility berubah
+		bool isMouseOverDot(vec2 mousePos, vec2 dotPos);
+		bool isMouseOverLine(vec2 mousePos, vec2 lineStart, vec2 lineEnd, float lineWidth);
+		float distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd, float curve = 0.0f);
+		int getLineIndexAtPosition(vec2 pos);  // Get index line di posisi mouse (-1 jika tidak ada)
+		bool lineExists(vec2 from, vec2 to);
+		void undoLastLine();  // Undo last custom line (CTRL+Z)
+
 		void keyPressed(int key);
 		void keyReleased(int key);
 		void mouseMoved(int x, int y );
 		void mouseDragged(int x, int y, int button);
 		void mousePressed(int x, int y, int button);
 		void mouseReleased(int x, int y, int button);
+		void mouseScrolled(int x, int y, float scrollX, float scrollY);
 		void mouseEntered(int x, int y);
 		void mouseExited(int x, int y);
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-		
+
 };

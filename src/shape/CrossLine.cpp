@@ -6,8 +6,13 @@ CrossLine::CrossLine(vec2 start, vec2 end, string label1, string label2, float r
 	end(end),
 	label1(label1),
 	label2(label2),
-	radius(radius)
+	radius(radius),
+	radiusDot(vec2(0, 0))
 {
+	// Hitung radiusDot SEKALI di constructor untuk akses dari ofApp
+	float totalAngle = atan2(end.y - start.y, end.x - start.x);
+	radiusDot = vec2(cos(totalAngle) * radius, sin(totalAngle) * radius);
+
 	loadFonts();  // Load font dari AbstractShape
 	maxProgress = totalSegments;  // Set max progress untuk isComplete()
 }
@@ -22,10 +27,16 @@ void CrossLine::setLabel2(string lbl) {
 
 void CrossLine::setStart(float startX, float startY) {
 	start = vec2(startX, startY);
+	// Re-calculate radiusDot agar sync dengan posisi baru
+	float totalAngle = atan2(end.y - start.y, end.x - start.x);
+	radiusDot = vec2(cos(totalAngle) * radius, sin(totalAngle) * radius);
 }
 
 void CrossLine::setEnd(float endX, float endY) {
 	end = vec2(endX, endY);
+	// Re-calculate radiusDot agar sync dengan posisi baru
+	float totalAngle = atan2(end.y - start.y, end.x - start.x);
+	radiusDot = vec2(cos(totalAngle) * radius, sin(totalAngle) * radius);
 }
 
 void CrossLine::showLabel() {
@@ -81,14 +92,9 @@ void CrossLine::draw() {
 
 	if (showing && progress >= totalSegments) {
 		ofFill();
-		//dot or circle posisi pada intersection crossline
-		// Gunakan totalAngle yang sudah dihitung untuk efisiensi
-		float dotX = cos(totalAngle) * radius;
-		float dotY = sin(totalAngle) * radius;
-
 		// Gambar dot hanya jika dotVisible = true
 		if (dotVisible) {
-			ofDrawCircle(dotX, dotY, lineWidth * 2);
+			ofDrawCircle(radiusDot.x, radiusDot.y, lineWidth * 2);
 			//Dot or circle end x and y
 			ofDrawCircle(end.x, end.y, lineWidth * 2);
 		}
@@ -96,7 +102,7 @@ void CrossLine::draw() {
 		ofSetColor(0);
 
 		if (labelVisible) {
-			fontNormal.drawString(label1, dotX, dotY-10);
+			fontNormal.drawString(label1, radiusDot.x, radiusDot.y - 10);
 			fontNormal.drawString(label2, end.x - 20, end.y - 5);
 		}
 	}

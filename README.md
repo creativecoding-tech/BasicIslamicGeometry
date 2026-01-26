@@ -14,7 +14,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 
 ## 📺 Demo Video
 
-Lihat hasilnya di YouTube: [Watch Demo](https://youtu.be/PZQPKV97S1o)
+Lihat hasilnya di YouTube: [Watch Demo](https://youtu.be/jh_NsybWokk)
 
 ---
 
@@ -41,6 +41,9 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Rectangle Lines** - 4 garis pembentuk rectangle (F→G, G→I, I→H, H→F) dengan 2 dot di intersection
 - **Octagram Lines** - 8 garis pembentuk pola octagram (8-point star) dengan 2 segment per line (main + extension)
 - **Polar Thinking** - Perhitungan posisi menggunakan trigonometri (cos, sin, atan2) untuk scalability
+- **Scalable Dot Positions System** - Semua dot positions diambil langsung dari shape objects (Circle.posX/Y, CrossLine.radiusDot, Parallelogram.intersecCrossLine, Rectangle.intersec1/2, Octagram.end) tanpa hardcoded values
+- **Performance Optimization - Cached Dots** - Sistem lazy cache untuk getAllDots() dengan dirty flag, hanya rebuild saat visibility berubah (reduce dari 180 vector copies/detik menjadi 0)
+- **CrossLine radiusDot Attribute** - CrossLine menyimpan posisi dot pada radius di `vec2 radiusDot`, dihitung sekali di constructor, auto-sync saat setStart/setEnd
 - **Sequential Drawing Mode** - Animasi drawing berurutan dari satu shape ke shape berikutnya
 - **Animated Drawing** - Semua shape digambar dengan animasi smooth (100 segments, 0.5 speed)
 - **Bidirectional Animation** - Animasi muncul (show) dan hilang (hide) dengan smoothing
@@ -63,17 +66,30 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 ## 🎮 Controls
 
+**Shape Controls:**
 | Input | Action |
 | --- | --- |
 | **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan (CartesianAxes → Circle A-E → CrossLine F-I → Parallelogram N-Q → Rectangle R-Y → OctagramLine 0-7) |
 | **SHIFT + )** | Show semua shapes (Circle, CrossLine, Parallelogram, Rectangle, OctagramLine, CartesianAxes) |
 | **DEL** | Hide semua shapes (termasuk CartesianAxes) |
-| **BACKSPACE** | Toggle CartesianAxes saja (hide/show) |
+| **BACKSPACE** | Toggle CartesianAxes saja (hide/show) atau Hapus custom line yang sedang terselect |
 | **\`** atau **~** | Toggle label visibility (semua label) |
 | **.** atau **>** | Toggle dot visibility (semua dot di intersection points) |
 | **+** atau **=** | Increase line width (+0.5px, max 4px) |
 | **-** atau **_** | Decrease line width (-0.5px, min 0px) |
 | **END** | Keluar dari aplikasi |
+
+**CustomLine Controls:**
+| Input | Action |
+| --- | --- |
+| **Mouse Drag** | Buat garis custom dari dot ke dot (hanya bisa mulai dan akhir di dot) |
+| **Mouse Click** | Select garis custom (berubah jadi merah), atau deselect jika klik di tempat kosong |
+| **Mouse Scroll** | Adjust curvature garis yang sedang di-select (scroll up = melengkung satu arah, scroll down = melengkung arah sebaliknya, 0 = lurus) |
+| **CTRL + Z** | Undo garis terakhir yang dibuat |
+| **CTRL + S** | Simpan semua custom lines ke file (binary format) |
+| **CTRL + O** | Load semua custom lines dengan animasi parallel (semua garis animate barengan) |
+| **CTRL + SHIFT + O** | Load semua custom lines dengan animasi sequential (satu per satu dengan delay) |
+| **CTRL + DEL** | Hapus semua custom lines (tidak jalan saat sedang loading) |
 
 **Shape Count:**
 - 5 CircleShape (A, B, C, D, E)
@@ -198,6 +214,100 @@ fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
 - **Consistency**: Font tidak berubah saat line width di-adjust
 - **Clean & Simple**: Visual yang konsisten di seluruh aplikasi
 
+### Quadratic Bezier Curve untuk CustomLine
+
+CustomLine menggunakan **Quadratic Bezier Curve** untuk membuat garis melengkung:
+
+```cpp
+// Rumus Quadratic Bezier: (1-t)²p0 + 2(1-t)t*p1 + t²p2
+vec2 point = start * (1-t) * (1-t) +           // (1-t)²·P0 (weight ke start)
+             controlPoint * 2 * (1-t) * t +    // 2(1-t)t·P1 (weight ke control)
+             end * t * t;                      // t²·P2 (weight ke end)
+```
+
+**Parameter Curve:**
+- **curve = 0**: Garis lurus (control point di tengah garis)
+- **curve > 0**: Melengkung satu arah (control point bergeser perpendicular)
+- **curve < 0**: Melengkung arah sebaliknya
+- **Sampling**: 100 segments untuk smooth curve
+- **Progress t**: 0.0 (start) → 1.0 (end)
+
+**Control Point Calculation:**
+```cpp
+// Hitung midpoint antara start dan end
+vec2 midPoint = (start + end) / 2.0f;
+
+// Hitung perpendicular vector (-y, x)
+vec2 dir = end - start;
+vec2 perp = vec2(-dir.y, dir.x);
+perp = perp / glm::length(perp);  // Normalize
+
+// Control point = midpoint + curve * perpendicular
+vec2 controlPoint = midPoint + perp * curve;
+```
+
+**Keuntungan Quadratic Bezier:**
+- **Smooth**: Curve yang halus dan natural
+- **Simple**: Cukup 3 titik (P0, P1, P2) untuk buat curve
+- **Flexible**: Dengan adjust control point, bisa buat berbagai bentuk lengkungan
+- **Parametric**: Mudah di-animate dengan parameter t (0 → 1)
+
+### Scalable Dot Positions System
+
+Semua dot positions (intersection points) sekarang **fully scalable** dan diambil langsung dari shape objects, **TANPA hardcoded values**. Ini memastikan ketika `radiusCircle` berubah, semua posisi dot otomatis menyesuaikan.
+
+**Circle Centers:**
+```cpp
+// Ambil langsung dari CircleShape objects (SCALABLE!)
+cachedDots.push_back({vec2(circleA->posX, circleA->posY), "Circle"});
+cachedDots.push_back({vec2(circleB->posX, circleB->posY), "Circle"});
+// ... dan seterusnya
+```
+
+**CrossLine Dots:**
+```cpp
+// CrossLine sekarang punya attribute `radiusDot` untuk posisi dot pada radius
+class CrossLine {
+    vec2 start;
+    vec2 end;
+    float radius;
+    vec2 radiusDot;  // ← Posisi dot pada radius (SCALABLE!)
+};
+
+// Di constructor, hitung radiusDot sekali saja:
+float totalAngle = atan2(end.y - start.y, end.x - start.x);
+radiusDot = vec2(cos(totalAngle) * radius, sin(totalAngle) * radius);
+
+// Ambil langsung dari CrossLine objects (SCALABLE!)
+cachedDots.push_back({crossLineF->radiusDot, "CrossLine"});  // Dot pada radius
+cachedDots.push_back({crossLineF->end, "CrossLine"});        // Dot endpoint
+```
+
+**Parallelogram Intersections:**
+```cpp
+// Ambil langsung dari ParallelogramLine objects (SCALABLE!)
+cachedDots.push_back({parallelogramCtoE->intersecCrossLine, "Parallelogram"});
+```
+
+**Rectangle Intersections:**
+```cpp
+// Ambil langsung dari RectangleLine objects (SCALABLE!)
+cachedDots.push_back({rectangleLineFtoG->intersec1, "Rectangle"});
+cachedDots.push_back({rectangleLineFtoG->intersec2, "Rectangle"});
+```
+
+**Octagram Endpoints:**
+```cpp
+// Ambil langsung dari OctagramLine objects (SCALABLE!)
+cachedDots.push_back({octagramLine0->end, "Octagram"});
+```
+
+**Keuntungan Scalable System:**
+- **No Hardcoded Values**: Semua posisi diambil dari shape object attributes
+- **Automatic Adjustment**: Ketika `radiusCircle` berubah, semua dot positions ikut berubah
+- **Future-Proof**: Mudah untuk mengubah posisi shape tanpa update hardcoded values
+- **Consistent**: Semua shapes follow pattern yang sama untuk dot positions
+
 ### Angle Labels pada CartesianAxes
 
 CartesianAxes menampilkan label sudut di setiap ujung sumbu dengan format **radians (degrees)**:
@@ -254,14 +364,17 @@ BasicIslamicGeometry/
 ├── src/
 │   ├── main.cpp              # Entry point aplikasi
 │   ├── ofApp.cpp/h           # Main application class
-│   └── shape/                # Shape implementations
-│       ├── AbstractShape.cpp/h         # Base class untuk semua shapes
-│       ├── CircleShape.cpp/h           # Circle dengan animasi drawing
-│       ├── CartesianAxes.cpp/h         # Sumbu X-Y dengan scaling & angle labels
-│       ├── CrossLine.cpp/h             # Garis diagonal dengan 2 dot & 2 label
-│       ├── ParallelogramLine.cpp/h     # Garis penghubung dengan 1 dot & 1 label
-│       ├── RectangleLine.cpp/h         # Garis rectangle dengan 2 dot & 2 label
-│       └── OctagramLine.cpp/h          # Garis octagram dengan 2 segment & 1 dot (0-7)
+│   ├── shape/                # Shape implementations
+│   │   ├── AbstractShape.cpp/h         # Base class untuk semua shapes
+│   │   ├── CircleShape.cpp/h           # Circle dengan animasi drawing
+│   │   ├── CartesianAxes.cpp/h         # Sumbu X-Y dengan scaling & angle labels
+│   │   ├── CrossLine.cpp/h             # Garis diagonal dengan 2 dot & 2 label
+│   │   ├── ParallelogramLine.cpp/h     # Garis penghubung dengan 1 dot & 1 label
+│   │   ├── RectangleLine.cpp/h         # Garis rectangle dengan 2 dot & 2 label
+│   │   ├── OctagramLine.cpp/h          # Garis octagram dengan 2 segment & 1 dot (0-7)
+│   │   └── CustomLine.cpp/h            # Custom user-created lines dengan bezier curve support
+│   └── operation/            # File operations & utilities
+│       └── FileManager.cpp/h           # Save/load custom lines ke binary file
 ├── bin/                      # Compiled executable
 ├── dll/                      # OF dependencies
 ├── obj/                      # Intermediate files (gitignored)
@@ -293,33 +406,7 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **master**
-
-Branch ini adalah **versi stabil** BasicIslamicGeometry yang menggabungkan semua fitur dari eksplorasi geometri Islam, termasuk five circle pattern, crosslines, parallelogram lines, rectangle lines, dan octagram lines yang membentuk pola 8-point star. Fitur yang tersedia:
-
-✅ **Five Circle Pattern**: 5 lingkaran (A, B, C, D, E) dengan konfigurasi posisi yang saling berhubungan
-✅ **Animated Drawing**: Lingkaran digambar dengan animasi smooth (100 segments, 0.5 speed)
-✅ **Cartesian Axes**: Sistem koordinat X-Y dengan animasi scaling (0 to 2.5x radius) dan label sudut (radians & degrees)
-✅ **CrossLine System**: 4 garis diagonal dari center ke sudut dengan dot di intersection
-✅ **Parallelogram Lines**: 4 garis penghubung antar circle center dengan dot di intersection
-✅ **Rectangle Lines**: 4 garis pembentuk rectangle (F→G, G→I, I→H, H→F) dengan 2 dot di intersection
-✅ **Octagram Lines**: 8 garis pembentuk pola octagram (0, 1, 2, 3, 4, 5, 6, 7) dengan 2 segment per line
-✅ **Polar Thinking**: Perhitungan posisi dan intersection menggunakan trigonometri untuk scalability
-✅ **Scalable Intersections**: Semua intersection point dihitung dengan rumus geometric yang scalable terhadap radiusCircle
-✅ **Bidirectional Animation**: Animasi muncul (show) dan hilang (hide) dengan smoothing
-✅ **Two-Phase Animation System**: OctagramLine memiliki 2 mode animation (sequential & paralel)
-✅ **Dynamic Line Width**: Ketebalan garis yang dapat diadjust (0.5px - 4px)
-✅ **Static Font System**: Semua label menggunakan font normal (Calibri 15px) untuk konsistensi visual
-✅ **Angle Labels**: Label sudut CartesianAxes dengan format "radians (degrees)" di setiap ujung sumbu
-✅ **Show/Hide Controls**: Toggle visibility untuk semua shapes
-✅ **Label System**: Label untuk semua shapes (Circle, CrossLine, Parallelogram, Rectangle, OctagramLine)
-✅ **Dot System**: Dot di intersection points dengan toggle visibility
-✅ **Trails Effect**: Semi-transparent overlay untuk efek jejak visual yang menarik
-✅ **Anti-aliased Rendering**: Garis yang smooth untuk kualitas visual tinggi
-✅ **Memory-safe Implementation**: Menggunakan `std::unique_ptr` untuk resource management
-✅ **Modular Setup Methods**: setup() terbagi menjadi setupCircles(), setupCartesianAxes(), setupCrossLines(), setupParallelograms(), setupRectangleLine(), setupOctagramLine()
-
-### Configuration:
+## ⚙️ Configuration
 
 **Circle Parameters:**
 - **radius**: 240px untuk semua lingkaran
@@ -349,8 +436,6 @@ Branch ini adalah **versi stabil** BasicIslamicGeometry yang menggabungkan semua
 - **Consistency**: Font tidak berubah saat line width di-adjust
 - **Clean & Simple**: Visual yang konsisten di seluruh aplikasi
 
-🎨 **Creative Freedom**: Project ini terbuka untuk eksplorasi dan improvisasi tanpa batas. Seni digital adalah tentang ekspresi, bukan checklist.
-
 ---
 
 ## 🤝 Contributing
@@ -377,7 +462,7 @@ This project is licensed under the **Apache License 2.0** - see the LICENSE file
 ## 🔗 Links
 
 - **[OpenFrameworks](https://openframeworks.cc/)** - openframeworks.cc
-- **[Watch Demo](https://youtu.be/PZQPKV97S1o)** - YouTube demonstration
+- **[Watch Demo](https://youtu.be/jh_NsybWokk)** - YouTube demonstration
 - **[SandyKurt Tutorials](https://sandykurt.com/free-tutorials)** - Free Islamic geometric patterns tutorials
 - **[Support Me](https://sociabuzz.com/abdkdhni)** - Fund the experiments ☕
 
