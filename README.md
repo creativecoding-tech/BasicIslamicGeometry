@@ -14,7 +14,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 
 ## 📺 Demo Video
 
-Lihat hasilnya di YouTube: [Watch Demo](https://youtu.be/fr0wx18GXeI)
+Lihat hasilnya di YouTube: [Watch Demo](https://youtu.be/jh_NsybWokk)
 
 ---
 
@@ -522,7 +522,7 @@ This project is licensed under the **Apache License 2.0** - see the LICENSE file
 ## 🔗 Links
 
 - **[OpenFrameworks](https://openframeworks.cc/)** - openframeworks.cc
-- **[Watch Demo](https://youtu.be/fr0wx18GXeI)** - YouTube demonstration
+- **[Watch Demo](https://youtu.be/jh_NsybWokk)** - YouTube demonstration
 - **[SandyKurt Tutorials](https://sandykurt.com/free-tutorials)** - Free Islamic geometric patterns tutorials
 - **[Support Me](https://sociabuzz.com/abdkdhni)** - Fund the experiments ☕
 
