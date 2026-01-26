@@ -87,7 +87,6 @@ void UltralightManager::update() {
 
 	// Update Ultralight renderer
 	renderer->Update();
-	renderer->RefreshDisplay(0);  // Update animasi
 	renderer->Render();
 
 	// Update OpenGL texture dari Ultralight surface
