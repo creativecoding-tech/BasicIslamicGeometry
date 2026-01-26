@@ -164,6 +164,53 @@ void UltralightManager::loadHTMLFile(const std::string& path) {
 }
 
 //--------------------------------------------------------------
+void UltralightManager::fireMouseMove(int x, int y) {
+	if (!view) return;
+	ultralight::MouseEvent event;
+	event.type = ultralight::MouseEvent::kType_MouseMoved;
+	event.x = x;
+	event.y = y;
+	view->FireMouseEvent(event);
+}
+
+//--------------------------------------------------------------
+void UltralightManager::fireMouseDown(int x, int y, int button) {
+	if (!view) return;
+	ultralight::MouseEvent event;
+	event.type = ultralight::MouseEvent::kType_MouseDown;
+	event.x = x;
+	event.y = y;
+	event.button = (ultralight::MouseEvent::Button)button;
+	view->FireMouseEvent(event);
+}
+
+//--------------------------------------------------------------
+void UltralightManager::fireMouseUp(int x, int y, int button) {
+	if (!view) return;
+	ultralight::MouseEvent event;
+	event.type = ultralight::MouseEvent::kType_MouseUp;
+	event.x = x;
+	event.y = y;
+	event.button = (ultralight::MouseEvent::Button)button;
+	view->FireMouseEvent(event);
+}
+
+//--------------------------------------------------------------
+void UltralightManager::fireMouseScroll(int x, int y, int scrollX, int scrollY) {
+	if (!view) return;
+	ultralight::ScrollEvent event;
+	event.type = ultralight::ScrollEvent::kType_ScrollByPixel;
+	event.delta_x = scrollX;
+	event.delta_y = scrollY;
+	view->FireScrollEvent(event);
+}
+
+//--------------------------------------------------------------
+bool UltralightManager::isMouseOverUI(int x, int y) const {
+	return x >= 0 && x < width && y >= 0 && y < height;
+}
+
+//--------------------------------------------------------------
 void UltralightManager::cleanup() {
 	if (!isInitialized) return;
 

@@ -943,6 +943,12 @@ void ofApp::createInvisiblePolygonFromSelected() {
 //--------------------------------------------------------------
 // Mouse Event Handlers
 void ofApp::mousePressed(int x, int y, int button) {
+	// Forward mouse press ke Ultralight UI jika mouse di area UI
+	if (ultralightUI.isMouseOverUI(x, y)) {
+		ultralightUI.fireMouseDown(x, y, button);
+		return;  // Jangan lanjut ke logic lain
+	}
+
 	// Logic lama: Cursor toggle dengan right click (button 2)
 	if (button == 2) {
 		cursorVisible = !cursorVisible;
@@ -1042,6 +1048,12 @@ void ofApp::mouseDragged(int x, int y, int button) {
 }
 
 void ofApp::mouseReleased(int x, int y, int button) {
+	// Forward mouse release ke Ultralight UI jika mouse di area UI
+	if (ultralightUI.isMouseOverUI(x, y)) {
+		ultralightUI.fireMouseUp(x, y, button);
+		return;  // Jangan lanjut ke logic lain
+	}
+
 	if (drawState != DRAGGING) {
 		return;
 	}
@@ -1080,6 +1092,12 @@ void ofApp::mouseReleased(int x, int y, int button) {
 
 //--------------------------------------------------------------
 void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
+	// Forward scroll ke Ultralight UI jika mouse di area UI
+	if (ultralightUI.isMouseOverUI(x, y)) {
+		ultralightUI.fireMouseScroll(x, y, scrollX, -scrollY * 30);  // Ultralight pakai pixel delta
+		return;  // Jangan lanjut ke logic lain
+	}
+
 	// Update curve untuk SEMUA garis yang selected
 	if (!selectedLineIndices.empty()) {
 		float curveSpeed = 5.0f;  // Kecepatan perubahan curve
@@ -1096,6 +1114,11 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
 void ofApp::mouseMoved(int x, int y) {
 	// Update mouse position untuk hover detection (adjust untuk center translation)
 	mousePos = vec2(x - ofGetWidth()/2, y - ofGetHeight()/2);
+
+	// Forward mouse move ke Ultralight UI jika mouse di area UI
+	if (ultralightUI.isMouseOverUI(x, y)) {
+		ultralightUI.fireMouseMove(x, y);
+	}
 }
 
 //--------------------------------------------------------------

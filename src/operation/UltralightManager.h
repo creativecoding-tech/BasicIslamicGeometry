@@ -72,10 +72,54 @@ public:
 	void loadHTMLFile(const std::string& path);
 
 	/**
-	 * Get underlying Ultralight View
-	 * Untuk advanced usage (JavaScript callbacks, dll)
+	 * Forward mouse movement event ke Ultralight View
+	 * @param x Mouse X position
+	 * @param y Mouse Y position
 	 */
-	ultralight::RefPtr<ultralight::View> getView() { return view; }
+	void fireMouseMove(int x, int y);
+
+	/**
+	 * Forward mouse button event ke Ultralight View
+	 * @param x Mouse X position
+	 * @param y Mouse Y position
+	 * @param button Mouse button (0=left, 1=middle, 2=right)
+	 */
+	void fireMouseDown(int x, int y, int button);
+
+	/**
+	 * Forward mouse button release event ke Ultralight View
+	 * @param x Mouse X position
+	 * @param y Mouse Y position
+	 * @param button Mouse button (0=left, 1=middle, 2=right)
+	 */
+	void fireMouseUp(int x, int y, int button);
+
+	/**
+	 * Forward mouse scroll event ke Ultralight View
+	 * @param x Mouse X position
+	 * @param y Mouse Y position
+	 * @param scrollX Horizontal scroll delta
+	 * @param scrollY Vertical scroll delta
+	 */
+	void fireMouseScroll(int x, int y, int scrollX, int scrollY);
+
+	/**
+	 * Cek apakah mouse position di dalam area Ultralight UI
+	 * @param x Mouse X position
+	 * @param y Mouse Y position
+	 * @return true jika mouse di dalam area UI
+	 */
+	bool isMouseOverUI(int x, int y) const;
+
+	/**
+	 * Get UI width
+	 */
+	int getWidth() const { return width; }
+
+	/**
+	 * Get UI height
+	 */
+	int getHeight() const { return height; }
 
 private:
 	ultralight::RefPtr<ultralight::View> view;
