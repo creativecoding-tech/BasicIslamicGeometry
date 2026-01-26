@@ -29,6 +29,7 @@ public:
 
 	// Getters
 	const vector<vec2>& getPoints() const { return points; }
+	vector<vec2> getSampledPoints() const;  // Ambil semua titik sampling dari curve (100 segments)
 	ofColor getColor() const { return color; }
 	float getLineWidth() const { return lineWidth; }
 	float getCurve() const { return curve; }

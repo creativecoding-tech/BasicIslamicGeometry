@@ -579,7 +579,7 @@ void ofApp::keyPressed(int key){
 			case 's':
 			case 'S':
 			case 19:  // CTRL+S (ASCII 19)
-				fileManager.saveCustomLines(customLines);
+				fileManager.saveAll(customLines, polygonShapes);
 				break;
 
 			case 'o':
@@ -589,7 +589,7 @@ void ofApp::keyPressed(int key){
 				if (ofGetKeyPressed(OF_KEY_SHIFT)) {
 					fileManager.loadCustomLinesSequential(customLines);  // Sequential load dengan animasi
 				} else {
-					fileManager.loadCustomLines(customLines);  // Load semua sekaligus
+					fileManager.loadAll(customLines, polygonShapes);  // Load semua sekaligus
 				}
 				break;
 
@@ -841,14 +841,17 @@ void ofApp::undoLastLine() {
 void ofApp::createInvisiblePolygonFromSelected() {
 	if (selectedLineIndices.empty()) return;  // Tidak ada yang selected
 
-	// 1. Extract semua titik dari selected lines
+	// 1. Extract semua titik dari selected lines (pakai sampled points untuk curve)
 	vector<vec2> allPoints;
 	for (int lineIndex : selectedLineIndices) {
 		if (lineIndex >= 0 && lineIndex < customLines.size()) {
-			auto points = customLines[lineIndex].getPoints();
-			if (points.size() >= 2) {
-				allPoints.push_back(points[0]);  // Start
-				allPoints.push_back(points[1]);  // End
+			// Ambil sampled points (100 segments) untuk ikuti curve
+			auto sampledPoints = customLines[lineIndex].getSampledPoints();
+			if (!sampledPoints.empty()) {
+				// Tambahkan semua sampled points ke allPoints
+				for (auto& p : sampledPoints) {
+					allPoints.push_back(p);
+				}
 			}
 		}
 	}
@@ -859,7 +862,7 @@ void ofApp::createInvisiblePolygonFromSelected() {
 	}
 
 	// 2. Create polygon dengan default color MERAH TRANSPARENT dan index
-	int polygonIndex = polygonShapes.size();  // Index polygon yang akan dibuat
+	int polygonIndex = static_cast<int>(polygonShapes.size());  // Index polygon yang akan dibuat
 	PolygonShape newPolygon(allPoints, ofColor(255, 0, 0, 150), polygonIndex);  // Alpha 150 (semi-transparent)
 	polygonShapes.push_back(newPolygon);
 

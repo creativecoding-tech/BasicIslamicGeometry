@@ -169,3 +169,32 @@ void CustomLine::updateProgress() {
 		}
 	}
 }
+
+//--------------------------------------------------------------
+vector<vec2> CustomLine::getSampledPoints() const {
+	if (points.size() < 2) return vector<vec2>();
+
+	vec2 start = points[0];
+	vec2 end = points[1];
+
+	// Kalau curve = 0, return 2 titik saja (lurus)
+	if (curve == 0.0f) {
+		return {start, end};
+	}
+
+	// Kalau curve != 0, ambil 100 sampled points dari bezier curve
+	vector<vec2> sampledPoints;
+	vec2 controlPoint = calculateControlPoint(start, end);
+	int segments = 100;
+
+	for (int j = 0; j <= segments; j++) {
+		float t = (float)j / segments;
+		vec2 point =
+			start * (1 - t) * (1 - t) +
+			controlPoint * 2 * (1 - t) * t +
+			end * t * t;
+		sampledPoints.push_back(point);
+	}
+
+	return sampledPoints;
+}

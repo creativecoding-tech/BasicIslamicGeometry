@@ -2,6 +2,7 @@
 
 // Konstanta filename
 const std::string FileManager::FILENAME = "custom_lines.bin";
+const std::string FileManager::FILENAME_POLYGONS = "polygons.bin";
 
 //--------------------------------------------------------------
 FileManager::FileManager()
@@ -297,4 +298,97 @@ void FileManager::setLoadSpeed(float speed) {
 //--------------------------------------------------------------
 float FileManager::getLoadSpeed() const {
     return loadSpeed;
+}
+
+//--------------------------------------------------------------
+void FileManager::saveAll(const std::vector<CustomLine>& customLines, const std::vector<PolygonShape>& polygons) {
+    // Save customLines
+    saveCustomLines(customLines);
+
+    // Save polygons
+    if (polygons.empty()) {
+        return;  // Tidak create file jika kosong
+    }
+
+    ofBuffer buffer;
+
+    // Write jumlah polygon dulu
+    int numPolygons = static_cast<int>(polygons.size());
+    buffer.append(reinterpret_cast<const char*>(&numPolygons), sizeof(int));
+
+    // Write setiap polygon dalam binary format
+    for (const auto& polygon : polygons) {
+        // Write jumlah vertices dalam polygon ini
+        const vector<vec2>& vertices = polygon.getVertices();
+        int numVertices = static_cast<int>(vertices.size());
+        buffer.append(reinterpret_cast<const char*>(&numVertices), sizeof(int));
+
+        // Write semua vertices
+        for (const auto& vertex : vertices) {
+            buffer.append(reinterpret_cast<const char*>(&vertex), sizeof(vec2));
+        }
+
+        // Write fillColor
+        ofColor fillColor = polygon.getColor();
+        buffer.append(reinterpret_cast<const char*>(&fillColor), sizeof(ofColor));
+    }
+
+    // Write buffer ke file
+    ofBufferToFile(FILENAME_POLYGONS, buffer);
+}
+
+//--------------------------------------------------------------
+bool FileManager::loadAll(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons) {
+    // Load customLines
+    bool linesLoaded = loadCustomLines(customLines);
+
+    // Load polygons
+    // Cek apakah ada isinya dulu (proteksi kerjaan yang sudah dibuat)
+    if (!polygons.empty()) {
+        return linesLoaded;  // Tidak load jika sudah ada isinya, tapi tetap return status loadLines
+    }
+
+    // Cek apakah file exists
+    ofFile file(FILENAME_POLYGONS);
+    if (!file.exists()) {
+        return linesLoaded;  // File tidak ada, tapi tetap return status loadLines
+    }
+
+    // Read file ke buffer
+    ofBuffer buffer = ofBufferFromFile(FILENAME_POLYGONS);
+    char* data = buffer.getData();
+
+    // Read jumlah polygon
+    int numPolygons = *reinterpret_cast<int*>(data);
+    data += sizeof(int);
+
+    // Clear existing polygons
+    polygons.clear();
+
+    // Read setiap polygon
+    for (int i = 0; i < numPolygons; i++) {
+        // Read jumlah vertices
+        int numVertices = *reinterpret_cast<int*>(data);
+        data += sizeof(int);
+
+        // Read semua vertices
+        vector<vec2> vertices;
+        for (int j = 0; j < numVertices; j++) {
+            vec2 vertex = *reinterpret_cast<vec2*>(data);
+            data += sizeof(vec2);
+            vertices.push_back(vertex);
+        }
+
+        // Read fillColor
+        ofColor fillColor = *reinterpret_cast<ofColor*>(data);
+        data += sizeof(ofColor);
+
+        // Buat PolygonShape dengan index
+        PolygonShape polygon(vertices, fillColor, i);
+
+        // Add ke vector
+        polygons.push_back(polygon);
+    }
+
+    return true;  // Success
 }

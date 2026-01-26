@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "../shape/CustomLine.h"
+#include "../shape/PolygonShape.h"
 using glm::vec2;
 
 class FileManager {
@@ -9,11 +10,9 @@ public:
     // Constructor
     FileManager();
 
-    // Save custom lines ke binary file (CTRL+S)
-    void saveCustomLines(const std::vector<CustomLine>& customLines);
-
-    // Load semua custom lines sekaligus (CTRL+O)
-    bool loadCustomLines(std::vector<CustomLine>& customLines);
+    // Save/load ALL data (CTRL+S / CTRL+O)
+    void saveAll(const std::vector<CustomLine>& customLines, const std::vector<PolygonShape>& polygons);
+    bool loadAll(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons);
 
     // Load custom lines sequential dengan animasi (CTRL+SHIFT+O)
     void loadCustomLinesSequential(std::vector<CustomLine>& customLines);
@@ -35,6 +34,10 @@ public:
     float getLoadSpeed() const;
 
 private:
+    // Helper methods untuk save/load customLines
+    void saveCustomLines(const std::vector<CustomLine>& customLines);
+    bool loadCustomLines(std::vector<CustomLine>& customLines);
+
     // Load state flags
     bool loadSequentialMode;
     bool loadParallelMode;
@@ -47,4 +50,5 @@ private:
 
     // Konstanta
     static const std::string FILENAME;
+    static const std::string FILENAME_POLYGONS;
 };
