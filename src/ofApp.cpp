@@ -410,10 +410,17 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::drawCustomLinesAndUI() {
-	// Update selection state dan draw semua custom lines
+	// Update selection state untuk semua lines (single-select dan multi-select)
 	for (int i = 0; i < customLines.size(); i++) {
-		customLines[i].setSelected(i == selectedLineIndex);
+		bool isSelected = (i == selectedLineIndex) || (selectedLineIndices.count(i) > 0);
+		customLines[i].setSelected(isSelected);
 		customLines[i].draw();
+	}
+
+	// Draw invisible polygons
+	for (int i = 0; i < invisiblePolygons.size(); i++) {
+		invisiblePolygons[i].setSelected(i == selectedPolygonIndex);
+		invisiblePolygons[i].draw();
 	}
 
 	// Draw curve value label untuk garis yang selected
@@ -555,6 +562,20 @@ void ofApp::keyPressed(int key){
 					fileManager.loadCustomLines(customLines);  // Load semua sekaligus
 				}
 				break;
+
+			case 'g':
+			case 'G':
+			case 7:  // CTRL+G (ASCII 7)
+				createInvisiblePolygonFromSelected();
+				break;
+		}
+	}
+
+	// Keys 1-9 - Assign color to selected polygon
+	if (key >= 49 && key <= 57) {  // '1' to '9'
+		int colorIndex = key - 49;  // 0 to 8
+		if (selectedPolygonIndex >= 0 && selectedPolygonIndex < invisiblePolygons.size()) {
+			invisiblePolygons[selectedPolygonIndex].setColor(polygonPresetColors[colorIndex]);
 		}
 	}
 }
@@ -787,6 +808,37 @@ void ofApp::undoLastLine() {
 }
 
 //--------------------------------------------------------------
+void ofApp::createInvisiblePolygonFromSelected() {
+	if (selectedLineIndices.empty()) return;  // Tidak ada yang selected
+
+	// 1. Extract semua titik dari selected lines
+	vector<vec2> allPoints;
+	for (int lineIndex : selectedLineIndices) {
+		if (lineIndex >= 0 && lineIndex < customLines.size()) {
+			auto points = customLines[lineIndex].getPoints();
+			if (points.size() >= 2) {
+				allPoints.push_back(points[0]);  // Start
+				allPoints.push_back(points[1]);  // End
+			}
+		}
+	}
+
+	if (allPoints.size() < 3) {
+		// Kurang dari 3 titik, tidak bisa buat polygon
+		return;
+	}
+
+	// 2. Create invisible polygon dengan default color KUNING
+	PolygonShape newPolygon(allPoints, ofColor(255, 255, 0, 200));
+	invisiblePolygons.push_back(newPolygon);
+
+	// 3. Clear selection
+	selectedLineIndices.clear();
+	lastSelectedLineIndex = -1;
+	selectedLineIndex = -1;
+}
+
+//--------------------------------------------------------------
 // File operations sekarang ditangani oleh FileManager class
 
 //--------------------------------------------------------------
@@ -798,6 +850,23 @@ void ofApp::mousePressed(int x, int y, int button) {
 		if (cursorVisible) ofShowCursor();
 		if (!cursorVisible) ofHideCursor();
 		return;  // Jangan lanjut ke interactive line creation untuk right click
+	}
+
+	// CTRL+Click untuk multi-select
+	if (button == 0 && isCtrlPressed) {
+		vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+		int clickedLineIndex = getLineIndexAtPosition(adjustedMousePos);
+
+		if (clickedLineIndex >= 0) {
+			// Toggle selection
+			if (selectedLineIndices.count(clickedLineIndex)) {
+				selectedLineIndices.erase(clickedLineIndex);  // Deselect
+			} else {
+				selectedLineIndices.insert(clickedLineIndex);  // Select
+			}
+			lastSelectedLineIndex = clickedLineIndex;
+		}
+		return;  // Jangan lanjut ke logic drag
 	}
 
 	// Logic untuk interactive line creation & line selection
@@ -819,6 +888,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 
 				// Deselect line yang mungkin terpilih
 				selectedLineIndex = -1;
+				selectedLineIndices.clear();
 
 				return;
 			}

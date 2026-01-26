@@ -8,7 +8,9 @@
 #include "shape/RectangleLine.h"
 #include "shape/OctagramLine.h"
 #include "shape/CustomLine.h"
+#include "shape/PolygonShape.h"
 #include "operation/FileManager.h"
+#include <set>
 using glm::vec2;
 class ofApp : public ofBaseApp{
 
@@ -71,6 +73,27 @@ class ofApp : public ofBaseApp{
 		// Line selection
 		int selectedLineIndex = -1;  // -1 = tidak ada yang dipilih
 
+		// Multi-select system
+		std::set<int> selectedLineIndices;  // Bisa select banyak garis
+		int lastSelectedLineIndex = -1;  // Untuk track line terakhir di-klik
+
+		// Invisible polygon system
+		vector<PolygonShape> invisiblePolygons;
+		int selectedPolygonIndex = -1;
+
+		// Preset warna untuk polygon
+		vector<ofColor> polygonPresetColors = {
+			ofColor(255, 0, 0, 200),      // 1: Merah
+			ofColor(0, 255, 0, 200),      // 2: Hijau
+			ofColor(0, 0, 255, 200),      // 3: Biru
+			ofColor(255, 255, 0, 200),    // 4: Kuning
+			ofColor(255, 0, 255, 200),    // 5: Magenta
+			ofColor(0, 255, 255, 200),    // 6: Cyan
+			ofColor(255, 128, 0, 200),    // 7: Orange
+			ofColor(128, 0, 255, 200),    // 8: Ungu
+			ofColor(128, 128, 128, 200)   // 9: Abu-abu
+		};
+
 		// Line width control
 		float currentLineWidth = 4.0f;  // Current line width untuk shapes
 		float mouseLineWidth = 3.f;    // Line width khusus untuk mouse drag lines
@@ -122,6 +145,7 @@ class ofApp : public ofBaseApp{
 		int getLineIndexAtPosition(vec2 pos);  // Get index line di posisi mouse (-1 jika tidak ada)
 		bool lineExists(vec2 from, vec2 to);
 		void undoLastLine();  // Undo last custom line (CTRL+Z)
+		void createInvisiblePolygonFromSelected();  // Create invisible polygon from selected lines (CTRL+G)
 
 		void keyPressed(int key);
 		void keyReleased(int key);

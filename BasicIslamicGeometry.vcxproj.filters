@@ -14,6 +14,7 @@
     <ClCompile Include="src\shape\ParallelogramLine.cpp" />
     <ClCompile Include="src\shape\RectangleLine.cpp" />
     <ClCompile Include="src\shape\OctagramLine.cpp" />
+    <ClCompile Include="src\shape\PolygonShape.cpp" />
     <ClCompile Include="src\operation\FileManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -32,6 +33,7 @@
     <ClInclude Include="src\shape\ParallelogramLine.h" />
     <ClInclude Include="src\shape\RectangleLine.h" />
     <ClInclude Include="src\shape\OctagramLine.h" />
+    <ClInclude Include="src\shape\PolygonShape.h" />
     <ClInclude Include="src\operation\FileManager.h" />
   </ItemGroup>
   <ItemGroup>
