@@ -40,7 +40,7 @@ void CartesianAxes::draw() {
 			// Ujung bawah (PI/2 = 90°)
 			fontNormal.drawString("PI/2 (90°)", -90, currentLength - 100);
 			// Ujung kiri (PI = 180°)
-			fontNormal.drawString("PI (180°)", -currentLength - 80, 5);
+			fontNormal.drawString("PI (180°)", -currentLength + 45, -20);
 			// Ujung atas (-PI/2 = 270°)
 			fontNormal.drawString("-PI/2 (270°)", -100, -currentLength + 100);
 		}
