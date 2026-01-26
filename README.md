@@ -123,6 +123,8 @@ Ultralight SDK **TIDAK BOLEH** di-commit atau di-push ke repository ini karena b
 **Yang sudah di-configure di repo ini:**
 - ✅ File `.vcxproj` sudah di-configure untuk linking Ultralight SDK
 - ✅ File `.gitignore` sudah mengabaikan folder `ultralight/` (mencegah commit tidak sengaja)
+- ✅ File `.gitignore` mengizinkan `bin/data/` (UI HTML akan di-commit ke repo)
+- ✅ `bin/data/html/ui.html` - Custom UI untuk aplikasi (sudah ada di repo)
 - ✅ README ini dengan instruksi setup lengkap
 
 ---
@@ -164,19 +166,45 @@ Ultralight/
     └── WebCore.dll
 ```
 
-#### Langkah 3: Copy DLLs ke Project Folder
+#### Langkah 3: Copy Required Files ke Project Folder
 
-Copy semua file `.dll` dari `<Ultralight>\bin\`:
-
-⚠️ **Catatan**: SDK (`include/`, `lib/`) **JANGAN** di-copy ke folder project, cukup DLLs saja yang diperlukan untuk runtime.
+**A. Copy DLLs dari `<Ultralight>\bin\`:**
 ```
 AppCore.dll
 Ultralight.dll
 UltralightCore.dll
 WebCore.dll
 ```
-
 Paste ke: `BasicIslamicGeometry\bin\`
+
+**B. Copy ICU Data dari `<Ultralight>\resources\`:**
+```
+icudt67l.dat
+```
+Paste ke: `BasicIslamicGeometry\bin\resources\`
+
+⚠️ **Catatan Penting**:
+- `icudt67l.dat` adalah ICU (International Components for Unicode) data untuk rendering text
+- File ini **WAJIB ada** di folder `bin\resources\`, kalau tidak akan muncul error: "could not load resource:resources/icudt67l.dat"
+- SDK (`include/`, `lib/`) **JANGAN** di-copy ke folder project, cukup DLLs dan ICU data saja.
+
+**Struktur Folder `bin\`:**
+```
+bin/
+├── [DLLs dari Ultralight]     ← Manual copy dari Ultralight SDK
+├── resources/                  ← Manual copy dari Ultralight SDK
+│   └── icudt67l.dat
+└── data/                       ← Dari repository (auto-clone)
+    └── html/
+        └── ui.html          ← Custom UI aplikasi
+```
+
+**File yang di-commit ke repository:**
+- ✅ `bin/data/html/ui.html` - Custom UI (dari repo, bukan dari Ultralight SDK)
+
+**File yang TIDAK di-commit (harus copy manual):**
+- ❌ Semua DLLs (`AppCore.dll`, `Ultralight.dll`, dll) - dari Ultralight SDK
+- ❌ `icudt67l.dat` - dari Ultralight SDK
 
 #### Langkah 4: Configure Visual Studio Project
 

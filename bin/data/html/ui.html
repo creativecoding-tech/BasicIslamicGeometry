@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>BasicIslamicGeometry - Ultralight UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: transparent;
+            color: #ffffff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #aaaaaa;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #00d4ff;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+        }
+
+        .control-label {
+            font-size: 14px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+            color: #000000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        button.secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        input[type="range"] {
+            width: 150px;
+            accent-color: #00ff88;
+        }
+
+        .status {
+            font-size: 12px;
+            color: #00ff88;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 6px;
+            border-left: 3px solid #00ff88;
+        }
+
+        .info {
+            font-size: 12px;
+            color: #888888;
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⬡ Islamic Geometry</h1>
+        <p class="subtitle">Ultralight UI Overlay - Testing Mode</p>
+
+        <div class="section">
+            <div class="section-title">Shape Controls</div>
+            <div class="control-group">
+                <span class="control-label">Show All Shapes</span>
+                <button onclick="app.showAllShapes()">Show</button>
+            </div>
+            <div class="control-group">
+                <span class="control-label">Hide All Shapes</span>
+                <button class="secondary" onclick="app.hideAllShapes()">Hide</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Display Options</div>
+            <div class="control-group">
+                <span class="control-label">Toggle Labels</span>
+                <button onclick="app.toggleLabels()">Toggle</button>
+            </div>
+            <div class="control-group">
+                <span class="control-label">Toggle Dots</span>
+                <button onclick="app.toggleDots()">Toggle</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Line Width</div>
+            <div class="control-group">
+                <span class="control-label">Width: <span id="lineWidthValue">4.0</span>px</span>
+                <input type="range" id="lineWidthSlider" min="0.5" max="4.0" step="0.5" value="4.0"
+                       oninput="updateLineWidth(this.value)">
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Animation</div>
+            <div class="control-group">
+                <span class="control-label">Sequential Draw</span>
+                <button onclick="app.startSequential()">Play</button>
+            </div>
+        </div>
+
+        <div class="status">
+            ✅ Ultralight UI Running - 60 FPS
+        </div>
+
+        <div class="info">
+            Press ESC or click outside to interact with geometry
+        </div>
+    </div>
+
+    <script>
+        function updateLineWidth(value) {
+            document.getElementById('lineWidthValue').textContent = parseFloat(value).toFixed(1);
+        }
+    </script>
+</body>
+</html>
