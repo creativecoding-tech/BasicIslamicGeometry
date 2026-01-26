@@ -8,7 +8,6 @@ UltralightManager* UltralightManager::g_instance = nullptr;
 static JSValueRef OnDialogCloseCallback(JSContextRef ctx, JSObjectRef function,
                                         JSObjectRef thisObject, size_t argc,
                                         const JSValueRef argv[], JSValueRef* exception) {
-	ofLogNotice("UltralightManager") << "JavaScript onDialogClose called!";
 	if (UltralightManager::g_instance && UltralightManager::g_instance->jsCallback) {
 		UltralightManager::g_instance->jsCallback("onDialogClose");
 	}
@@ -18,7 +17,6 @@ static JSValueRef OnDialogCloseCallback(JSContextRef ctx, JSObjectRef function,
 static JSValueRef OnNextCallback(JSContextRef ctx, JSObjectRef function,
                                  JSObjectRef thisObject, size_t argc,
                                  const JSValueRef argv[], JSValueRef* exception) {
-	ofLogNotice("UltralightManager") << "JavaScript onNext called!";
 	if (UltralightManager::g_instance && UltralightManager::g_instance->jsCallback) {
 		UltralightManager::g_instance->jsCallback("onNext");
 	}
@@ -28,7 +26,6 @@ static JSValueRef OnNextCallback(JSContextRef ctx, JSObjectRef function,
 static JSValueRef OnBackCallback(JSContextRef ctx, JSObjectRef function,
                                  JSObjectRef thisObject, size_t argc,
                                  const JSValueRef argv[], JSValueRef* exception) {
-	ofLogNotice("UltralightManager") << "JavaScript onBack called!";
 	if (UltralightManager::g_instance && UltralightManager::g_instance->jsCallback) {
 		UltralightManager::g_instance->jsCallback("onBack");
 	}
@@ -38,7 +35,6 @@ static JSValueRef OnBackCallback(JSContextRef ctx, JSObjectRef function,
 static JSValueRef OnCreateCallback(JSContextRef ctx, JSObjectRef function,
                                   JSObjectRef thisObject, size_t argc,
                                   const JSValueRef argv[], JSValueRef* exception) {
-	ofLogNotice("UltralightManager") << "JavaScript onCreate called!";
 	if (UltralightManager::g_instance && UltralightManager::g_instance->jsCallback) {
 		UltralightManager::g_instance->jsCallback("onCreate");
 	}
@@ -121,8 +117,6 @@ void UltralightManager::createView(int w, int h) {
 	ultralight::ViewConfig viewConfig;
 	viewConfig.is_accelerated = false;  // CPU renderer (BitmapSurface)
 
-	ofLogNotice("UltralightManager") << "hasJSCallback: " << hasJSCallback;
-
 	// Create View dulu (session = nullptr untuk default session)
 	view = renderer->CreateView(w, h, viewConfig, nullptr);
 
@@ -132,12 +126,8 @@ void UltralightManager::createView(int w, int h) {
 
 	// Set ViewListener dengan callback kalau dibutuhkan
 	if (hasJSCallback && jsCallback) {
-		ofLogNotice("UltralightManager") << "Creating and setting ViewListener...";
 		DialogViewListener* dialogListener = new DialogViewListener(jsCallback);
 		view->set_view_listener(dialogListener);
-		ofLogNotice("UltralightManager") << "ViewListener set successfully!";
-	} else {
-		ofLogNotice("UltralightManager") << "No JS callback, skipping ViewListener";
 	}
 }
 
@@ -216,35 +206,22 @@ void UltralightManager::loadHTML(const std::string& html) {
 
 //--------------------------------------------------------------
 void UltralightManager::loadHTMLFile(const std::string& path) {
-	if (!view) {
-		ofLogError("UltralightManager") << "Cannot load HTML - view is null!";
-		return;
-	}
+	if (!view) return;
 	string fullPath = ofToDataPath(path, true);
 	string fileURL = "file:///" + fullPath;
-	ofLogNotice("UltralightManager") << "Loading HTML file: " << fileURL;
 	view->LoadURL(fileURL.c_str());
 }
 
 //--------------------------------------------------------------
 void UltralightManager::bindJSFunctions() {
-	if (!view || !hasJSCallback) {
-		ofLogError("UltralightManager") << "Cannot bind JS - view or callback not ready!";
-		return;
-	}
-
-	ofLogNotice("UltralightManager") << "Binding JavaScript functions...";
+	if (!view || !hasJSCallback) return;
 
 	// Set instance pointer supaya static functions bisa akses jsCallback
 	g_instance = this;
 
 	// Lock JavaScript context
 	ultralight::RefPtr<ultralight::JSContext> context = view->LockJSContext();
-
-	if (!context) {
-		ofLogError("UltralightManager") << "Failed to lock JS context!";
-		return;
-	}
+	if (!context) return;
 
 	JSContextRef ctx = context->ctx();
 	JSObjectRef globalObject = JSContextGetGlobalObject(ctx);
@@ -275,8 +252,6 @@ void UltralightManager::bindJSFunctions() {
 	// Set app object to global object (window.app)
 	JSObjectSetProperty(ctx, globalObject, appName, appObject, kJSPropertyAttributeNone, nullptr);
 
-	ofLogNotice("UltralightManager") << "JavaScript functions bound successfully!";
-
 	// Cleanup
 	JSStringRelease(closeName);
 	JSStringRelease(nextName);
@@ -304,7 +279,6 @@ void UltralightManager::fireMouseDown(int x, int y, int button) {
 	event.y = y;
 	event.button = (ultralight::MouseEvent::Button)button;
 	view->FireMouseEvent(event);
-	ofLogNotice("UltralightManager") << "Mouse clicked at: " << x << ", " << y;
 }
 
 //--------------------------------------------------------------

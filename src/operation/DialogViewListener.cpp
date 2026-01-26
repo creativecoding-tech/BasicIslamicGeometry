@@ -47,15 +47,9 @@ void DialogViewListener::OnDOMReady(ultralight::View* caller,
                                       const ultralight::String& url) {
 	if (!is_main_frame) return;  // Hanya handle main frame
 
-	ofLogNotice("DialogViewListener") << "OnDOMReady called! Binding JavaScript functions...";
-
 	// Lock JavaScript context
 	ultralight::RefPtr<ultralight::JSContext> context = caller->LockJSContext();
-
-	if (!context) {
-		ofLogError("DialogViewListener") << "Failed to lock JS context!";
-		return;
-	}
+	if (!context) return;
 
 	JSContextRef ctx = context->ctx();
 	JSObjectRef globalObject = JSContextGetGlobalObject(ctx);
@@ -85,8 +79,6 @@ void DialogViewListener::OnDOMReady(ultralight::View* caller,
 
 	// Set app object to global object (window.app)
 	JSObjectSetProperty(ctx, globalObject, appName, appObject, kJSPropertyAttributeNone, nullptr);
-
-	ofLogNotice("DialogViewListener") << "JavaScript functions bound successfully!";
 
 	// Cleanup
 	JSStringRelease(closeName);
