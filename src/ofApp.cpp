@@ -438,10 +438,12 @@ void ofApp::draw(){
 	ofPopMatrix();
 
 	// Draw Ultralight UI dengan style terpisah (tidak ganggu trail effect)
-	ofPushStyle();
-	ofSetColor(255, 255);  // Override trail effect alpha
-	ultralightUI.draw();
-	ofPopStyle();  // Kembalikan ke trail effect (255, 25) untuk frame berikutnya
+	if (ultralightUIVisible) {
+		ofPushStyle();
+		ofSetColor(255, 255);  // Override trail effect alpha
+		ultralightUI.draw();
+		ofPopStyle();  // Kembalikan ke trail effect (255, 25) untuk frame berikutnya
+	}
 }
 
 //--------------------------------------------------------------
@@ -525,6 +527,11 @@ void ofApp::keyPressed(int key){
 	// Toggle dot visibility dengan . atau >
 	if (key == '.' || key == '>') {
 		toggleDots();
+	}
+
+	// Toggle Ultralight UI visibility dengan G atau g (hanya tanpa CTRL)
+	if ((key == 'G' || key == 'g') && !isCtrlPressed) {
+		toggleUltralightUI();
 	}
 
 	if (key == OF_KEY_DEL) {
@@ -943,8 +950,8 @@ void ofApp::createInvisiblePolygonFromSelected() {
 //--------------------------------------------------------------
 // Mouse Event Handlers
 void ofApp::mousePressed(int x, int y, int button) {
-	// Forward mouse press ke Ultralight UI jika mouse di area UI
-	if (ultralightUI.isMouseOverUI(x, y)) {
+	// Forward mouse press ke Ultralight UI jika mouse di area UI dan UI visible
+	if (ultralightUIVisible && ultralightUI.isMouseOverUI(x, y)) {
 		ultralightUI.fireMouseDown(x, y, button);
 		return;  // Jangan lanjut ke logic lain
 	}
@@ -1048,8 +1055,8 @@ void ofApp::mouseDragged(int x, int y, int button) {
 }
 
 void ofApp::mouseReleased(int x, int y, int button) {
-	// Forward mouse release ke Ultralight UI jika mouse di area UI
-	if (ultralightUI.isMouseOverUI(x, y)) {
+	// Forward mouse release ke Ultralight UI jika mouse di area UI dan UI visible
+	if (ultralightUIVisible && ultralightUI.isMouseOverUI(x, y)) {
 		ultralightUI.fireMouseUp(x, y, button);
 		return;  // Jangan lanjut ke logic lain
 	}
@@ -1092,8 +1099,8 @@ void ofApp::mouseReleased(int x, int y, int button) {
 
 //--------------------------------------------------------------
 void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
-	// Forward scroll ke Ultralight UI jika mouse di area UI
-	if (ultralightUI.isMouseOverUI(x, y)) {
+	// Forward scroll ke Ultralight UI jika mouse di area UI dan UI visible
+	if (ultralightUIVisible && ultralightUI.isMouseOverUI(x, y)) {
 		ultralightUI.fireMouseScroll(x, y, scrollX, -scrollY * 30);  // Ultralight pakai pixel delta
 		return;  // Jangan lanjut ke logic lain
 	}
@@ -1115,8 +1122,8 @@ void ofApp::mouseMoved(int x, int y) {
 	// Update mouse position untuk hover detection (adjust untuk center translation)
 	mousePos = vec2(x - ofGetWidth()/2, y - ofGetHeight()/2);
 
-	// Forward mouse move ke Ultralight UI jika mouse di area UI
-	if (ultralightUI.isMouseOverUI(x, y)) {
+	// Forward mouse move ke Ultralight UI jika mouse di area UI dan UI visible
+	if (ultralightUIVisible && ultralightUI.isMouseOverUI(x, y)) {
 		ultralightUI.fireMouseMove(x, y);
 	}
 }
@@ -1600,6 +1607,11 @@ void ofApp::increaseLineWidth() {
 	octagramLine5->setLineWidth(currentLineWidth);
 	octagramLine6->setLineWidth(currentLineWidth);
 	octagramLine7->setLineWidth(currentLineWidth);
+}
+
+//--------------------------------------------------------------
+void ofApp::toggleUltralightUI() {
+	ultralightUIVisible = !ultralightUIVisible;
 }
 
 //--------------------------------------------------------------

@@ -113,6 +113,7 @@ class ofApp : public ofBaseApp{
 
 		// Ultralight UI Manager untuk HTML overlay UI
 		UltralightManager ultralightUI;
+		bool ultralightUIVisible = false;  // UI visibility state
 
 		void setup();
 		void setupCircles();
@@ -136,6 +137,7 @@ class ofApp : public ofBaseApp{
 		void showAllShapes();           // Show all shapes
 		void decreaseLineWidth();       // Kurangi line width
 		void increaseLineWidth();       // Tambah line width
+		void toggleUltralightUI();      // Toggle Ultralight UI visibility (G/g)
 
 		// Interactive Line Creation helpers
 		const vector<DotInfo>& getAllDots();  // Return cached dots by reference
