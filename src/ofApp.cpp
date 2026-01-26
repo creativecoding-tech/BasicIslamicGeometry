@@ -361,12 +361,14 @@ void ofApp::update(){
 		updateSequentialDrawing();
 	}
 
-	// Update sequential load logic dari FileManager
-	fileManager.updateSequentialLoad(customLines);
+	// Update sequential load logic dari FileManager (lines + polygons)
+	fileManager.updateSequentialLoad(customLines, polygonShapes);
 
-	// Update polygon animations
-	for (auto& polygon : polygonShapes) {
-		polygon.update();
+	// Update polygon animations (untuk parallel mode)
+	if (fileManager.isLoadParallelMode()) {
+		for (auto& polygon : polygonShapes) {
+			polygon.update();
+		}
 	}
 }
 
@@ -498,12 +500,27 @@ void ofApp::keyPressed(int key){
 
 	if (key == OF_KEY_DEL) {
 		if (isCtrlPressed) {
+			// Jangan hapus jika sedang sequential load
+			if (fileManager.isLoadSequentialMode()) {
+				return;  // Aborted, sedang loading
+			}
+
+			// Jangan hapus jika sedang parallel load dan masih ada polygon animasi
+			if (fileManager.isLoadParallelMode()) {
+				// Cek apakah masih ada polygon yang sedang animasi
+				for (const auto& polygon : polygonShapes) {
+					if (polygon.hasAnimation()) {
+						return;  // Masih ada polygon yang animasi, tunggu kelar
+					}
+				}
+			}
+
 			// CTRL+DEL: Hapus semua polygon dan semua custom lines
 			if (!polygonShapes.empty()) {
 				polygonShapes.clear();
 				selectedPolygonIndex = -1;
 			}
-			if (!fileManager.isLoadSequentialMode() && !fileManager.isLoadParallelMode()) {
+			if (!fileManager.isLoadParallelMode()) {
 				FileManager::clearCustomLines(customLines);
 			}
 			return;  // Jangan lanjut ke hideAllShapes()
@@ -516,6 +533,21 @@ void ofApp::keyPressed(int key){
 	}
 
 	if (key == OF_KEY_BACKSPACE) {
+		// Jangan hapus jika sedang sequential load
+		if (fileManager.isLoadSequentialMode()) {
+			return;  // Aborted, sedang loading
+		}
+
+		// Jangan hapus jika sedang parallel load dan masih ada polygon animasi
+		if (fileManager.isLoadParallelMode()) {
+			// Cek apakah masih ada polygon yang sedang animasi
+			for (const auto& polygon : polygonShapes) {
+				if (polygon.hasAnimation()) {
+					return;  // Masih ada polygon yang animasi, tunggu kelar
+				}
+			}
+		}
+
 		// Prioritas: Hapus polygon selected dulu
 		if (selectedPolygonIndex != -1) {
 			// Hapus polygon yang selected
@@ -592,9 +624,9 @@ void ofApp::keyPressed(int key){
 			case 15:  // CTRL+O (ASCII 15)
 				// Cek apakah SHIFT juga ditekan
 				if (ofGetKeyPressed(OF_KEY_SHIFT)) {
-					fileManager.loadCustomLinesSequential(customLines);  // Sequential load dengan animasi
+					fileManager.loadAllSequential(customLines, polygonShapes);  // Sequential load dengan animasi (lines + polygons)
 				} else {
-					fileManager.loadAll(customLines, polygonShapes);  // Load semua sekaligus
+					fileManager.loadAll(customLines, polygonShapes);  // Load semua sekaligus (parallel)
 				}
 				break;
 

@@ -9,9 +9,10 @@ const std::string FileManager::FILENAME_POLYGONS = "polygons.bin";
 FileManager::FileManager()
     : loadSequentialMode(false)
     , loadParallelMode(false)
-    , currentLoadIndex(0)
+    , currentLineIndex(0)
     , loadSpeed(0.05f)
-    , loadAccumulator(0.0f) {
+    , loadAccumulator(0.0f)
+    , currentPolygonIndex(0) {
 }
 
 //--------------------------------------------------------------
@@ -123,70 +124,115 @@ bool FileManager::loadCustomLines(std::vector<CustomLine>& customLines) {
 }
 
 //--------------------------------------------------------------
-void FileManager::loadCustomLinesSequential(std::vector<CustomLine>& customLines) {
+void FileManager::loadAllSequential(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons) {
+    // === LOAD CUSTOM LINES ===
     // Cek apakah ada isinya dulu (proteksi kerjaan yang sudah dibuat)
-    if (!customLines.empty()) {
-        return;
-    }
+    if (customLines.empty()) {
+        // Cek apakah file exists
+        ofFile file(FILENAME);
+        if (file.exists()) {
+            // Baca file ke buffer
+            ofBuffer buffer = ofBufferFromFile(FILENAME);
+            char* data = buffer.getData();
 
-    // Cek apakah file exists
-    ofFile file(FILENAME);
-    if (!file.exists()) {
-        return;
-    }
+            // Read jumlah line
+            int numLines = *reinterpret_cast<int*>(data);
+            data += sizeof(int);
 
-    // Baca file ke buffer
-    ofBuffer buffer = ofBufferFromFile(FILENAME);
-    char* data = buffer.getData();
+            // Simpan SEMUA lines ke loadedLinesBuffer
+            loadedLinesBuffer.clear();
 
-    // Read jumlah line
-    int numLines = *reinterpret_cast<int*>(data);
-    data += sizeof(int);
+            for (int i = 0; i < numLines; i++) {
+                CustomLine line;
 
-    // Simpan SEMUA lines ke loadedLinesBuffer
-    loadedLinesBuffer.clear();
+                // Read jumlah points
+                int numPoints = *reinterpret_cast<int*>(data);
+                data += sizeof(int);
 
-    for (int i = 0; i < numLines; i++) {
-        CustomLine line;
+                // Read semua points
+                vector<vec2> points;
+                for (int j = 0; j < numPoints; j++) {
+                    vec2 point = *reinterpret_cast<vec2*>(data);
+                    data += sizeof(vec2);
+                    points.push_back(point);
+                }
+                line.setPoints(points);
 
-        // Read jumlah points
-        int numPoints = *reinterpret_cast<int*>(data);
-        data += sizeof(int);
+                // Read color
+                ofColor color = *reinterpret_cast<ofColor*>(data);
+                data += sizeof(ofColor);
+                line.setColor(color);
 
-        // Read semua points
-        vector<vec2> points;
-        for (int j = 0; j < numPoints; j++) {
-            vec2 point = *reinterpret_cast<vec2*>(data);
-            data += sizeof(vec2);
-            points.push_back(point);
+                // Read lineWidth
+                float lineWidth = *reinterpret_cast<float*>(data);
+                data += sizeof(float);
+                line.setLineWidth(lineWidth);
+
+                // Read curve
+                float curve = *reinterpret_cast<float*>(data);
+                data += sizeof(float);
+                line.setCurve(curve);
+
+                // Set initial animation state
+                line.setProgress(0.0f);
+                line.setSpeed(0.02f);
+
+                // Add ke buffer
+                loadedLinesBuffer.push_back(line);
+            }
         }
-        line.setPoints(points);
+    }
 
-        // Read color
-        ofColor color = *reinterpret_cast<ofColor*>(data);
-        data += sizeof(ofColor);
-        line.setColor(color);
+    // === LOAD POLYGONS ===
+    // Cek apakah ada isinya dulu (proteksi kerjaan yang sudah dibuat)
+    if (polygons.empty()) {
+        // Cek apakah file exists
+        ofFile file(FILENAME_POLYGONS);
+        if (file.exists()) {
+            // Read file ke buffer
+            ofBuffer buffer = ofBufferFromFile(FILENAME_POLYGONS);
+            char* data = buffer.getData();
 
-        // Read lineWidth
-        float lineWidth = *reinterpret_cast<float*>(data);
-        data += sizeof(float);
-        line.setLineWidth(lineWidth);
+            // Read jumlah polygon
+            int numPolygons = *reinterpret_cast<int*>(data);
+            data += sizeof(int);
 
-        // Read curve
-        float curve = *reinterpret_cast<float*>(data);
-        data += sizeof(float);
-        line.setCurve(curve);
+            // Simpan SEMUA polygons ke loadedPolygonsBuffer
+            loadedPolygonsBuffer.clear();
 
-        // Set initial animation state
-        line.setProgress(0.0f);  // Mulai dari 0 (belum tergambar)
-        line.setSpeed(0.02f);     // Kecepatan animasi
+            for (int i = 0; i < numPolygons; i++) {
+                // Read jumlah vertices
+                int numVertices = *reinterpret_cast<int*>(data);
+                data += sizeof(int);
 
-        // Add ke buffer (BUKAN ke customLines!)
-        loadedLinesBuffer.push_back(line);
+                // Read semua vertices
+                vector<vec2> vertices;
+                for (int j = 0; j < numVertices; j++) {
+                    vec2 vertex = *reinterpret_cast<vec2*>(data);
+                    data += sizeof(vec2);
+                    vertices.push_back(vertex);
+                }
+
+                // Read fillColor
+                ofColor fillColor = *reinterpret_cast<ofColor*>(data);
+                data += sizeof(ofColor);
+
+                // Buat PolygonShape dengan index
+                PolygonShape polygon(vertices, fillColor, i);
+
+                // Tambah FadeInAnimation
+                auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
+                polygon.setAnimation(std::move(fadeIn));
+
+                // Add ke buffer (BUKAN ke polygons!)
+                loadedPolygonsBuffer.push_back(std::move(polygon));
+            }
+        }
     }
 
     // Reset index dan mulai mode sequential
-    currentLoadIndex = 0;
+    currentLineIndex = 0;
+    currentPolygonIndex = 0;
     loadAccumulator = 0.0f;
     loadSequentialMode = true;
 }
@@ -197,7 +243,21 @@ void FileManager::clearCustomLines(std::vector<CustomLine>& customLines) {
 }
 
 //--------------------------------------------------------------
-void FileManager::updateSequentialLoad(std::vector<CustomLine>& customLines) {
+void FileManager::cancelSequentialLoad() {
+    // Clear semua buffer
+    loadedLinesBuffer.clear();
+    loadedPolygonsBuffer.clear();
+
+    // Reset state
+    loadSequentialMode = false;
+    loadParallelMode = false;
+    currentLineIndex = 0;
+    currentPolygonIndex = 0;
+    loadAccumulator = 0.0f;
+}
+
+//--------------------------------------------------------------
+void FileManager::updateSequentialLoad(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons) {
     // PARALLEL MODE: Update semua lines barengan
     if (loadParallelMode) {
         bool allComplete = true;
@@ -218,41 +278,54 @@ void FileManager::updateSequentialLoad(std::vector<CustomLine>& customLines) {
         return;
     }
 
-    // SEQUENTIAL MODE: Update satu per satu (original logic)
+    // SEQUENTIAL MODE: Update satu per satu (lines + polygons)
     if (!loadSequentialMode) {
         return;
     }
 
-    // Add line baru jika line terakhir sudah complete
-    bool canAddNewLine = false;
-    if (customLines.empty()) {
-        canAddNewLine = true;
-    } else {
-        // Cek apakah line terakhir sudah complete
-        CustomLine& lastLine = customLines.back();
-        if (lastLine.getProgress() >= 1.0f && currentLoadIndex < static_cast<int>(loadedLinesBuffer.size())) {
-            canAddNewLine = true;
-        }
+    // === ADD NEW ITEMS (lines + polygons) ===
+    // Cek apakah masih ada item yang belum di-load (lines ATAU polygons)
+    bool stillHasItems = (currentLineIndex < static_cast<int>(loadedLinesBuffer.size())) ||
+                         (currentPolygonIndex < static_cast<int>(loadedPolygonsBuffer.size()));
+
+    // Add item baru dengan delay
+    if (stillHasItems) {
+        loadAccumulator += loadSpeed;
     }
 
-    // Add line baru dengan delay
-    if (canAddNewLine) {
-        loadAccumulator += loadSpeed;
-        if (loadAccumulator >= 1.0f && currentLoadIndex < static_cast<int>(loadedLinesBuffer.size())) {
-            customLines.push_back(loadedLinesBuffer[currentLoadIndex]);
-            currentLoadIndex++;
+    // Cek apakah saatnya add item baru (line atau polygon)
+    if (loadAccumulator >= 1.0f) {
+        // Prioritas: Add line dulu kalau ada
+        if (currentLineIndex < static_cast<int>(loadedLinesBuffer.size())) {
+            customLines.push_back(loadedLinesBuffer[currentLineIndex]);
+            currentLineIndex++;
+            loadAccumulator = 0.0f;
+        }
+        // Kalau tidak ada line lagi, add polygon
+        else if (currentPolygonIndex < static_cast<int>(loadedPolygonsBuffer.size())) {
+            polygons.push_back(std::move(loadedPolygonsBuffer[currentPolygonIndex]));
+            currentPolygonIndex++;
             loadAccumulator = 0.0f;
         }
     }
 
+    // === UPDATE PROGRESS ===
     // Update progress untuk semua lines yang belum complete
     for (auto& line : customLines) {
         line.updateProgress();
     }
 
-    // Cek apakah sudah selesai (semua lines loaded dan semua complete)
+    // Update animation untuk semua polygons
+    for (auto& polygon : polygons) {
+        polygon.update();
+    }
+
+    // === CEK SELESAI ===
+    // Cek apakah sudah selesai (semua lines & polygons loaded dan semua complete)
     bool allComplete = true;
-    if (currentLoadIndex < static_cast<int>(loadedLinesBuffer.size())) {
+
+    // Cek lines
+    if (currentLineIndex < static_cast<int>(loadedLinesBuffer.size())) {
         allComplete = false;  // Masih ada lines yang belum di-load
     } else {
         // Cek apakah semua lines sudah complete
@@ -264,10 +337,16 @@ void FileManager::updateSequentialLoad(std::vector<CustomLine>& customLines) {
         }
     }
 
+    // Cek polygons
+    if (currentPolygonIndex < static_cast<int>(loadedPolygonsBuffer.size())) {
+        allComplete = false;  // Masih ada polygons yang belum di-load
+    }
+
     if (allComplete) {
         loadSequentialMode = false;  // Selesai
-        loadedLinesBuffer.clear();     // Bersihkan buffer
-        loadAccumulator = 0.0f;        // Reset accumulator
+        loadedLinesBuffer.clear();    // Bersihkan buffer lines
+        loadedPolygonsBuffer.clear(); // Bersihkan buffer polygons
+        loadAccumulator = 0.0f;       // Reset accumulator
     }
 }
 
@@ -283,7 +362,7 @@ bool FileManager::isLoadParallelMode() const {
 
 //--------------------------------------------------------------
 int FileManager::getCurrentLoadIndex() const {
-    return currentLoadIndex;
+    return currentLineIndex;
 }
 
 //--------------------------------------------------------------

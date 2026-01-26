@@ -14,14 +14,17 @@ public:
     void saveAll(const std::vector<CustomLine>& customLines, const std::vector<PolygonShape>& polygons);
     bool loadAll(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons);
 
-    // Load custom lines sequential dengan animasi (CTRL+SHIFT+O)
-    void loadCustomLinesSequential(std::vector<CustomLine>& customLines);
+    // Load ALL data sequential dengan animasi (CTRL+SHIFT+O)
+    void loadAllSequential(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons);
 
     // Clear semua custom lines (CTRL+DEL)
     static void clearCustomLines(std::vector<CustomLine>& customLines);
 
+    // Cancel sequential load (clear buffer dan reset state)
+    void cancelSequentialLoad();
+
     // Update sequential load (dipanggil dari update())
-    void updateSequentialLoad(std::vector<CustomLine>& customLines);
+    void updateSequentialLoad(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons);
 
     // Getter untuk state
     bool isLoadSequentialMode() const;
@@ -42,11 +45,15 @@ private:
     bool loadSequentialMode;
     bool loadParallelMode;
 
-    // Sequential load state
+    // Sequential load state untuk CustomLines
     std::vector<CustomLine> loadedLinesBuffer;
-    int currentLoadIndex;
+    int currentLineIndex;
     float loadSpeed;
     float loadAccumulator;
+
+    // Sequential load state untuk Polygons
+    std::vector<PolygonShape> loadedPolygonsBuffer;
+    int currentPolygonIndex;
 
     // Konstanta
     static const std::string FILENAME;
