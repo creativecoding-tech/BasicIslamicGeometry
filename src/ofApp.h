@@ -70,28 +70,25 @@ class ofApp : public ofBaseApp{
 		vector<vec2> currentPolylinePoints;  // Capture points saat drag untuk polyline
 		vector<CustomLine> customLines;  // CustomLine dari FileManager
 
-		// Line selection
-		int selectedLineIndex = -1;  // -1 = tidak ada yang dipilih
-
-		// Multi-select system
-		std::set<int> selectedLineIndices;  // Bisa select banyak garis
+		// Line selection (SATU SYSTEM UNTUK SEMUA!)
+		std::set<int> selectedLineIndices;  // Bisa select 1 atau banyak garis
 		int lastSelectedLineIndex = -1;  // Untuk track line terakhir di-klik
 
 		// Invisible polygon system
-		vector<PolygonShape> invisiblePolygons;
+		vector<PolygonShape> polygonShapes;
 		int selectedPolygonIndex = -1;
 
 		// Preset warna untuk polygon
 		vector<ofColor> polygonPresetColors = {
-			ofColor(255, 0, 0, 200),      // 1: Merah
-			ofColor(0, 255, 0, 200),      // 2: Hijau
-			ofColor(0, 0, 255, 200),      // 3: Biru
-			ofColor(255, 255, 0, 200),    // 4: Kuning
-			ofColor(255, 0, 255, 200),    // 5: Magenta
-			ofColor(0, 255, 255, 200),    // 6: Cyan
-			ofColor(255, 128, 0, 200),    // 7: Orange
-			ofColor(128, 0, 255, 200),    // 8: Ungu
-			ofColor(128, 128, 128, 200)   // 9: Abu-abu
+			ofColor(255, 0, 0, 255),      // 1: Merah (OPAQUE!)
+			ofColor(0, 255, 0, 255),      // 2: Hijau (OPAQUE!)
+			ofColor(0, 0, 255, 255),      // 3: Biru (OPAQUE!)
+			ofColor(255, 255, 0, 255),    // 4: Kuning (OPAQUE!)
+			ofColor(255, 0, 255, 255),    // 5: Magenta (OPAQUE!)
+			ofColor(0, 255, 255, 255),    // 6: Cyan (OPAQUE!)
+			ofColor(255, 128, 0, 255),    // 7: Orange (OPAQUE!)
+			ofColor(128, 0, 255, 255),    // 8: Ungu (OPAQUE!)
+			ofColor(128, 128, 128, 255)   // 9: Abu-abu (OPAQUE!)
 		};
 
 		// Line width control

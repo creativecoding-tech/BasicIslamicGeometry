@@ -2,7 +2,7 @@
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape()
-	: vertices(), fillColor(ofColor(255, 255, 0, 200)), selected(false) {}
+	: vertices(), fillColor(ofColor(255, 0, 0, 150)), selected(false) {}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color)

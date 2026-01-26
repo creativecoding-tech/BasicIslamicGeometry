@@ -6,7 +6,7 @@ void ofApp::setup(){
 	ofSetVerticalSync(false); //Tidak ada limit dari refresh rate monitor
 	ofSetFrameRate(60);
 	ofSetEscapeQuitsApp(false);
-	ofSetBackgroundAuto(false);
+	ofSetBackgroundAuto(false);  // Coba ubah ke TRUE untuk test (hilangkan trail effect)
 	ofEnableAntiAliasing();
 	ofEnableSmoothing();
 	ofHideCursor();
@@ -410,29 +410,34 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::drawCustomLinesAndUI() {
-	// Update selection state untuk semua lines (single-select dan multi-select)
+	// Update selection state untuk semua lines
 	for (int i = 0; i < customLines.size(); i++) {
-		bool isSelected = (i == selectedLineIndex) || (selectedLineIndices.count(i) > 0);
+		bool isSelected = (selectedLineIndices.count(i) > 0);
 		customLines[i].setSelected(isSelected);
 		customLines[i].draw();
 	}
 
 	// Draw invisible polygons
-	for (int i = 0; i < invisiblePolygons.size(); i++) {
-		invisiblePolygons[i].setSelected(i == selectedPolygonIndex);
-		invisiblePolygons[i].draw();
+	for (int i = 0; i < polygonShapes.size(); i++) {
+		polygonShapes[i].setSelected(i == selectedPolygonIndex);
+		polygonShapes[i].draw();
 	}
 
 	// Draw curve value label untuk garis yang selected
-	if (selectedLineIndex >= 0 && selectedLineIndex < customLines.size()) {
-		const CustomLine& line = customLines[selectedLineIndex];
-		if (line.getPoints().size() >= 2) {
-			vec2 midPoint = (line.getPoints()[0] + line.getPoints()[1]) / 2.0f;
+	if (!selectedLineIndices.empty()) {
+		// Tampilkan label untuk SEMUA garis yang selected
+		for (int lineIndex : selectedLineIndices) {
+			if (lineIndex >= 0 && lineIndex < customLines.size()) {
+				const CustomLine& line = customLines[lineIndex];
+				if (line.getPoints().size() >= 2) {
+					vec2 midPoint = (line.getPoints()[0] + line.getPoints()[1]) / 2.0f;
 
-			ofPushStyle();
-			ofSetColor(0, 0, 0);  // Hitam untuk label
-			fontNormal.drawString("Curve: " + ofToString(line.getCurve(), 1), midPoint.x + 10, midPoint.y - 10);
-			ofPopStyle();
+					ofPushStyle();
+					ofSetColor(0, 0, 0);  // Hitam untuk label
+					fontNormal.drawString("Curve: " + ofToString(line.getCurve(), 1), midPoint.x + 10, midPoint.y - 10);
+					ofPopStyle();
+				}
+			}
 		}
 	}
 
@@ -488,9 +493,16 @@ void ofApp::keyPressed(int key){
 
 	if (key == OF_KEY_DEL) {
 		if (isCtrlPressed) {
-			// CTRL+DEL: Clear semua custom lines - HANYA jika TIDAK sedang load
-			if (!fileManager.isLoadSequentialMode() && !fileManager.isLoadParallelMode()) {
-				FileManager::clearCustomLines(customLines);
+			// CTRL+DEL: Hapus polygon jika ada yang selected, kalau tidak hapus custom lines
+			if (selectedPolygonIndex != -1) {
+				// Hapus polygon yang selected
+				polygonShapes.erase(polygonShapes.begin() + selectedPolygonIndex);
+				selectedPolygonIndex = -1;
+			} else {
+				// Tidak ada polygon selected, hapus custom lines
+				if (!fileManager.isLoadSequentialMode() && !fileManager.isLoadParallelMode()) {
+					FileManager::clearCustomLines(customLines);
+				}
 			}
 			return;  // Jangan lanjut ke hideAllShapes()
 		} else {
@@ -502,10 +514,16 @@ void ofApp::keyPressed(int key){
 	}
 
 	if (key == OF_KEY_BACKSPACE) {
-		// Jika ada customLine yang terselect, hapus customLine tersebut
-		if (selectedLineIndex != -1) {
-			customLines.erase(customLines.begin() + selectedLineIndex);
-			selectedLineIndex = -1;  // Reset selection
+		// Hapus garis yang terselect
+		if (!selectedLineIndices.empty()) {
+			// Hapus SEMUA garis yang terselect
+			// Sort descending agar aman untuk erase
+			vector<int> toDelete(selectedLineIndices.begin(), selectedLineIndices.end());
+			std::sort(toDelete.rbegin(), toDelete.rend());  // Descending
+			for (int index : toDelete) {
+				customLines.erase(customLines.begin() + index);
+			}
+			selectedLineIndices.clear();
 		} else {
 			// Jika tidak ada customLine terselect, toggle CartesianAxes
 			if (cartesianAxes->showing) {
@@ -574,8 +592,8 @@ void ofApp::keyPressed(int key){
 	// Keys 1-9 - Assign color to selected polygon
 	if (key >= 49 && key <= 57) {  // '1' to '9'
 		int colorIndex = key - 49;  // 0 to 8
-		if (selectedPolygonIndex >= 0 && selectedPolygonIndex < invisiblePolygons.size()) {
-			invisiblePolygons[selectedPolygonIndex].setColor(polygonPresetColors[colorIndex]);
+		if (selectedPolygonIndex >= 0 && selectedPolygonIndex < polygonShapes.size()) {
+			polygonShapes[selectedPolygonIndex].setColor(polygonPresetColors[colorIndex]);
 		}
 	}
 }
@@ -828,14 +846,13 @@ void ofApp::createInvisiblePolygonFromSelected() {
 		return;
 	}
 
-	// 2. Create invisible polygon dengan default color KUNING
-	PolygonShape newPolygon(allPoints, ofColor(255, 255, 0, 200));
-	invisiblePolygons.push_back(newPolygon);
+	// 2. Create polygon dengan default color MERAH TRANSPARENT
+	PolygonShape newPolygon(allPoints, ofColor(255, 0, 0, 150));  // Alpha 150 (semi-transparent)
+	polygonShapes.push_back(newPolygon);
 
 	// 3. Clear selection
 	selectedLineIndices.clear();
 	lastSelectedLineIndex = -1;
-	selectedLineIndex = -1;
 }
 
 //--------------------------------------------------------------
@@ -887,7 +904,6 @@ void ofApp::mousePressed(int x, int y, int button) {
 				clickedOnDot = true;
 
 				// Deselect line yang mungkin terpilih
-				selectedLineIndex = -1;
 				selectedLineIndices.clear();
 
 				return;
@@ -898,11 +914,12 @@ void ofApp::mousePressed(int x, int y, int button) {
 		if (!clickedOnDot) {
 			int lineIndex = getLineIndexAtPosition(adjustedMousePos);
 			if (lineIndex >= 0) {
-				// Select garis ini
-				selectedLineIndex = lineIndex;
+				// Select garis ini (single select: hapus yang lama, select yang baru)
+				selectedLineIndices.clear();
+				selectedLineIndices.insert(lineIndex);
 			} else {
-				// Klik di tempat kosong → deselect
-				selectedLineIndex = -1;
+				// Klik di tempat kosong → deselect semua
+				selectedLineIndices.clear();
 			}
 		}
 	}
@@ -964,12 +981,15 @@ void ofApp::mouseReleased(int x, int y, int button) {
 
 //--------------------------------------------------------------
 void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
-	// Update curve untuk garis yang sedang dipilih
-	if (selectedLineIndex >= 0 && selectedLineIndex < customLines.size()) {
-		// scrollY positif = scroll up, scrollY negatif = scroll down
+	// Update curve untuk SEMUA garis yang selected
+	if (!selectedLineIndices.empty()) {
 		float curveSpeed = 5.0f;  // Kecepatan perubahan curve
-		float newCurve = customLines[selectedLineIndex].getCurve() + scrollY * curveSpeed;
-		customLines[selectedLineIndex].setCurve(newCurve);
+		for (int lineIndex : selectedLineIndices) {
+			if (lineIndex >= 0 && lineIndex < customLines.size()) {
+				float newCurve = customLines[lineIndex].getCurve() + scrollY * curveSpeed;
+				customLines[lineIndex].setCurve(newCurve);
+			}
+		}
 	}
 }
 
