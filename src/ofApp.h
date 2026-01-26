@@ -13,9 +13,22 @@
 #include "operation/UltralightManager.h"
 #include <set>
 using glm::vec2;
+
+/**
+ * Application states untuk wizard dialog
+ */
+enum AppState {
+	SETUP_MODE,       // Dialog 1: Pilih 2D/3D mode
+	SETUP_TEMPLATE,   // Dialog 2: Pilih Sacred Geometry template
+	RUNNING           // Main canvas running
+};
+
 class ofApp : public ofBaseApp{
 
 	public:
+		// Application state untuk wizard dialog
+		AppState appState = SETUP_MODE;
+
 		float radiusCircle = 240;
 		//circle attribute
 		std::unique_ptr<CircleShape> circleA;
@@ -112,8 +125,9 @@ class ofApp : public ofBaseApp{
 		FileManager fileManager;
 
 		// Ultralight UI Manager untuk HTML overlay UI
-		UltralightManager ultralightUI;
-		bool ultralightUIVisible = false;  // UI visibility state
+		UltralightManager sacredGeoUI;     // Small UI untuk Sacred Geometry controls (toggle G)
+		UltralightManager dialogUI;        // Full dialog untuk setup wizard (600x400 centered)
+		bool sacredGeoUIVisible = false;   // Sacred Geo UI visibility state
 
 		void setup();
 		void setupCircles();
@@ -137,7 +151,15 @@ class ofApp : public ofBaseApp{
 		void showAllShapes();           // Show all shapes
 		void decreaseLineWidth();       // Kurangi line width
 		void increaseLineWidth();       // Tambah line width
-		void toggleUltralightUI();      // Toggle Ultralight UI visibility (G/g)
+		void toggleUltralightUI();      // Toggle Sacred Geo UI visibility (G/g)
+
+		// Dialog/State management methods
+		void setupDialogUI();           // Initialize dialog UI manager
+		void showModeDialog();          // Show dialog 1 (2D/3D selection)
+		void showTemplateDialog();      // Show dialog 2 (template selection)
+		void handleDialogClick(int x, int y);  // Handle button clicks in dialog
+		void onCreateApp();             // Called when user clicks Create
+		void onDialogClose();           // Called when user clicks Close (exit app)
 
 		// Interactive Line Creation helpers
 		const vector<DotInfo>& getAllDots();  // Return cached dots by reference

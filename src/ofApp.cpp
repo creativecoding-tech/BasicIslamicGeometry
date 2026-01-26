@@ -9,12 +9,17 @@ void ofApp::setup(){
 	ofSetBackgroundAuto(false);  // Coba ubah ke TRUE untuk test (hilangkan trail effect)
 	ofEnableAntiAliasing();
 	ofEnableSmoothing();
-	ofHideCursor();
 
 	// Load font untuk custom line labels
 	fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
 
-	// Call modular setup methods
+	// Setup Dialog UI untuk wizard (600x400 centered)
+	setupDialogUI();
+
+	// Show dialog pertama (mode selection)
+	showModeDialog();
+
+	// Call modular setup methods ( Sacred geometry shapes)
 	setupCircles();
 	setupCartesianAxes();
 	setupCrossLines();
@@ -25,18 +30,7 @@ void ofApp::setup(){
 	// Initial dots cache build (cache di-build saat pertama kali getAllDots() dipanggil)
 	dotsCacheDirty = true;
 
-	// Setup Ultralight UI Manager (ukuran kecil di pojok kiri atas)
-	try {
-		ofLogNotice("ofApp") << "Attempting to initialize Ultralight UI...";
-		ultralightUI.setup(400, ofGetHeight()-50);  // bukan full screen
-		ofLogNotice("ofApp") << "Ultralight UI initialized successfully!";
-		ultralightUI.loadHTMLFile("html/ui.html");  // Load dari folder html/
-		ofLogNotice("ofApp") << "HTML file loaded!";
-	} catch (const std::exception& e) {
-		// Ultralight gagal initialize, lanjut saja tanpa UI
-		ofLogError("ofApp") << "Failed to initialize Ultralight UI: " << e.what();
-		ofLogError("ofApp") << "Continuing without Ultralight UI overlay...";
-	}
+	// NOTE: sacredGeoUI akan di-setup nanti setelah user klik Create (onCreateApp)
 }
 
 //--------------------------------------------------------------
@@ -384,65 +378,92 @@ void ofApp::update(){
 		}
 	}
 
-	// Update Ultralight UI renderer
-	ultralightUI.update();
+	// Update Ultralight UI renderers
+	dialogUI.update();
+	if (appState == RUNNING) {
+		sacredGeoUI.update();
+	}
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-	// Trail effect untuk geometry
-	ofSetColor(255, 25);
-	ofFill();
-	ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
+	// Render berdasarkan application state
+	if (appState == SETUP_MODE || appState == SETUP_TEMPLATE) {
+		// Background hitam solid
+		ofSetColor(0);
+		ofFill();
+		ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
 
-	// Push matrix untuk geometry drawing (centered)
-	ofPushMatrix();
-	ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
-	//Draw circle
-	circleA->draw();
-	circleB->draw();
-	circleC->draw();
-	circleD->draw();
-	circleE->draw();
-	//Draw Cartesian
-	cartesianAxes->draw();
-	//Draw CrossLine
-	crossLineF->draw();
-	crossLineG->draw();
-	crossLineH->draw();
-	crossLineI->draw();
-	//Draw paralellogram
-	parallelogramCtoE->draw();
-	parallelogramEtoB->draw();
-	parallelogramBtoD->draw();
-	parallelogramDtoC->draw();
-	//Draw RectangleLine
-	rectangleLineFtoG->draw();
-	rectangleLineGtoI->draw();
-	rectangleLineItoH->draw();
-	rectangleLineHtoF->draw();
-	//Draw OctagramLine
-	octagramLine0->draw();
-	octagramLine1->draw();
-	octagramLine2->draw();
-	octagramLine3->draw();
-	octagramLine4->draw();
-	octagramLine5->draw();
-	octagramLine6->draw();
-	octagramLine7->draw();
-
-	// Draw custom lines dan UI elements
-	drawCustomLinesAndUI();
-
-	// Reset transform
-	ofPopMatrix();
-
-	// Draw Ultralight UI dengan style terpisah (tidak ganggu trail effect)
-	if (ultralightUIVisible) {
+		// Draw dialog centered
 		ofPushStyle();
-		ofSetColor(255, 255);  // Override trail effect alpha
-		ultralightUI.draw();
-		ofPopStyle();  // Kembalikan ke trail effect (255, 25) untuk frame berikutnya
+		ofSetColor(255, 255);
+
+		// Calculate centered position
+		int dialogX = (ofGetWidth() - 600) / 2;
+		int dialogY = (ofGetHeight() - 400) / 2;
+
+		ofPushMatrix();
+		ofTranslate(dialogX, dialogY);
+		dialogUI.draw();
+		ofPopMatrix();
+
+		ofPopStyle();
+	}
+	else { // RUNNING state
+		// Trail effect untuk geometry
+		ofSetColor(255, 25);
+		ofFill();
+		ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
+
+		// Push matrix untuk geometry drawing (centered)
+		ofPushMatrix();
+		ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
+		//Draw circle
+		circleA->draw();
+		circleB->draw();
+		circleC->draw();
+		circleD->draw();
+		circleE->draw();
+		//Draw Cartesian
+		cartesianAxes->draw();
+		//Draw CrossLine
+		crossLineF->draw();
+		crossLineG->draw();
+		crossLineH->draw();
+		crossLineI->draw();
+		//Draw paralellogram
+		parallelogramCtoE->draw();
+		parallelogramEtoB->draw();
+		parallelogramBtoD->draw();
+		parallelogramDtoC->draw();
+		//Draw RectangleLine
+		rectangleLineFtoG->draw();
+		rectangleLineGtoI->draw();
+		rectangleLineItoH->draw();
+		rectangleLineHtoF->draw();
+		//Draw OctagramLine
+		octagramLine0->draw();
+		octagramLine1->draw();
+		octagramLine2->draw();
+		octagramLine3->draw();
+		octagramLine4->draw();
+		octagramLine5->draw();
+		octagramLine6->draw();
+		octagramLine7->draw();
+
+		// Draw custom lines dan UI elements
+		drawCustomLinesAndUI();
+
+		// Reset transform
+		ofPopMatrix();
+
+		// Draw Ultralight UI dengan style terpisah (tidak ganggu trail effect)
+		if (sacredGeoUIVisible) {
+			ofPushStyle();
+			ofSetColor(255, 255);  // Override trail effect alpha
+			sacredGeoUI.draw();
+			ofPopStyle();  // Kembalikan ke trail effect (255, 25) untuk frame berikutnya
+		}
 	}
 }
 
@@ -950,9 +971,15 @@ void ofApp::createInvisiblePolygonFromSelected() {
 //--------------------------------------------------------------
 // Mouse Event Handlers
 void ofApp::mousePressed(int x, int y, int button) {
+	// Handle dialog button clicks (Dialog active)
+	if (appState == SETUP_MODE || appState == SETUP_TEMPLATE) {
+		handleDialogClick(x, y);
+		return;  // Jangan lanjut ke logic lain saat dialog aktif
+	}
+
 	// Forward mouse press ke Ultralight UI jika mouse di area UI dan UI visible
-	if (ultralightUIVisible && ultralightUI.isMouseOverUI(x, y)) {
-		ultralightUI.fireMouseDown(x, y, button);
+	if (sacredGeoUIVisible && sacredGeoUI.isMouseOverUI(x, y)) {
+		sacredGeoUI.fireMouseDown(x, y, button);
 		return;  // Jangan lanjut ke logic lain
 	}
 
@@ -1056,8 +1083,8 @@ void ofApp::mouseDragged(int x, int y, int button) {
 
 void ofApp::mouseReleased(int x, int y, int button) {
 	// Forward mouse release ke Ultralight UI jika mouse di area UI dan UI visible
-	if (ultralightUIVisible && ultralightUI.isMouseOverUI(x, y)) {
-		ultralightUI.fireMouseUp(x, y, button);
+	if (sacredGeoUIVisible && sacredGeoUI.isMouseOverUI(x, y)) {
+		sacredGeoUI.fireMouseUp(x, y, button);
 		return;  // Jangan lanjut ke logic lain
 	}
 
@@ -1100,8 +1127,8 @@ void ofApp::mouseReleased(int x, int y, int button) {
 //--------------------------------------------------------------
 void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
 	// Forward scroll ke Ultralight UI jika mouse di area UI dan UI visible
-	if (ultralightUIVisible && ultralightUI.isMouseOverUI(x, y)) {
-		ultralightUI.fireMouseScroll(x, y, scrollX, -scrollY * 30);  // Ultralight pakai pixel delta
+	if (sacredGeoUIVisible && sacredGeoUI.isMouseOverUI(x, y)) {
+		sacredGeoUI.fireMouseScroll(x, y, scrollX, -scrollY * 30);  // Ultralight pakai pixel delta
 		return;  // Jangan lanjut ke logic lain
 	}
 
@@ -1123,8 +1150,8 @@ void ofApp::mouseMoved(int x, int y) {
 	mousePos = vec2(x - ofGetWidth()/2, y - ofGetHeight()/2);
 
 	// Forward mouse move ke Ultralight UI jika mouse di area UI dan UI visible
-	if (ultralightUIVisible && ultralightUI.isMouseOverUI(x, y)) {
-		ultralightUI.fireMouseMove(x, y);
+	if (sacredGeoUIVisible && sacredGeoUI.isMouseOverUI(x, y)) {
+		sacredGeoUI.fireMouseMove(x, y);
 	}
 }
 
@@ -1611,13 +1638,112 @@ void ofApp::increaseLineWidth() {
 
 //--------------------------------------------------------------
 void ofApp::toggleUltralightUI() {
-	ultralightUIVisible = !ultralightUIVisible;
+	sacredGeoUIVisible = !sacredGeoUIVisible;
+}
+
+//--------------------------------------------------------------
+void ofApp::setupDialogUI() {
+	dialogUI.setup(600, 400);
+}
+
+//--------------------------------------------------------------
+void ofApp::showModeDialog() {
+	dialogUI.loadHTMLFile("html/dialog_mode.html");
+	appState = SETUP_MODE;
+}
+
+//--------------------------------------------------------------
+void ofApp::showTemplateDialog() {
+	dialogUI.loadHTMLFile("html/dialog_template.html");
+	appState = SETUP_TEMPLATE;
+}
+
+//--------------------------------------------------------------
+void ofApp::handleDialogClick(int x, int y) {
+	// Calculate dialog position (centered)
+	int dialogX = (ofGetWidth() - 600) / 2;
+	int dialogY = (ofGetHeight() - 400) / 2;
+
+	// Convert screen coordinates to dialog-relative coordinates
+	int relX = x - dialogX;
+	int relY = y - dialogY;
+
+	if (appState == SETUP_MODE) {
+		// Dialog 1: Mode Selection
+		// Mode cards area (approximately y: 100-280)
+		if (relY >= 100 && relY <= 280) {
+			// 2D Mode card (left, x: 50-250)
+			if (relX >= 50 && relX <= 250) {
+				// Selected 2D - store selection and enable Next
+				showTemplateDialog();
+				return;
+			}
+			// 3D Mode card (right, x: 350-550)
+			if (relX >= 350 && relX <= 550) {
+				// Selected 3D - store selection and enable Next
+				showTemplateDialog();
+				return;
+			}
+		}
+
+		// Buttons area (approximately y: 340-380)
+		if (relY >= 340 && relY <= 380) {
+			// Close button (left, x: 150-270)
+			if (relX >= 150 && relX <= 270) {
+				onDialogClose();
+				return;
+			}
+			// Next button (right, x: 330-450)
+			if (relX >= 330 && relX <= 450) {
+				showTemplateDialog();
+				return;
+			}
+		}
+	}
+	else if (appState == SETUP_TEMPLATE) {
+		// Dialog 2: Template Selection
+		// Template cards area (approximately y: 100-250)
+		if (relY >= 100 && relY <= 250) {
+			// Basic Zellige template (centered, x: 50-550)
+			if (relX >= 50 && relX <= 550) {
+				// Template selected - continue to Create button
+				// (auto-select for now since only 1 template)
+			}
+		}
+
+		// Buttons area (approximately y: 340-380)
+		if (relY >= 340 && relY <= 380) {
+			// Back button (left, x: 150-270)
+			if (relX >= 150 && relX <= 270) {
+				showModeDialog();
+				return;
+			}
+			// Create button (right, x: 330-450)
+			if (relX >= 330 && relX <= 450) {
+				onCreateApp();
+				return;
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::onCreateApp() {
+	sacredGeoUI.setup(400, ofGetHeight()-50);
+	sacredGeoUI.loadHTMLFile("html/ui.html");
+	appState = RUNNING;
+}
+
+//--------------------------------------------------------------
+void ofApp::onDialogClose() {
+	ofExit();
 }
 
 //--------------------------------------------------------------
 void ofApp::exit() {
 	// Cleanup Ultralight UI resources
-	ultralightUI.cleanup();
+	dialogUI.cleanup();
+	sacredGeoUI.cleanup();
 }
 
 
