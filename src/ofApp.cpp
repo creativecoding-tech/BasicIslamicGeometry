@@ -493,16 +493,13 @@ void ofApp::keyPressed(int key){
 
 	if (key == OF_KEY_DEL) {
 		if (isCtrlPressed) {
-			// CTRL+DEL: Hapus polygon jika ada yang selected, kalau tidak hapus custom lines
-			if (selectedPolygonIndex != -1) {
-				// Hapus polygon yang selected
-				polygonShapes.erase(polygonShapes.begin() + selectedPolygonIndex);
+			// CTRL+DEL: Hapus semua polygon dan semua custom lines
+			if (!polygonShapes.empty()) {
+				polygonShapes.clear();
 				selectedPolygonIndex = -1;
-			} else {
-				// Tidak ada polygon selected, hapus custom lines
-				if (!fileManager.isLoadSequentialMode() && !fileManager.isLoadParallelMode()) {
-					FileManager::clearCustomLines(customLines);
-				}
+			}
+			if (!fileManager.isLoadSequentialMode() && !fileManager.isLoadParallelMode()) {
+				FileManager::clearCustomLines(customLines);
 			}
 			return;  // Jangan lanjut ke hideAllShapes()
 		} else {
@@ -514,8 +511,14 @@ void ofApp::keyPressed(int key){
 	}
 
 	if (key == OF_KEY_BACKSPACE) {
-		// Hapus garis yang terselect
-		if (!selectedLineIndices.empty()) {
+		// Prioritas: Hapus polygon selected dulu
+		if (selectedPolygonIndex != -1) {
+			// Hapus polygon yang selected
+			polygonShapes.erase(polygonShapes.begin() + selectedPolygonIndex);
+			selectedPolygonIndex = -1;
+		}
+		// Kalau tidak ada polygon selected, cek customLine
+		else if (!selectedLineIndices.empty()) {
 			// Hapus SEMUA garis yang terselect
 			// Sort descending agar aman untuk erase
 			vector<int> toDelete(selectedLineIndices.begin(), selectedLineIndices.end());
@@ -524,8 +527,9 @@ void ofApp::keyPressed(int key){
 				customLines.erase(customLines.begin() + index);
 			}
 			selectedLineIndices.clear();
-		} else {
-			// Jika tidak ada customLine terselect, toggle CartesianAxes
+		}
+		// Kalau tidak ada polygon dan customLine terselect, toggle CartesianAxes
+		else {
 			if (cartesianAxes->showing) {
 				cartesianAxes->hide();
 			} else {
