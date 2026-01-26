@@ -238,6 +238,7 @@
     <ClCompile Include="src\shape\CustomLine.cpp" />
     <ClCompile Include="src\shape\PolygonShape.cpp" />
     <ClCompile Include="src\operation\FileManager.cpp" />
+    <ClCompile Include="src\operation\UltralightManager.cpp" />
     <ClCompile Include="src\anim\AbstractAnimation.cpp" />
     <ClCompile Include="src\anim\FadeInAnimation.cpp" />
   </ItemGroup>
@@ -253,6 +254,7 @@
     <ClInclude Include="src\shape\CustomLine.h" />
     <ClInclude Include="src\shape\PolygonShape.h" />
     <ClInclude Include="src\operation\FileManager.h" />
+    <ClInclude Include="src\operation\UltralightManager.h" />
     <ClInclude Include="src\anim\AbstractAnimation.h" />
     <ClInclude Include="src\anim\FadeInAnimation.h" />
   </ItemGroup>

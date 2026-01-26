@@ -10,6 +10,7 @@
 #include "shape/CustomLine.h"
 #include "shape/PolygonShape.h"
 #include "operation/FileManager.h"
+#include "operation/UltralightManager.h"
 #include <set>
 using glm::vec2;
 class ofApp : public ofBaseApp{
@@ -110,6 +111,9 @@ class ofApp : public ofBaseApp{
 		// File Manager untuk save/load custom lines
 		FileManager fileManager;
 
+		// Ultralight UI Manager untuk HTML overlay UI
+		UltralightManager ultralightUI;
+
 		void setup();
 		void setupCircles();
 		void setupCartesianAxes();
@@ -156,5 +160,6 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
+		void exit();  // Cleanup Ultralight on exit
 
 };

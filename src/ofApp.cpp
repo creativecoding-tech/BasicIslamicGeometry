@@ -4,7 +4,7 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
 	ofSetVerticalSync(false); //Tidak ada limit dari refresh rate monitor
-	ofSetFrameRate(60);
+	ofSetFrameRate(60);  // Sync dengan Ultralight 60 FPS cap
 	ofSetEscapeQuitsApp(false);
 	ofSetBackgroundAuto(false);  // Coba ubah ke TRUE untuk test (hilangkan trail effect)
 	ofEnableAntiAliasing();
@@ -24,6 +24,19 @@ void ofApp::setup(){
 
 	// Initial dots cache build (cache di-build saat pertama kali getAllDots() dipanggil)
 	dotsCacheDirty = true;
+
+	// Setup Ultralight UI Manager (ukuran kecil di pojok kiri atas)
+	try {
+		ofLogNotice("ofApp") << "Attempting to initialize Ultralight UI...";
+		ultralightUI.setup(400, 300);  // UI 400x300 pixel, bukan full screen
+		ofLogNotice("ofApp") << "Ultralight UI initialized successfully!";
+		ultralightUI.loadHTMLFile("ui.html");
+		ofLogNotice("ofApp") << "HTML file loaded!";
+	} catch (const std::exception& e) {
+		// Ultralight gagal initialize, lanjut saja tanpa UI
+		ofLogError("ofApp") << "Failed to initialize Ultralight UI: " << e.what();
+		ofLogError("ofApp") << "Continuing without Ultralight UI overlay...";
+	}
 }
 
 //--------------------------------------------------------------
@@ -370,13 +383,20 @@ void ofApp::update(){
 			polygon.update();
 		}
 	}
+
+	// Update Ultralight UI renderer
+	ultralightUI.update();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+	// Trail effect untuk geometry
 	ofSetColor(255, 25);
 	ofFill();
 	ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
+
+	// Push matrix untuk geometry drawing (centered)
+	ofPushMatrix();
 	ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
 	//Draw circle
 	circleA->draw();
@@ -413,6 +433,15 @@ void ofApp::draw(){
 
 	// Draw custom lines dan UI elements
 	drawCustomLinesAndUI();
+
+	// Reset transform
+	ofPopMatrix();
+
+	// Draw Ultralight UI dengan style terpisah (tidak ganggu trail effect)
+	ofPushStyle();
+	ofSetColor(255, 255);  // Override trail effect alpha
+	ultralightUI.draw();
+	ofPopStyle();  // Kembalikan ke trail effect (255, 25) untuk frame berikutnya
 }
 
 //--------------------------------------------------------------
@@ -1548,6 +1577,12 @@ void ofApp::increaseLineWidth() {
 	octagramLine5->setLineWidth(currentLineWidth);
 	octagramLine6->setLineWidth(currentLineWidth);
 	octagramLine7->setLineWidth(currentLineWidth);
+}
+
+//--------------------------------------------------------------
+void ofApp::exit() {
+	// Cleanup Ultralight UI resources
+	ultralightUI.cleanup();
 }
 
 
