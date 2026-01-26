@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--mouse--line-orange)
+![Branch](https://img.shields.io/badge/Branch-sketch--polygon--color-orange)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -111,8 +111,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 # Clone repository ini
 git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 
-# Checkout branch sketch-mouse-line
-git checkout sketch-mouse-line
+# Checkout branch sketch-polygon-color
+git checkout sketch-polygon-color
 
 # Jalankan OpenFrameworks Project Generator
 # Buka: openFrameworks/apps/projectGenerator/projectGenerator.exe
@@ -362,7 +362,8 @@ BasicIslamicGeometry/
 │   │   ├── ParallelogramLine.cpp/h     # Garis penghubung dengan 1 dot & 1 label
 │   │   ├── RectangleLine.cpp/h         # Garis rectangle dengan 2 dot & 2 label
 │   │   ├── OctagramLine.cpp/h          # Garis octagram dengan 2 segment & 1 dot (0-7)
-│   │   └── CustomLine.cpp/h            # Custom user-created lines dengan bezier curve support
+│   │   ├── CustomLine.cpp/h            # Custom user-created lines dengan bezier curve support
+│   │   └── PolygonShape.cpp/h          # Polygon fill-only dengan color preset system
 │   └── operation/            # File operations & utilities
 │       └── FileManager.cpp/h           # Save/load custom lines ke binary file
 ├── bin/                      # Compiled executable
@@ -396,14 +397,22 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **sketch-mouse-line**
+## 📝 Current Status: **sketch-polygon-color**
 
-Branch ini adalah **eksperimen mouse interaction** pada BasicIslamicGeometry dengan fokus pada **mouse drag untuk draw line**. Fitur yang tersedia:
+Branch ini adalah **eksperimen polygon coloring** pada BasicIslamicGeometry dengan fokus pada **sistem polygon fill dan multi-selection**. Fitur yang tersedia:
 
 ✅ **Mouse Interaction**: Mouse drag untuk menggambar line secara interaktif antar dots
 ✅ **CustomLine System**: Garis custom yang bisa dibuat user dengan mouse drag (start dot → end dot)
 ✅ **Bezier Curve Support**: Garis bisa dibuat melengkung dengan scroll mouse (curve parameter)
+✅ **Multi-Select System**: CTRL+Klik untuk toggle selection multiple garis
+✅ **SHIFT+B**: Select semua customLines sekaligus (shortcut untuk select all)
 ✅ **Line Selection**: Klik garis untuk select, visual feedback dengan warna merah
+✅ **PolygonShape System**: Class untuk polygon fill-only tanpa outline (hanya warna)
+✅ **Create Polygon (CTRL+G)**: Buat polygon dari selected customLines (otomatis deteksi closed loop)
+✅ **Polygon Selection**: Klik polygon untuk select, visual feedback dengan label "Polygon0", "Polygon1", dst
+✅ **Polygon Color Preset**: 9 warna preset untuk polygon (merah, hijau, biru, kuning, magenta, cyan, orange, ungu, abu-abu)
+✅ **Polygon Color Assignment**: Keys 1-9 untuk assign color ke selected polygon secara realtime
+✅ **Delete Polygon**: CTRL+DEL untuk hapus selected polygon
 ✅ **Parallel Load Mode (CTRL+O)**: Load semua garis dengan animasi parallel (barengan seperti OctagramLine)
 ✅ **Sequential Load Mode (CTRL+SHIFT+O)**: Load garis satu per satu dengan delay
 ✅ **Save/Load System**: Simpan dan load custom lines ke binary file
@@ -436,6 +445,7 @@ Branch ini adalah **eksperimen mouse interaction** pada BasicIslamicGeometry den
 ✅ **Memory-safe Implementation**: Menggunakan `std::unique_ptr` untuk resource management
 ✅ **Modular Setup Methods**: setup() terbagi menjadi setupCircles(), setupCartesianAxes(), setupCrossLines(), setupParallelograms(), setupRectangleLine(), setupOctagramLine()
 ✅ **CustomLine Class**: Encapsulated class untuk custom line dengan curve support, progressive animation, dan selection state
+✅ **PolygonShape Class**: Encapsulated class untuk polygon fill dengan color preset system dan label indicator
 
 ### Keyboard Shortcuts
 
@@ -456,13 +466,24 @@ Branch ini adalah **eksperimen mouse interaction** pada BasicIslamicGeometry den
 | --- | --- |
 | **Mouse Drag** | Buat garis custom dari dot ke dot (hanya bisa mulai dan akhir di dot) |
 | **Mouse Click** | Select garis custom (berubah jadi merah) |
+| **CTRL + Click** | Toggle selection multiple garis (multi-select) |
+| **SHIFT + B** | Select semua customLines sekaligus |
 | **Mouse Scroll** | Adjust curvature garis yang sedang di-select (scroll up = melengkung satu arah, scroll down = melengkung arah sebaliknya, 0 = lurus) |
 | **CTRL + Z** | Undo garis terakhir yang dibuat |
+| **CTRL + G** | Buat polygon dari selected customLines (minimum 3 garis untuk buat polygon) |
 | **CTRL + S** | Simpan semua custom lines ke file (binary format) |
 | **CTRL + O** | Load semua custom lines dengan animasi parallel (semua garis animate barengan) |
 | **CTRL + SHIFT + O** | Load semua custom lines dengan animasi sequential (satu per satu dengan delay) |
-| **CTRL + DEL** | Hapus semua custom lines (tidak jalan saat sedang loading) |
+| **CTRL + DEL** | Hapus polygon yang sedang di-select (jika tidak ada polygon selected, hapus semua custom lines) |
+| **1 - 9** | Assign color ke polygon yang sedang di-select (1=Merah, 2=Hijau, 3=Biru, 4=Kuning, 5=Magenta, 6=Cyan, 7=Orange, 8=Ungu, 9=Abu-abu) |
 | **END** | Keluar dari aplikasi |
+
+**Polygon Controls:**
+| Input | Action |
+| --- | --- |
+| **Mouse Click** | Select polygon (muncul label "Polygon0", "Polygon1", dst di tengah polygon) |
+| **1 - 9** | Ganti warna polygon yang sedang di-select secara realtime |
+| **CTRL + DEL** | Hapus polygon yang sedang di-select |
 
 ### Configuration:
 
