@@ -30,7 +30,7 @@ void ofApp::setup(){
 		ofLogNotice("ofApp") << "Attempting to initialize Ultralight UI...";
 		ultralightUI.setup(400, 300);  // UI 400x300 pixel, bukan full screen
 		ofLogNotice("ofApp") << "Ultralight UI initialized successfully!";
-		ultralightUI.loadHTMLFile("ui.html");
+		ultralightUI.loadHTMLFile("html/ui.html");  // Load dari folder html/
 		ofLogNotice("ofApp") << "HTML file loaded!";
 	} catch (const std::exception& e) {
 		// Ultralight gagal initialize, lanjut saja tanpa UI
