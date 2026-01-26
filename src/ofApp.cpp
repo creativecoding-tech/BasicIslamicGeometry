@@ -383,6 +383,14 @@ void ofApp::update(){
 	if (appState == RUNNING) {
 		sacredGeoUI.update();
 	}
+
+	// Bind JavaScript functions setelah delay (untuk tunggu HTML load complete)
+	if (framesUntilBindJS > 0) {
+		framesUntilBindJS--;
+		if (framesUntilBindJS == 0) {
+			dialogUI.bindJSFunctions();
+		}
+	}
 }
 
 //--------------------------------------------------------------
@@ -973,6 +981,16 @@ void ofApp::createInvisiblePolygonFromSelected() {
 void ofApp::mousePressed(int x, int y, int button) {
 	// Handle dialog button clicks (Dialog active)
 	if (appState == SETUP_MODE || appState == SETUP_TEMPLATE) {
+		// Forward mouse event ke dialogUI untuk JavaScript bridge
+		int dialogX = (ofGetWidth() - 600) / 2;
+		int dialogY = (ofGetHeight() - 400) / 2;
+		int relX = x - dialogX;
+		int relY = y - dialogY;
+
+		if (relX >= 0 && relX < 600 && relY >= 0 && relY < 400) {
+			dialogUI.fireMouseDown(relX, relY, button);
+		}
+
 		handleDialogClick(x, y);
 		return;  // Jangan lanjut ke logic lain saat dialog aktif
 	}
@@ -1082,6 +1100,19 @@ void ofApp::mouseDragged(int x, int y, int button) {
 }
 
 void ofApp::mouseReleased(int x, int y, int button) {
+	// Handle dialog mouse release
+	if (appState == SETUP_MODE || appState == SETUP_TEMPLATE) {
+		int dialogX = (ofGetWidth() - 600) / 2;
+		int dialogY = (ofGetHeight() - 400) / 2;
+		int relX = x - dialogX;
+		int relY = y - dialogY;
+
+		if (relX >= 0 && relX < 600 && relY >= 0 && relY < 400) {
+			dialogUI.fireMouseUp(relX, relY, button);
+		}
+		return;
+	}
+
 	// Forward mouse release ke Ultralight UI jika mouse di area UI dan UI visible
 	if (sacredGeoUIVisible && sacredGeoUI.isMouseOverUI(x, y)) {
 		sacredGeoUI.fireMouseUp(x, y, button);
@@ -1148,6 +1179,18 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
 void ofApp::mouseMoved(int x, int y) {
 	// Update mouse position untuk hover detection (adjust untuk center translation)
 	mousePos = vec2(x - ofGetWidth()/2, y - ofGetHeight()/2);
+
+	// Handle dialog mouse move
+	if (appState == SETUP_MODE || appState == SETUP_TEMPLATE) {
+		int dialogX = (ofGetWidth() - 600) / 2;
+		int dialogY = (ofGetHeight() - 400) / 2;
+		int relX = x - dialogX;
+		int relY = y - dialogY;
+
+		if (relX >= 0 && relX < 600 && relY >= 0 && relY < 400) {
+			dialogUI.fireMouseMove(relX, relY);
+		}
+	}
 
 	// Forward mouse move ke Ultralight UI jika mouse di area UI dan UI visible
 	if (sacredGeoUIVisible && sacredGeoUI.isMouseOverUI(x, y)) {
@@ -1643,19 +1686,39 @@ void ofApp::toggleUltralightUI() {
 
 //--------------------------------------------------------------
 void ofApp::setupDialogUI() {
+	// Set JavaScript callback dulu SEBELUM setup supaya ViewListener terpasang
+	dialogUI.setJSCallback([this](const std::string& action) {
+		this->handleJSAction(action);
+	});
+
 	dialogUI.setup(600, 400);
+}
+
+//--------------------------------------------------------------
+void ofApp::handleJSAction(const std::string& action) {
+	if (action == "onDialogClose") {
+		onDialogClose();
+	} else if (action == "onNext") {
+		showTemplateDialog();
+	} else if (action == "onBack") {
+		showModeDialog();
+	} else if (action == "onCreate") {
+		onCreateApp();
+	}
 }
 
 //--------------------------------------------------------------
 void ofApp::showModeDialog() {
 	dialogUI.loadHTMLFile("html/dialog_mode.html");
 	appState = SETUP_MODE;
+	framesUntilBindJS = 10;  // Bind JS functions setelah 10 frame
 }
 
 //--------------------------------------------------------------
 void ofApp::showTemplateDialog() {
 	dialogUI.loadHTMLFile("html/dialog_template.html");
 	appState = SETUP_TEMPLATE;
+	framesUntilBindJS = 10;  // Bind JS functions setelah 10 frame
 }
 
 //--------------------------------------------------------------
@@ -1669,56 +1732,32 @@ void ofApp::handleDialogClick(int x, int y) {
 	int relY = y - dialogY;
 
 	if (appState == SETUP_MODE) {
-		// Dialog 1: Mode Selection
+		// Dialog 1: Mode Selection - handle mode card clicks
 		// Mode cards area (approximately y: 100-280)
 		if (relY >= 100 && relY <= 280) {
 			// 2D Mode card (left, x: 50-250)
 			if (relX >= 50 && relX <= 250) {
-				// Selected 2D - lanjut ke dialog template
 				showTemplateDialog();
 				return;
 			}
 			// 3D Mode card (right, x: 350-550)
 			if (relX >= 350 && relX <= 550) {
-				// Selected 3D - lanjut ke dialog template
 				showTemplateDialog();
 				return;
 			}
 		}
-
-		// Buttons area (approximately y: 340-380)
-		if (relY >= 340 && relY <= 380) {
-			// Close button (center, x: 240-360 karena cuma 1 tombol)
-			if (relX >= 240 && relX <= 360) {
-				onDialogClose();
-				return;
-			}
-		}
+		// Button clicks handled by JavaScript bridge - no need to handle here
 	}
 	else if (appState == SETUP_TEMPLATE) {
-		// Dialog 2: Template Selection
-		// Template cards area (approximately y: 100-250)
+		// Dialog 2: Template Selection - template card clicks
+		// (handled by mouse click for now, buttons handled by JS)
 		if (relY >= 100 && relY <= 250) {
-			// Basic Zellige template (centered, x: 50-550)
+			// Basic Zellige template (centered)
 			if (relX >= 50 && relX <= 550) {
-				// Template selected - continue to Create button
-				// (auto-select for now since only 1 template)
+				// Template selected (nothing for now, only 1 template)
 			}
 		}
-
-		// Buttons area (approximately y: 340-380)
-		if (relY >= 340 && relY <= 380) {
-			// Back button (left side of dialog center, x: 200-280)
-			if (relX >= 200 && relX <= 280) {
-				showModeDialog();
-				return;
-			}
-			// Create button (right side of dialog center, x: 320-400)
-			if (relX >= 320 && relX <= 400) {
-				onCreateApp();
-				return;
-			}
-		}
+		// Button clicks handled by JavaScript bridge
 	}
 }
 

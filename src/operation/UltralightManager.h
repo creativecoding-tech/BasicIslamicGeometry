@@ -121,12 +121,31 @@ public:
 	 */
 	int getHeight() const { return height; }
 
+	/**
+	 * Set JavaScript callback untuk handle button clicks dari HTML
+	 * @param callback Function yang dipanggil ketika JavaScript trigger action
+	 */
+	void setJSCallback(std::function<void(const std::string&)> callback) {
+		jsCallback = callback;
+		hasJSCallback = true;
+	}
+
+	/**
+	 * Bind JavaScript functions ke view (manual binding, tidak lewat OnDOMReady)
+	 */
+	void bindJSFunctions();
+
+	// Static instance dan jsCallback untuk JavaScript callback access
+	static UltralightManager* g_instance;
+	std::function<void(const std::string&)> jsCallback;  // Public untuk static callback access
+
 private:
 	ultralight::RefPtr<ultralight::View> view;
 	ultralight::RefPtr<ultralight::Renderer> renderer;
 	ofTexture texture;
 	int width, height;
 	bool isInitialized;
+	bool hasJSCallback = false;  // Flag untuk track apakah ada JS callback
 
 	/**
 	 * Create/update OpenGL texture dari Ultralight surface
