@@ -16,6 +16,8 @@
     <ClCompile Include="src\shape\OctagramLine.cpp" />
     <ClCompile Include="src\shape\PolygonShape.cpp" />
     <ClCompile Include="src\operation\FileManager.cpp" />
+    <ClCompile Include="src\anim\AbstractAnimation.cpp" />
+    <ClCompile Include="src\anim\FadeInAnimation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -35,6 +37,8 @@
     <ClInclude Include="src\shape\OctagramLine.h" />
     <ClInclude Include="src\shape\PolygonShape.h" />
     <ClInclude Include="src\operation\FileManager.h" />
+    <ClInclude Include="src\anim\AbstractAnimation.h" />
+    <ClInclude Include="src\anim\FadeInAnimation.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="icon.rc" />

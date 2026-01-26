@@ -238,6 +238,8 @@
     <ClCompile Include="src\shape\CustomLine.cpp" />
     <ClCompile Include="src\shape\PolygonShape.cpp" />
     <ClCompile Include="src\operation\FileManager.cpp" />
+    <ClCompile Include="src\anim\AbstractAnimation.cpp" />
+    <ClCompile Include="src\anim\FadeInAnimation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ofApp.h" />
@@ -251,6 +253,8 @@
     <ClInclude Include="src\shape\CustomLine.h" />
     <ClInclude Include="src\shape\PolygonShape.h" />
     <ClInclude Include="src\operation\FileManager.h" />
+    <ClInclude Include="src\anim\AbstractAnimation.h" />
+    <ClInclude Include="src\anim\FadeInAnimation.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(OF_ROOT)\libs\openFrameworksCompiled\project\vs\openframeworksLib.vcxproj">

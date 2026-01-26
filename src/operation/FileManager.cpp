@@ -1,4 +1,5 @@
 #include "FileManager.h"
+#include "../anim/FadeInAnimation.h"
 
 // Konstanta filename
 const std::string FileManager::FILENAME = "custom_lines.bin";
@@ -383,11 +384,12 @@ bool FileManager::loadAll(std::vector<CustomLine>& customLines, std::vector<Poly
         ofColor fillColor = *reinterpret_cast<ofColor*>(data);
         data += sizeof(ofColor);
 
-        // Buat PolygonShape dengan index
-        PolygonShape polygon(vertices, fillColor, i);
+        // Buat PolygonShape dengan index dan langsung add ke vector
+        polygons.emplace_back(vertices, fillColor, i);
 
-        // Add ke vector
-        polygons.push_back(polygon);
+        // Set animation ke polygon yang sudah ada di vector (reference)
+        auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
+        polygons.back().setAnimation(std::move(fadeIn));
     }
 
     return true;  // Success

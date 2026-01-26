@@ -363,6 +363,11 @@ void ofApp::update(){
 
 	// Update sequential load logic dari FileManager
 	fileManager.updateSequentialLoad(customLines);
+
+	// Update polygon animations
+	for (auto& polygon : polygonShapes) {
+		polygon.update();
+	}
 }
 
 //--------------------------------------------------------------
