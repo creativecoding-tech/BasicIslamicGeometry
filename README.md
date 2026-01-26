@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--ultralight-orange)
+![Branch](https://img.shields.io/badge/Branch-sketch--islamic--geometry--studio-orange)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -35,6 +35,11 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 ## ✨ Fitur & Teknik
 
+- **Wizard Dialog System** - Setup wizard dengan 2 dialog: Mode Selection (2D/3D) → Template Selection (Basic Zellige)
+- **JavaScript Bridge** - Integrasi JavaScript-C++ untuk button interactivity menggunakan Ultralight JavaScriptCore API
+- **Ultralight UI Overlay** - HTML/CSS/JavaScript UI dengan glassmorphism design dan smooth gradients
+- **DialogViewListener** - Custom ViewListener untuk handle OnDOMReady event dan bind C++ functions ke JavaScript
+- **AppState System** - State machine untuk wizard flow (SETUP_MODE → SETUP_TEMPLATE → RUNNING)
 - **Five Circle Pattern** - 5 lingkaran dengan radius dinamis yang saling berhubungan
 - **CrossLine System** - 4 garis diagonal dari center ke sudut dengan dot di intersection point
 - **Parallelogram Lines** - 4 garis penghubung antar circle center membentuk diamond/rhombus
@@ -68,6 +73,16 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 ## 🎮 Controls
 
+**Setup Wizard Controls (Dialog Mode):**
+| Input | Action |
+| --- | --- |
+| **Klik 2D/3D Mode** | Pilih mode rendering (langsung lanjut ke template selection) |
+| **Klik Template** | Pilih template geometry (Basic Zellige, dll) |
+| **Close Button** | Tutup dialog dan kembali ke mode selection |
+| **Back Button** | Kembali ke dialog mode selection |
+| **Create Button** | Masuk ke main canvas (RUNNING state) |
+
+**Main Canvas Controls (Running State):**
 | Input | Action |
 | --- | --- |
 | **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan (CartesianAxes → Circle A-E → CrossLine F-I → Parallelogram N-Q → Rectangle R-Y → OctagramLine 0-7) |
@@ -94,7 +109,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 ## 🛠️ Tech Stack
 
 - **[OpenFrameworks 0.12.1](https://openframeworks.cc/)**
-- **[Ultralight UI](https://ultralig.ht/)** - Modern HTML/CSS overlay UI
+- **[Ultralight UI](https://ultralig.ht/)** - Modern HTML/CSS/JavaScript overlay UI
+- **JavaScriptCore API** - JavaScript-C++ bridge untuk UI interactivity
 - **C++17**
 - **Visual Studio 2022 Community**
 - **Geometric Construction Algorithms** untuk Islamic patterns
@@ -252,8 +268,8 @@ Atau lewat Visual Studio GUI:
 # Clone repository ini
 git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 
-# Checkout branch sketch-ultralight
-git checkout sketch-ultralight
+# Checkout branch sketch-islamic-geometry-studio
+git checkout sketch-islamic-geometry-studio
 
 # Jalankan OpenFrameworks Project Generator
 # Buka: openFrameworks/apps/projectGenerator/projectGenerator.exe
@@ -509,8 +525,14 @@ BasicIslamicGeometry/
 │   │   ├── AbstractAnimation.cpp/h    # Base class untuk semua animation
 │   │   └── FadeInAnimation.cpp/h      # Fade-in animation untuk polygon (alpha blending)
 │   └── operation/            # File operations & utilities
-│       └── FileManager.cpp/h           # Save/load custom lines & polygons ke binary file
+│       ├── FileManager.cpp/h           # Save/load custom lines & polygons ke binary file
+│       ├── UltralightManager.cpp/h     # Ultralight UI manager untuk HTML overlay
+│       └── DialogViewListener.cpp/h    # ViewListener untuk JavaScript bridge (OnDOMReady event)
 ├── bin/                      # Compiled executable
+│   └── data/                 # Data files
+│       └── html/             # Ultralight UI HTML files
+│           ├── dialog_mode.html      # Dialog 1: Mode selection (2D/3D)
+│           └── dialog_template.html  # Dialog 2: Template selection (Basic Zellige)
 ├── dll/                      # OF dependencies
 ├── obj/                      # Intermediate files (gitignored)
 └── BasicIslamicGeometry.sln/.vcxproj # Visual Studio project files
@@ -541,9 +563,41 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **sketch-ultralight**
+## 📝 Current Status: **sketch-islamic-geometry-studio**
 
-Branch ini adalah **eksperimen integrasi Ultralight UI** pada BasicIslamicGeometry untuk menambahkan **UI overlay berbasis HTML/CSS/JavaScript**.
+Branch ini adalah **Islamic Geometry Studio** dengan setup wizard system dan UI overlay berbasis HTML/CSS/JavaScript menggunakan Ultralight.
+
+### Fitur Baru di Branch Ini:
+
+✅ **Wizard Dialog System** - Setup wizard dengan 2 dialog untuk configurasi awal:
+  - Dialog 1 (Mode Selection): Pilih rendering mode (2D/3D)
+  - Dialog 2 (Template Selection): Pilih template geometry (Basic Zellige, dll)
+  - Automatic transition antar dialog
+  - Glassmorphism design dengan smooth gradients
+
+✅ **JavaScript Bridge Implementation** - Integrasi penuh JavaScript-C++:
+  - DialogViewListener untuk handle OnDOMReady event
+  - Bind C++ functions ke JavaScript object `app` (onDialogClose, onNext, onBack, onCreate)
+  - Button interactivity lewat JavaScript onclick handlers
+  - Mouse event forwarding (mouseMove, mouseDown, mouseUp) ke Ultralight View
+
+✅ **Ultralight UI Manager** - Class untuk manage Ultralight UI instances:
+  - setup() untuk initialization (Renderer, View, Texture)
+  - loadHTMLFile() untuk load HTML dari file system
+  - bindJSFunctions() untuk manual JavaScript binding
+  - update() dan draw() untuk render UI overlay
+  - Mouse event forwarding (fireMouseMove, fireMouseDown, fireMouseUp, fireMouseScroll)
+
+✅ **AppState System** - State machine untuk wizard flow:
+  - SETUP_MODE: Dialog mode selection aktif
+  - SETUP_TEMPLATE: Dialog template selection aktif
+  - RUNNING: Main canvas aktif
+
+✅ **HTML Dialog Files** - UI files di `bin/data/html/`:
+  - dialog_mode.html: Mode selection dengan 2D/3D mode cards
+  - dialog_template.html: Template selection dengan template cards
+  - Responsive glassmorphism design
+  - Gradient backgrounds (ungu-biru)
 
 ### Fitur yang tersedia dari branch sebelumnya:
 
