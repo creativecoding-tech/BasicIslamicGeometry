@@ -5,6 +5,10 @@
 *.userosscache
 *.sln.docstates
 
+# Ultralight SDK (download separately, NOT in repo due to license restrictions)
+# DO NOT commit Ultralight SDK to repository
+ultralight/
+
 # Build outputs
 bin/
 !bin/data/

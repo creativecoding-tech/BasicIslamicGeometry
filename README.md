@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--polygon--color-orange)
+![Branch](https://img.shields.io/badge/Branch-sketch--ultralight-orange)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -94,6 +94,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 ## 🛠️ Tech Stack
 
 - **[OpenFrameworks 0.12.1](https://openframeworks.cc/)**
+- **[Ultralight UI](https://ultralig.ht/)** - Modern HTML/CSS overlay UI
 - **C++17**
 - **Visual Studio 2022 Community**
 - **Geometric Construction Algorithms** untuk Islamic patterns
@@ -106,15 +107,125 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 1. Install **[OpenFrameworks](https://openframeworks.cc/)** untuk Windows
 2. Install **Visual Studio 2022** dengan workload "Desktop development with C++"
+3. **[Ultralight SDK](https://ultralig.ht/)** untuk UI overlay (required)
 
-### Setup
+### Setup Ultralight SDK
+
+⚠️ **PENTING - Batasan Lisensi**:
+
+Ultralight SDK **TIDAK BOLEH** di-commit atau di-push ke repository ini karena batasan lisensi. SDK harus didownload dan di-setup secara manual di komputer masing-masing.
+
+**Kenapa tidak ada di repo?**
+- Ultralight Free License melarang distribusi SDK mentah (header files, library files) di repository publik
+- SDK hanya boleh didownload langsung dari website resmi: https://ultralig.ht/
+- Yang boleh di-distribute adalah DLLs sebagai bagian dari aplikasi yang sudah di-compile (executable)
+
+**Yang sudah di-configure di repo ini:**
+- ✅ File `.vcxproj` sudah di-configure untuk linking Ultralight SDK
+- ✅ File `.gitignore` sudah mengabaikan folder `ultralight/` (mencegah commit tidak sengaja)
+- ✅ README ini dengan instruksi setup lengkap
+
+---
+
+Ultralight SDK diperlukan untuk UI overlay dan **TIDAK** termasuk di repo ini (harus download terpisah).
+
+#### Langkah 1: Download Ultralight SDK
+
+1. Download Ultralight SDK (Windows x64): https://ultralig.ht/
+2. Pilih **Free License** version terbaru
+3. Format: ZIP archive (~16 MB)
+
+#### Langkah 2: Extract Ultralight SDK
+
+Extract file ZIP ke lokasi apa saja yang Anda inginkan, contoh:
+- `C:\Ultralight\`
+- `D:\Libraries\Ultralight\`
+- `F:\AInstaled\Ultralight\` ← (ini yang dipakai di project ini)
+- Atau langsung di dalam project: `BasicIslamicGeometry\ultralight\`
+
+⚠️ **Catatan**: Lokasi extract bebas, tapi Anda perlu update path di file `.vcxproj` sesuai lokasi Anda (lihat Langkah 4).
+
+Pastikan folder structure berisi:
+```
+Ultralight/
+├── include/
+│   ├── AppCore/
+│   ├── JavaScriptCore/
+│   └── Ultralight/
+├── lib/
+│   ├── AppCore.lib
+│   ├── Ultralight.lib
+│   ├── UltralightCore.lib
+│   └── WebCore.lib
+└── bin/
+    ├── AppCore.dll
+    ├── Ultralight.dll
+    ├── UltralightCore.dll
+    └── WebCore.dll
+```
+
+#### Langkah 3: Copy DLLs ke Project Folder
+
+Copy semua file `.dll` dari `<Ultralight>\bin\`:
+
+⚠️ **Catatan**: SDK (`include/`, `lib/`) **JANGAN** di-copy ke folder project, cukup DLLs saja yang diperlukan untuk runtime.
+```
+AppCore.dll
+Ultralight.dll
+UltralightCore.dll
+WebCore.dll
+```
+
+Paste ke: `BasicIslamicGeometry\bin\`
+
+#### Langkah 4: Configure Visual Studio Project
+
+**Opsi A: Jika Extract di Lokasi Sama dengan Developer**
+
+Jika Anda extract ke `F:\AInstaled\Ultralight\` (sama dengan developer), file `.vcxproj` sudah di-configure dan Anda bisa langsung build.
+
+**Opsi B: Jika Extract di Lokasi Berbeda**
+
+Anda perlu update path di file `.vcxproj` secara manual:
+
+1. Buka `BasicIslamicGeometry.vcxproj` dengan text editor (Notepad, VS Code, dll)
+2. Cari dan ganti semua:
+   ```
+   F:\AInstaled\Ultralight\include
+   ```
+   Dengan path lokasi extract Anda, contoh:
+   ```
+   C:\Ultralight\include
+   ```
+3. Cari dan ganti semua:
+   ```
+   F:\AInstaled\Ultralight\lib
+   ```
+   Dengan:
+   ```
+   C:\Ultralight\lib
+   ```
+
+Atau lewat Visual Studio GUI:
+- Project Properties → C/C++ → General → Additional Include Directories
+  → Ganti `F:\AInstaled\Ultralight\include` dengan path Anda
+- Project Properties → Linker → General → Additional Library Directories
+  → Ganti `F:\AInstaled\Ultralight\lib` dengan path Anda
+
+**Libraries yang di-link:**
+- `Ultralight.lib`
+- `UltralightCore.lib`
+- `AppCore.lib`
+- `WebCore.lib`
+
+### Setup Project
 
 ```bash
 # Clone repository ini
 git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 
-# Checkout branch sketch-polygon-color
-git checkout sketch-polygon-color
+# Checkout branch sketch-ultralight
+git checkout sketch-ultralight
 
 # Jalankan OpenFrameworks Project Generator
 # Buka: openFrameworks/apps/projectGenerator/projectGenerator.exe
@@ -402,9 +513,11 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **sketch-polygon-color**
+## 📝 Current Status: **sketch-ultralight**
 
-Branch ini adalah **eksperimen polygon coloring** pada BasicIslamicGeometry dengan fokus pada **sistem polygon fill dan multi-selection**. Fitur yang tersedia:
+Branch ini adalah **eksperimen integrasi Ultralight UI** pada BasicIslamicGeometry untuk menambahkan **UI overlay berbasis HTML/CSS/JavaScript**.
+
+### Fitur yang tersedia dari branch sebelumnya:
 
 ✅ **Mouse Interaction**: Mouse drag untuk menggambar line secara interaktif antar dots
 ✅ **CustomLine System**: Garis custom yang bisa dibuat user dengan mouse drag (start dot → end dot)
