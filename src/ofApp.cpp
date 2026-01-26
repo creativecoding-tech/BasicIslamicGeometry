@@ -1674,13 +1674,13 @@ void ofApp::handleDialogClick(int x, int y) {
 		if (relY >= 100 && relY <= 280) {
 			// 2D Mode card (left, x: 50-250)
 			if (relX >= 50 && relX <= 250) {
-				// Selected 2D - store selection and enable Next
+				// Selected 2D - lanjut ke dialog template
 				showTemplateDialog();
 				return;
 			}
 			// 3D Mode card (right, x: 350-550)
 			if (relX >= 350 && relX <= 550) {
-				// Selected 3D - store selection and enable Next
+				// Selected 3D - lanjut ke dialog template
 				showTemplateDialog();
 				return;
 			}
@@ -1688,14 +1688,9 @@ void ofApp::handleDialogClick(int x, int y) {
 
 		// Buttons area (approximately y: 340-380)
 		if (relY >= 340 && relY <= 380) {
-			// Close button (left, x: 150-270)
-			if (relX >= 150 && relX <= 270) {
+			// Close button (center, x: 240-360 karena cuma 1 tombol)
+			if (relX >= 240 && relX <= 360) {
 				onDialogClose();
-				return;
-			}
-			// Next button (right, x: 330-450)
-			if (relX >= 330 && relX <= 450) {
-				showTemplateDialog();
 				return;
 			}
 		}
@@ -1713,13 +1708,13 @@ void ofApp::handleDialogClick(int x, int y) {
 
 		// Buttons area (approximately y: 340-380)
 		if (relY >= 340 && relY <= 380) {
-			// Back button (left, x: 150-270)
-			if (relX >= 150 && relX <= 270) {
+			// Back button (left side of dialog center, x: 200-280)
+			if (relX >= 200 && relX <= 280) {
 				showModeDialog();
 				return;
 			}
-			// Create button (right, x: 330-450)
-			if (relX >= 330 && relX <= 450) {
+			// Create button (right side of dialog center, x: 320-400)
+			if (relX >= 320 && relX <= 400) {
 				onCreateApp();
 				return;
 			}
