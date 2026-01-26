@@ -445,6 +445,14 @@ bool FileManager::loadAll(std::vector<CustomLine>& customLines, std::vector<Poly
     // Clear existing polygons
     polygons.clear();
 
+    // Reserve space dulu untuk mencegah reallocation
+    ofFile tempFile(FILENAME_POLYGONS);
+    if (tempFile.exists()) {
+        ofBuffer tempBuffer = ofBufferFromFile(FILENAME_POLYGONS);
+        int numPolygons = *reinterpret_cast<int*>(tempBuffer.getData());
+        polygons.reserve(numPolygons);
+    }
+
     // Read setiap polygon
     for (int i = 0; i < numPolygons; i++) {
         // Read jumlah vertices
@@ -463,10 +471,10 @@ bool FileManager::loadAll(std::vector<CustomLine>& customLines, std::vector<Poly
         ofColor fillColor = *reinterpret_cast<ofColor*>(data);
         data += sizeof(ofColor);
 
-        // Buat PolygonShape dengan index dan langsung add ke vector
+        // Add ke vector dengan emplace_back (construct in-place)
         polygons.emplace_back(vertices, fillColor, i);
 
-        // Set animation ke polygon yang sudah ada di vector (reference)
+        // Set animation langsung ke element yang baru ditambah
         auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
         polygons.back().setAnimation(std::move(fadeIn));
     }
