@@ -48,6 +48,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Animated Drawing** - Semua shape digambar dengan animasi smooth (100 segments, 0.5 speed)
 - **Bidirectional Animation** - Animasi muncul (show) dan hilang (hide) dengan smoothing
 - **Two-Phase Animation** - OctagramLine memiliki 2 mode: sequential (Phase 1 → Phase 2) dan paralel (barengan)
+- **Animation System** - Base class `AbstractAnimation` untuk reusable animations (FadeInAnimation, dll)
+- **FadeInAnimation** - Animation fade-in untuk polygon dengan alpha blending (0 → targetAlpha)
 - **Cartesian Coordinate System** - Sumbu X-Y dengan animasi scaling (0 to 2.5x radius) dan label sudut (radians & degrees)
 - **Dynamic Line Width** - Ketebalan garis yang dapat diadjust secara realtime (0.5px - 4px)
 - **Static Font System** - Semua label menggunakan font normal (Calibri 15px) untuk konsistensi visual
@@ -60,7 +62,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **AbstractShape Base Class** - Arsitektur OOP dengan inheritance untuk code reusability
 - **Anti-Aliasing & Smoothing** - Garis yang smooth untuk visual yang lebih baik
 - **Trails Effect** - Semi-transparent overlay untuk efek jejak visual yang menarik
-- **Modular Design** - Terpisah dalam kategori: `shape/`
+- **Modular Design** - Terpisah dalam kategori: `shape/`, `anim/`, `operation/`
 
 ---
 
@@ -363,9 +365,12 @@ BasicIslamicGeometry/
 │   │   ├── RectangleLine.cpp/h         # Garis rectangle dengan 2 dot & 2 label
 │   │   ├── OctagramLine.cpp/h          # Garis octagram dengan 2 segment & 1 dot (0-7)
 │   │   ├── CustomLine.cpp/h            # Custom user-created lines dengan bezier curve support
-│   │   └── PolygonShape.cpp/h          # Polygon fill-only dengan color preset system
+│   │   └── PolygonShape.cpp/h          # Polygon fill-only dengan fade-in animation
+│   ├── anim/                 # Animation system implementations
+│   │   ├── AbstractAnimation.cpp/h    # Base class untuk semua animation
+│   │   └── FadeInAnimation.cpp/h      # Fade-in animation untuk polygon (alpha blending)
 │   └── operation/            # File operations & utilities
-│       └── FileManager.cpp/h           # Save/load custom lines ke binary file
+│       └── FileManager.cpp/h           # Save/load custom lines & polygons ke binary file
 ├── bin/                      # Compiled executable
 ├── dll/                      # OF dependencies
 ├── obj/                      # Intermediate files (gitignored)
@@ -413,11 +418,16 @@ Branch ini adalah **eksperimen polygon coloring** pada BasicIslamicGeometry deng
 ✅ **Polygon Color Preset**: 9 warna preset untuk polygon (merah, hijau, biru, kuning, magenta, cyan, orange, ungu, abu-abu)
 ✅ **Polygon Color Assignment**: Keys 1-9 untuk assign color ke selected polygon secara realtime
 ✅ **Delete Polygon**: CTRL+DEL untuk hapus selected polygon
-✅ **Parallel Load Mode (CTRL+O)**: Load semua garis dengan animasi parallel (barengan seperti OctagramLine)
-✅ **Sequential Load Mode (CTRL+SHIFT+O)**: Load garis satu per satu dengan delay
-✅ **Save/Load System**: Simpan dan load custom lines ke binary file
+✅ **Parallel Load Mode (CTRL+O)**: Load semua garis dan polygons dengan animasi parallel (barengan dengan fade-in)
+✅ **Sequential Load Mode (CTRL+SHIFT+O)**: Load semua garis dan polygons dengan animasi sequential (lines dulu, baru polygons satu per satu)
+✅ **Animation System**: AbstractAnimation base class untuk reusable animations (FadeInAnimation, dll)
+✅ **FadeInAnimation**: Animation fade-in untuk polygon dengan alpha blending (0 → targetAlpha, configurable speed)
+✅ **Polygon Fade-In Effect**: Polygon muncul perlahan dari transparan ke warna asli saat load
+✅ **Save/Load Polygons**: Simpan dan load polygons ke binary file (polygons.bin) bersama customLines
+✅ **Save/Load System**: CTRL+S save customLines + polygons, CTRL+O load keduanya (parallel/sequential)
+✅ **Delete Protection**: Tidak bisa delete saat animasi polygon belum selesai (CTRL+DEL dan BACKSPACE diblokir)
+✅ **Cancel Sequential Load**: BACKSPACE saat sedang sequential load akan cancel load dan hapus yang sudah ter-load
 ✅ **Undo System**: CTRL+Z untuk undo garis terakhir
-✅ **Clear Protection**: CTRL+DEL tidak jalan saat sedang loading
 ✅ **Curve Label**: Display nilai curve saat garis di-select
 ✅ **Invalid Line Filter**: Filter garis yang start == end (panjang 0)
 ✅ **Five Circle Pattern**: 5 lingkaran (A, B, C, D, E) dengan konfigurasi posisi yang saling berhubungan
@@ -445,7 +455,7 @@ Branch ini adalah **eksperimen polygon coloring** pada BasicIslamicGeometry deng
 ✅ **Memory-safe Implementation**: Menggunakan `std::unique_ptr` untuk resource management
 ✅ **Modular Setup Methods**: setup() terbagi menjadi setupCircles(), setupCartesianAxes(), setupCrossLines(), setupParallelograms(), setupRectangleLine(), setupOctagramLine()
 ✅ **CustomLine Class**: Encapsulated class untuk custom line dengan curve support, progressive animation, dan selection state
-✅ **PolygonShape Class**: Encapsulated class untuk polygon fill dengan color preset system dan label indicator
+✅ **PolygonShape Class**: Encapsulated class untuk polygon fill dengan color preset system, label indicator, dan fade-in animation support
 
 ### Keyboard Shortcuts
 
@@ -470,11 +480,12 @@ Branch ini adalah **eksperimen polygon coloring** pada BasicIslamicGeometry deng
 | **SHIFT + B** | Select semua customLines sekaligus |
 | **Mouse Scroll** | Adjust curvature garis yang sedang di-select (scroll up = melengkung satu arah, scroll down = melengkung arah sebaliknya, 0 = lurus) |
 | **CTRL + Z** | Undo garis terakhir yang dibuat |
-| **CTRL + G** | Buat polygon dari selected customLines (minimum 3 garis untuk buat polygon) |
-| **CTRL + S** | Simpan semua custom lines ke file (binary format) |
-| **CTRL + O** | Load semua custom lines dengan animasi parallel (semua garis animate barengan) |
-| **CTRL + SHIFT + O** | Load semua custom lines dengan animasi sequential (satu per satu dengan delay) |
-| **CTRL + DEL** | Hapus polygon yang sedang di-select (jika tidak ada polygon selected, hapus semua custom lines) |
+| **CTRL + G** | Buat polygon dari selected customLines (minimum 3 garis untuk buat polygon, otomatis ikuti curve shape) |
+| **CTRL + S** | Simpan semua custom lines dan polygons ke file binary (custom_lines.bin + polygons.bin) |
+| **CTRL + O** | Load semua custom lines dan polygons dengan animasi parallel (barengan dengan fade-in) |
+| **CTRL + SHIFT + O** | Load semua custom lines dan polygons dengan animasi sequential (lines dulu, baru polygons satu per satu) |
+| **CTRL + DEL** | Hapus semua polygons dan custom lines (hanya jika animasi sudah selesai, tidak bisa saat sedang loading) |
+| **BACKSPACE** | Hapus polygon/line yang sedang di-select (jika tidak ada yang selected dan sedang sequential load, cancel load. Jika tidak ada yang selected dan tidak sedang loading, toggle CartesianAxes) |
 | **1 - 9** | Assign color ke polygon yang sedang di-select (1=Merah, 2=Hijau, 3=Biru, 4=Kuning, 5=Magenta, 6=Cyan, 7=Orange, 8=Ungu, 9=Abu-abu) |
 | **END** | Keluar dari aplikasi |
 
@@ -483,7 +494,8 @@ Branch ini adalah **eksperimen polygon coloring** pada BasicIslamicGeometry deng
 | --- | --- |
 | **Mouse Click** | Select polygon (muncul label "Polygon0", "Polygon1", dst di tengah polygon) |
 | **1 - 9** | Ganti warna polygon yang sedang di-select secara realtime |
-| **CTRL + DEL** | Hapus polygon yang sedang di-select |
+| **CTRL + DEL** | Hapus semua polygons dan custom lines (hanya jika animasi sudah selesai) |
+| **BACKSPACE** | Hapus polygon yang sedang di-select (hanya jika animasi sudah selesai) |
 
 ### Configuration:
 
