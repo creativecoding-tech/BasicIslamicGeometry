@@ -550,9 +550,17 @@ void ofApp::keyPressed(int key){
 	}
 
 	// Handle CTRL key ditekan
-	if (key == 3683 || key == OF_KEY_CONTROL) {  // 3683 = CTRL pada Windows
+	if (key == 3682 || key == 3683) {  // HANYA 3682/3683
 		isCtrlPressed = true;
 		return;  // Jangan lanjut ke logic lain
+	}
+
+	// SHIFT+B = Select SEMUA customLines (bisa 'B' atau 'b' karena CAPSLOCK)
+	if ((key == 'B' || key == 'b') && ofGetKeyPressed(OF_KEY_SHIFT)) {
+		for (int i = 0; i < customLines.size(); i++) {
+			selectedLineIndices.insert(i);
+		}
+		return;
 	}
 
 	// Handle tombol saat CTRL aktif - gunakan switch-case
