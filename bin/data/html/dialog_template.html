@@ -55,26 +55,51 @@
         .template-card {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
-            border-radius: 12px;
+            border-radius: 24px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             padding: 20px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             align-items: center;
             gap: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
         }
 
         .template-card:hover {
-            transform: translateX(5px);
+            transform: translateX(8px) scale(1.02);
             background: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.5);
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
+                        0 0 40px rgba(255, 255, 255, 0.2);
         }
 
         .template-card.selected {
             background: rgba(255, 255, 255, 0.3);
             border-color: #00ff88;
-            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
+                        0 0 40px rgba(0, 255, 136, 0.6),
+                        inset 0 0 20px rgba(0, 255, 136, 0.2);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
+                            0 0 40px rgba(0, 255, 136, 0.6),
+                            inset 0 0 20px rgba(0, 255, 136, 0.2);
+            }
+            50% {
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
+                            0 0 60px rgba(0, 255, 136, 0.9),
+                            inset 0 0 30px rgba(0, 255, 136, 0.4);
+            }
         }
 
         .template-icon {
@@ -85,7 +110,13 @@
             justify-content: center;
             align-items: center;
             background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
+            border-radius: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .template-card:hover .template-icon {
+            transform: rotate(5deg) scale(1.1);
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .template-info {
@@ -114,9 +145,10 @@
             font-size: 16px;
             font-weight: bold;
             border: none;
-            border-radius: 8px;
+            border-radius: 16px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         button.back-btn {
@@ -127,6 +159,8 @@
 
         button.back-btn:hover {
             background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
         }
 
         button.create-btn {
@@ -135,8 +169,8 @@
         }
 
         button.create-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 12px 35px rgba(0, 255, 136, 0.5);
         }
     </style>
 </head>
