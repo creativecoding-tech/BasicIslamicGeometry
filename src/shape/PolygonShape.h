@@ -12,6 +12,7 @@ public:
 	// Constructor
 	PolygonShape();
 	PolygonShape(vector<vec2> verts, ofColor color);
+	PolygonShape(vector<vec2> verts, ofColor color, int index);  // Dengan index untuk label
 
 	// Main drawing method - draw fill ONLY, no outline
 	void draw() const;
@@ -25,8 +26,12 @@ public:
 	bool isSelected() const;
 	const vector<vec2>& getVertices() const;
 
+	// Utils
+	bool containsPoint(vec2 point) const;  // Cek apakah point ada di dalam polygon
+
 private:
 	vector<vec2> vertices;
 	ofColor fillColor;
 	bool selected;
+	int index;  // Index polygon untuk label
 };

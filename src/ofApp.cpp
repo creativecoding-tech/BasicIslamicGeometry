@@ -854,8 +854,9 @@ void ofApp::createInvisiblePolygonFromSelected() {
 		return;
 	}
 
-	// 2. Create polygon dengan default color MERAH TRANSPARENT
-	PolygonShape newPolygon(allPoints, ofColor(255, 0, 0, 150));  // Alpha 150 (semi-transparent)
+	// 2. Create polygon dengan default color MERAH TRANSPARENT dan index
+	int polygonIndex = polygonShapes.size();  // Index polygon yang akan dibuat
+	PolygonShape newPolygon(allPoints, ofColor(255, 0, 0, 150), polygonIndex);  // Alpha 150 (semi-transparent)
 	polygonShapes.push_back(newPolygon);
 
 	// 3. Clear selection
@@ -920,14 +921,31 @@ void ofApp::mousePressed(int x, int y, int button) {
 
 		// Kalau tidak klik di dot, cek apakah klik di garis untuk SELECT
 		if (!clickedOnDot) {
-			int lineIndex = getLineIndexAtPosition(adjustedMousePos);
-			if (lineIndex >= 0) {
-				// Select garis ini (single select: hapus yang lama, select yang baru)
-				selectedLineIndices.clear();
-				selectedLineIndices.insert(lineIndex);
-			} else {
-				// Klik di tempat kosong → deselect semua
-				selectedLineIndices.clear();
+			// CEK POLYGON DULU (sebelum cek garis)
+			bool clickedOnPolygon = false;
+			for (int i = 0; i < polygonShapes.size(); i++) {
+				if (polygonShapes[i].containsPoint(adjustedMousePos)) {
+					// Select polygon ini
+					selectedPolygonIndex = i;
+					selectedLineIndices.clear();  // Deselect semua lines
+					clickedOnPolygon = true;
+					break;
+				}
+			}
+
+			// Kalau tidak klik di polygon, cek garis
+			if (!clickedOnPolygon) {
+				int lineIndex = getLineIndexAtPosition(adjustedMousePos);
+				if (lineIndex >= 0) {
+					// Select garis ini (single select: hapus yang lama, select yang baru)
+					selectedLineIndices.clear();
+					selectedLineIndices.insert(lineIndex);
+					selectedPolygonIndex = -1;  // Deselect polygon
+				} else {
+					// Klik di tempat kosong → deselect semua
+					selectedLineIndices.clear();
+					selectedPolygonIndex = -1;  // Deselect polygon
+				}
 			}
 		}
 	}
