@@ -131,7 +131,6 @@ class ofApp : public ofBaseApp{
 		void setupDialogUI();           // Initialize dialog UI manager
 		void showModeDialog();          // Show dialog 1 (2D/3D selection)
 		void showTemplateDialog();      // Show dialog 2 (template selection)
-		void handleDialogClick(int x, int y);  // Handle mouse clicks on mode cards
 		void handleJSAction(const std::string& action);  // Handle JavaScript bridge calls
 		void onCreateApp();             // Called when user clicks Create
 		void onDialogClose();           // Called when user clicks Close (exit app)

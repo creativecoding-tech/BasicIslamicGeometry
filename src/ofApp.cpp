@@ -32,8 +32,6 @@ void ofApp::setup() {
   // Initial dots cache build (cache di-build saat pertama kali getAllDots()
   // dipanggil)
   dotsCacheDirty = true;
-
-  appState = RUNNING;
 }
 
 //--------------------------------------------------------------
@@ -910,7 +908,6 @@ void ofApp::mousePressed(int x, int y, int button) {
       dialogUI.fireMouseDown(relX, relY, button);
     }
 
-    handleDialogClick(x, y);
     return; // Jangan lanjut ke logic lain saat dialog aktif
   }
 
@@ -1362,45 +1359,6 @@ void ofApp::showTemplateDialog() {
   dialogUI.loadHTMLFile("html/dialog_template.html");
   appState = SETUP_TEMPLATE;
   framesUntilBindJS = 10; // Bind JS functions setelah 10 frame
-}
-
-//--------------------------------------------------------------
-void ofApp::handleDialogClick(int x, int y) {
-  // Calculate dialog position (centered)
-  int dialogX = (ofGetWidth() - 600) / 2;
-  int dialogY = (ofGetHeight() - 400) / 2;
-
-  // Convert screen coordinates to dialog-relative coordinates
-  int relX = x - dialogX;
-  int relY = y - dialogY;
-
-  if (appState == SETUP_MODE) {
-    // Dialog 1: Mode Selection - handle mode card clicks
-    // Mode cards area (approximately y: 100-280)
-    if (relY >= 100 && relY <= 280) {
-      // 2D Mode card (left, x: 50-250)
-      if (relX >= 50 && relX <= 250) {
-        showTemplateDialog();
-        return;
-      }
-      // 3D Mode card (right, x: 350-550)
-      if (relX >= 350 && relX <= 550) {
-        showTemplateDialog();
-        return;
-      }
-    }
-    // Button clicks handled by JavaScript bridge - no need to handle here
-  } else if (appState == SETUP_TEMPLATE) {
-    // Dialog 2: Template Selection - template card clicks
-    // (handled by mouse click for now, buttons handled by JS)
-    if (relY >= 100 && relY <= 250) {
-      // Basic Zellige template (centered)
-      if (relX >= 50 && relX <= 550) {
-        // Template selected (nothing for now, only 1 template)
-      }
-    }
-    // Button clicks handled by JavaScript bridge
-  }
 }
 
 //--------------------------------------------------------------
