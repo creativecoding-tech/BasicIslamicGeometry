@@ -51,15 +51,6 @@ static JSValueRef OnDialogCloseCallback(JSContextRef ctx, JSObjectRef function,
 	return JSValueMakeUndefined(ctx);
 }
 
-static JSValueRef OnNextCallback(JSContextRef ctx, JSObjectRef function,
-                                 JSObjectRef thisObject, size_t argc,
-                                 const JSValueRef argv[], JSValueRef* exception) {
-	if (UltralightManager::g_instance && UltralightManager::g_instance->jsCallback) {
-		UltralightManager::g_instance->jsCallback("onNext");
-	}
-	return JSValueMakeUndefined(ctx);
-}
-
 static JSValueRef OnBackCallback(JSContextRef ctx, JSObjectRef function,
                                  JSObjectRef thisObject, size_t argc,
                                  const JSValueRef argv[], JSValueRef* exception) {
@@ -274,9 +265,6 @@ void UltralightManager::bindJSFunctions() {
 	JSStringRef closeName = JSStringCreateWithUTF8CString("onDialogClose");
 	JSObjectRef closeFunc = JSObjectMakeFunctionWithCallback(ctx, closeName, &OnDialogCloseCallback);
 
-	JSStringRef nextName = JSStringCreateWithUTF8CString("onNext");
-	JSObjectRef nextFunc = JSObjectMakeFunctionWithCallback(ctx, nextName, &OnNextCallback);
-
 	JSStringRef backName = JSStringCreateWithUTF8CString("onBack");
 	JSObjectRef backFunc = JSObjectMakeFunctionWithCallback(ctx, backName, &OnBackCallback);
 
@@ -295,7 +283,6 @@ void UltralightManager::bindJSFunctions() {
 
 	// Set properties to app object
 	JSObjectSetProperty(ctx, appObject, closeName, closeFunc, kJSPropertyAttributeNone, nullptr);
-	JSObjectSetProperty(ctx, appObject, nextName, nextFunc, kJSPropertyAttributeNone, nullptr);
 	JSObjectSetProperty(ctx, appObject, backName, backFunc, kJSPropertyAttributeNone, nullptr);
 	JSObjectSetProperty(ctx, appObject, createName, createFunc, kJSPropertyAttributeNone, nullptr);
 	JSObjectSetProperty(ctx, appObject, mode2DName, mode2DFunc, kJSPropertyAttributeNone, nullptr);
@@ -306,7 +293,6 @@ void UltralightManager::bindJSFunctions() {
 
 	// Cleanup
 	JSStringRelease(closeName);
-	JSStringRelease(nextName);
 	JSStringRelease(backName);
 	JSStringRelease(createName);
 	JSStringRelease(mode2DName);

@@ -1338,8 +1338,6 @@ void ofApp::setupDialogUI() {
 void ofApp::handleJSAction(const std::string &action) {
   if (action == "onDialogClose") {
     onDialogClose();
-  } else if (action == "onNext") {
-    showTemplateDialog();
   } else if (action == "onBack") {
     showModeDialog();
   } else if (action == "on2DMode") {
