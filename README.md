@@ -35,11 +35,6 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 ## ✨ Fitur & Teknik
 
-- **Wizard Dialog System** - Setup wizard dengan 2 dialog: Mode Selection (2D/3D) → Template Selection (Basic Zellige)
-- **JavaScript Bridge** - Integrasi JavaScript-C++ untuk button interactivity menggunakan Ultralight JavaScriptCore API
-- **Ultralight UI Overlay** - HTML/CSS/JavaScript UI dengan glassmorphism design dan smooth gradients
-- **DialogViewListener** - Custom ViewListener untuk handle OnDOMReady event dan bind C++ functions ke JavaScript
-- **AppState System** - State machine untuk wizard flow (SETUP_MODE → SETUP_TEMPLATE → RUNNING)
 - **Five Circle Pattern** - 5 lingkaran dengan radius dinamis yang saling berhubungan
 - **CrossLine System** - 4 garis diagonal dari center ke sudut dengan dot di intersection point
 - **Parallelogram Lines** - 4 garis penghubung antar circle center membentuk diamond/rhombus
@@ -50,6 +45,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Performance Optimization - Cached Dots** - Sistem lazy cache untuk getAllDots() dengan dirty flag, hanya rebuild saat visibility berubah (reduce dari 180 vector copies/detik menjadi 0)
 - **CrossLine radiusDot Attribute** - CrossLine menyimpan posisi dot pada radius di `vec2 radiusDot`, dihitung sekali di constructor, auto-sync saat setStart/setEnd
 - **Sequential Drawing Mode** - Animasi drawing berurutan dari satu shape ke shape berikutnya
+- **Parallel Drawing Mode** - Animasi drawing parallel untuk semua shapes sekaligus
 - **Animated Drawing** - Semua shape digambar dengan animasi smooth (100 segments, 0.5 speed)
 - **Bidirectional Animation** - Animasi muncul (show) dan hilang (hide) dengan smoothing
 - **Two-Phase Animation** - OctagramLine memiliki 2 mode: sequential (Phase 1 → Phase 2) dan paralel (barengan)
@@ -73,16 +69,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 ## 🎮 Controls
 
-**Setup Wizard Controls (Dialog Mode):**
-| Input | Action |
-| --- | --- |
-| **Klik 2D/3D Mode** | Pilih mode rendering (langsung lanjut ke template selection) |
-| **Klik Template** | Pilih template geometry (Basic Zellige, dll) |
-| **Close Button** | Tutup dialog dan kembali ke mode selection |
-| **Back Button** | Kembali ke dialog mode selection |
-| **Create Button** | Masuk ke main canvas (RUNNING state) |
-
-**Main Canvas Controls (Running State):**
+**Main Canvas Controls:**
 | Input | Action |
 | --- | --- |
 | **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan (CartesianAxes → Circle A-E → CrossLine F-I → Parallelogram N-Q → Rectangle R-Y → OctagramLine 0-7) |
@@ -94,6 +81,31 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **+** atau **=** | Increase line width (+0.5px, max 4px) |
 | **-** atau **_** | Decrease line width (-0.5px, min 0px) |
 | **END** | Keluar dari aplikasi |
+
+**CustomLine Controls:**
+| Input | Action |
+| --- | --- |
+| **Mouse Drag** | Buat garis custom dari dot ke dot (hanya bisa mulai dan akhir di dot) |
+| **Mouse Click** | Select garis custom (berubah jadi merah) |
+| **CTRL + Click** | Toggle selection multiple garis (multi-select) |
+| **SHIFT + B** | Select semua customLines sekaligus |
+| **Mouse Scroll** | Adjust curvature garis yang sedang di-select (scroll up = melengkung satu arah, scroll down = melengkung arah sebaliknya, 0 = lurus) |
+| **CTRL + Z** | Undo garis terakhir yang dibuat |
+| **CTRL + G** | Buat polygon dari selected customLines (minimum 3 garis untuk buat polygon, otomatis ikuti curve shape) |
+| **CTRL + S** | Simpan semua custom lines dan polygons ke file binary (custom_lines.bin + polygons.bin) |
+| **CTRL + O** | Load semua custom lines dan polygons dengan animasi parallel (barengan dengan fade-in) |
+| **CTRL + SHIFT + O** | Load semua custom lines dan polygons dengan animasi sequential (lines dulu, baru polygons satu per satu) |
+| **CTRL + DEL** | Hapus semua polygons dan custom lines (hanya jika animasi sudah selesai, tidak bisa saat sedang loading) |
+| **BACKSPACE** | Hapus polygon/line yang sedang di-select (jika tidak ada yang selected dan sedang sequential load, cancel load. Jika tidak ada yang selected dan tidak sedang loading, toggle CartesianAxes) |
+| **1 - 9** | Assign color ke polygon yang sedang di-select (1=Merah, 2=Hijau, 3=Biru, 4=Kuning, 5=Magenta, 6=Cyan, 7=Orange, 8=Ungu, 9=Abu-abu) |
+
+**Polygon Controls:**
+| Input | Action |
+| --- | --- |
+| **Mouse Click** | Select polygon (muncul label "Polygon0", "Polygon1", dst di tengah polygon) |
+| **1 - 9** | Ganti warna polygon yang sedang di-select secara realtime |
+| **CTRL + DEL** | Hapus semua polygons dan custom lines (hanya jika animasi sudah selesai) |
+| **BACKSPACE** | Hapus polygon yang sedang di-select (hanya jika animasi sudah selesai) |
 
 **Shape Count:**
 - 5 CircleShape (A, B, C, D, E)
@@ -109,8 +121,6 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 ## 🛠️ Tech Stack
 
 - **[OpenFrameworks 0.12.1](https://openframeworks.cc/)**
-- **[Ultralight UI](https://ultralig.ht/)** - Modern HTML/CSS/JavaScript overlay UI
-- **JavaScriptCore API** - JavaScript-C++ bridge untuk UI interactivity
 - **C++17**
 - **Visual Studio 2022 Community**
 - **Geometric Construction Algorithms** untuk Islamic patterns
@@ -123,144 +133,6 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 1. Install **[OpenFrameworks](https://openframeworks.cc/)** untuk Windows
 2. Install **Visual Studio 2022** dengan workload "Desktop development with C++"
-3. **[Ultralight SDK](https://ultralig.ht/)** untuk UI overlay (required)
-
-### Setup Ultralight SDK
-
-⚠️ **PENTING - Batasan Lisensi**:
-
-Ultralight SDK **TIDAK BOLEH** di-commit atau di-push ke repository ini karena batasan lisensi. SDK harus didownload dan di-setup secara manual di komputer masing-masing.
-
-**Kenapa tidak ada di repo?**
-- Ultralight Free License melarang distribusi SDK mentah (header files, library files) di repository publik
-- SDK hanya boleh didownload langsung dari website resmi: https://ultralig.ht/
-- Yang boleh di-distribute adalah DLLs sebagai bagian dari aplikasi yang sudah di-compile (executable)
-
-**Yang sudah di-configure di repo ini:**
-- ✅ File `.vcxproj` sudah di-configure untuk linking Ultralight SDK
-- ✅ File `.gitignore` sudah mengabaikan folder `ultralight/` (mencegah commit tidak sengaja)
-- ✅ File `.gitignore` mengizinkan `bin/data/` (UI HTML akan di-commit ke repo)
-- ✅ `bin/data/html/ui.html` - Custom UI untuk aplikasi (sudah ada di repo)
-- ✅ README ini dengan instruksi setup lengkap
-
----
-
-Ultralight SDK diperlukan untuk UI overlay dan **TIDAK** termasuk di repo ini (harus download terpisah).
-
-#### Langkah 1: Download Ultralight SDK
-
-1. Download Ultralight SDK (Windows x64): https://ultralig.ht/
-2. Pilih **Free License** version terbaru
-3. Format: ZIP archive (~16 MB)
-
-#### Langkah 2: Extract Ultralight SDK
-
-Extract file ZIP ke lokasi apa saja yang Anda inginkan, contoh:
-- `C:\Ultralight\`
-- `D:\Libraries\Ultralight\`
-- `F:\AInstaled\Ultralight\` ← (ini yang dipakai di project ini)
-- Atau langsung di dalam project: `BasicIslamicGeometry\ultralight\`
-
-⚠️ **Catatan**: Lokasi extract bebas, tapi Anda perlu update path di file `.vcxproj` sesuai lokasi Anda (lihat Langkah 4).
-
-Pastikan folder structure berisi:
-```
-Ultralight/
-├── include/
-│   ├── AppCore/
-│   ├── JavaScriptCore/
-│   └── Ultralight/
-├── lib/
-│   ├── AppCore.lib
-│   ├── Ultralight.lib
-│   ├── UltralightCore.lib
-│   └── WebCore.lib
-└── bin/
-    ├── AppCore.dll
-    ├── Ultralight.dll
-    ├── UltralightCore.dll
-    └── WebCore.dll
-```
-
-#### Langkah 3: Copy Required Files ke Project Folder
-
-**A. Copy DLLs dari `<Ultralight>\bin\`:**
-```
-AppCore.dll
-Ultralight.dll
-UltralightCore.dll
-WebCore.dll
-```
-Paste ke: `BasicIslamicGeometry\bin\`
-
-**B. Copy ICU Data dari `<Ultralight>\resources\`:**
-```
-icudt67l.dat
-```
-Paste ke: `BasicIslamicGeometry\bin\resources\`
-
-⚠️ **Catatan Penting**:
-- `icudt67l.dat` adalah ICU (International Components for Unicode) data untuk rendering text
-- File ini **WAJIB ada** di folder `bin\resources\`, kalau tidak akan muncul error: "could not load resource:resources/icudt67l.dat"
-- SDK (`include/`, `lib/`) **JANGAN** di-copy ke folder project, cukup DLLs dan ICU data saja.
-
-**Struktur Folder `bin\`:**
-```
-bin/
-├── [DLLs dari Ultralight]     ← Manual copy dari Ultralight SDK
-├── resources/                  ← Manual copy dari Ultralight SDK
-│   └── icudt67l.dat
-└── data/                       ← Dari repository (auto-clone)
-    └── html/
-        └── ui.html          ← Custom UI aplikasi
-```
-
-**File yang di-commit ke repository:**
-- ✅ `bin/data/html/ui.html` - Custom UI (dari repo, bukan dari Ultralight SDK)
-
-**File yang TIDAK di-commit (harus copy manual):**
-- ❌ Semua DLLs (`AppCore.dll`, `Ultralight.dll`, dll) - dari Ultralight SDK
-- ❌ `icudt67l.dat` - dari Ultralight SDK
-
-#### Langkah 4: Configure Visual Studio Project
-
-**Opsi A: Jika Extract di Lokasi Sama dengan Developer**
-
-Jika Anda extract ke `F:\AInstaled\Ultralight\` (sama dengan developer), file `.vcxproj` sudah di-configure dan Anda bisa langsung build.
-
-**Opsi B: Jika Extract di Lokasi Berbeda**
-
-Anda perlu update path di file `.vcxproj` secara manual:
-
-1. Buka `BasicIslamicGeometry.vcxproj` dengan text editor (Notepad, VS Code, dll)
-2. Cari dan ganti semua:
-   ```
-   F:\AInstaled\Ultralight\include
-   ```
-   Dengan path lokasi extract Anda, contoh:
-   ```
-   C:\Ultralight\include
-   ```
-3. Cari dan ganti semua:
-   ```
-   F:\AInstaled\Ultralight\lib
-   ```
-   Dengan:
-   ```
-   C:\Ultralight\lib
-   ```
-
-Atau lewat Visual Studio GUI:
-- Project Properties → C/C++ → General → Additional Include Directories
-  → Ganti `F:\AInstaled\Ultralight\include` dengan path Anda
-- Project Properties → Linker → General → Additional Library Directories
-  → Ganti `F:\AInstaled\Ultralight\lib` dengan path Anda
-
-**Libraries yang di-link:**
-- `Ultralight.lib`
-- `UltralightCore.lib`
-- `AppCore.lib`
-- `WebCore.lib`
 
 ### Setup Project
 
@@ -379,128 +251,9 @@ vec2 point = start * (1-t) * (1-t) +           // (1-t)²·P0 (weight ke start)
 - **Sampling**: 100 segments untuk smooth curve
 - **Progress t**: 0.0 (start) → 1.0 (end)
 
-**Control Point Calculation:**
-```cpp
-// Hitung midpoint antara start dan end
-vec2 midPoint = (start + end) / 2.0f;
-
-// Hitung perpendicular vector (-y, x)
-vec2 dir = end - start;
-vec2 perp = vec2(-dir.y, dir.x);
-perp = perp / glm::length(perp);  // Normalize
-
-// Control point = midpoint + curve * perpendicular
-vec2 controlPoint = midPoint + perp * curve;
-```
-
-**Keuntungan Quadratic Bezier:**
-- **Smooth**: Curve yang halus dan natural
-- **Simple**: Cukup 3 titik (P0, P1, P2) untuk buat curve
-- **Flexible**: Dengan adjust control point, bisa buat berbagai bentuk lengkungan
-- **Parametric**: Mudah di-animate dengan parameter t (0 → 1)
-
 ### Scalable Dot Positions System
 
 Semua dot positions (intersection points) sekarang **fully scalable** dan diambil langsung dari shape objects, **TANPA hardcoded values**. Ini memastikan ketika `radiusCircle` berubah, semua posisi dot otomatis menyesuaikan.
-
-**Circle Centers:**
-```cpp
-// Ambil langsung dari CircleShape objects (SCALABLE!)
-cachedDots.push_back({vec2(circleA->posX, circleA->posY), "Circle"});
-cachedDots.push_back({vec2(circleB->posX, circleB->posY), "Circle"});
-// ... dan seterusnya
-```
-
-**CrossLine Dots:**
-```cpp
-// CrossLine sekarang punya attribute `radiusDot` untuk posisi dot pada radius
-class CrossLine {
-    vec2 start;
-    vec2 end;
-    float radius;
-    vec2 radiusDot;  // ← Posisi dot pada radius (SCALABLE!)
-};
-
-// Di constructor, hitung radiusDot sekali saja:
-float totalAngle = atan2(end.y - start.y, end.x - start.x);
-radiusDot = vec2(cos(totalAngle) * radius, sin(totalAngle) * radius);
-
-// Ambil langsung dari CrossLine objects (SCALABLE!)
-cachedDots.push_back({crossLineF->radiusDot, "CrossLine"});  // Dot pada radius
-cachedDots.push_back({crossLineF->end, "CrossLine"});        // Dot endpoint
-```
-
-**Parallelogram Intersections:**
-```cpp
-// Ambil langsung dari ParallelogramLine objects (SCALABLE!)
-cachedDots.push_back({parallelogramCtoE->intersecCrossLine, "Parallelogram"});
-```
-
-**Rectangle Intersections:**
-```cpp
-// Ambil langsung dari RectangleLine objects (SCALABLE!)
-cachedDots.push_back({rectangleLineFtoG->intersec1, "Rectangle"});
-cachedDots.push_back({rectangleLineFtoG->intersec2, "Rectangle"});
-```
-
-**Octagram Endpoints:**
-```cpp
-// Ambil langsung dari OctagramLine objects (SCALABLE!)
-cachedDots.push_back({octagramLine0->end, "Octagram"});
-```
-
-**Keuntungan Scalable System:**
-- **No Hardcoded Values**: Semua posisi diambil dari shape object attributes
-- **Automatic Adjustment**: Ketika `radiusCircle` berubah, semua dot positions ikut berubah
-- **Future-Proof**: Mudah untuk mengubah posisi shape tanpa update hardcoded values
-- **Consistent**: Semua shapes follow pattern yang sama untuk dot positions
-
-### Angle Labels pada CartesianAxes
-
-CartesianAxes menampilkan label sudut di setiap ujung sumbu dengan format **radians (degrees)**:
-
-```cpp
-// Label sudut di 4 ujung sumbu
-fontNormal.drawString("0 (0°)", currentLength + 10, 5);              // Kanan
-fontNormal.drawString("PI/2 (90°)", -90, currentLength - 100);        // Bawah
-fontNormal.drawString("PI (180°)", -currentLength - 80, 5);          // Kiri
-fontNormal.drawString("-PI/2 (270°)", -100, -currentLength + 100);   // Atas
-```
-
-**Screen Coordinates Reference:**
-- 0° (0 rad) = Timur (kanan) = X positif
-- 90° (PI/2) = Selatan (bawah) = Y positif
-- 180° (PI) = Barat (kiri) = X negatif
-- 270° (-PI/2) = Utara (atas) = Y negatif
-
-### Polar Thinking untuk RectangleLine
-
-RectangleLine menggunakan **polar thinking** untuk perhitungan posisi dan intersection yang scalable:
-
-```cpp
-// Hitung posisi F dan G dengan polar (SCALABLE!)
-float angleF = -3 * PI / 4;  // -135°
-vec2 posF = vec2(cos(angleF) * radiusCircle, sin(angleF) * radiusCircle);
-
-float angleG = -PI / 4;  // -45°
-vec2 posG = vec2(cos(angleG) * radiusCircle, sin(angleG) * radiusCircle);
-
-// Hitung intersection dengan rumus geometric yang scalable
-vec2 intersecR = vec2(-radiusCircle * (1 - sqrt(2) / 2), posF.y);  // F→G ∩ C→E
-vec2 intersecS = vec2(radiusCircle * (1 - sqrt(2) / 2), posF.y);   // F→G ∩ B→E
-```
-
-**Keuntungan Polar Thinking:**
-- **Scalable**: Semua posisi otomatis menyesuaikan jika radiusCircle berubah
-- **Geometric Intuitive**: Menggunakan angle dan distance sesuai nature Islamic geometry
-- **Rotation-Friendly**: Mudah di-rotate dengan menambah offset angle
-- **Compass-Based**: Sesuai dengan compass construction technique
-
-**4 RectangleLine Configuration:**
-- **F→G**: Horizontal di y = -170, dengan intersection R (-70, -170) dan S (70, -170)
-- **G→I**: Vertical di x = 170, dengan intersection T (170, -70) dan U (170, 70)
-- **I→H**: Horizontal di y = 170, dengan intersection V (70, 170) dan W (-70, 170)
-- **H→F**: Vertical di x = -170, dengan intersection X (-170, 70) dan Y (-170, -70)
 
 ---
 
@@ -525,14 +278,9 @@ BasicIslamicGeometry/
 │   │   ├── AbstractAnimation.cpp/h    # Base class untuk semua animation
 │   │   └── FadeInAnimation.cpp/h      # Fade-in animation untuk polygon (alpha blending)
 │   └── operation/            # File operations & utilities
-│       ├── FileManager.cpp/h           # Save/load custom lines & polygons ke binary file
-│       ├── UltralightManager.cpp/h     # Ultralight UI manager untuk HTML overlay
-│       └── DialogViewListener.cpp/h    # ViewListener untuk JavaScript bridge (OnDOMReady event)
+│       └── FileManager.cpp/h           # Save/load custom lines & polygons ke binary file
 ├── bin/                      # Compiled executable
 │   └── data/                 # Data files
-│       └── html/             # Ultralight UI HTML files
-│           ├── dialog_mode.html      # Dialog 1: Mode selection (2D/3D)
-│           └── dialog_template.html  # Dialog 2: Template selection (Basic Zellige)
 ├── dll/                      # OF dependencies
 ├── obj/                      # Intermediate files (gitignored)
 └── BasicIslamicGeometry.sln/.vcxproj # Visual Studio project files
@@ -565,41 +313,9 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ## 📝 Current Status: **sketch-islamic-geometry-studio**
 
-Branch ini adalah **Islamic Geometry Studio** dengan setup wizard system dan UI overlay berbasis HTML/CSS/JavaScript menggunakan Ultralight.
+Branch ini adalah **Islamic Geometry Studio** dengan sistem custom line creation, polygon creation, dan file save/load functionality.
 
-### Fitur Baru di Branch Ini:
-
-✅ **Wizard Dialog System** - Setup wizard dengan 2 dialog untuk configurasi awal:
-  - Dialog 1 (Mode Selection): Pilih rendering mode (2D/3D)
-  - Dialog 2 (Template Selection): Pilih template geometry (Basic Zellige, dll)
-  - Automatic transition antar dialog
-  - Glassmorphism design dengan smooth gradients
-
-✅ **JavaScript Bridge Implementation** - Integrasi penuh JavaScript-C++:
-  - DialogViewListener untuk handle OnDOMReady event
-  - Bind C++ functions ke JavaScript object `app` (onDialogClose, onNext, onBack, onCreate)
-  - Button interactivity lewat JavaScript onclick handlers
-  - Mouse event forwarding (mouseMove, mouseDown, mouseUp) ke Ultralight View
-
-✅ **Ultralight UI Manager** - Class untuk manage Ultralight UI instances:
-  - setup() untuk initialization (Renderer, View, Texture)
-  - loadHTMLFile() untuk load HTML dari file system
-  - bindJSFunctions() untuk manual JavaScript binding
-  - update() dan draw() untuk render UI overlay
-  - Mouse event forwarding (fireMouseMove, fireMouseDown, fireMouseUp, fireMouseScroll)
-
-✅ **AppState System** - State machine untuk wizard flow:
-  - SETUP_MODE: Dialog mode selection aktif
-  - SETUP_TEMPLATE: Dialog template selection aktif
-  - RUNNING: Main canvas aktif
-
-✅ **HTML Dialog Files** - UI files di `bin/data/html/`:
-  - dialog_mode.html: Mode selection dengan 2D/3D mode cards
-  - dialog_template.html: Template selection dengan template cards
-  - Responsive glassmorphism design
-  - Gradient backgrounds (ungu-biru)
-
-### Fitur yang tersedia dari branch sebelumnya:
+### Fitur Utama:
 
 ✅ **Mouse Interaction**: Mouse drag untuk menggambar line secara interaktif antar dots
 ✅ **CustomLine System**: Garis custom yang bisa dibuat user dengan mouse drag (start dot → end dot)
@@ -651,78 +367,6 @@ Branch ini adalah **Islamic Geometry Studio** dengan setup wizard system dan UI 
 ✅ **Modular Setup Methods**: setup() terbagi menjadi setupCircles(), setupCartesianAxes(), setupCrossLines(), setupParallelograms(), setupRectangleLine(), setupOctagramLine()
 ✅ **CustomLine Class**: Encapsulated class untuk custom line dengan curve support, progressive animation, dan selection state
 ✅ **PolygonShape Class**: Encapsulated class untuk polygon fill dengan color preset system, label indicator, dan fade-in animation support
-
-### Keyboard Shortcuts
-
-**Shape Controls:**
-| Input | Action |
-| --- | --- |
-| **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan (CartesianAxes → Circle A-E → CrossLine F-I → Parallelogram N-Q → Rectangle R-Y → OctagramLine 0-7) |
-| **SHIFT + )** | Show semua shapes (Circle, CrossLine, Parallelogram, Rectangle, OctagramLine, CartesianAxes) |
-| **DEL** | Hide semua shapes (termasuk CartesianAxes) |
-| **BACKSPACE** | Toggle CartesianAxes saja (hide/show) |
-| **\`** atau **~** | Toggle label visibility (semua label) |
-| **.** atau **>** | Toggle dot visibility (semua dot di intersection points) |
-| **+** atau **=** | Increase line width (+0.5px, max 4px) |
-| **-** atau **_** | Decrease line width (-0.5px, min 0px) |
-
-**CustomLine Controls:**
-| Input | Action |
-| --- | --- |
-| **Mouse Drag** | Buat garis custom dari dot ke dot (hanya bisa mulai dan akhir di dot) |
-| **Mouse Click** | Select garis custom (berubah jadi merah) |
-| **CTRL + Click** | Toggle selection multiple garis (multi-select) |
-| **SHIFT + B** | Select semua customLines sekaligus |
-| **Mouse Scroll** | Adjust curvature garis yang sedang di-select (scroll up = melengkung satu arah, scroll down = melengkung arah sebaliknya, 0 = lurus) |
-| **CTRL + Z** | Undo garis terakhir yang dibuat |
-| **CTRL + G** | Buat polygon dari selected customLines (minimum 3 garis untuk buat polygon, otomatis ikuti curve shape) |
-| **CTRL + S** | Simpan semua custom lines dan polygons ke file binary (custom_lines.bin + polygons.bin) |
-| **CTRL + O** | Load semua custom lines dan polygons dengan animasi parallel (barengan dengan fade-in) |
-| **CTRL + SHIFT + O** | Load semua custom lines dan polygons dengan animasi sequential (lines dulu, baru polygons satu per satu) |
-| **CTRL + DEL** | Hapus semua polygons dan custom lines (hanya jika animasi sudah selesai, tidak bisa saat sedang loading) |
-| **BACKSPACE** | Hapus polygon/line yang sedang di-select (jika tidak ada yang selected dan sedang sequential load, cancel load. Jika tidak ada yang selected dan tidak sedang loading, toggle CartesianAxes) |
-| **1 - 9** | Assign color ke polygon yang sedang di-select (1=Merah, 2=Hijau, 3=Biru, 4=Kuning, 5=Magenta, 6=Cyan, 7=Orange, 8=Ungu, 9=Abu-abu) |
-| **END** | Keluar dari aplikasi |
-
-**Polygon Controls:**
-| Input | Action |
-| --- | --- |
-| **Mouse Click** | Select polygon (muncul label "Polygon0", "Polygon1", dst di tengah polygon) |
-| **1 - 9** | Ganti warna polygon yang sedang di-select secara realtime |
-| **CTRL + DEL** | Hapus semua polygons dan custom lines (hanya jika animasi sudah selesai) |
-| **BACKSPACE** | Hapus polygon yang sedang di-select (hanya jika animasi sudah selesai) |
-
-### Configuration:
-
-**Circle Parameters:**
-- **radius**: 240px untuk semua lingkaran
-- **circleSpeed**: 0.5 segments per frame
-- **totalSegments**: 100 segments untuk full circle
-- **lineWidth**: 0.5px (thin) - 4px (thick)
-
-**Circle Positions:**
-- **Circle A**: (0, 0) - Center
-- **Circle B**: (240, 0) - Right
-- **Circle C**: (-240, 0) - Left
-- **Circle D**: (0, 240) - Bottom
-- **Circle E**: (0, -240) - Top
-
-**Cartesian Axes Parameters:**
-- **maxScale**: 2.5 (sumbu memanjang 2.5x radius = 600px)
-- **speed**: 0.02 per frame
-- **lineWidth**: 2px (default)
-- **Angle Labels**: Format "radians (degrees)" di setiap ujung sumbu
-  - Kanan: "0 (0°)"
-  - Bawah: "PI/2 (90°)"
-  - Kiri: "PI (180°)"
-  - Atas: "-PI/2 (270°)"
-
-**Font System:**
-- **All Labels**: Calibri 15px (Regular)
-- **Consistency**: Font tidak berubah saat line width di-adjust
-- **Clean & Simple**: Visual yang konsisten di seluruh aplikasi
-
-🎨 **Creative Freedom**: Project ini terbuka untuk eksplorasi dan improvisasi tanpa batas. Seni digital adalah tentang ekspresi, bukan checklist.
 
 ---
 

@@ -82,7 +82,6 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);F:\AInstaled\Ultralight\include</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ObjectFileName>$(IntDir)\Build\%(RelativeDir)\$(Configuration)\</ObjectFileName>
@@ -96,8 +95,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
-      <AdditionalDependencies>%(AdditionalDependencies);Ultralight.lib;UltralightCore.lib;AppCore.lib;WebCore.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);F:\AInstaled\Ultralight\lib</AdditionalLibraryDirectories>
       <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
     </Link>
   </ItemDefinitionGroup>
@@ -127,7 +124,6 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);F:\AInstaled\Ultralight\include</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
       <ObjectFileName>$(IntDir)\Build\%(RelativeDir)\$(Configuration)\</ObjectFileName>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -143,8 +139,6 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
-      <AdditionalDependencies>%(AdditionalDependencies);Ultralight.lib;UltralightCore.lib;AppCore.lib;WebCore.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);F:\AInstaled\Ultralight\lib</AdditionalLibraryDirectories>
       <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
     </Link>
   </ItemDefinitionGroup>
@@ -238,8 +232,6 @@
     <ClCompile Include="src\shape\CustomLine.cpp" />
     <ClCompile Include="src\shape\PolygonShape.cpp" />
     <ClCompile Include="src\operation\FileManager.cpp" />
-    <ClCompile Include="src\operation\UltralightManager.cpp" />
-    <ClCompile Include="src\operation\DialogViewListener.cpp" />
     <ClCompile Include="src\template\TemplateRegistry.cpp" />
     <ClCompile Include="src\template\templates\BasicZelligeTemplate.cpp" />
     <ClCompile Include="src\anim\AbstractAnimation.cpp" />
@@ -258,8 +250,6 @@
     <ClInclude Include="src\shape\CustomLine.h" />
     <ClInclude Include="src\shape\PolygonShape.h" />
     <ClInclude Include="src\operation\FileManager.h" />
-    <ClInclude Include="src\operation\UltralightManager.h" />
-    <ClInclude Include="src\operation\DialogViewListener.h" />
     <ClInclude Include="src\template\SacredGeometryTemplate.h" />
     <ClInclude Include="src\template\TemplateRegistry.h" />
     <ClInclude Include="src\template\templates\BasicZelligeTemplate.h" />

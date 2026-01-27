@@ -6,28 +6,14 @@
 #include "shape/PolygonShape.h"
 #include "shape/DotInfo.h"
 #include "operation/FileManager.h"
-#include "operation/UltralightManager.h"
 #include "template/SacredGeometryTemplate.h"
 #include "template/TemplateRegistry.h"
 #include <set>
 using glm::vec2;
 
-/**
- * Application states untuk wizard dialog
- */
-enum AppState {
-	SETUP_MODE,       // Dialog 1: Pilih 2D/3D mode
-	SETUP_TEMPLATE,   // Dialog 2: Pilih Sacred Geometry template
-	RUNNING           // Main canvas running
-};
-
 class ofApp : public ofBaseApp{
 
 	public:
-		// Application state untuk wizard dialog
-		AppState appState = SETUP_MODE;
-		std::string selectedMode = "2D";  // Selected mode: "2D" or "3D"
-
 		// TEMPLATE SYSTEM - Ganti semua individual shape unique_ptrs!
 		SacredGeometryTemplate* currentTemplate = nullptr;  // Template yang sedang aktif
 		std::vector<std::unique_ptr<AbstractShape>> templateShapes;  // Semua shapes dari template
@@ -102,12 +88,6 @@ class ofApp : public ofBaseApp{
 		// File Manager untuk save/load custom lines
 		FileManager fileManager;
 
-		// Ultralight UI Manager untuk HTML overlay UI
-		UltralightManager sacredGeoUI;     // Small UI untuk Sacred Geometry controls (toggle G)
-		UltralightManager dialogUI;        // Full dialog untuk setup wizard (600x400 centered)
-		bool sacredGeoUIVisible = true;   // Sacred Geo UI visibility state
-		int framesUntilBindJS = 0;         // Counter untuk delay bind JS functions setelah load HTML
-
 		void setup();
 		void setupTemplateSystem();  // Register semua templates ke registry
 		void switchTemplate(const std::string& templateName);  // Switch ke template tertentu
@@ -126,15 +106,6 @@ class ofApp : public ofBaseApp{
 		void showAllShapes();           // Show all shapes
 		void decreaseLineWidth();       // Kurangi line width
 		void increaseLineWidth();       // Tambah line width
-		void toggleUltralightUI();      // Toggle Sacred Geo UI visibility (G/g)
-
-		// Dialog/State management methods
-		void setupDialogUI();           // Initialize dialog UI manager
-		void showModeDialog();          // Show dialog 1 (2D/3D selection)
-		void showTemplateDialog(const std::string& mode = "2D");  // Show dialog 2 (template selection) with mode parameter
-		void handleJSAction(const std::string& action);  // Handle JavaScript bridge calls
-		void onCreateApp();             // Called when user clicks Create
-		void onDialogClose();           // Called when user clicks Close (exit app)
 
 		// Interactive Line Creation helpers
 		const std::vector<DotInfo>& getAllDots();  // Return cached dots by reference
@@ -159,6 +130,6 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-		void exit();  // Cleanup Ultralight on exit
+		void exit();
 
 };

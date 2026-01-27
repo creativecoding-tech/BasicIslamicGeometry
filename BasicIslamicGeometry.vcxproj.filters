@@ -16,8 +16,6 @@
     <ClCompile Include="src\shape\OctagramLine.cpp" />
     <ClCompile Include="src\shape\PolygonShape.cpp" />
     <ClCompile Include="src\operation\FileManager.cpp" />
-    <ClCompile Include="src\operation\UltralightManager.cpp" />
-    <ClCompile Include="src\operation\DialogViewListener.cpp" />
     <ClCompile Include="src\template\TemplateRegistry.cpp" />
     <ClCompile Include="src\template\templates\BasicZelligeTemplate.cpp" />
     <ClCompile Include="src\anim\AbstractAnimation.cpp" />
@@ -42,8 +40,6 @@
     <ClInclude Include="src\shape\OctagramLine.h" />
     <ClInclude Include="src\shape\PolygonShape.h" />
     <ClInclude Include="src\operation\FileManager.h" />
-    <ClInclude Include="src\operation\UltralightManager.h" />
-    <ClInclude Include="src\operation\DialogViewListener.h" />
     <ClInclude Include="src\template\SacredGeometryTemplate.h" />
     <ClInclude Include="src\template\TemplateRegistry.h" />
     <ClInclude Include="src\template\templates\BasicZelligeTemplate.h" />

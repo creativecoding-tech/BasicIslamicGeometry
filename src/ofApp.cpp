@@ -1,36 +1,27 @@
 #include "ofApp.h"
-#include "operation/UltralightManager.h" // Untuk SharedRendererManager
 #include "shape/AbstractShape.h"
 #include "template/templates/BasicZelligeTemplate.h"
 
 
 //--------------------------------------------------------------
 void ofApp::setup() {
-  ofSetVerticalSync(false); // Tidak ada limit dari refresh rate monitor
-  ofSetFrameRate(60);       // Sync dengan Ultralight 60 FPS cap
+  ofSetVerticalSync(false);
+  ofSetFrameRate(60);
   ofSetEscapeQuitsApp(false);
-  ofSetBackgroundAuto(
-      false); // Coba ubah ke TRUE untuk test (hilangkan trail effect)
+  ofSetBackgroundAuto(false);
   ofEnableAntiAliasing();
   ofEnableSmoothing();
 
   // Load font untuk custom line labels
   fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
 
-  // STEP 1: Setup template system (REGISTER SEMUA TEMPLATES)
+  // Setup template system (REGISTER SEMUA TEMPLATES)
   setupTemplateSystem();
 
-  // Setup Dialog UI untuk wizard (600x400 centered)
-  setupDialogUI();
-
-  // Show dialog pertama (mode selection)
-  showModeDialog();
-
-  // STEP 2: Load default template (Basic Zellige)
+  // Load default template (Basic Zellige)
   switchTemplate("Basic Zellige");
 
-  // Initial dots cache build (cache di-build saat pertama kali getAllDots()
-  // dipanggil)
+  // Initial dots cache build
   dotsCacheDirty = true;
 }
 
@@ -201,87 +192,31 @@ void ofApp::update() {
       }
     }
   }
-
-  // Update Ultralight UI renderers
-  // SEKARANG AMAN: Semua UltralightManager instances share 1 Renderer
-  // melalui SharedRendererManager singleton. Tidak akan ada WebCore.dll
-  // corruption!
-  if (appState == SETUP_MODE || appState == SETUP_TEMPLATE) {
-    dialogUI.update();
-  }
-  if (appState == RUNNING) {
-    sacredGeoUI.update();
-  }
-
-  // Bind JavaScript functions setelah delay (untuk tunggu HTML load complete)
-  if (framesUntilBindJS > 0) {
-    framesUntilBindJS--;
-    if (framesUntilBindJS == 0) {
-      // Bind sesuai dengan state yang aktif
-      if (appState == RUNNING) {
-        sacredGeoUI.bindJSFunctions();
-      } else {
-        dialogUI.bindJSFunctions();
-      }
-    }
-  }
 }
 
 //--------------------------------------------------------------
 void ofApp::draw() {
-  // Render berdasarkan application state
-  if (appState == SETUP_MODE || appState == SETUP_TEMPLATE) {
-    // Background hitam solid
-    ofSetColor(0);
-    ofFill();
-    ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
+  // Trail effect untuk geometry
+  ofSetColor(255, 25);
+  ofFill();
+  ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
 
-    // Draw dialog centered
-    ofPushStyle();
-    ofSetColor(255, 255);
+  // Push matrix untuk geometry drawing (centered)
+  ofPushMatrix();
+  ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
 
-    // Calculate centered position
-    int dialogX = (ofGetWidth() - 600) / 2;
-    int dialogY = (ofGetHeight() - 400) / 2;
-
-    ofPushMatrix();
-    ofTranslate(dialogX, dialogY);
-    dialogUI.draw();
-    ofPopMatrix();
-
-    ofPopStyle();
-  } else { // RUNNING state
-    // Trail effect untuk geometry
-    ofSetColor(255, 25);
-    ofFill();
-    ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
-
-    // Push matrix untuk geometry drawing (centered)
-    ofPushMatrix();
-    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-
-    // Draw semua template shapes (polymorphic iteration)
-    for (auto &shape : templateShapes) {
-      if (shape) {
-        shape->draw();
-      }
-    }
-
-    // Draw custom lines dan UI elements
-    drawCustomLinesAndUI();
-
-    // Reset transform
-    ofPopMatrix();
-
-    // Draw Ultralight UI dengan style terpisah (tidak ganggu trail effect)
-    if (sacredGeoUIVisible) {
-      ofPushStyle();
-      ofSetColor(255, 255); // Override trail effect alpha
-      sacredGeoUI.draw();
-      ofPopStyle(); // Kembalikan ke trail effect (255, 25) untuk frame
-                    // berikutnya
+  // Draw semua template shapes (polymorphic iteration)
+  for (auto &shape : templateShapes) {
+    if (shape) {
+      shape->draw();
     }
   }
+
+  // Draw custom lines dan UI elements
+  drawCustomLinesAndUI();
+
+  // Reset transform
+  ofPopMatrix();
 }
 
 //--------------------------------------------------------------
@@ -376,11 +311,6 @@ void ofApp::keyPressed(int key) {
   // Toggle dot visibility dengan . atau >
   if (key == '.' || key == '>') {
     toggleDots();
-  }
-
-  // Toggle Ultralight UI visibility dengan G atau g (hanya tanpa CTRL)
-  if ((key == 'G' || key == 'g') && !isCtrlPressed) {
-    toggleUltralightUI();
   }
 
   if (key == OF_KEY_DEL) {
@@ -901,27 +831,6 @@ void ofApp::createInvisiblePolygonFromSelected() {
 //--------------------------------------------------------------
 // Mouse Event Handlers
 void ofApp::mousePressed(int x, int y, int button) {
-  // Handle dialog button clicks (Dialog active)
-  if (appState == SETUP_MODE || appState == SETUP_TEMPLATE) {
-    // Forward mouse event ke dialogUI untuk JavaScript bridge
-    int dialogX = (ofGetWidth() - 600) / 2;
-    int dialogY = (ofGetHeight() - 400) / 2;
-    int relX = x - dialogX;
-    int relY = y - dialogY;
-
-    if (relX >= 0 && relX < 600 && relY >= 0 && relY < 400) {
-      dialogUI.fireMouseDown(relX, relY, button);
-    }
-
-    return; // Jangan lanjut ke logic lain saat dialog aktif
-  }
-
-  // Forward mouse press ke Ultralight UI jika mouse di area UI dan UI visible
-  if (sacredGeoUIVisible && sacredGeoUI.isMouseOverUI(x, y)) {
-    sacredGeoUI.fireMouseDown(x, y, button);
-    return; // Jangan lanjut ke logic lain
-  }
-
   // Logic lama: Cursor toggle dengan right click (button 2)
   if (button == 2) {
     cursorVisible = !cursorVisible;
@@ -1023,25 +932,6 @@ void ofApp::mouseDragged(int x, int y, int button) {
 }
 
 void ofApp::mouseReleased(int x, int y, int button) {
-  // Handle dialog mouse release
-  if (appState == SETUP_MODE || appState == SETUP_TEMPLATE) {
-    int dialogX = (ofGetWidth() - 600) / 2;
-    int dialogY = (ofGetHeight() - 400) / 2;
-    int relX = x - dialogX;
-    int relY = y - dialogY;
-
-    if (relX >= 0 && relX < 600 && relY >= 0 && relY < 400) {
-      dialogUI.fireMouseUp(relX, relY, button);
-    }
-    return;
-  }
-
-  // Forward mouse release ke Ultralight UI jika mouse di area UI dan UI visible
-  if (sacredGeoUIVisible && sacredGeoUI.isMouseOverUI(x, y)) {
-    sacredGeoUI.fireMouseUp(x, y, button);
-    return; // Jangan lanjut ke logic lain
-  }
-
   if (drawState != DRAGGING) {
     return;
   }
@@ -1081,12 +971,6 @@ void ofApp::mouseReleased(int x, int y, int button) {
 
 //--------------------------------------------------------------
 void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
-  // Forward scroll ke Ultralight UI jika mouse di area UI dan UI visible
-  if (sacredGeoUIVisible && sacredGeoUI.isMouseOverUI(x, y)) {
-    sacredGeoUI.fireMouseScroll(x, y, scrollX,
-                                -scrollY * 30); // Ultralight pakai pixel delta
-    return;                                     // Jangan lanjut ke logic lain
-  }
 
   // Update curve untuk SEMUA garis yang selected
   if (!selectedLineIndices.empty()) {
@@ -1103,26 +987,8 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y) {
-  // Update mouse position untuk hover detection (adjust untuk center
-  // translation)
+  // Update mouse position untuk hover detection (adjust untuk center translation)
   mousePos = vec2(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
-
-  // Handle dialog mouse move
-  if (appState == SETUP_MODE || appState == SETUP_TEMPLATE) {
-    int dialogX = (ofGetWidth() - 600) / 2;
-    int dialogY = (ofGetHeight() - 400) / 2;
-    int relX = x - dialogX;
-    int relY = y - dialogY;
-
-    if (relX >= 0 && relX < 600 && relY >= 0 && relY < 400) {
-      dialogUI.fireMouseMove(relX, relY);
-    }
-  }
-
-  // Forward mouse move ke Ultralight UI jika mouse di area UI dan UI visible
-  if (sacredGeoUIVisible && sacredGeoUI.isMouseOverUI(x, y)) {
-    sacredGeoUI.fireMouseMove(x, y);
-  }
 }
 
 //--------------------------------------------------------------
@@ -1223,7 +1089,6 @@ void ofApp::updateSequentialDrawing() {
 
 //--------------------------------------------------------------
 void ofApp::toggleLabels() {
-  ofLogNotice("ofApp") << "toggleLabels() called, labelsVisible was: " << labelsVisible;
   // Toggle label visibility
   labelsVisible = !labelsVisible;
 
@@ -1235,16 +1100,10 @@ void ofApp::toggleLabels() {
       shape->hideLabel();
     }
   }
-
-  // Update UI HTML checkbox dan ON/OFF label
-  std::string script = "setLabelsState(" + std::string(labelsVisible ? "true" : "false") + ");";
-  ofLogNotice("ofApp") << "Evaluating JavaScript: " << script;
-  sacredGeoUI.evaluateJavaScript(script);
 }
 
 //--------------------------------------------------------------
 void ofApp::toggleDots() {
-  ofLogNotice("ofApp") << "toggleDots() called, dotsVisible was: " << dotsVisible;
   // Toggle dot visibility
   dotsVisible = !dotsVisible;
 
@@ -1256,9 +1115,6 @@ void ofApp::toggleDots() {
       shape->hideDot();
     }
   }
-
-  // Update UI HTML checkbox dan ON/OFF label
-  sacredGeoUI.evaluateJavaScript("setDotsState(" + std::string(dotsVisible ? "true" : "false") + ");");
 }
 
 //--------------------------------------------------------------
@@ -1338,82 +1194,6 @@ void ofApp::increaseLineWidth() {
 }
 
 //--------------------------------------------------------------
-void ofApp::toggleUltralightUI() { sacredGeoUIVisible = !sacredGeoUIVisible; }
-
-//--------------------------------------------------------------
-void ofApp::setupDialogUI() {
-  // Set JavaScript callback dulu SEBELUM setup supaya ViewListener terpasang
-  dialogUI.setJSCallback(
-      [this](const std::string &action) { this->handleJSAction(action); });
-
-  dialogUI.setup(600, 400);
-}
-
-//--------------------------------------------------------------
-void ofApp::handleJSAction(const std::string &action) {
-  ofLogNotice("ofApp") << "handleJSAction: " << action;
-  if (action == "onDialogClose") {
-    onDialogClose();
-  } else if (action == "onBack") {
-    showModeDialog();
-  } else if (action == "on2DMode") {
-    selectedMode = "2D";
-    showTemplateDialog("2D");
-  } else if (action == "on3DMode") {
-    selectedMode = "3D";
-    showTemplateDialog("3D");
-  } else if (action == "onCreate") {
-    onCreateApp();
-  } else if (action == "toggleLabels") {
-    toggleLabels();
-  } else if (action == "toggleDots") {
-    toggleDots();
-  }
-}
-
-//--------------------------------------------------------------
-void ofApp::showModeDialog() {
-  dialogUI.loadHTMLFile("html/dialog_mode.html");
-  appState = SETUP_MODE;
-  framesUntilBindJS = 10; // Bind JS functions setelah 10 frame
-}
-
-//--------------------------------------------------------------
-void ofApp::showTemplateDialog(const std::string& mode) {
-  // Load dialog template yang berbeda tergantung mode (2D vs 3D)
-  if (mode == "3D") {
-    dialogUI.loadHTMLFile("html/dialog_template_3d.html");
-  } else {
-    dialogUI.loadHTMLFile("html/dialog_template_2d.html");
-  }
-  appState = SETUP_TEMPLATE;
-  framesUntilBindJS = 10; // Bind JS functions setelah 10 frame
-}
-
-//--------------------------------------------------------------
-void ofApp::onCreateApp() {
-  // Set JavaScript callback dulu SEBELUM setup supaya ViewListener terpasang
-  sacredGeoUI.setJSCallback(
-      [this](const std::string &action) { this->handleJSAction(action); });
-
-  sacredGeoUI.setup(400, ofGetHeight() - 50);
-  sacredGeoUI.loadHTMLFile("html/sacred_geometry.html");
-  appState = RUNNING;
-  framesUntilBindJS = 10; // Bind JS functions setelah 10 frame
-}
-
-//--------------------------------------------------------------
-void ofApp::onDialogClose() { ofExit(); }
-
-//--------------------------------------------------------------
 void ofApp::exit() {
-  // STEP 1: Cleanup setiap UltralightManager instance
-  // Ini akan cleanup view dan viewListener untuk masing-masing instance
-  dialogUI.cleanup();
-  sacredGeoUI.cleanup();
-
-  // STEP 2: Cleanup shared renderer (paling terakhir!)
-  // SharedRendererManager cleanup dipanggil SETELAH semua instances cleanup
-  // untuk memastikan tidak ada view yang mencoba akses renderer
-  SharedRendererManager::cleanup();
+  // Cleanup jika ada
 }
