@@ -78,6 +78,24 @@ static JSValueRef OnCreateCallback(JSContextRef ctx, JSObjectRef function,
 	return JSValueMakeUndefined(ctx);
 }
 
+static JSValueRef On2DModeCallback(JSContextRef ctx, JSObjectRef function,
+                                    JSObjectRef thisObject, size_t argc,
+                                    const JSValueRef argv[], JSValueRef* exception) {
+	if (UltralightManager::g_instance && UltralightManager::g_instance->jsCallback) {
+		UltralightManager::g_instance->jsCallback("on2DMode");
+	}
+	return JSValueMakeUndefined(ctx);
+}
+
+static JSValueRef On3DModeCallback(JSContextRef ctx, JSObjectRef function,
+                                    JSObjectRef thisObject, size_t argc,
+                                    const JSValueRef argv[], JSValueRef* exception) {
+	if (UltralightManager::g_instance && UltralightManager::g_instance->jsCallback) {
+		UltralightManager::g_instance->jsCallback("on3DMode");
+	}
+	return JSValueMakeUndefined(ctx);
+}
+
 //--------------------------------------------------------------
 UltralightManager::UltralightManager()
 	: width(0)
@@ -265,6 +283,12 @@ void UltralightManager::bindJSFunctions() {
 	JSStringRef createName = JSStringCreateWithUTF8CString("onCreate");
 	JSObjectRef createFunc = JSObjectMakeFunctionWithCallback(ctx, createName, &OnCreateCallback);
 
+	JSStringRef mode2DName = JSStringCreateWithUTF8CString("on2DMode");
+	JSObjectRef mode2DFunc = JSObjectMakeFunctionWithCallback(ctx, mode2DName, &On2DModeCallback);
+
+	JSStringRef mode3DName = JSStringCreateWithUTF8CString("on3DMode");
+	JSObjectRef mode3DFunc = JSObjectMakeFunctionWithCallback(ctx, mode3DName, &On3DModeCallback);
+
 	// Create app object
 	JSStringRef appName = JSStringCreateWithUTF8CString("app");
 	JSObjectRef appObject = JSObjectMake(ctx, nullptr, nullptr);
@@ -274,6 +298,8 @@ void UltralightManager::bindJSFunctions() {
 	JSObjectSetProperty(ctx, appObject, nextName, nextFunc, kJSPropertyAttributeNone, nullptr);
 	JSObjectSetProperty(ctx, appObject, backName, backFunc, kJSPropertyAttributeNone, nullptr);
 	JSObjectSetProperty(ctx, appObject, createName, createFunc, kJSPropertyAttributeNone, nullptr);
+	JSObjectSetProperty(ctx, appObject, mode2DName, mode2DFunc, kJSPropertyAttributeNone, nullptr);
+	JSObjectSetProperty(ctx, appObject, mode3DName, mode3DFunc, kJSPropertyAttributeNone, nullptr);
 
 	// Set app object to global object (window.app)
 	JSObjectSetProperty(ctx, globalObject, appName, appObject, kJSPropertyAttributeNone, nullptr);
@@ -283,6 +309,8 @@ void UltralightManager::bindJSFunctions() {
 	JSStringRelease(nextName);
 	JSStringRelease(backName);
 	JSStringRelease(createName);
+	JSStringRelease(mode2DName);
+	JSStringRelease(mode3DName);
 	JSStringRelease(appName);
 }
 

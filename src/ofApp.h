@@ -26,6 +26,7 @@ class ofApp : public ofBaseApp{
 	public:
 		// Application state untuk wizard dialog
 		AppState appState = SETUP_MODE;
+		std::string selectedMode = "2D";  // Selected mode: "2D" or "3D"
 
 		// TEMPLATE SYSTEM - Ganti semua individual shape unique_ptrs!
 		SacredGeometryTemplate* currentTemplate = nullptr;  // Template yang sedang aktif
@@ -130,7 +131,7 @@ class ofApp : public ofBaseApp{
 		// Dialog/State management methods
 		void setupDialogUI();           // Initialize dialog UI manager
 		void showModeDialog();          // Show dialog 1 (2D/3D selection)
-		void showTemplateDialog();      // Show dialog 2 (template selection)
+		void showTemplateDialog(const std::string& mode = "2D");  // Show dialog 2 (template selection) with mode parameter
 		void handleJSAction(const std::string& action);  // Handle JavaScript bridge calls
 		void onCreateApp();             // Called when user clicks Create
 		void onDialogClose();           // Called when user clicks Close (exit app)

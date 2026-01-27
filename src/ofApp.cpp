@@ -1342,6 +1342,12 @@ void ofApp::handleJSAction(const std::string &action) {
     showTemplateDialog();
   } else if (action == "onBack") {
     showModeDialog();
+  } else if (action == "on2DMode") {
+    selectedMode = "2D";
+    showTemplateDialog("2D");
+  } else if (action == "on3DMode") {
+    selectedMode = "3D";
+    showTemplateDialog("3D");
   } else if (action == "onCreate") {
     onCreateApp();
   }
@@ -1355,8 +1361,13 @@ void ofApp::showModeDialog() {
 }
 
 //--------------------------------------------------------------
-void ofApp::showTemplateDialog() {
-  dialogUI.loadHTMLFile("html/dialog_template.html");
+void ofApp::showTemplateDialog(const std::string& mode) {
+  // Load dialog template yang berbeda tergantung mode (2D vs 3D)
+  if (mode == "3D") {
+    dialogUI.loadHTMLFile("html/dialog_template_3d.html");
+  } else {
+    dialogUI.loadHTMLFile("html/dialog_template_2d.html");
+  }
   appState = SETUP_TEMPLATE;
   framesUntilBindJS = 10; // Bind JS functions setelah 10 frame
 }
