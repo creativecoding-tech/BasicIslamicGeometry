@@ -3,6 +3,8 @@
 #include "ofMain.h"
 #include "../shape/CustomLine.h"
 #include "../shape/PolygonShape.h"
+#include "../template/SacredGeometryTemplate.h"
+#include <string>
 using glm::vec2;
 
 class FileManager {
@@ -10,9 +12,15 @@ public:
     // Constructor
     FileManager();
 
-    // Save/load ALL data (CTRL+S / CTRL+O)
-    void saveAll(const std::vector<CustomLine>& customLines, const std::vector<PolygonShape>& polygons);
-    bool loadAll(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons);
+    // Save/load ALL data ke .na format (CTRL+S / CTRL+O)
+    void saveAll(const std::string& templateName, float globalRadius,
+                 const std::vector<CustomLine>& customLines,
+                 const std::vector<PolygonShape>& polygons);
+
+    // Load ALL data dari .na format - return template name
+    bool loadAll(std::string& outTemplateName, float& outGlobalRadius,
+                 std::vector<CustomLine>& customLines,
+                 std::vector<PolygonShape>& polygons);
 
     // Load ALL data sequential dengan animasi (CTRL+SHIFT+O)
     void loadAllSequential(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons);
@@ -37,9 +45,12 @@ public:
     float getLoadSpeed() const;
 
 private:
-    // Helper methods untuk save/load customLines
-    void saveCustomLines(const std::vector<CustomLine>& customLines);
-    bool loadCustomLines(std::vector<CustomLine>& customLines);
+    // Helper methods untuk .na format
+    void saveCustomLinesNA(ofBuffer& buffer, const std::vector<CustomLine>& customLines, float radius);
+    bool loadCustomLinesNA(ofBuffer& buffer, size_t& offset, std::vector<CustomLine>& customLines, float radius);
+
+    void savePolygonsNA(ofBuffer& buffer, const std::vector<PolygonShape>& polygons, float radius);
+    bool loadPolygonsNA(ofBuffer& buffer, size_t& offset, std::vector<PolygonShape>& polygons, float radius);
 
     // Load state flags
     bool loadSequentialMode;
@@ -57,5 +68,9 @@ private:
 
     // Konstanta
     static const std::string FILENAME;
-    static const std::string FILENAME_POLYGONS;
+
+    // Format constants
+    static constexpr char MAGIC_NUMBER[4] = {'N', 'A', '0', '1'};
+    static constexpr int VERSION = 1;
+    static constexpr int HEADER_SIZE = 64;  // Header tetap 64 bytes untuk masa depan
 };

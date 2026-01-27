@@ -388,7 +388,9 @@ void ofApp::keyPressed(int key){
 			case 's':
 			case 'S':
 			case 19:  // CTRL+S (ASCII 19)
-				fileManager.saveAll(customLines, polygonShapes);
+				if (currentTemplate) {
+					fileManager.saveAll(currentTemplate->getName(), radiusCircle, customLines, polygonShapes);
+				}
 				break;
 
 			case 'o':
@@ -398,7 +400,17 @@ void ofApp::keyPressed(int key){
 				if (ofGetKeyPressed(OF_KEY_SHIFT)) {
 					fileManager.loadAllSequential(customLines, polygonShapes);  // Sequential load dengan animasi (lines + polygons)
 				} else {
-					fileManager.loadAll(customLines, polygonShapes);  // Load semua sekaligus (parallel)
+					// Load workspace dengan template name dan radius
+					string loadedTemplateName;
+					float loadedRadius;
+					if (fileManager.loadAll(loadedTemplateName, loadedRadius, customLines, polygonShapes)) {
+						// Switch ke template yang di-load
+						switchTemplate(loadedTemplateName);
+						// Update radius dengan loaded radius
+						radiusCircle = loadedRadius;
+						// Tampilkan semua shapes
+						showAllShapes();
+					}
 				}
 				break;
 

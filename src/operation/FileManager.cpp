@@ -2,8 +2,331 @@
 #include "../anim/FadeInAnimation.h"
 
 // Konstanta filename
-const std::string FileManager::FILENAME = "custom_lines.bin";
-const std::string FileManager::FILENAME_POLYGONS = "polygons.bin";
+const std::string FileManager::FILENAME = "workspace.nay";
+
+//--------------------------------------------------------------
+void FileManager::saveAll(const std::string& templateName, float globalRadius,
+                           const std::vector<CustomLine>& customLines,
+                           const std::vector<PolygonShape>& polygons) {
+	ofBuffer buffer;
+
+	// ===== HEADER (64 bytes) =====
+	// Magic number (4 bytes)
+	buffer.append(MAGIC_NUMBER, 4);
+
+	// Version (4 bytes int)
+	int version = VERSION;
+	buffer.append(reinterpret_cast<const char*>(&version), sizeof(int));
+
+	// Template name length (4 bytes int)
+	int nameLen = static_cast<int>(templateName.length());
+	buffer.append(reinterpret_cast<const char*>(&nameLen), sizeof(int));
+
+	// Template name (string)
+	buffer.append(templateName.c_str(), nameLen);
+
+	// Global radius (4 bytes float)
+	buffer.append(reinterpret_cast<const char*>(&globalRadius), sizeof(float));
+
+	// Reserved (20 bytes)
+	char reserved[20] = {0};
+	buffer.append(reserved, 20);
+
+	// ===== CUSTOM LINES =====
+	int numLines = static_cast<int>(customLines.size());
+	buffer.append(reinterpret_cast<const char*>(&numLines), sizeof(int));
+
+	// Simpan customLines dengan NORMALIZED positions (dibagi radius)
+	saveCustomLinesNA(buffer, customLines, globalRadius);
+
+	// ===== POLYGONS =====
+	int numPolygons = static_cast<int>(polygons.size());
+	buffer.append(reinterpret_cast<const char*>(&numPolygons), sizeof(int));
+
+	// Simpan polygons dengan NORMALIZED positions (dibagi radius)
+	savePolygonsNA(buffer, polygons, globalRadius);
+
+	// Write ke file
+	ofBufferToFile(FILENAME, buffer);
+}
+
+//--------------------------------------------------------------
+bool FileManager::loadAll(std::string& outTemplateName, float& outGlobalRadius,
+                           std::vector<CustomLine>& customLines,
+                           std::vector<PolygonShape>& polygons) {
+	// Cek apakah ada isinya dulu
+	if (!customLines.empty()) {
+		return false;  // Tidak load jika sudah ada isinya
+	}
+
+	// Cek apakah file exists
+	ofFile file(FILENAME);
+	if (!file.exists()) {
+		return false;
+	}
+
+	// Read file ke buffer
+	ofBuffer buffer = ofBufferFromFile(FILENAME);
+	char* data = buffer.getData();
+	size_t bufferSize = buffer.size();
+
+	// Validasi ukuran minimal
+	if (bufferSize < 64) {
+		ofLog() << "Error: File terlalu kecil";
+		return false;
+	}
+
+	size_t offset = 0;
+
+	// ===== VALIDASI HEADER =====
+	// Magic number
+	if (memcmp(data + offset, MAGIC_NUMBER, 4) != 0) {
+		ofLog() << "Error: Invalid file format (wrong magic number)";
+		return false;
+	}
+	offset += 4;
+
+	// Version
+	int version = *reinterpret_cast<int*>(data + offset);
+	offset += sizeof(int);
+	if (version != VERSION) {
+		ofLog() << "Error: Unsupported version: " << version;
+		return false;
+	}
+
+	// Template name length
+	int nameLen = *reinterpret_cast<int*>(data + offset);
+	offset += sizeof(int);
+
+	// Template name
+	if (nameLen <= 0 || nameLen > 256) {
+		ofLog() << "Error: Invalid template name length";
+		return false;
+	}
+	outTemplateName = std::string(data + offset, nameLen);
+	offset += nameLen;
+
+	// Global radius
+	outGlobalRadius = *reinterpret_cast<float*>(data + offset);
+	offset += sizeof(float);
+
+	// Skip reserved (20 bytes)
+	offset += 20;
+
+	// ===== LOAD CUSTOM LINES =====
+	if (offset >= bufferSize) {
+		ofLog() << "Error: Unexpected end of file after header";
+		return false;
+	}
+
+	int numLines = *reinterpret_cast<int*>(data + offset);
+	offset += sizeof(int);
+
+	customLines.clear();
+	if (!loadCustomLinesNA(buffer, offset, customLines, outGlobalRadius)) {
+		ofLog() << "Error: Failed to load custom lines";
+		return false;
+	}
+
+	// ===== LOAD POLYGONS =====
+	if (offset >= bufferSize) {
+		ofLog() << "Error: Unexpected end of file after custom lines";
+		return false;
+	}
+
+	int numPolygons = *reinterpret_cast<int*>(data + offset);
+	offset += sizeof(int);
+
+	polygons.clear();
+	if (!loadPolygonsNA(buffer, offset, polygons, outGlobalRadius)) {
+		ofLog() << "Error: Failed to load polygons";
+		return false;
+	}
+
+	return true;
+}
+
+//--------------------------------------------------------------
+void FileManager::saveCustomLinesNA(ofBuffer& buffer, const std::vector<CustomLine>& customLines, float radius) {
+	// Write jumlah line
+	int numLines = static_cast<int>(customLines.size());
+	buffer.append(reinterpret_cast<const char*>(&numLines), sizeof(int));
+
+	// Write setiap line dengan NORMALIZED positions
+	for (const auto& line : customLines) {
+		// Write jumlah points
+		const vector<vec2>& points = line.getPoints();
+		int numPoints = static_cast<int>(points.size());
+		buffer.append(reinterpret_cast<const char*>(&numPoints), sizeof(int));
+
+		// Write semua points dengan POSISI NORMALIZED (dibagi radius)
+		for (const auto& point : points) {
+			vec2 normalizedPoint = point / radius;  // Normalize
+			buffer.append(reinterpret_cast<const char*>(&normalizedPoint), sizeof(vec2));
+		}
+
+		// Write color, lineWidth, dan curve (tidak perlu normalize)
+		ofColor color = line.getColor();
+		float lineWidth = line.getLineWidth();
+		float curve = line.getCurve();
+		buffer.append(reinterpret_cast<const char*>(&color), sizeof(ofColor));
+		buffer.append(reinterpret_cast<const char*>(&lineWidth), sizeof(float));
+		buffer.append(reinterpret_cast<const char*>(&curve), sizeof(float));
+	}
+}
+
+//--------------------------------------------------------------
+bool FileManager::loadCustomLinesNA(ofBuffer& buffer, size_t& offset, std::vector<CustomLine>& customLines, float radius) {
+	char* data = buffer.getData();
+	size_t bufferSize = buffer.size();
+
+	// Read jumlah line
+	if (offset + sizeof(int) > bufferSize) {
+		return false;
+	}
+	int numLines = *reinterpret_cast<int*>(data + offset);
+	offset += sizeof(int);
+
+	// Read setiap line
+	for (int i = 0; i < numLines; i++) {
+		CustomLine line;
+
+		// Read jumlah points
+		if (offset + sizeof(int) > bufferSize) {
+			return false;
+		}
+		int numPoints = *reinterpret_cast<int*>(data + offset);
+		offset += sizeof(int);
+
+		// Read semua points dan DENORMALIZE (kali radius)
+		vector<vec2> points;
+		for (int j = 0; j < numPoints; j++) {
+			if (offset + sizeof(vec2) > bufferSize) {
+				return false;
+			}
+			vec2 normalizedPoint = *reinterpret_cast<vec2*>(data + offset);
+			offset += sizeof(vec2);
+			vec2 point = normalizedPoint * radius;  // Denormalize
+			points.push_back(point);
+		}
+		line.setPoints(points);
+
+		// Read color
+		if (offset + sizeof(ofColor) > bufferSize) {
+			return false;
+		}
+		ofColor color = *reinterpret_cast<ofColor*>(data + offset);
+		offset += sizeof(ofColor);
+		line.setColor(color);
+
+		// Read lineWidth
+		if (offset + sizeof(float) > bufferSize) {
+			return false;
+		}
+		float lineWidth = *reinterpret_cast<float*>(data + offset);
+		offset += sizeof(float);
+		line.setLineWidth(lineWidth);
+
+		// Read curve
+		if (offset + sizeof(float) > bufferSize) {
+			return false;
+		}
+		float curve = *reinterpret_cast<float*>(data + offset);
+		offset += sizeof(float);
+		line.setCurve(curve);
+
+		// Set progress ke 0.0 untuk parallel animation (semua barengan)
+		line.setProgress(0.0f);
+		line.setSpeed(0.005f);
+
+		// Add ke vector
+		customLines.push_back(line);
+	}
+
+	// Enable parallel mode untuk animate semua lines barengan
+	loadParallelMode = true;
+
+	return true;
+}
+
+//--------------------------------------------------------------
+void FileManager::savePolygonsNA(ofBuffer& buffer, const std::vector<PolygonShape>& polygons, float radius) {
+	// Write jumlah polygon
+	int numPolygons = static_cast<int>(polygons.size());
+	buffer.append(reinterpret_cast<const char*>(&numPolygons), sizeof(int));
+
+	// Write setiap polygon dengan NORMALIZED positions
+	for (const auto& polygon : polygons) {
+		// Write jumlah vertices
+		const vector<vec2>& vertices = polygon.getVertices();
+		int numVertices = static_cast<int>(vertices.size());
+		buffer.append(reinterpret_cast<const char*>(&numVertices), sizeof(int));
+
+		// Write semua vertices dengan POSISI NORMALIZED (dibagi radius)
+		for (const auto& vertex : vertices) {
+			vec2 normalizedVertex = vertex / radius;  // Normalize
+			buffer.append(reinterpret_cast<const char*>(&normalizedVertex), sizeof(vec2));
+		}
+
+		// Write fillColor (tidak perlu normalize)
+		ofColor fillColor = polygon.getColor();
+		buffer.append(reinterpret_cast<const char*>(&fillColor), sizeof(ofColor));
+	}
+}
+
+//--------------------------------------------------------------
+bool FileManager::loadPolygonsNA(ofBuffer& buffer, size_t& offset, std::vector<PolygonShape>& polygons, float radius) {
+	char* data = buffer.getData();
+	size_t bufferSize = buffer.size();
+
+	// Read jumlah polygon
+	if (offset + sizeof(int) > bufferSize) {
+		return false;
+	}
+	int numPolygons = *reinterpret_cast<int*>(data + offset);
+	offset += sizeof(int);
+
+	// Read setiap polygon
+	for (int i = 0; i < numPolygons; i++) {
+		// Read jumlah vertices
+		if (offset + sizeof(int) > bufferSize) {
+			return false;
+		}
+		int numVertices = *reinterpret_cast<int*>(data + offset);
+		offset += sizeof(int);
+
+		// Read semua vertices dan DENORMALIZE (kali radius)
+		vector<vec2> vertices;
+		for (int j = 0; j < numVertices; j++) {
+			if (offset + sizeof(vec2) > bufferSize) {
+				return false;
+			}
+			vec2 normalizedVertex = *reinterpret_cast<vec2*>(data + offset);
+			offset += sizeof(vec2);
+			vec2 vertex = normalizedVertex * radius;  // Denormalize
+			vertices.push_back(vertex);
+		}
+
+		// Read fillColor
+		if (offset + sizeof(ofColor) > bufferSize) {
+			return false;
+		}
+		ofColor fillColor = *reinterpret_cast<ofColor*>(data + offset);
+		offset += sizeof(ofColor);
+
+		// Buat PolygonShape dengan index
+		PolygonShape polygon(vertices, fillColor, i);
+
+		// Tambah FadeInAnimation
+		auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
+		polygon.setAnimation(std::move(fadeIn));
+
+		// Add ke vector
+		polygons.push_back(std::move(polygon));
+	}
+
+	return true;
+}
 
 //--------------------------------------------------------------
 FileManager::FileManager()
@@ -16,225 +339,158 @@ FileManager::FileManager()
 }
 
 //--------------------------------------------------------------
-void FileManager::saveCustomLines(const std::vector<CustomLine>& customLines) {
-    // Cek apakah ada lines untuk disimpan
-    if (customLines.empty()) {
-        return;  // Tidak create file jika kosong
-    }
-
-    ofBuffer buffer;
-
-    // Write jumlah line dulu
-    int numLines = static_cast<int>(customLines.size());
-    buffer.append(reinterpret_cast<const char*>(&numLines), sizeof(int));
-
-    // Write setiap line dalam binary format
-    for (const auto& line : customLines) {
-        // Write jumlah points dalam line ini
-        const vector<vec2>& points = line.getPoints();
-        int numPoints = static_cast<int>(points.size());
-        buffer.append(reinterpret_cast<const char*>(&numPoints), sizeof(int));
-
-        // Write semua points
-        for (const auto& point : points) {
-            buffer.append(reinterpret_cast<const char*>(&point), sizeof(vec2));
-        }
-
-        // Write color, lineWidth, dan curve
-        ofColor color = line.getColor();
-        float lineWidth = line.getLineWidth();
-        float curve = line.getCurve();
-        buffer.append(reinterpret_cast<const char*>(&color), sizeof(ofColor));
-        buffer.append(reinterpret_cast<const char*>(&lineWidth), sizeof(float));
-        buffer.append(reinterpret_cast<const char*>(&curve), sizeof(float));
-    }
-
-    // Write buffer ke file (selalu replace/overwrite)
-    ofBufferToFile(FILENAME, buffer);
-}
-
-//--------------------------------------------------------------
-bool FileManager::loadCustomLines(std::vector<CustomLine>& customLines) {
-    // Cek apakah ada isinya dulu (proteksi kerjaan yang sudah dibuat)
-    if (!customLines.empty()) {
-        return false;  // Tidak load jika sudah ada isinya
-    }
-
-    // Cek apakah file exists
-    ofFile file(FILENAME);
-    if (!file.exists()) {
-        return false;
-    }
-
-    // Read file ke buffer
-    ofBuffer buffer = ofBufferFromFile(FILENAME);
-    char* data = buffer.getData();
-
-    // Read jumlah line
-    int numLines = *reinterpret_cast<int*>(data);
-    data += sizeof(int);
-
-    // Clear existing lines
-    customLines.clear();
-
-    // Read setiap line
-    for (int i = 0; i < numLines; i++) {
-        CustomLine line;
-
-        // Read jumlah points
-        int numPoints = *reinterpret_cast<int*>(data);
-        data += sizeof(int);
-
-        // Read semua points
-        vector<vec2> points;
-        for (int j = 0; j < numPoints; j++) {
-            vec2 point = *reinterpret_cast<vec2*>(data);
-            data += sizeof(vec2);
-            points.push_back(point);
-        }
-        line.setPoints(points);
-
-        // Read color
-        ofColor color = *reinterpret_cast<ofColor*>(data);
-        data += sizeof(ofColor);
-        line.setColor(color);
-
-        // Read lineWidth
-        float lineWidth = *reinterpret_cast<float*>(data);
-        data += sizeof(float);
-        line.setLineWidth(lineWidth);
-
-        // Read curve
-        float curve = *reinterpret_cast<float*>(data);
-        data += sizeof(float);
-        line.setCurve(curve);
-
-        // Set progress ke 0.0 untuk animasi parallel
-        line.setProgress(0.0f);
-        line.setSpeed(0.005f);  // Kecepatan animasi
-
-        // Add ke vector
-        customLines.push_back(line);
-    }
-
-    // Enable parallel mode untuk animate semua lines barengan
-    loadParallelMode = true;
-
-    return true;
-}
-
-//--------------------------------------------------------------
 void FileManager::loadAllSequential(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons) {
-    // === LOAD CUSTOM LINES ===
-    // Cek apakah ada isinya dulu (proteksi kerjaan yang sudah dibuat)
-    if (customLines.empty()) {
-        // Cek apakah file exists
-        ofFile file(FILENAME);
-        if (file.exists()) {
-            // Baca file ke buffer
-            ofBuffer buffer = ofBufferFromFile(FILENAME);
-            char* data = buffer.getData();
+	// Cek apakah file .na exists
+	ofFile file(FILENAME);
+	if (!file.exists()) {
+		return;
+	}
 
-            // Read jumlah line
-            int numLines = *reinterpret_cast<int*>(data);
-            data += sizeof(int);
+	// Read file ke buffer
+	ofBuffer buffer = ofBufferFromFile(FILENAME);
+	char* data = buffer.getData();
+	size_t bufferSize = buffer.size();
 
-            // Simpan SEMUA lines ke loadedLinesBuffer
-            loadedLinesBuffer.clear();
+	// Validasi ukuran minimal
+	if (bufferSize < 64) {
+		ofLog() << "Error: File terlalu kecil";
+		return;
+	}
 
-            for (int i = 0; i < numLines; i++) {
-                CustomLine line;
+	size_t offset = 0;
 
-                // Read jumlah points
-                int numPoints = *reinterpret_cast<int*>(data);
-                data += sizeof(int);
+	// ===== VALIDASI HEADER =====
+	// Magic number
+	if (memcmp(data + offset, MAGIC_NUMBER, 4) != 0) {
+		ofLog() << "Error: Invalid file format (wrong magic number)";
+		return;
+	}
+	offset += 4;
 
-                // Read semua points
-                vector<vec2> points;
-                for (int j = 0; j < numPoints; j++) {
-                    vec2 point = *reinterpret_cast<vec2*>(data);
-                    data += sizeof(vec2);
-                    points.push_back(point);
-                }
-                line.setPoints(points);
+	// Version
+	int version = *reinterpret_cast<int*>(data + offset);
+	offset += sizeof(int);
+	if (version != VERSION) {
+		ofLog() << "Error: Unsupported version: " << version;
+		return;
+	}
 
-                // Read color
-                ofColor color = *reinterpret_cast<ofColor*>(data);
-                data += sizeof(ofColor);
-                line.setColor(color);
+	// Template name length
+	int nameLen = *reinterpret_cast<int*>(data + offset);
+	offset += sizeof(int);
 
-                // Read lineWidth
-                float lineWidth = *reinterpret_cast<float*>(data);
-                data += sizeof(float);
-                line.setLineWidth(lineWidth);
+	// Skip template name (tidak perlu di-load untuk sequential mode)
+	offset += nameLen;
 
-                // Read curve
-                float curve = *reinterpret_cast<float*>(data);
-                data += sizeof(float);
-                line.setCurve(curve);
+	// Global radius (diperlukan untuk denormalize)
+	float globalRadius = *reinterpret_cast<float*>(data + offset);
+	offset += sizeof(float);
 
-                // Set initial animation state
-                line.setProgress(0.0f);
-                line.setSpeed(0.02f);
+	// Skip reserved (20 bytes)
+	offset += 20;
 
-                // Add ke buffer
-                loadedLinesBuffer.push_back(line);
-            }
-        }
-    }
+	// ===== LOAD CUSTOM LINES KE BUFFER =====
+	if (offset >= bufferSize) {
+		ofLog() << "Error: Unexpected end of file after header";
+		return;
+	}
 
-    // === LOAD POLYGONS ===
-    // Cek apakah ada isinya dulu (proteksi kerjaan yang sudah dibuat)
-    if (polygons.empty()) {
-        // Cek apakah file exists
-        ofFile file(FILENAME_POLYGONS);
-        if (file.exists()) {
-            // Read file ke buffer
-            ofBuffer buffer = ofBufferFromFile(FILENAME_POLYGONS);
-            char* data = buffer.getData();
+	int numLines = *reinterpret_cast<int*>(data + offset);
+	offset += sizeof(int);
 
-            // Read jumlah polygon
-            int numPolygons = *reinterpret_cast<int*>(data);
-            data += sizeof(int);
+	// Load customLines jika vectors kosong
+	if (customLines.empty()) {
+		loadedLinesBuffer.clear();
 
-            // Simpan SEMUA polygons ke loadedPolygonsBuffer
-            loadedPolygonsBuffer.clear();
+		for (int i = 0; i < numLines; i++) {
+			CustomLine line;
 
-            for (int i = 0; i < numPolygons; i++) {
-                // Read jumlah vertices
-                int numVertices = *reinterpret_cast<int*>(data);
-                data += sizeof(int);
+			// Read jumlah points
+			int numPoints = *reinterpret_cast<int*>(data + offset);
+			offset += sizeof(int);
 
-                // Read semua vertices
-                vector<vec2> vertices;
-                for (int j = 0; j < numVertices; j++) {
-                    vec2 vertex = *reinterpret_cast<vec2*>(data);
-                    data += sizeof(vec2);
-                    vertices.push_back(vertex);
-                }
+			// Read semua points dan DENORMALIZE (kali radius)
+			vector<vec2> points;
+			for (int j = 0; j < numPoints; j++) {
+				vec2 normalizedPoint = *reinterpret_cast<vec2*>(data + offset);
+				offset += sizeof(vec2);
+				vec2 point = normalizedPoint * globalRadius;  // Denormalize
+				points.push_back(point);
+			}
+			line.setPoints(points);
 
-                // Read fillColor
-                ofColor fillColor = *reinterpret_cast<ofColor*>(data);
-                data += sizeof(ofColor);
+			// Read color
+			ofColor color = *reinterpret_cast<ofColor*>(data + offset);
+			offset += sizeof(ofColor);
+			line.setColor(color);
 
-                // Buat PolygonShape dengan index
-                PolygonShape polygon(vertices, fillColor, i);
+			// Read lineWidth
+			float lineWidth = *reinterpret_cast<float*>(data + offset);
+			offset += sizeof(float);
+			line.setLineWidth(lineWidth);
 
-                // Tambah FadeInAnimation
-                auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
-                polygon.setAnimation(std::move(fadeIn));
+			// Read curve
+			float curve = *reinterpret_cast<float*>(data + offset);
+			offset += sizeof(float);
+			line.setCurve(curve);
 
-                // Add ke buffer (BUKAN ke polygons!)
-                loadedPolygonsBuffer.push_back(std::move(polygon));
-            }
-        }
-    }
+			// Set initial animation state
+			line.setProgress(0.0f);
+			line.setSpeed(0.02f);
 
-    // Reset index dan mulai mode sequential
-    currentLineIndex = 0;
-    currentPolygonIndex = 0;
-    loadAccumulator = 0.0f;
-    loadSequentialMode = true;
+			// Add ke buffer
+			loadedLinesBuffer.push_back(line);
+		}
+	}
+
+	// ===== LOAD POLYGONS KE BUFFER =====
+	if (offset >= bufferSize) {
+		ofLog() << "Error: Unexpected end of file after custom lines";
+		return;
+	}
+
+	int numPolygons = *reinterpret_cast<int*>(data + offset);
+	offset += sizeof(int);
+
+	// Load polygons jika vectors kosong
+	if (polygons.empty()) {
+		loadedPolygonsBuffer.clear();
+
+		for (int i = 0; i < numPolygons; i++) {
+			// Read jumlah vertices
+			int numVertices = *reinterpret_cast<int*>(data + offset);
+			offset += sizeof(int);
+
+			// Read semua vertices dan DENORMALIZE (kali radius)
+			vector<vec2> vertices;
+			for (int j = 0; j < numVertices; j++) {
+				vec2 normalizedVertex = *reinterpret_cast<vec2*>(data + offset);
+				offset += sizeof(vec2);
+				vec2 vertex = normalizedVertex * globalRadius;  // Denormalize
+				vertices.push_back(vertex);
+			}
+
+			// Read fillColor
+			ofColor fillColor = *reinterpret_cast<ofColor*>(data + offset);
+			offset += sizeof(ofColor);
+
+			// Buat PolygonShape dengan index
+			PolygonShape polygon(vertices, fillColor, i);
+
+			// Tambah FadeInAnimation
+			auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
+			polygon.setAnimation(std::move(fadeIn));
+
+			// Add ke buffer
+			loadedPolygonsBuffer.push_back(std::move(polygon));
+		}
+	}
+
+	// Reset index dan mulai mode sequential
+	currentLineIndex = 0;
+	currentPolygonIndex = 0;
+	loadAccumulator = 0.0f;
+	loadSequentialMode = true;
 }
 
 //--------------------------------------------------------------
@@ -378,106 +634,4 @@ void FileManager::setLoadSpeed(float speed) {
 //--------------------------------------------------------------
 float FileManager::getLoadSpeed() const {
     return loadSpeed;
-}
-
-//--------------------------------------------------------------
-void FileManager::saveAll(const std::vector<CustomLine>& customLines, const std::vector<PolygonShape>& polygons) {
-    // Save customLines
-    saveCustomLines(customLines);
-
-    // Save polygons
-    if (polygons.empty()) {
-        return;  // Tidak create file jika kosong
-    }
-
-    ofBuffer buffer;
-
-    // Write jumlah polygon dulu
-    int numPolygons = static_cast<int>(polygons.size());
-    buffer.append(reinterpret_cast<const char*>(&numPolygons), sizeof(int));
-
-    // Write setiap polygon dalam binary format
-    for (const auto& polygon : polygons) {
-        // Write jumlah vertices dalam polygon ini
-        const vector<vec2>& vertices = polygon.getVertices();
-        int numVertices = static_cast<int>(vertices.size());
-        buffer.append(reinterpret_cast<const char*>(&numVertices), sizeof(int));
-
-        // Write semua vertices
-        for (const auto& vertex : vertices) {
-            buffer.append(reinterpret_cast<const char*>(&vertex), sizeof(vec2));
-        }
-
-        // Write fillColor
-        ofColor fillColor = polygon.getColor();
-        buffer.append(reinterpret_cast<const char*>(&fillColor), sizeof(ofColor));
-    }
-
-    // Write buffer ke file
-    ofBufferToFile(FILENAME_POLYGONS, buffer);
-}
-
-//--------------------------------------------------------------
-bool FileManager::loadAll(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons) {
-    // Load customLines
-    bool linesLoaded = loadCustomLines(customLines);
-
-    // Load polygons
-    // Cek apakah ada isinya dulu (proteksi kerjaan yang sudah dibuat)
-    if (!polygons.empty()) {
-        return linesLoaded;  // Tidak load jika sudah ada isinya, tapi tetap return status loadLines
-    }
-
-    // Cek apakah file exists
-    ofFile file(FILENAME_POLYGONS);
-    if (!file.exists()) {
-        return linesLoaded;  // File tidak ada, tapi tetap return status loadLines
-    }
-
-    // Read file ke buffer
-    ofBuffer buffer = ofBufferFromFile(FILENAME_POLYGONS);
-    char* data = buffer.getData();
-
-    // Read jumlah polygon
-    int numPolygons = *reinterpret_cast<int*>(data);
-    data += sizeof(int);
-
-    // Clear existing polygons
-    polygons.clear();
-
-    // Reserve space dulu untuk mencegah reallocation
-    ofFile tempFile(FILENAME_POLYGONS);
-    if (tempFile.exists()) {
-        ofBuffer tempBuffer = ofBufferFromFile(FILENAME_POLYGONS);
-        int numPolygons = *reinterpret_cast<int*>(tempBuffer.getData());
-        polygons.reserve(numPolygons);
-    }
-
-    // Read setiap polygon
-    for (int i = 0; i < numPolygons; i++) {
-        // Read jumlah vertices
-        int numVertices = *reinterpret_cast<int*>(data);
-        data += sizeof(int);
-
-        // Read semua vertices
-        vector<vec2> vertices;
-        for (int j = 0; j < numVertices; j++) {
-            vec2 vertex = *reinterpret_cast<vec2*>(data);
-            data += sizeof(vec2);
-            vertices.push_back(vertex);
-        }
-
-        // Read fillColor
-        ofColor fillColor = *reinterpret_cast<ofColor*>(data);
-        data += sizeof(ofColor);
-
-        // Add ke vector dengan emplace_back (construct in-place)
-        polygons.emplace_back(vertices, fillColor, i);
-
-        // Set animation langsung ke element yang baru ditambah
-        auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
-        polygons.back().setAnimation(std::move(fadeIn));
-    }
-
-    return true;  // Success
 }
