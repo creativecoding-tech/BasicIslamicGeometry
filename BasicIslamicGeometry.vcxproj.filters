@@ -20,6 +20,12 @@
     <ClCompile Include="src\template\templates\BasicZelligeTemplate.cpp" />
     <ClCompile Include="src\anim\AbstractAnimation.cpp" />
     <ClCompile Include="src\anim\FadeInAnimation.cpp" />
+    <ClCompile Include="src\imgui\imgui.cpp" />
+    <ClCompile Include="src\imgui\imgui_draw.cpp" />
+    <ClCompile Include="src\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\imgui\imgui_tables.cpp" />
+    <ClCompile Include="src\imgui\backends\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="src\imgui\backends\imgui_impl_win32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -45,6 +51,12 @@
     <ClInclude Include="src\template\templates\BasicZelligeTemplate.h" />
     <ClInclude Include="src\anim\AbstractAnimation.h" />
     <ClInclude Include="src\anim\FadeInAnimation.h" />
+    <ClInclude Include="src\imgui\imgui.h" />
+    <ClInclude Include="src\imgui\imgui_internal.h" />
+    <ClInclude Include="src\imgui\imconfig.h" />
+    <ClInclude Include="src\imgui\backends\imgui_impl_opengl3.h" />
+    <ClInclude Include="src\imgui\backends\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="src\imgui\backends\imgui_impl_win32.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="icon.rc" />
