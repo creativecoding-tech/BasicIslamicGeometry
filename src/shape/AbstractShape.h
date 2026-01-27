@@ -1,5 +1,7 @@
 #pragma once
 #include "ofMain.h"
+#include "DotInfo.h"
+#include <vector>
 
 /**
  * AbstractShape - Base class untuk semua shape geometri
@@ -24,6 +26,16 @@ public:
 	// Pure virtual methods - WAJIB di-override oleh derived class
 	virtual void update() = 0;
 	virtual void draw() = 0;
+
+	// Polymorphic method untuk menambahkan dots ke cache (default: no-op)
+	// Derived classes yang punya dots (Circle, CrossLine, dll) harus override
+	virtual void addDotsToCache(std::vector<DotInfo>& dots) {}
+
+	// Label dan dot control (default: no-op, dapat di-override jika diperlukan)
+	virtual void showLabel() {}
+	virtual void hideLabel() {}
+	virtual void showDot() {}
+	virtual void hideDot() {}
 
 	// Common method untuk line width
 	virtual void setLineWidth(float width);

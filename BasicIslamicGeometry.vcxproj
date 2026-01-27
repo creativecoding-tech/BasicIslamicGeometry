@@ -240,6 +240,8 @@
     <ClCompile Include="src\operation\FileManager.cpp" />
     <ClCompile Include="src\operation\UltralightManager.cpp" />
     <ClCompile Include="src\operation\DialogViewListener.cpp" />
+    <ClCompile Include="src\template\TemplateRegistry.cpp" />
+    <ClCompile Include="src\template\templates\BasicZelligeTemplate.cpp" />
     <ClCompile Include="src\anim\AbstractAnimation.cpp" />
     <ClCompile Include="src\anim\FadeInAnimation.cpp" />
   </ItemGroup>
@@ -249,6 +251,7 @@
     <ClInclude Include="src\shape\CartesianAxes.h" />
     <ClInclude Include="src\shape\CircleShape.h" />
     <ClInclude Include="src\shape\CrossLine.h" />
+    <ClInclude Include="src\shape\DotInfo.h" />
     <ClInclude Include="src\shape\OctagramLine.h" />
     <ClInclude Include="src\shape\ParallelogramLine.h" />
     <ClInclude Include="src\shape\RectangleLine.h" />
@@ -257,6 +260,9 @@
     <ClInclude Include="src\operation\FileManager.h" />
     <ClInclude Include="src\operation\UltralightManager.h" />
     <ClInclude Include="src\operation\DialogViewListener.h" />
+    <ClInclude Include="src\template\SacredGeometryTemplate.h" />
+    <ClInclude Include="src\template\TemplateRegistry.h" />
+    <ClInclude Include="src\template\templates\BasicZelligeTemplate.h" />
     <ClInclude Include="src\anim\AbstractAnimation.h" />
     <ClInclude Include="src\anim\FadeInAnimation.h" />
   </ItemGroup>

@@ -1,4 +1,5 @@
 #include "RectangleLine.h"
+#include "DotInfo.h"
 
 RectangleLine::RectangleLine(vec2 start, vec2 end, vec2 intersec1, vec2 intersec2, string label1, string label2):
 start(start),
@@ -87,4 +88,11 @@ void RectangleLine::draw() {
 		}
 	}
 	ofPopMatrix();
+}
+
+//--------------------------------------------------------------
+void RectangleLine::addDotsToCache(std::vector<DotInfo>& dots) {
+	// RectangleLine punya 2 dots: intersec1 dan intersec2
+	dots.push_back({intersec1, "Rectangle"});
+	dots.push_back({intersec2, "Rectangle"});
 }

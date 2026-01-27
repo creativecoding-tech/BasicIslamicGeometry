@@ -1,4 +1,5 @@
 #include "CrossLine.h"
+#include "DotInfo.h"
 #include <ofMain.h>
 
 CrossLine::CrossLine(vec2 start, vec2 end, string label1, string label2, float radius):
@@ -107,4 +108,11 @@ void CrossLine::draw() {
 		}
 	}
 	ofPopMatrix();
+}
+
+//--------------------------------------------------------------
+void CrossLine::addDotsToCache(std::vector<DotInfo>& dots) {
+	// CrossLine punya 2 dots: radiusDot dan end
+	dots.push_back({radiusDot, "CrossLine"});
+	dots.push_back({end, "CrossLine"});
 }

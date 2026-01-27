@@ -106,7 +106,7 @@ void UltralightManager::setup(int w, int h) {
 		// Allocate texture
 		texture.allocate(width, height, GL_RGBA);
 		isInitialized = true;
-	} catch (const std::exception& e) {
+	} catch (const std::exception&) {
 		// Cleanup jika gagal
 		view = nullptr;
 		viewListener.reset();

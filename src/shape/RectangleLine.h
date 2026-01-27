@@ -26,6 +26,9 @@ public:
 	void showDot();
 	void hideDot();
 
+	// Override addDotsToCache untuk menambahkan Rectangle dots
+	void addDotsToCache(std::vector<DotInfo>& dots) override;
+
 	// Label visibility control
 	void showLabel();
 	void hideLabel();

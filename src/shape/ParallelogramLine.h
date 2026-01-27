@@ -24,6 +24,9 @@ class ParallelogramLine : public AbstractShape
 		void showDot();
 		void hideDot();
 
+		// Override addDotsToCache untuk menambahkan Parallelogram dots
+		void addDotsToCache(std::vector<DotInfo>& dots) override;
+
 		// Label visibility control
 		void showLabel();
 		void hideLabel();

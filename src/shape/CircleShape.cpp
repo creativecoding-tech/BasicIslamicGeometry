@@ -1,4 +1,5 @@
 #include "CircleShape.h"
+#include "DotInfo.h"
 #include <ofMain.h>
 
 CircleShape::CircleShape(float r,std::string label,float posX,float posY) {
@@ -88,4 +89,10 @@ void CircleShape::draw() {
 		}
 	}
 	ofPopMatrix();
+}
+
+//--------------------------------------------------------------
+void CircleShape::addDotsToCache(std::vector<DotInfo>& dots) {
+	// Circle hanya punya satu dot: center point (posX, posY)
+	dots.push_back({glm::vec2(posX, posY), "Circle"});
 }

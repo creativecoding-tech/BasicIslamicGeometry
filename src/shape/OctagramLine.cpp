@@ -1,4 +1,5 @@
 #include "OctagramLine.h"
+#include "DotInfo.h"
 OctagramLine::OctagramLine(vec2 start, vec2 end, std::optional<vec2> nextPoint, string label) :
 	start(start),
 	end(end),
@@ -149,4 +150,10 @@ void OctagramLine::draw() {
 		}
 	}
 	ofPopMatrix();
+}
+
+//--------------------------------------------------------------
+void OctagramLine::addDotsToCache(std::vector<DotInfo>& dots) {
+	// OctagramLine punya satu dot: end point
+	dots.push_back({end, "Octagram"});
 }

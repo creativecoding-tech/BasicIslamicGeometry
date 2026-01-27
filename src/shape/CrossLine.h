@@ -35,6 +35,9 @@ public:
 	void showDot();
 	void hideDot();
 
+	// Override addDotsToCache untuk menambahkan CrossLine dots
+	void addDotsToCache(std::vector<DotInfo>& dots) override;
+
 	// Override pure virtual methods dari AbstractShape
 	void update() override;
 	void draw() override;

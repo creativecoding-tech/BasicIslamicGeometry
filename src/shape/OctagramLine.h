@@ -22,6 +22,9 @@ public:
 	void showDot();
 	void hideDot();
 
+	// Override addDotsToCache untuk menambahkan Octagram dots
+	void addDotsToCache(std::vector<DotInfo>& dots) override;
+
 	// Label visibility control
 	void showLabel();
 	void hideLabel();

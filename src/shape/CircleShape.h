@@ -27,6 +27,9 @@ public:
 	void showDot();
 	void hideDot();
 
+	// Override addDotsToCache untuk menambahkan circle center dot
+	void addDotsToCache(std::vector<DotInfo>& dots) override;
+
 private:
 	float totalSegments = 100;  // Circle-specific
 	bool labelVisible = true;   // Flag untuk label visibility

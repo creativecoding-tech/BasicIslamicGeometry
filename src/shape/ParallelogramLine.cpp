@@ -1,4 +1,5 @@
 #include "ParallelogramLine.h"
+#include "DotInfo.h"
 
 ParallelogramLine::ParallelogramLine(vec2 start, vec2 end, vec2 intersecCrossLine, std::string label) :
 	start(start),
@@ -92,4 +93,10 @@ void ParallelogramLine::draw() {
 	}
 	ofPopMatrix();
 
+}
+
+//--------------------------------------------------------------
+void ParallelogramLine::addDotsToCache(std::vector<DotInfo>& dots) {
+	// ParallelogramLine hanya punya satu dot: intersecCrossLine
+	dots.push_back({intersecCrossLine, "Parallelogram"});
 }

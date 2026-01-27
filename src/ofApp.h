@@ -1,16 +1,14 @@
 #pragma once
 
 #include "ofMain.h"
-#include "shape/CircleShape.h"
-#include "shape/CartesianAxes.h"
-#include "shape/CrossLine.h"
-#include "shape/ParallelogramLine.h"
-#include "shape/RectangleLine.h"
-#include "shape/OctagramLine.h"
+#include "shape/AbstractShape.h"
 #include "shape/CustomLine.h"
 #include "shape/PolygonShape.h"
+#include "shape/DotInfo.h"
 #include "operation/FileManager.h"
 #include "operation/UltralightManager.h"
+#include "template/SacredGeometryTemplate.h"
+#include "template/TemplateRegistry.h"
 #include <set>
 using glm::vec2;
 
@@ -29,49 +27,16 @@ class ofApp : public ofBaseApp{
 		// Application state untuk wizard dialog
 		AppState appState = SETUP_MODE;
 
-		float radiusCircle = 240;
-		//circle attribute
-		std::unique_ptr<CircleShape> circleA;
-		std::unique_ptr<CircleShape> circleB;
-		std::unique_ptr<CircleShape> circleC;
-		std::unique_ptr<CircleShape> circleD;
-		std::unique_ptr<CircleShape> circleE;
-		//cartesian attribute
-		std::unique_ptr<CartesianAxes> cartesianAxes;
-		//crossline attribute
-		std::unique_ptr<CrossLine> crossLineF;
-		std::unique_ptr<CrossLine> crossLineG;
-		std::unique_ptr<CrossLine> crossLineH;
-		std::unique_ptr<CrossLine> crossLineI;
-		//parallelogram attribute
-		std::unique_ptr<ParallelogramLine> parallelogramCtoE;
-		std::unique_ptr<ParallelogramLine> parallelogramEtoB;
-		std::unique_ptr<ParallelogramLine> parallelogramBtoD;
-		std::unique_ptr<ParallelogramLine> parallelogramDtoC;
-		//rectangle attribute
-		std::unique_ptr<RectangleLine> rectangleLineFtoG;
-		std::unique_ptr<RectangleLine> rectangleLineGtoI;
-		std::unique_ptr<RectangleLine> rectangleLineItoH;
-		std::unique_ptr<RectangleLine> rectangleLineHtoF;
-		//octagram attribute
-		std::unique_ptr<OctagramLine> octagramLine0;
-		std::unique_ptr<OctagramLine> octagramLine1;
-		std::unique_ptr<OctagramLine> octagramLine2;
-		std::unique_ptr<OctagramLine> octagramLine3;
-		std::unique_ptr<OctagramLine> octagramLine4;
-		std::unique_ptr<OctagramLine> octagramLine5;
-		std::unique_ptr<OctagramLine> octagramLine6;
-		std::unique_ptr<OctagramLine> octagramLine7;
+		// TEMPLATE SYSTEM - Ganti semua individual shape unique_ptrs!
+		SacredGeometryTemplate* currentTemplate = nullptr;  // Template yang sedang aktif
+		std::vector<std::unique_ptr<AbstractShape>> templateShapes;  // Semua shapes dari template
+		float radiusCircle = 240;  // Radius default dari template
 
 		bool cursorVisible = false;
 
 		ofTrueTypeFont fontNormal;  // Font untuk custom line labels
 
-		// Interactive Line Creation
-		struct DotInfo {
-			vec2 position;
-			string shapeType;
-		};
+		// DotInfo sekarang didefinisikan di src/shape/DotInfo.h (common struct)
 
 		enum DrawState {
 			IDLE,
@@ -118,7 +83,7 @@ class ofApp : public ofBaseApp{
 		bool isCtrlPressed = false;
 
 		// Cached dots untuk performance
-		vector<DotInfo> cachedDots;
+		std::vector<DotInfo> cachedDots;
 		bool dotsCacheDirty = true;  // Flag untuk rebuild cache
 
 		// File Manager untuk save/load custom lines
@@ -131,12 +96,8 @@ class ofApp : public ofBaseApp{
 		int framesUntilBindJS = 0;         // Counter untuk delay bind JS functions setelah load HTML
 
 		void setup();
-		void setupCircles();
-		void setupCartesianAxes();
-		void setupCrossLines();
-		void setupParallelograms();
-		void setupRectangleLine();
-		void setupOctagramLine();
+		void setupTemplateSystem();  // Register semua templates ke registry
+		void switchTemplate(const std::string& templateName);  // Switch ke template tertentu
 		void update();
 		void draw();
 		void drawCustomLinesAndUI();  // Draw custom lines, curve label, preview, dan dot highlights
@@ -164,7 +125,7 @@ class ofApp : public ofBaseApp{
 		void onDialogClose();           // Called when user clicks Close (exit app)
 
 		// Interactive Line Creation helpers
-		const vector<DotInfo>& getAllDots();  // Return cached dots by reference
+		const std::vector<DotInfo>& getAllDots();  // Return cached dots by reference
 		void updateDotsCache();  // Rebuild dots cache saat visibility berubah
 		bool isMouseOverDot(vec2 mousePos, vec2 dotPos);
 		bool isMouseOverLine(vec2 mousePos, vec2 lineStart, vec2 lineEnd, float lineWidth);
