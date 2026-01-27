@@ -265,7 +265,38 @@ void ofApp::keyPressed(int key) {
   }
 
   if (key == OF_KEY_DEL) {
-    if (isCtrlPressed) {
+    bool isShiftPressed = ofGetKeyPressed(OF_KEY_SHIFT);
+
+    if (isCtrlPressed && isShiftPressed) {
+      // Jangan hapus jika sedang sequential load
+      if (fileManager.isLoadSequentialMode()) {
+        return; // Aborted, sedang loading
+      }
+
+      // Jangan hapus jika sedang parallel load dan masih ada polygon animasi
+      if (fileManager.isLoadParallelMode()) {
+        // Cek apakah masih ada polygon yang sedang animasi
+        for (const auto &polygon : polygonShapes) {
+          if (polygon.hasAnimation()) {
+            return; // Masih ada polygon yang animasi, tunggu kelar
+          }
+        }
+      }
+
+      // CTRL+SHIFT+DEL: Hapus semua polygon, custom lines, dan hide template shapes
+      if (!polygonShapes.empty()) {
+        polygonShapes.clear();
+        selectedPolygonIndex = -1;
+      }
+      FileManager::clearCustomLines(customLines);
+      selectedLineIndices.clear();
+      lastSelectedLineIndex = -1;
+
+      // Hide semua template shapes (BUKAN clear, supaya CTRL+)/CTRL+! bisa jalan lagi)
+      hideAllShapes();
+
+      return; // Jangan lanjut ke logic DEL biasa
+    } else if (isCtrlPressed) {
       // Jangan hapus jika sedang sequential load
       if (fileManager.isLoadSequentialMode()) {
         return; // Aborted, sedang loading
