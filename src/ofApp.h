@@ -105,7 +105,7 @@ class ofApp : public ofBaseApp{
 		// Ultralight UI Manager untuk HTML overlay UI
 		UltralightManager sacredGeoUI;     // Small UI untuk Sacred Geometry controls (toggle G)
 		UltralightManager dialogUI;        // Full dialog untuk setup wizard (600x400 centered)
-		bool sacredGeoUIVisible = false;   // Sacred Geo UI visibility state
+		bool sacredGeoUIVisible = true;   // Sacred Geo UI visibility state
 		int framesUntilBindJS = 0;         // Counter untuk delay bind JS functions setelah load HTML
 
 		void setup();

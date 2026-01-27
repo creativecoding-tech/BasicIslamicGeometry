@@ -1373,7 +1373,7 @@ void ofApp::showTemplateDialog(const std::string& mode) {
 //--------------------------------------------------------------
 void ofApp::onCreateApp() {
   sacredGeoUI.setup(400, ofGetHeight() - 50);
-  sacredGeoUI.loadHTMLFile("html/ui.html");
+  sacredGeoUI.loadHTMLFile("html/sacred_geometry.html");
   appState = RUNNING;
 }
 
