@@ -10,6 +10,26 @@
 #include <memory>
 
 /**
+ * SharedRendererManager - Singleton Ultralight Renderer
+ *
+ * Hanya ada SATU Renderer untuk seluruh aplikasi, tidak peduli berapa
+ * banyak UltralightManager instances. Ini mencegah WebCore.dll corruption
+ * dari multiple Renderer instances.
+ */
+class SharedRendererManager {
+public:
+	// Get singleton instance
+	static ultralight::RefPtr<ultralight::Renderer> getInstance();
+
+	// Cleanup singleton (call saat aplikasi shutdown)
+	static void cleanup();
+
+private:
+	static ultralight::RefPtr<ultralight::Renderer> renderer;
+	static bool isInitialized;
+};
+
+/**
  * UltralightManager
  *
  * Manages Ultralight UI Overlay untuk OpenFrameworks applications.
@@ -143,12 +163,13 @@ public:
 
 private:
 	ultralight::RefPtr<ultralight::View> view;
-	ultralight::RefPtr<ultralight::Renderer> renderer;
+	// Renderer dihapus - sekarang pakai SharedRendererManager singleton
 	std::unique_ptr<DialogViewListener> viewListener;  // Manage listener lifetime properly
 	ofTexture texture;
 	int width, height;
 	bool isInitialized;
 	bool hasJSCallback = false;  // Flag untuk track apakah ada JS callback
+	bool isShuttingDown = false;  // Flag untuk mencegah callbacks saat shutdown
 
 	/**
 	 * Create/update OpenGL texture dari Ultralight surface

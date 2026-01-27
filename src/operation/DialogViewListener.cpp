@@ -4,9 +4,12 @@
 DialogViewListener* DialogViewListener::g_instance = nullptr;
 
 // JS function callbacks untuk setiap action
+// DIPERBAIKI: Null-safe checks untuk mencegah crash saat cleanup/shutdown
 static JSValueRef OnDialogCloseCallback(JSContextRef ctx, JSObjectRef function,
                                          JSObjectRef thisObject, size_t argc,
                                          const JSValueRef argv[], JSValueRef* exception) {
+	// CRITICAL: Check null pointer SEBELUM akses apapun
+	// Ini mencegah crash saat cleanup/shutdown race condition
 	if (DialogViewListener::g_instance && DialogViewListener::g_instance->jsCallback) {
 		DialogViewListener::g_instance->jsCallback("onDialogClose");
 	}

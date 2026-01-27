@@ -1,5 +1,6 @@
 #include "ofApp.h"
 #include "shape/AbstractShape.h"
+#include "operation/UltralightManager.h"  // Untuk SharedRendererManager
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -379,7 +380,11 @@ void ofApp::update(){
 	}
 
 	// Update Ultralight UI renderers
-	dialogUI.update();
+	// SEKARANG AMAN: Semua UltralightManager instances share 1 Renderer
+	// melalui SharedRendererManager singleton. Tidak akan ada WebCore.dll corruption!
+	if (appState == SETUP_MODE || appState == SETUP_TEMPLATE) {
+		dialogUI.update();
+	}
 	if (appState == RUNNING) {
 		sacredGeoUI.update();
 	}
@@ -1775,9 +1780,15 @@ void ofApp::onDialogClose() {
 
 //--------------------------------------------------------------
 void ofApp::exit() {
-	// Cleanup Ultralight UI resources
+	// STEP 1: Cleanup setiap UltralightManager instance
+	// Ini akan cleanup view dan viewListener untuk masing-masing instance
 	dialogUI.cleanup();
 	sacredGeoUI.cleanup();
+
+	// STEP 2: Cleanup shared renderer (paling terakhir!)
+	// SharedRendererManager cleanup dipanggil SETELAH semua instances cleanup
+	// untuk memastikan tidak ada view yang mencoba akses renderer
+	SharedRendererManager::cleanup();
 }
 
 

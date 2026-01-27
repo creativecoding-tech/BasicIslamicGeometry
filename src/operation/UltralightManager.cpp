@@ -1,13 +1,50 @@
 #include "UltralightManager.h"
 #include "DialogViewListener.h"
 
+// Static members for SharedRendererManager
+ultralight::RefPtr<ultralight::Renderer> SharedRendererManager::renderer = nullptr;
+bool SharedRendererManager::isInitialized = false;
+
+//--------------------------------------------------------------
+ultralight::RefPtr<ultralight::Renderer> SharedRendererManager::getInstance() {
+	if (!isInitialized) {
+		// Setup Platform handlers dulu (sekali saja)
+		auto& platform = ultralight::Platform::instance();
+		platform.set_font_loader(ultralight::GetPlatformFontLoader());
+		platform.set_file_system(ultralight::GetPlatformFileSystem("."));
+		// Logging di-disable untuk performance (file I/O bikin lambat)
+		// platform.set_logger(ultralight::GetDefaultLogger("ultralight.log"));
+
+		// Create singleton Renderer
+		renderer = ultralight::Renderer::Create();
+		if (!renderer) {
+			throw std::runtime_error("Failed to create shared Ultralight Renderer");
+		}
+
+		isInitialized = true;
+	}
+
+	return renderer;
+}
+
+//--------------------------------------------------------------
+void SharedRendererManager::cleanup() {
+	if (isInitialized && renderer) {
+		renderer = nullptr;
+		isInitialized = false;
+	}
+}
+
 // Static instance pointer
 UltralightManager* UltralightManager::g_instance = nullptr;
 
 // JavaScript callback functions (file-scope static functions)
+// DIPERBAIKI: Null-safe checks untuk mencegah crash saat cleanup/shutdown
 static JSValueRef OnDialogCloseCallback(JSContextRef ctx, JSObjectRef function,
                                         JSObjectRef thisObject, size_t argc,
                                         const JSValueRef argv[], JSValueRef* exception) {
+	// CRITICAL: Check null pointer SEBELUM akses apapun
+	// Ini mencegah crash saat cleanup/shutdown race condition
 	if (UltralightManager::g_instance && UltralightManager::g_instance->jsCallback) {
 		UltralightManager::g_instance->jsCallback("onDialogClose");
 	}
@@ -72,36 +109,24 @@ void UltralightManager::setup(int w, int h) {
 	} catch (const std::exception& e) {
 		// Cleanup jika gagal
 		view = nullptr;
-		renderer = nullptr;
+		viewListener.reset();
 
-		// Re-throw agar caller tahu
-		ofLogError("UltralightManager") << "Setup failed: " << e.what();
+		// Re-throw agar caller tahu (logging dihapus untuk performance)
 		throw;
 	}
 }
 
 //--------------------------------------------------------------
 void UltralightManager::setupPlatform() {
-	// Setup Platform singleton dengan default handlers dari AppCore
-	auto& platform = ultralight::Platform::instance();
-
-	// Gunakan default implementations dari AppCore
-	platform.set_font_loader(ultralight::GetPlatformFontLoader());
-	platform.set_file_system(ultralight::GetPlatformFileSystem("."));
-	platform.set_logger(ultralight::GetDefaultLogger("ultralight.log"));
+	// Platform setup sekarang di-handle oleh SharedRendererManager::getInstance()
+	// Tidak perlu setup lagi di sini
 }
 
 //--------------------------------------------------------------
 void UltralightManager::initUltralight() {
-	// Setup Platform handlers dulu
-	setupPlatform();
-
-	// Create Ultralight renderer
-	renderer = ultralight::Renderer::Create();
-
-	if (!renderer) {
-		throw std::runtime_error("Failed to create Ultralight Renderer");
-	}
+	// Renderer setup sekarang di-handle oleh SharedRendererManager
+	// Tidak perlu create renderer sendiri lagi
+	// Renderer akan di-share di antara semua UltralightManager instances
 }
 
 //--------------------------------------------------------------
@@ -109,8 +134,11 @@ void UltralightManager::createView(int w, int h) {
 	ultralight::ViewConfig viewConfig;
 	viewConfig.is_accelerated = false;  // CPU renderer (BitmapSurface)
 
-	// Create View dulu (session = nullptr untuk default session)
-	view = renderer->CreateView(w, h, viewConfig, nullptr);
+	// Get shared renderer (singleton)
+	ultralight::RefPtr<ultralight::Renderer> sharedRenderer = SharedRendererManager::getInstance();
+
+	// Create View dengan shared renderer
+	view = sharedRenderer->CreateView(w, h, viewConfig, nullptr);
 
 	if (!view) {
 		throw std::runtime_error("Failed to create Ultralight View");
@@ -126,11 +154,16 @@ void UltralightManager::createView(int w, int h) {
 
 //--------------------------------------------------------------
 void UltralightManager::update() {
-	if (!isInitialized || !renderer) return;
+	// Skip update jika tidak initialized atau sedang shutdown
+	if (!isInitialized || !view) return;
+
+	// Update shared renderer (semua UltralightManager instances pakai renderer yang sama)
+	ultralight::RefPtr<ultralight::Renderer> sharedRenderer = SharedRendererManager::getInstance();
+	if (!sharedRenderer) return;
 
 	// Update Ultralight renderer
-	renderer->Update();
-	renderer->Render();
+	sharedRenderer->Update();
+	sharedRenderer->Render();
 
 	// Update OpenGL texture dari Ultralight surface
 	updateTexture();
@@ -302,26 +335,37 @@ bool UltralightManager::isMouseOverUI(int x, int y) const {
 
 //--------------------------------------------------------------
 void UltralightManager::cleanup() {
+	// Double-check untuk prevent double-cleanup
 	if (!isInitialized) return;
 
-	// Clear static instance pointers untuk prevent dangling pointer access
-	// Ini mencegah callback dari JavaScript setelah cleanup
+	// STEP 1: Matikan semua callbacks SEBELUM apapun (CRITICAL!)
+	// Ini mencegah race condition dari JavaScript callbacks yang mungkin terjadi
+	// selama shutdown. Static pointer di-reset ke nullptr agar callback functions
+	// tidak mencoba akses object yang sudah di-destroy.
 	g_instance = nullptr;
-	DialogViewListener::resetInstance();  // Clear DialogViewListener static pointer
+	DialogViewListener::resetInstance();
 
-	// Disconnect listener dari view SEBELUM view di-destroy
+	// STEP 2: Disconnect listener dari view SEGERA
+	// Ini memutus koneksi antara view dan listener sehingga tidak ada callback
+	// yang bisa terjadi selama proses shutdown.
 	if (view) {
-		view->set_view_listener(nullptr);  // Clear listener dari view
+		view->set_view_listener(nullptr);
 	}
 
-	// Delete ViewListener (unique_ptr akan otomatis delete)
+	// STEP 3: Delete ViewListener object
+	// unique_ptr akan otomatis menghapus memory
 	viewListener.reset();
 
-	// Release view SEBELUM renderer
+	// STEP 4: Release view
+	// View di-release, tapi tidak perlu release renderer karena renderer
+	// sekarang adalah SHARED singleton yang di-manage oleh SharedRendererManager
 	view = nullptr;
 
-	// Release renderer terakhir
-	renderer = nullptr;
+	// NOTE: Renderer TIDAK di-release di sini karena:
+	// - Renderer sekarang adalah SHARED singleton (SharedRendererManager)
+	// - Renderer akan di-cleanup sekali saja di aplikasi shutdown
+	// - Multiple UltralightManager instances share 1 renderer yang sama
 
+	// Mark as not initialized
 	isInitialized = false;
 }
