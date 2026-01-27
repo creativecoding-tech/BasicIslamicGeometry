@@ -25,6 +25,7 @@ bin/*.so
 bin/*.dylib
 **/*.bin
 **/*.dat
+**/*.nay
 bin/resources/
 
 # Compiled files (intermediate)
