@@ -25,7 +25,10 @@ public:
 	}
 
 	virtual ~DialogViewListener() {
-		g_instance = nullptr;
+		// Reset g_instance jika ini adalah instance yang aktif
+		if (g_instance == this) {
+			g_instance = nullptr;
+		}
 	}
 
 	// Dipanggil saat DOM ready - bind JavaScript functions di sini
@@ -33,4 +36,9 @@ public:
 	                        uint64_t frame_id,
 	                        bool is_main_frame,
 	                        const ultralight::String& url);
+
+	// Static method untuk reset g_instance dari luar (untuk cleanup)
+	static void resetInstance() {
+		g_instance = nullptr;
+	}
 };

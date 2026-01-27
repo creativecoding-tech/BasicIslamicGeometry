@@ -6,6 +6,8 @@
 #include <Ultralight/platform/Config.h>
 #include <AppCore/Platform.h>
 #include <Ultralight/RefPtr.h>
+#include "DialogViewListener.h"
+#include <memory>
 
 /**
  * UltralightManager
@@ -142,6 +144,7 @@ public:
 private:
 	ultralight::RefPtr<ultralight::View> view;
 	ultralight::RefPtr<ultralight::Renderer> renderer;
+	std::unique_ptr<DialogViewListener> viewListener;  // Manage listener lifetime properly
 	ofTexture texture;
 	int width, height;
 	bool isInitialized;

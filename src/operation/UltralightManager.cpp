@@ -62,16 +62,12 @@ void UltralightManager::setup(int w, int h) {
 	height = h;
 
 	try {
-		ofLogNotice("UltralightManager") << "Step 1: Creating Renderer...";
 		// Initialize Ultralight
 		initUltralight();
-		ofLogNotice("UltralightManager") << "Step 2: Creating View...";
 		// Create view
 		createView(width, height);
-		ofLogNotice("UltralightManager") << "Step 3: Allocating texture...";
 		// Allocate texture
 		texture.allocate(width, height, GL_RGBA);
-		ofLogNotice("UltralightManager") << "Step 4: Setup complete!";
 		isInitialized = true;
 	} catch (const std::exception& e) {
 		// Cleanup jika gagal
@@ -93,8 +89,6 @@ void UltralightManager::setupPlatform() {
 	platform.set_font_loader(ultralight::GetPlatformFontLoader());
 	platform.set_file_system(ultralight::GetPlatformFileSystem("."));
 	platform.set_logger(ultralight::GetDefaultLogger("ultralight.log"));
-
-	ofLogNotice("UltralightManager") << "Platform setup complete";
 }
 
 //--------------------------------------------------------------
@@ -108,8 +102,6 @@ void UltralightManager::initUltralight() {
 	if (!renderer) {
 		throw std::runtime_error("Failed to create Ultralight Renderer");
 	}
-
-	ofLogNotice("UltralightManager") << "Renderer created successfully";
 }
 
 //--------------------------------------------------------------
@@ -124,10 +116,11 @@ void UltralightManager::createView(int w, int h) {
 		throw std::runtime_error("Failed to create Ultralight View");
 	}
 
-	// Set ViewListener dengan callback kalau dibutuhkan
+	// Create dan set ViewListener dengan callback kalau dibutuhkan
+	// Disimpan di member variable agar lifetime-nya jelas dan otomatis di-cleanup
 	if (hasJSCallback && jsCallback) {
-		DialogViewListener* dialogListener = new DialogViewListener(jsCallback);
-		view->set_view_listener(dialogListener);
+		viewListener = std::make_unique<DialogViewListener>(jsCallback);
+		view->set_view_listener(viewListener.get());
 	}
 }
 
@@ -311,7 +304,23 @@ bool UltralightManager::isMouseOverUI(int x, int y) const {
 void UltralightManager::cleanup() {
 	if (!isInitialized) return;
 
+	// Clear static instance pointers untuk prevent dangling pointer access
+	// Ini mencegah callback dari JavaScript setelah cleanup
+	g_instance = nullptr;
+	DialogViewListener::resetInstance();  // Clear DialogViewListener static pointer
+
+	// Disconnect listener dari view SEBELUM view di-destroy
+	if (view) {
+		view->set_view_listener(nullptr);  // Clear listener dari view
+	}
+
+	// Delete ViewListener (unique_ptr akan otomatis delete)
+	viewListener.reset();
+
+	// Release view SEBELUM renderer
 	view = nullptr;
+
+	// Release renderer terakhir
 	renderer = nullptr;
 
 	isInitialized = false;
