@@ -945,6 +945,7 @@ void ofApp::updateSequentialDrawing() {
 			// Semua shapes sudah complete, matikan sequential mode dan tandai selesai
 			sequentialMode = false;
 			sequentialCompleted = true;
+			dotsCacheDirty = true;  // Rebuild dots cache agar mouse hover bekerja
 		}
 	}
 }
