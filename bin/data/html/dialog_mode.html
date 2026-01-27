@@ -179,19 +179,9 @@
     </div>
 
     <script>
-        let selectedMode = null;
-
         function selectMode(mode) {
-            selectedMode = mode;
-
-            // Update visual selection
-            document.querySelectorAll('.mode-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            document.getElementById('mode-' + mode).classList.add('selected');
-
-            // Enable next button
-            document.getElementById('next-btn').disabled = false;
+            // Langsung navigasi ke dialog template saat mode dipilih
+            app.onNext();
         }
     </script>
 </body>
