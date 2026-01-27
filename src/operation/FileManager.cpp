@@ -364,14 +364,11 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
     ofColor fillColor = *reinterpret_cast<ofColor *>(data + offset);
     offset += sizeof(ofColor);
 
-    // Buat PolygonShape dengan index
-    PolygonShape polygon(vertices, fillColor, i);
-
-    // Tambah FadeInAnimation
+    // Buat PolygonShape dengan index (PAKAI ORIGINAL ALPHA)
     auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
-    polygon.setAnimation(std::move(fadeIn));
+    PolygonShape polygon(vertices, fillColor, i, std::move(fadeIn));
 
-    // Add ke vector
+    // Add ke vector dengan std::move untuk transfer animation ownership
     polygons.push_back(std::move(polygon));
   }
 
@@ -384,7 +381,9 @@ FileManager::FileManager()
       loadSpeed(0.05f), loadAccumulator(0.0f), currentPolygonIndex(0) {}
 
 //--------------------------------------------------------------
-void FileManager::loadAllSequential(std::vector<CustomLine> &customLines,
+void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlobalRadius,
+                                    float &outLineWidth, bool &outLabelsVisible, bool &outDotsVisible,
+                                    std::vector<CustomLine> &customLines,
                                     std::vector<PolygonShape> &polygons) {
   // Cek apakah file .na exists
   ofFile file(FILENAME);
@@ -416,7 +415,8 @@ void FileManager::loadAllSequential(std::vector<CustomLine> &customLines,
   // Version
   int version = *reinterpret_cast<int *>(data + offset);
   offset += sizeof(int);
-  if (version != VERSION) {
+  // Support version 1 and 2
+  if (version != 1 && version != 2) {
     ofLog() << "Error: Unsupported version: " << version;
     return;
   }
@@ -425,15 +425,39 @@ void FileManager::loadAllSequential(std::vector<CustomLine> &customLines,
   int nameLen = *reinterpret_cast<int *>(data + offset);
   offset += sizeof(int);
 
-  // Skip template name (tidak perlu di-load untuk sequential mode)
+  // Read template name
+  if (nameLen <= 0 || nameLen > 256) {
+    ofLog() << "Error: Invalid template name length";
+    return;
+  }
+  outTemplateName = std::string(data + offset, nameLen);
   offset += nameLen;
 
   // Global radius (diperlukan untuk denormalize)
-  float globalRadius = *reinterpret_cast<float *>(data + offset);
+  outGlobalRadius = *reinterpret_cast<float *>(data + offset);
   offset += sizeof(float);
 
-  // Skip reserved (20 bytes)
-  offset += 20;
+  // Parse Additional Settings based on version
+  if (version == 1) {
+    // Version 1: Set default values dan skip reserved 20 bytes
+    outLineWidth = 4.0f;
+    outLabelsVisible = true;
+    outDotsVisible = true;
+    offset += 20;
+  } else if (version == 2) {
+    // Version 2: Read dari apa yang sebelumnya reserved
+    outLineWidth = *reinterpret_cast<float *>(data + offset);
+    offset += sizeof(float);
+
+    outLabelsVisible = *reinterpret_cast<bool *>(data + offset);
+    offset += sizeof(bool);
+
+    outDotsVisible = *reinterpret_cast<bool *>(data + offset);
+    offset += sizeof(bool);
+
+    // Skip remaining reserved (14 bytes)
+    offset += 14;
+  }
 
   // ===== LOAD CUSTOM LINES KE BUFFER =====
   if (offset >= bufferSize) {
@@ -444,6 +468,15 @@ void FileManager::loadAllSequential(std::vector<CustomLine> &customLines,
   int numLines = *reinterpret_cast<int *>(data + offset);
   offset += sizeof(int);
 
+  // Baca numLines yang KEDUA (dari saveCustomLinesNA)
+  int numLines2 = *reinterpret_cast<int *>(data + offset);
+  offset += sizeof(int);
+
+  // Validasi: numLines harus sama dengan numLines2
+  if (numLines != numLines2) {
+    ofLog() << "Warning: numLines mismatch (" << numLines << " vs " << numLines2 << ")";
+  }
+
   // Load customLines jika vectors kosong
   if (customLines.empty()) {
     loadedLinesBuffer.clear();
@@ -452,30 +485,50 @@ void FileManager::loadAllSequential(std::vector<CustomLine> &customLines,
       CustomLine line;
 
       // Read jumlah points
+      if (offset + sizeof(int) > bufferSize) {
+        ofLog() << "Error: Unexpected end of file reading numPoints";
+        return;
+      }
       int numPoints = *reinterpret_cast<int *>(data + offset);
       offset += sizeof(int);
 
       // Read semua points dan DENORMALIZE (kali radius)
       vector<vec2> points;
       for (int j = 0; j < numPoints; j++) {
+        if (offset + sizeof(vec2) > bufferSize) {
+          ofLog() << "Error: Unexpected end of file reading point";
+          return;
+        }
         vec2 normalizedPoint = *reinterpret_cast<vec2 *>(data + offset);
         offset += sizeof(vec2);
-        vec2 point = normalizedPoint * globalRadius; // Denormalize
+        vec2 point = normalizedPoint * outGlobalRadius; // Denormalize
         points.push_back(point);
       }
       line.setPoints(points);
 
       // Read color
+      if (offset + sizeof(ofColor) > bufferSize) {
+        ofLog() << "Error: Unexpected end of file reading color";
+        return;
+      }
       ofColor color = *reinterpret_cast<ofColor *>(data + offset);
       offset += sizeof(ofColor);
       line.setColor(color);
 
       // Read lineWidth
+      if (offset + sizeof(float) > bufferSize) {
+        ofLog() << "Error: Unexpected end of file reading lineWidth";
+        return;
+      }
       float lineWidth = *reinterpret_cast<float *>(data + offset);
       offset += sizeof(float);
       line.setLineWidth(lineWidth);
 
       // Read curve
+      if (offset + sizeof(float) > bufferSize) {
+        ofLog() << "Error: Unexpected end of file reading curve";
+        return;
+      }
       float curve = *reinterpret_cast<float *>(data + offset);
       offset += sizeof(float);
       line.setCurve(curve);
@@ -498,34 +551,52 @@ void FileManager::loadAllSequential(std::vector<CustomLine> &customLines,
   int numPolygons = *reinterpret_cast<int *>(data + offset);
   offset += sizeof(int);
 
+  // Baca numPolygons yang KEDUA (dari savePolygonsNA)
+  int numPolygons2 = *reinterpret_cast<int *>(data + offset);
+  offset += sizeof(int);
+
+  // Validasi: numPolygons harus sama dengan numPolygons2
+  if (numPolygons != numPolygons2) {
+    ofLog() << "Warning: numPolygons mismatch (" << numPolygons << " vs " << numPolygons2 << ")";
+  }
+
   // Load polygons jika vectors kosong
   if (polygons.empty()) {
     loadedPolygonsBuffer.clear();
 
     for (int i = 0; i < numPolygons; i++) {
       // Read jumlah vertices
+      if (offset + sizeof(int) > bufferSize) {
+        ofLog() << "Error: Unexpected end of file reading numVertices";
+        return;
+      }
       int numVertices = *reinterpret_cast<int *>(data + offset);
       offset += sizeof(int);
 
       // Read semua vertices dan DENORMALIZE (kali radius)
       vector<vec2> vertices;
       for (int j = 0; j < numVertices; j++) {
+        if (offset + sizeof(vec2) > bufferSize) {
+          ofLog() << "Error: Unexpected end of file reading vertex";
+          return;
+        }
         vec2 normalizedVertex = *reinterpret_cast<vec2 *>(data + offset);
         offset += sizeof(vec2);
-        vec2 vertex = normalizedVertex * globalRadius; // Denormalize
+        vec2 vertex = normalizedVertex * outGlobalRadius; // Denormalize
         vertices.push_back(vertex);
       }
 
       // Read fillColor
+      if (offset + sizeof(ofColor) > bufferSize) {
+        ofLog() << "Error: Unexpected end of file reading fillColor";
+        return;
+      }
       ofColor fillColor = *reinterpret_cast<ofColor *>(data + offset);
       offset += sizeof(ofColor);
 
-      // Buat PolygonShape dengan index
-      PolygonShape polygon(vertices, fillColor, i);
-
-      // Tambah FadeInAnimation
+      // Buat PolygonShape dengan index dan animation langsung
       auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
-      polygon.setAnimation(std::move(fadeIn));
+      PolygonShape polygon(vertices, fillColor, i, std::move(fadeIn));
 
       // Add ke buffer
       loadedPolygonsBuffer.push_back(std::move(polygon));
@@ -674,3 +745,8 @@ void FileManager::setLoadSpeed(float speed) { loadSpeed = speed; }
 
 //--------------------------------------------------------------
 float FileManager::getLoadSpeed() const { return loadSpeed; }
+
+//--------------------------------------------------------------
+void FileManager::setLoadParallelMode(bool enabled) {
+  loadParallelMode = enabled;
+}

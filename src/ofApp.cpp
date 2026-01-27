@@ -81,18 +81,126 @@ void ofApp::update() {
     updateSequentialDrawing();
   }
 
-  // Update semua template shapes (untuk animasi progress)
-  for (auto &shape : templateShapes) {
-    shape->update();
-  }
+  // Update staggered parallel load (CTRL+O)
+  if (isStaggeredLoad) {
+    switch (loadStage) {
+      case LOAD_TEMPLATE:
+        if (isSequentialShapeLoad) {
+          // SEQUENTIAL MODE (CTRL+SHIFT+O): Update satu per satu
+          if (currentTemplateIndex < templateShapes.size()) {
+            templateShapes[currentTemplateIndex]->update();
 
-  // Update sequential load logic dari FileManager (lines + polygons)
-  fileManager.updateSequentialLoad(customLines, polygonShapes);
+            if (templateShapes[currentTemplateIndex]->isComplete()) {
+              currentTemplateIndex++;
+            }
+          } else {
+            loadStage = LOAD_CUSTOMLINES;
+            currentTemplateIndex = 0;
+          }
+        } else {
+          // PARALLEL MODE (CTRL+O): Update semua bareng
+          for (auto &shape : templateShapes) {
+            shape->update();
+          }
 
-  // Update polygon animations (untuk parallel mode)
-  if (fileManager.isLoadParallelMode()) {
-    for (auto &polygon : polygonShapes) {
-      polygon.update();
+          bool allComplete = true;
+          for (auto &shape : templateShapes) {
+            if (!shape->isComplete()) {
+              allComplete = false;
+              break;
+            }
+          }
+
+          if (allComplete) {
+            loadStage = LOAD_CUSTOMLINES;
+            fileManager.setLoadParallelMode(true);
+          }
+        }
+        break;
+
+      case LOAD_CUSTOMLINES:
+        // Untuk sequential load: updateSequentialLoad akan menambah customLines bertahap
+        fileManager.updateSequentialLoad(customLines, polygonShapes);
+
+        // Update progress semua customLines yang sudah ada
+        for (auto &line : customLines) {
+          line.updateProgress();
+        }
+
+        // Cek apakah semua customLines sudah complete ATAU sequential load sudah selesai
+        {
+          bool allComplete = true;
+          bool allLoaded = (fileManager.getCurrentLoadIndex() >= fileManager.getTotalLoadedLines());
+
+          for (const auto &line : customLines) {
+            if (line.getProgress() < 1.0f) {
+              allComplete = false;
+              break;
+            }
+          }
+
+          // Pindah ke stage POLYGONS jika semua complete DAN semua sudah di-load
+          if (allComplete && allLoaded) {
+            loadStage = LOAD_POLYGONS;
+          }
+        }
+        break;
+
+      case LOAD_POLYGONS:
+        // Untuk sequential load: updateSequentialLoad akan menambah polygons bertahap
+        fileManager.updateSequentialLoad(customLines, polygonShapes);
+
+        // Update animation semua polygons yang sudah ada
+        for (auto &polygon : polygonShapes) {
+          polygon.update();
+        }
+
+        // Cek apakah semua polygons sudah complete DAN sequential load sudah selesai
+        {
+          bool allComplete = true;
+          bool allLoaded = !fileManager.isLoadSequentialMode();  // Sequential mode selesai
+
+          for (const auto &polygon : polygonShapes) {
+            if (!polygon.isAnimationComplete()) {
+              allComplete = false;
+              break;
+            }
+          }
+
+          // Selesai staggered load jika semua complete DAN semua sudah di-load
+          if (allComplete && allLoaded) {
+            loadStage = LOAD_DONE;
+            isStaggeredLoad = false;
+            isSequentialShapeLoad = false;
+            // Matikan sequential mode di FileManager supaya CTRL+SHIFT+DEL bisa dipakai
+            fileManager.cancelSequentialLoad();  // Reset semua flag sequential
+          }
+        }
+        break;
+
+      case LOAD_DONE:
+        // Selesai, tidak ada update khusus
+        break;
+    }
+  } else {
+    // Update normal (bukan staggered load)
+    // Update semua template shapes (untuk animasi progress)
+    for (auto &shape : templateShapes) {
+      shape->update();
+    }
+
+    // Update sequential load logic dari FileManager (lines + polygons)
+    // TAPI JANGAN panggil kalau sedang staggered load!
+    if (!isStaggeredLoad) {
+      fileManager.updateSequentialLoad(customLines, polygonShapes);
+    }
+
+    // Update polygon animations (untuk parallel mode)
+    // TAPI jangan kalau sedang staggered load!
+    if (fileManager.isLoadParallelMode() && !isStaggeredLoad) {
+      for (auto &polygon : polygonShapes) {
+        polygon.update();
+      }
     }
   }
 
@@ -183,9 +291,17 @@ void ofApp::drawCustomLinesAndUI() {
   }
 
   // Draw invisible polygons
-  for (int i = 0; i < polygonShapes.size(); i++) {
-    polygonShapes[i].setSelected(i == selectedPolygonIndex);
-    polygonShapes[i].draw();
+  // TAPI jangan draw kalau sedang staggered load dan belum di stage POLYGONS
+  bool shouldDrawPolygons = true;
+  if (isStaggeredLoad && loadStage != LOAD_POLYGONS && loadStage != LOAD_DONE) {
+    shouldDrawPolygons = false;  // Jangan draw polygons
+  }
+
+  if (shouldDrawPolygons) {
+    for (int i = 0; i < polygonShapes.size(); i++) {
+      polygonShapes[i].setSelected(i == selectedPolygonIndex);
+      polygonShapes[i].draw();
+    }
   }
 
   // Draw curve value label untuk garis yang selected
@@ -273,16 +389,6 @@ void ofApp::keyPressed(int key) {
         return; // Aborted, sedang loading
       }
 
-      // Jangan hapus jika sedang parallel load dan masih ada polygon animasi
-      if (fileManager.isLoadParallelMode()) {
-        // Cek apakah masih ada polygon yang sedang animasi
-        for (const auto &polygon : polygonShapes) {
-          if (polygon.hasAnimation()) {
-            return; // Masih ada polygon yang animasi, tunggu kelar
-          }
-        }
-      }
-
       // CTRL+SHIFT+DEL: Hapus semua polygon, custom lines, dan hide template shapes
       if (!polygonShapes.empty()) {
         polygonShapes.clear();
@@ -322,8 +428,8 @@ void ofApp::keyPressed(int key) {
       }
       return; // Jangan lanjut ke hideAllShapes()
     } else {
-      // DEL saja: Hide semua shapes (hanya jika TIDAK sequential drawing)
-      if (!sequentialMode) {
+      // DEL saja: Hide semua shapes (hanya jika TIDAK staggered load)
+      if (!isStaggeredLoad) {
         hideAllShapes();
       }
     }
@@ -441,9 +547,58 @@ void ofApp::keyPressed(int key) {
     case 15: // CTRL+O (ASCII 15)
       // Cek apakah SHIFT juga ditekan
       if (ofGetKeyPressed(OF_KEY_SHIFT)) {
-        fileManager.loadAllSequential(
-            customLines,
-            polygonShapes); // Sequential load dengan animasi (lines + polygons)
+        // Sequential load dengan animasi
+        string loadedTemplateName;
+        float loadedRadius;
+        float loadedLineWidth;
+        bool loadedLabelsVisible;
+        bool loadedDotsVisible;
+
+        fileManager.loadAllSequential(loadedTemplateName, loadedRadius,
+                                      loadedLineWidth, loadedLabelsVisible, loadedDotsVisible,
+                                      customLines, polygonShapes);
+
+        // Clear customLines dan polygons yang sudah ada sebelumnya
+        customLines.clear();
+        selectedLineIndices.clear();
+        lastSelectedLineIndex = -1;
+        polygonShapes.clear();
+        selectedPolygonIndex = -1;
+
+        // Switch ke template yang di-load
+        switchTemplate(loadedTemplateName);
+        radiusCircle = loadedRadius;
+
+        // Update Settings
+        currentLineWidth = loadedLineWidth;
+        labelsVisible = loadedLabelsVisible;
+        dotsVisible = loadedDotsVisible;
+
+        // Apply settings ke semua template shapes
+        for (auto &shape : templateShapes) {
+          shape->setLineWidth(currentLineWidth);
+          if (labelsVisible)
+            shape->showLabel();
+          else
+            shape->hideLabel();
+          if (dotsVisible)
+            shape->showDot();
+          else
+            shape->hideDot();
+        }
+
+        showAllShapes();  // Reset animasi template
+
+        // Set sequential mode SETELAH showAllShapes (karena showAllShapes akan reset ke false)
+        for (auto &shape : templateShapes) {
+          shape->setSequentialMode(true);
+        }
+
+        fileManager.setLoadParallelMode(false);
+        loadStage = LOAD_TEMPLATE;
+        isStaggeredLoad = true;
+        isSequentialShapeLoad = true;  // Sequential per shape
+        currentTemplateIndex = 0;  // Reset index template
       } else {
         // Load workspace dengan template name, radius, dan ALL settings
         string loadedTemplateName;
@@ -480,10 +635,19 @@ void ofApp::keyPressed(int key) {
               shape->showDot();
             else
               shape->hideDot();
+
+            shape->setSequentialMode(false);  // PARALLEL mode (CTRL+O)
           }
 
-          // Tampilkan semua shapes
-          showAllShapes();
+          // Mulai staggered parallel load
+          showAllShapes();  // Ini akan memulai animasi dari awal
+
+          // Matikan parallel mode dulu supaya customLines tidak langsung di-animate
+          fileManager.setLoadParallelMode(false);
+
+          loadStage = LOAD_TEMPLATE;
+          isStaggeredLoad = true;
+          isSequentialShapeLoad = false;  // PARALLEL mode (CTRL+O)
         }
       }
       break;

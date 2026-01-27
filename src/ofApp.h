@@ -82,6 +82,18 @@ class ofApp : public ofBaseApp{
 		float threshold = 10.0f; //dalam radius saat mouse hover pada dot
 		bool isCtrlPressed = false;
 
+		// Staggered parallel load mode (CTRL+O)
+		enum LoadStage {
+			LOAD_TEMPLATE,      // Stage 1: Draw template shapes paralel
+			LOAD_CUSTOMLINES,   // Stage 2: Draw customLines paralel
+			LOAD_POLYGONS,      // Stage 3: Draw polygons paralel
+			LOAD_DONE           // Stage 4: Selesai
+		};
+		LoadStage loadStage = LOAD_DONE;  // Current load stage
+		bool isStaggeredLoad = false;     // Flag untuk staggered parallel mode
+		bool isSequentialShapeLoad = false;  // Flag untuk sequential load per shape (CTRL+SHIFT+O)
+		int currentTemplateIndex = 0;     // Index template shape yang sedang di-animate (untuk sequential)
+
 		// Cached dots untuk performance
 		std::vector<DotInfo> cachedDots;
 		bool dotsCacheDirty = true;  // Flag untuk rebuild cache

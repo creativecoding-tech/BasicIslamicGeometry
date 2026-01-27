@@ -25,7 +25,9 @@ public:
                  float& outLineWidth, bool& outLabelsVisible, bool& outDotsVisible);
 
     // Load ALL data sequential dengan animasi (CTRL+SHIFT+O)
-    void loadAllSequential(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons);
+    void loadAllSequential(std::string& outTemplateName, float& outGlobalRadius,
+                          float& outLineWidth, bool& outLabelsVisible, bool& outDotsVisible,
+                          std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons);
 
     // Clear semua custom lines (CTRL+DEL)
     static void clearCustomLines(std::vector<CustomLine>& customLines);
@@ -41,6 +43,9 @@ public:
     bool isLoadParallelMode() const;
     int getCurrentLoadIndex() const;
     int getTotalLoadedLines() const;
+
+    // Setter untuk load mode (diperlukan untuk staggered load)
+    void setLoadParallelMode(bool enabled);
 
     // Speed control
     void setLoadSpeed(float speed);

@@ -16,6 +16,7 @@ public:
 	PolygonShape();
 	PolygonShape(vector<vec2> verts, ofColor color);
 	PolygonShape(vector<vec2> verts, ofColor color, int index);  // Dengan index untuk label
+	PolygonShape(vector<vec2> verts, ofColor color, int index, std::unique_ptr<FadeInAnimation> anim);  // Dengan animation (untuk load dari file)
 
 	// Copy constructor (animation tidak dicopy)
 	PolygonShape(const PolygonShape& other);
@@ -23,13 +24,19 @@ public:
 	// Copy assignment operator (animation tidak dicopy)
 	PolygonShape& operator=(const PolygonShape& other);
 
+	// Move constructor (transfer animation ownership)
+	PolygonShape(PolygonShape&& other) noexcept;
+
+	// Move assignment operator (transfer animation ownership)
+	PolygonShape& operator=(PolygonShape&& other) noexcept;
+
 	// Main drawing method - draw fill ONLY, no outline
 	void draw() const;
 
 	// Animation
 	void update();  // Update animation progress
-	void setAnimation(std::unique_ptr<FadeInAnimation> anim);  // Set animation
 	bool hasAnimation() const;  // Cek apakah punya animation
+	bool isAnimationComplete() const;  // Cek apakah animation sudah selesai
 
 	// Setters
 	void setColor(ofColor color);

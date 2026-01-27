@@ -1,4 +1,5 @@
 #include "PolygonShape.h"
+#include "../anim/FadeInAnimation.h"
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape()
@@ -13,13 +14,16 @@ PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int idx)
 	: vertices(verts), fillColor(color), selected(false), index(idx), animation(nullptr) {}
 
 //--------------------------------------------------------------
+PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index, std::unique_ptr<FadeInAnimation> anim)
+	: vertices(verts), fillColor(color), selected(false), index(index), animation(std::move(anim)) {}
+
+//--------------------------------------------------------------
 PolygonShape::PolygonShape(const PolygonShape& other)
 	: vertices(other.vertices)
 	, fillColor(other.fillColor)
 	, selected(other.selected)
 	, index(other.index)
-	, animation(nullptr) {  // Animation tidak dicopy (reset ke nullptr)
-}
+	, animation(nullptr) {}
 
 //--------------------------------------------------------------
 PolygonShape& PolygonShape::operator=(const PolygonShape& other) {
@@ -34,18 +38,51 @@ PolygonShape& PolygonShape::operator=(const PolygonShape& other) {
 }
 
 //--------------------------------------------------------------
+// Move constructor - transfer animation ownership
+PolygonShape::PolygonShape(PolygonShape&& other) noexcept
+	: vertices(std::move(other.vertices))
+	, fillColor(other.fillColor)
+	, selected(other.selected)
+	, index(other.index)
+	, animation(std::move(other.animation)) {}
+
+//--------------------------------------------------------------
+// Move assignment operator - transfer animation ownership
+PolygonShape& PolygonShape::operator=(PolygonShape&& other) noexcept {
+	if (this != &other) {
+		vertices = std::move(other.vertices);
+		fillColor = other.fillColor;
+		selected = other.selected;
+		index = other.index;
+		animation = std::move(other.animation);
+	}
+	return *this;
+}
+
+//--------------------------------------------------------------
 void PolygonShape::draw() const {
 	ofPushStyle();
 	ofFill();
 
-	// Gunakan animation alpha jika ada, otherwise pakai original alpha
-	if (animation && !animation->isComplete()) {
-		// Ambil current alpha dari animation
-		float currentAlpha = animation->getCurrentAlpha();
+	// Gunakan animation alpha untuk fade-in
+	if (animation) {
 		ofColor animatedColor = fillColor;
-		animatedColor.a = static_cast<int>(currentAlpha);
+
+		// DEBUG: Cek progress
+		float progress = animation->getProgress();
+
+		// Kalau progress masih 0, alpha harus 0 (BENAR-BENAR HIDDEN)
+		if (progress == 0.0f) {
+			animatedColor.a = 0;  // FORCE alpha 0!
+		} else {
+			// Progress > 0, pakai current alpha
+			float currentAlpha = animation->getCurrentAlpha();
+			animatedColor.a = static_cast<int>(currentAlpha);
+		}
+
 		ofSetColor(animatedColor);
 	} else {
+		// Tidak ada animation, pakai fillColor asli
 		ofSetColor(fillColor);
 	}
 
@@ -82,13 +119,16 @@ void PolygonShape::update() {
 }
 
 //--------------------------------------------------------------
-void PolygonShape::setAnimation(std::unique_ptr<FadeInAnimation> anim) {
-	animation = std::move(anim);
+bool PolygonShape::hasAnimation() const {
+	return animation != nullptr;
 }
 
 //--------------------------------------------------------------
-bool PolygonShape::hasAnimation() const {
-	return animation != nullptr;
+bool PolygonShape::isAnimationComplete() const {
+	if (animation) {
+		return animation->isComplete();
+	}
+	return true;  // Kalau tidak ada animation, dianggap complete
 }
 
 //--------------------------------------------------------------
