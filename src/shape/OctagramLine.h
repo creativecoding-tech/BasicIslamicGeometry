@@ -36,8 +36,8 @@ public:
 	// Override isComplete untuk ngecek kedua progress (main + extension)
 	bool isComplete() override;
 
-	// Mode control untuk animation
-	void setSequentialMode(bool sequential) { isSequentialMode = sequential; }
+	// Override setSequentialMode untuk kontrol animasi
+	void setSequentialMode(bool sequential) override { isSequentialMode = sequential; }
 
 private:
 	float totalSegments = 100;  // specific

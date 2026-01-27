@@ -37,6 +37,9 @@ public:
 	virtual void showDot() {}
 	virtual void hideDot() {}
 
+	// Sequential mode control (default: no-op, OctagramLine akan override)
+	virtual void setSequentialMode(bool sequential) {}
+
 	// Common method untuk line width
 	virtual void setLineWidth(float width);
 

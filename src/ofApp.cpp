@@ -908,19 +908,15 @@ void ofApp::startSequentialDrawing() {
 		shape->hide();
 	}
 
-	// Set sequential mode untuk semua OctagramLine (jika ada)
-	// Carilah OctagramLine dalam templateShapes dan set sequential mode
-	for (auto& shape : templateShapes) {
-		// Dynamic cast untuk cek apakah ini OctagramLine
-		// Kita tidak bisa static cast karena kita tidak tahu tipe pastinya
-		// Tapi untuk sekarang, kita skip ini dulu - nanti kita handle
-		// dengan cara lain jika perlu
-	}
-
 	// Mulai sequential mode
 	sequentialMode = true;
 	sequentialCompleted = false;  // Reset flag
 	currentShapeIndex = 0;
+
+	// Set sequential mode untuk semua shapes (setelah sequentialMode = true)
+	for (auto& shape : templateShapes) {
+		shape->setSequentialMode(sequentialMode);
+	}
 
 	// Show shape pertama
 	if (!templateShapes.empty()) {
@@ -985,6 +981,14 @@ void ofApp::toggleDots() {
 
 //--------------------------------------------------------------
 void ofApp::hideAllShapes() {
+	// Matikan sequential mode
+	sequentialMode = false;
+
+	// Set paralel mode untuk semua shapes (pakai sequentialMode yang sudah false)
+	for (auto& shape : templateShapes) {
+		shape->setSequentialMode(sequentialMode);
+	}
+
 	// Hide semua shapes
 	for (auto& shape : templateShapes) {
 		shape->hide();
@@ -999,6 +1003,14 @@ void ofApp::hideAllShapes() {
 
 //--------------------------------------------------------------
 void ofApp::showAllShapes() {
+	// Matikan sequential mode (paralel mode)
+	sequentialMode = false;
+
+	// Set mode untuk semua shapes (pakai sequentialMode yang sudah false)
+	for (auto& shape : templateShapes) {
+		shape->setSequentialMode(sequentialMode);
+	}
+
 	// Show semua shapes (akan animasi barengan/paralel)
 	for (auto& shape : templateShapes) {
 		shape->show();
