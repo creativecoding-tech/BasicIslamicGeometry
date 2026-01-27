@@ -217,7 +217,12 @@ void ofApp::update() {
   if (framesUntilBindJS > 0) {
     framesUntilBindJS--;
     if (framesUntilBindJS == 0) {
-      dialogUI.bindJSFunctions();
+      // Bind sesuai dengan state yang aktif
+      if (appState == RUNNING) {
+        sacredGeoUI.bindJSFunctions();
+      } else {
+        dialogUI.bindJSFunctions();
+      }
     }
   }
 }
@@ -1218,6 +1223,7 @@ void ofApp::updateSequentialDrawing() {
 
 //--------------------------------------------------------------
 void ofApp::toggleLabels() {
+  ofLogNotice("ofApp") << "toggleLabels() called, labelsVisible was: " << labelsVisible;
   // Toggle label visibility
   labelsVisible = !labelsVisible;
 
@@ -1229,10 +1235,16 @@ void ofApp::toggleLabels() {
       shape->hideLabel();
     }
   }
+
+  // Update UI HTML checkbox dan ON/OFF label
+  std::string script = "setLabelsState(" + std::string(labelsVisible ? "true" : "false") + ");";
+  ofLogNotice("ofApp") << "Evaluating JavaScript: " << script;
+  sacredGeoUI.evaluateJavaScript(script);
 }
 
 //--------------------------------------------------------------
 void ofApp::toggleDots() {
+  ofLogNotice("ofApp") << "toggleDots() called, dotsVisible was: " << dotsVisible;
   // Toggle dot visibility
   dotsVisible = !dotsVisible;
 
@@ -1244,6 +1256,9 @@ void ofApp::toggleDots() {
       shape->hideDot();
     }
   }
+
+  // Update UI HTML checkbox dan ON/OFF label
+  sacredGeoUI.evaluateJavaScript("setDotsState(" + std::string(dotsVisible ? "true" : "false") + ");");
 }
 
 //--------------------------------------------------------------
@@ -1336,6 +1351,7 @@ void ofApp::setupDialogUI() {
 
 //--------------------------------------------------------------
 void ofApp::handleJSAction(const std::string &action) {
+  ofLogNotice("ofApp") << "handleJSAction: " << action;
   if (action == "onDialogClose") {
     onDialogClose();
   } else if (action == "onBack") {
@@ -1348,6 +1364,10 @@ void ofApp::handleJSAction(const std::string &action) {
     showTemplateDialog("3D");
   } else if (action == "onCreate") {
     onCreateApp();
+  } else if (action == "toggleLabels") {
+    toggleLabels();
+  } else if (action == "toggleDots") {
+    toggleDots();
   }
 }
 
@@ -1372,9 +1392,14 @@ void ofApp::showTemplateDialog(const std::string& mode) {
 
 //--------------------------------------------------------------
 void ofApp::onCreateApp() {
+  // Set JavaScript callback dulu SEBELUM setup supaya ViewListener terpasang
+  sacredGeoUI.setJSCallback(
+      [this](const std::string &action) { this->handleJSAction(action); });
+
   sacredGeoUI.setup(400, ofGetHeight() - 50);
   sacredGeoUI.loadHTMLFile("html/sacred_geometry.html");
   appState = RUNNING;
+  framesUntilBindJS = 10; // Bind JS functions setelah 10 frame
 }
 
 //--------------------------------------------------------------

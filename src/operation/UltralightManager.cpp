@@ -87,6 +87,32 @@ static JSValueRef On3DModeCallback(JSContextRef ctx, JSObjectRef function,
 	return JSValueMakeUndefined(ctx);
 }
 
+static JSValueRef ToggleLabelsCallback(JSContextRef ctx, JSObjectRef function,
+                                     JSObjectRef thisObject, size_t argc,
+                                     const JSValueRef argv[], JSValueRef* exception) {
+	ofLogNotice("UltralightManager") << "ToggleLabelsCallback called";
+	if (UltralightManager::g_instance && UltralightManager::g_instance->jsCallback) {
+		ofLogNotice("UltralightManager") << "Calling jsCallback with toggleLabels";
+		UltralightManager::g_instance->jsCallback("toggleLabels");
+	} else {
+		ofLogNotice("UltralightManager") << "g_instance or jsCallback is null!";
+	}
+	return JSValueMakeUndefined(ctx);
+}
+
+static JSValueRef ToggleDotsCallback(JSContextRef ctx, JSObjectRef function,
+                                    JSObjectRef thisObject, size_t argc,
+                                    const JSValueRef argv[], JSValueRef* exception) {
+	ofLogNotice("UltralightManager") << "ToggleDotsCallback called";
+	if (UltralightManager::g_instance && UltralightManager::g_instance->jsCallback) {
+		ofLogNotice("UltralightManager") << "Calling jsCallback with toggleDots";
+		UltralightManager::g_instance->jsCallback("toggleDots");
+	} else {
+		ofLogNotice("UltralightManager") << "g_instance or jsCallback is null!";
+	}
+	return JSValueMakeUndefined(ctx);
+}
+
 //--------------------------------------------------------------
 UltralightManager::UltralightManager()
 	: width(0)
@@ -248,9 +274,35 @@ void UltralightManager::loadHTMLFile(const std::string& path) {
 }
 
 //--------------------------------------------------------------
-void UltralightManager::bindJSFunctions() {
-	if (!view || !hasJSCallback) return;
+void UltralightManager::evaluateJavaScript(const std::string& script) {
+	if (!view) {
+		ofLogNotice("UltralightManager") << "evaluateJavaScript: view is null!";
+		return;
+	}
+	ultralight::RefPtr<ultralight::JSContext> context = view->LockJSContext();
+	if (!context) {
+		ofLogNotice("UltralightManager") << "evaluateJavaScript: context is null!";
+		return;
+	}
 
+	ofLogNotice("UltralightManager") << "evaluateJavaScript: " << script;
+	JSContextRef ctx = context->ctx();
+	JSStringRef scriptRef = JSStringCreateWithUTF8CString(script.c_str());
+
+	// Evaluate script tanpa mempedulikan return value
+	JSEvaluateScript(ctx, scriptRef, nullptr, nullptr, 0, nullptr);
+
+	JSStringRelease(scriptRef);
+}
+
+//--------------------------------------------------------------
+void UltralightManager::bindJSFunctions() {
+	if (!view || !hasJSCallback) {
+		ofLogNotice("UltralightManager") << "bindJSFunctions() early return: view=" << (view.get() != nullptr) << " hasJSCallback=" << hasJSCallback;
+		return;
+	}
+
+	ofLogNotice("UltralightManager") << "bindJSFunctions() called, binding functions...";
 	// Set instance pointer supaya static functions bisa akses jsCallback
 	g_instance = this;
 
@@ -277,6 +329,12 @@ void UltralightManager::bindJSFunctions() {
 	JSStringRef mode3DName = JSStringCreateWithUTF8CString("on3DMode");
 	JSObjectRef mode3DFunc = JSObjectMakeFunctionWithCallback(ctx, mode3DName, &On3DModeCallback);
 
+	JSStringRef toggleLabelsName = JSStringCreateWithUTF8CString("toggleLabels");
+	JSObjectRef toggleLabelsFunc = JSObjectMakeFunctionWithCallback(ctx, toggleLabelsName, &ToggleLabelsCallback);
+
+	JSStringRef toggleDotsName = JSStringCreateWithUTF8CString("toggleDots");
+	JSObjectRef toggleDotsFunc = JSObjectMakeFunctionWithCallback(ctx, toggleDotsName, &ToggleDotsCallback);
+
 	// Create app object
 	JSStringRef appName = JSStringCreateWithUTF8CString("app");
 	JSObjectRef appObject = JSObjectMake(ctx, nullptr, nullptr);
@@ -287,6 +345,8 @@ void UltralightManager::bindJSFunctions() {
 	JSObjectSetProperty(ctx, appObject, createName, createFunc, kJSPropertyAttributeNone, nullptr);
 	JSObjectSetProperty(ctx, appObject, mode2DName, mode2DFunc, kJSPropertyAttributeNone, nullptr);
 	JSObjectSetProperty(ctx, appObject, mode3DName, mode3DFunc, kJSPropertyAttributeNone, nullptr);
+	JSObjectSetProperty(ctx, appObject, toggleLabelsName, toggleLabelsFunc, kJSPropertyAttributeNone, nullptr);
+	JSObjectSetProperty(ctx, appObject, toggleDotsName, toggleDotsFunc, kJSPropertyAttributeNone, nullptr);
 
 	// Set app object to global object (window.app)
 	JSObjectSetProperty(ctx, globalObject, appName, appObject, kJSPropertyAttributeNone, nullptr);
@@ -297,6 +357,8 @@ void UltralightManager::bindJSFunctions() {
 	JSStringRelease(createName);
 	JSStringRelease(mode2DName);
 	JSStringRelease(mode3DName);
+	JSStringRelease(toggleLabelsName);
+	JSStringRelease(toggleDotsName);
 	JSStringRelease(appName);
 }
 

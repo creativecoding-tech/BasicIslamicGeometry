@@ -157,6 +157,12 @@ public:
 	 */
 	void bindJSFunctions();
 
+	/**
+	 * Execute JavaScript code di view
+	 * @param script JavaScript code string untuk dieksekusi
+	 */
+	void evaluateJavaScript(const std::string& script);
+
 	// Static instance dan jsCallback untuk JavaScript callback access
 	static UltralightManager* g_instance;
 	std::function<void(const std::string&)> jsCallback;  // Public untuk static callback access

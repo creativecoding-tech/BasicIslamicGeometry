@@ -112,6 +112,56 @@
             border-left: 3px solid #00ff88;
         }
 
+        /* Toggle Switch Styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 26px;
+            transition: background-color .4s;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .slider-handle {
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            background-color: #00ff88;
+            border-radius: 50%;
+            transition: left .4s;
+        }
+
+        /* ON state: slider ke kanan - tetap pakai class untuk background */
+        .slider.on {
+            background-color: rgba(0, 255, 136, 0.4);
+        }
+
+        /* ON/OFF label */
+        .on-off-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-left: 8px;
+        }
+
         .info {
             font-size: 12px;
             color: #888888;
@@ -139,12 +189,20 @@
         <div class="section">
             <div class="section-title">Display Options</div>
             <div class="control-group">
-                <span class="control-label">Toggle Labels</span>
-                <button onclick="app.toggleLabels()">Toggle</button>
+                <span class="control-label">Labels</span>
+                <label class="switch" onclick="onLabelsClick(); return false;">
+                    <input type="checkbox" id="labelsToggle" checked>
+                    <span class="slider on" id="labelsSlider"><span class="slider-handle"></span></span>
+                </label>
+                <span class="on-off-label" id="labelsOnOff">ON</span>
             </div>
             <div class="control-group">
-                <span class="control-label">Toggle Dots</span>
-                <button onclick="app.toggleDots()">Toggle</button>
+                <span class="control-label">Dots</span>
+                <label class="switch" onclick="onDotsClick(); return false;">
+                    <input type="checkbox" id="dotsToggle" checked>
+                    <span class="slider on" id="dotsSlider"><span class="slider-handle"></span></span>
+                </label>
+                <span class="on-off-label" id="dotsOnOff">ON</span>
             </div>
         </div>
 
@@ -174,6 +232,53 @@
         function updateLineWidth(value) {
             document.getElementById('lineWidthValue').textContent = parseFloat(value).toFixed(1);
         }
+
+        // Prevent double-fire dari checkbox click
+        let isTogglingLabels = false;
+        let isTogglingDots = false;
+
+        function onLabelsClick() {
+            if (isTogglingLabels) return;
+            isTogglingLabels = true;
+            app.toggleLabels();
+            setTimeout(() => { isTogglingLabels = false; }, 100);
+        }
+
+        function onDotsClick() {
+            if (isTogglingDots) return;
+            isTogglingDots = true;
+            app.toggleDots();
+            setTimeout(() => { isTogglingDots = false; }, 100);
+        }
+
+        // Update toggle switch state saat dipanggil dari C++
+        function setLabelsState(isVisible) {
+            var slider = document.getElementById('labelsSlider');
+            var handle = slider.querySelector('.slider-handle');
+            // Set class untuk background color
+            slider.className = isVisible ? 'slider on' : 'slider';
+            // Set inline style langsung untuk handle position
+            handle.style.left = isVisible ? '28px' : '4px';
+            // Update label
+            document.getElementById('labelsOnOff').textContent = isVisible ? 'ON' : 'OFF';
+        }
+
+        function setDotsState(isVisible) {
+            var slider = document.getElementById('dotsSlider');
+            var handle = slider.querySelector('.slider-handle');
+            // Set class untuk background color
+            slider.className = isVisible ? 'slider on' : 'slider';
+            // Set inline style langsung untuk handle position
+            handle.style.left = isVisible ? '28px' : '4px';
+            // Update label
+            document.getElementById('dotsOnOff').textContent = isVisible ? 'ON' : 'OFF';
+        }
+
+        // Force initial state setelah delay (untuk tunggu Ultralight render complete)
+        setTimeout(function() {
+            setLabelsState(true);
+            setDotsState(true);
+        }, 100);
     </script>
 </body>
 </html>
