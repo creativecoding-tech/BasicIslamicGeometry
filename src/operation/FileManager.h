@@ -15,12 +15,14 @@ public:
     // Save/load ALL data ke .na format (CTRL+S / CTRL+O)
     void saveAll(const std::string& templateName, float globalRadius,
                  const std::vector<CustomLine>& customLines,
-                 const std::vector<PolygonShape>& polygons);
+                 const std::vector<PolygonShape>& polygons,
+                 float currentLineWidth, bool labelsVisible, bool dotsVisible);
 
     // Load ALL data dari .na format - return template name
     bool loadAll(std::string& outTemplateName, float& outGlobalRadius,
                  std::vector<CustomLine>& customLines,
-                 std::vector<PolygonShape>& polygons);
+                 std::vector<PolygonShape>& polygons,
+                 float& outLineWidth, bool& outLabelsVisible, bool& outDotsVisible);
 
     // Load ALL data sequential dengan animasi (CTRL+SHIFT+O)
     void loadAllSequential(std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons);
@@ -71,6 +73,6 @@ private:
 
     // Format constants
     static constexpr char MAGIC_NUMBER[4] = {'N', 'A', '0', '1'};
-    static constexpr int VERSION = 1;
+    static constexpr int VERSION = 2;
     static constexpr int HEADER_SIZE = 64;  // Header tetap 64 bytes untuk masa depan
 };
