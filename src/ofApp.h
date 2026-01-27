@@ -91,12 +91,19 @@ class ofApp : public ofBaseApp{
 		// File Manager untuk save/load custom lines
 		FileManager fileManager;
 
+		ImGuiContext* imguiContext = nullptr;
+
 		void setup();
 		void setupTemplateSystem();  // Register semua templates ke registry
 		void switchTemplate(const std::string& templateName);  // Switch ke template tertentu
 		void update();
 		void draw();
 		void drawCustomLinesAndUI();  // Draw custom lines, curve label, preview, dan dot highlights
+
+		void setupImGui();
+		void updateImGui();
+		void drawImGui();
+		void exitImGui();
 
 		// Sequential drawing methods
 		void startSequentialDrawing();

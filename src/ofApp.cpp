@@ -23,6 +23,9 @@ void ofApp::setup() {
 
   // Initial dots cache build
   dotsCacheDirty = true;
+
+  //define ImGUI
+  setupImGui();
 }
 
 //--------------------------------------------------------------
@@ -192,6 +195,9 @@ void ofApp::update() {
       }
     }
   }
+
+  //define ImGUI
+  updateImGui();
 }
 
 //--------------------------------------------------------------
@@ -217,6 +223,9 @@ void ofApp::draw() {
 
   // Reset transform
   ofPopMatrix();
+
+  //ImGUI
+  drawImGui();
 }
 
 //--------------------------------------------------------------
@@ -1196,4 +1205,94 @@ void ofApp::increaseLineWidth() {
 //--------------------------------------------------------------
 void ofApp::exit() {
   // Cleanup jika ada
+
+    //ImGUI
+    exitImGui();
 }
+
+void ofApp::setupImGui() {
+    IMGUI_CHECKVERSION(); //cek versi imgui.h and imgui.cpp harus sama
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    ImGui::StyleColorsDark();
+    ImGui_ImplOpenGL3_Init();
+    HWND hwnd = ofGetWin32Window();
+    ImGui_ImplWin32_Init(hwnd);
+}
+
+void ofApp::updateImGui() {
+    // Update ImGui input handling dari Win32 backend
+    ImGui_ImplWin32_NewFrame();
+}
+
+//--------------------------------------------------------------
+void ofApp::drawImGui() {
+    // 1. Start new ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplWin32_NewFrame();  // Call ini juga di sini untuk keamanan
+    ImGui::NewFrame();
+
+    // 2. === BUILD UI DI SINI ===
+    // Contoh: Main Menu Bar
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Save Workspace", "CTRL+S")) {
+                // TODO: Implement save
+                
+            }
+            if (ImGui::MenuItem("Load Workspace", "CTRL+O")) {
+                // TODO: Implement load
+                
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Exit", "ALT+F4")) {
+                ofExit();
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("View")) {
+            if (ImGui::MenuItem("Toggle Labels", "L")) {
+                toggleLabels();
+            }
+            if (ImGui::MenuItem("Toggle Dots", "D")) {
+                toggleDots();
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Hide All Shapes")) {
+                hideAllShapes();
+            }
+            if (ImGui::MenuItem("Show All Shapes")) {
+                showAllShapes();
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Help")) {
+            if (ImGui::MenuItem("About")) {
+                
+            }
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
+    // ==========================
+
+    // 3. Render ImGui ke OpenGL
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void ofApp::exitImGui() {
+    //Shutdown OpenGL3 Backend
+    ImGui_ImplOpenGL3_Shutdown();
+
+    //Shutdown Win32 Backend
+    ImGui_ImplWin32_Shutdown();
+
+    //Destroy ImGui Context
+    ImGui::DestroyContext();
+}
+

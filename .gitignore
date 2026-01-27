@@ -27,6 +27,7 @@ bin/*.dylib
 **/*.dat
 **/*.nay
 bin/resources/
+bin/imgui.ini
 
 # Compiled files (intermediate)
 *.obj
