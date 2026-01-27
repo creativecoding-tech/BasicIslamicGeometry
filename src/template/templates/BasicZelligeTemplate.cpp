@@ -25,9 +25,10 @@ float BasicZelligeTemplate::getDefaultRadius() {
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupShapes(std::vector<std::unique_ptr<AbstractShape>>& shapes) {
-	// Panggil semua setup methods
-	setupCircles(shapes);
+	// Panggil semua setup methods dengan urutan yang BENAR
+	// CartesianAxes DULU sebagai fondasi/sumbu koordinat
 	setupCartesianAxes(shapes);
+	setupCircles(shapes);
 	setupCrossLines(shapes);
 	setupParallelograms(shapes);
 	setupRectangleLines(shapes);
