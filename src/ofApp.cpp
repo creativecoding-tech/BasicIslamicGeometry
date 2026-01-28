@@ -313,11 +313,15 @@ void ofApp::keyPressed(int key) {
 
   // Toggle label visibility dengan ` atau ~
   if (key == '`' || key == '~') {
+    // Toggle label visibility
+    labelsVisible = !labelsVisible;
     toggleLabels();
   }
 
   // Toggle dot visibility dengan . atau >
   if (key == '.' || key == '>') {
+    // Toggle dot visibility
+    dotsVisible = !dotsVisible;
     toggleDots();
   }
 
@@ -1030,9 +1034,6 @@ void ofApp::updateSequentialDrawing() {
 
 //--------------------------------------------------------------
 void ofApp::toggleLabels() {
-  // Toggle label visibility
-  labelsVisible = !labelsVisible;
-
   // Iterate semua template shapes
   for (auto &shape : templateShapes) {
     if (labelsVisible) {
@@ -1045,8 +1046,7 @@ void ofApp::toggleLabels() {
 
 //--------------------------------------------------------------
 void ofApp::toggleDots() {
-  // Toggle dot visibility
-  dotsVisible = !dotsVisible;
+
 
   // Iterate semua template shapes
   for (auto &shape : templateShapes) {

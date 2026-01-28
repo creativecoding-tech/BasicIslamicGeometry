@@ -17,13 +17,12 @@ void LeftPanel::draw() {
         }
 
         if (ImGui::CollapsingHeader("Display")) {
-            ImGui::Checkbox("Show Labels", &app->labelsVisible);
-            ImGui::Checkbox("Show Dots", &app->dotsVisible);
-        }
-
-        if (ImGui::CollapsingHeader("Stats")) {
-            ImGui::Text("Custom Lines: %zu", app->customLines.size());
-            ImGui::Text("Polygons: %zu", app->polygonShapes.size());
+            if (ImGui::Checkbox("Show Labels", &app->labelsVisible)) {
+                app->toggleLabels();
+            }
+            if (ImGui::Checkbox("Show Dots", &app->dotsVisible)) {
+                app->toggleDots();
+            }
         }
     }
     ImGui::End();
