@@ -839,6 +839,10 @@ void ofApp::createInvisiblePolygonFromSelected() {
 void ofApp::mousePressed(int x, int y, int button) {
   // Logic lama: Cursor toggle dengan right click (button 2)
   if (button == 2) {
+    // Forward ke ImGui
+    ImGuiIO& io = ImGui::GetIO();
+    io.AddMouseButtonEvent(button, true);
+
     cursorVisible = !cursorVisible;
     if (cursorVisible)
       ofShowCursor();
@@ -849,6 +853,15 @@ void ofApp::mousePressed(int x, int y, int button) {
 
   // CTRL+Click untuk multi-select
   if (button == 0 && isCtrlPressed) {
+    // Forward ke ImGui dulu
+    ImGuiIO& io = ImGui::GetIO();
+    io.AddMouseButtonEvent(button, true);
+
+    // Cek apakah ImGui mau capture mouse
+    if (io.WantCaptureMouse) {
+      return; // ImGui handle, jangan process di OF
+    }
+
     vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
     int clickedLineIndex = getLineIndexAtPosition(adjustedMousePos);
 
@@ -866,6 +879,15 @@ void ofApp::mousePressed(int x, int y, int button) {
 
   // Logic untuk interactive line creation & line selection
   if (button == 0) {
+    // Forward ke ImGui dulu (BIAR DROPDOWN MENU BISA DI-KLIK!)
+    ImGuiIO& io = ImGui::GetIO();
+    io.AddMouseButtonEvent(button, true);
+
+    // Cek apakah ImGui mau capture mouse
+    if (io.WantCaptureMouse) {
+      return; // ImGui handle, jangan process di OF
+    }
+
     // Adjust mouse position untuk center translation
     vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
     vector<DotInfo> dots = getAllDots();
@@ -938,6 +960,12 @@ void ofApp::mouseDragged(int x, int y, int button) {
 }
 
 void ofApp::mouseReleased(int x, int y, int button) {
+  // Forward ke ImGui
+  ImGuiIO& io = ImGui::GetIO();
+  io.AddMouseButtonEvent(button, false);
+
+  // Biarkan ImGui handle semua
+
   if (drawState != DRAGGING) {
     return;
   }
@@ -993,6 +1021,10 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y) {
+  // Forward ke ImGui
+  ImGuiIO& io = ImGui::GetIO();
+  io.AddMousePosEvent(x, y);
+
   // Update mouse position untuk hover detection (adjust untuk center translation)
   mousePos = vec2(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
 }
@@ -1221,22 +1253,21 @@ void ofApp::setupImGui() {
 
 //--------------------------------------------------------------
 void ofApp::drawImGui() {
-    // 1. Start new ImGui frame
+    // Update display size BEFORE NewFrame! (WAJIB!)
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize = ImVec2(ofGetWidth(), ofGetHeight());
+
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplWin32_NewFrame();  // Call ini juga di sini untuk keamanan
     ImGui::NewFrame();
 
-    // 2. === BUILD UI DI SINI ===
-    // Contoh: Main Menu Bar
+    // === MAIN MENU BAR ===
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Save Workspace", "CTRL+S")) {
-                // TODO: Implement save
-                
+                ofLogNotice("ImGui") << "Save clicked";
             }
             if (ImGui::MenuItem("Load Workspace", "CTRL+O")) {
-                // TODO: Implement load
-                
+                ofLogNotice("ImGui") << "Load clicked";
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Exit", "ALT+F4")) {
@@ -1264,7 +1295,7 @@ void ofApp::drawImGui() {
 
         if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem("About")) {
-                
+                ofLogNotice("ImGui") << "About clicked";
             }
             ImGui::EndMenu();
         }
@@ -1273,7 +1304,6 @@ void ofApp::drawImGui() {
     }
     // ==========================
 
-    // 3. Render ImGui ke OpenGL
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
