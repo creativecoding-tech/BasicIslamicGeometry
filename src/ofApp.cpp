@@ -473,12 +473,7 @@ void ofApp::keyPressed(int key) {
     case 's':
     case 'S':
     case 19: // CTRL+S (ASCII 19)
-      if (currentTemplate) {
-        // Save dengan additional state (line width, labels, dots)
-        fileManager.saveAll(currentTemplate->getName(), radiusCircle,
-                            customLines, polygonShapes, currentLineWidth,
-                            labelsVisible, dotsVisible);
-      }
+      saveWorkspace();
       break;
 
     case 'o':
@@ -486,108 +481,9 @@ void ofApp::keyPressed(int key) {
     case 15: // CTRL+O (ASCII 15)
       // Cek apakah SHIFT juga ditekan
       if (ofGetKeyPressed(OF_KEY_SHIFT)) {
-        // Sequential load dengan animasi
-        string loadedTemplateName;
-        float loadedRadius;
-        float loadedLineWidth;
-        bool loadedLabelsVisible;
-        bool loadedDotsVisible;
-
-        fileManager.loadAllSequential(loadedTemplateName, loadedRadius,
-                                      loadedLineWidth, loadedLabelsVisible, loadedDotsVisible,
-                                      customLines, polygonShapes);
-
-        // Clear customLines dan polygons yang sudah ada sebelumnya
-        customLines.clear();
-        selectedLineIndices.clear();
-        lastSelectedLineIndex = -1;
-        polygonShapes.clear();
-        selectedPolygonIndex = -1;
-
-        // Switch ke template yang di-load
-        switchTemplate(loadedTemplateName);
-        radiusCircle = loadedRadius;
-
-        // Update Settings
-        currentLineWidth = loadedLineWidth;
-        labelsVisible = loadedLabelsVisible;
-        dotsVisible = loadedDotsVisible;
-
-        // Apply settings ke semua template shapes
-        for (auto &shape : templateShapes) {
-          shape->setLineWidth(currentLineWidth);
-          if (labelsVisible)
-            shape->showLabel();
-          else
-            shape->hideLabel();
-          if (dotsVisible)
-            shape->showDot();
-          else
-            shape->hideDot();
-        }
-
-        showAllShapes();  // Reset animasi template
-
-        // Set sequential mode SETELAH showAllShapes (karena showAllShapes akan reset ke false)
-        for (auto &shape : templateShapes) {
-          shape->setSequentialMode(true);
-        }
-
-        fileManager.setLoadParallelMode(false);
-        loadStage = LOAD_TEMPLATE;
-        isStaggeredLoad = true;
-        isSequentialShapeLoad = true;  // Sequential per shape
-        currentTemplateIndex = 0;  // Reset index template
+          loadWorkspaceSeq();
       } else {
-        // Load workspace dengan template name, radius, dan ALL settings
-        string loadedTemplateName;
-        float loadedRadius;
-        float loadedLineWidth;
-        bool loadedLabelsVisible;
-        bool loadedDotsVisible;
-
-        if (fileManager.loadAll(loadedTemplateName, loadedRadius, customLines,
-                                polygonShapes, loadedLineWidth,
-                                loadedLabelsVisible, loadedDotsVisible)) {
-
-          // Switch ke template yang di-load
-          switchTemplate(loadedTemplateName);
-
-          // Update radius dengan loaded radius
-          radiusCircle = loadedRadius;
-
-          // Update Settings
-          currentLineWidth = loadedLineWidth;
-          labelsVisible = loadedLabelsVisible;
-          dotsVisible = loadedDotsVisible;
-
-          // Apply settings ke semua shapes yang baru di-load
-          for (auto &shape : templateShapes) {
-            shape->setLineWidth(currentLineWidth);
-
-            if (labelsVisible)
-              shape->showLabel();
-            else
-              shape->hideLabel();
-
-            if (dotsVisible)
-              shape->showDot();
-            else
-              shape->hideDot();
-
-            shape->setSequentialMode(false);  // PARALLEL mode (CTRL+O)
-          }
-
-          // Mulai staggered parallel load
-          showAllShapes();  // Ini akan memulai animasi dari awal
-
-          // Matikan parallel mode dulu supaya customLines tidak langsung di-animate
-          fileManager.setLoadParallelMode(false);
-
-          loadStage = LOAD_TEMPLATE;
-          isStaggeredLoad = true;
-          isSequentialShapeLoad = false;  // PARALLEL mode (CTRL+O)
-        }
+          loadWorkspace();
       }
       break;
 
@@ -1232,6 +1128,123 @@ void ofApp::increaseLineWidth() {
 }
 
 //--------------------------------------------------------------
+void ofApp::saveWorkspace() {
+  if (currentTemplate) {
+    fileManager.saveAll(currentTemplate->getName(), radiusCircle,
+                        customLines, polygonShapes, currentLineWidth,
+                        labelsVisible, dotsVisible);
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::loadWorkspace() {
+    // Load workspace dengan template name, radius, dan ALL settings
+    string loadedTemplateName;
+    float loadedRadius;
+    float loadedLineWidth;
+    bool loadedLabelsVisible;
+    bool loadedDotsVisible;
+
+    if (fileManager.loadAll(loadedTemplateName, loadedRadius, customLines,
+        polygonShapes, loadedLineWidth,
+        loadedLabelsVisible, loadedDotsVisible)) {
+
+        // Switch ke template yang di-load
+        switchTemplate(loadedTemplateName);
+
+        // Update radius dengan loaded radius
+        radiusCircle = loadedRadius;
+
+        // Update Settings
+        currentLineWidth = loadedLineWidth;
+        labelsVisible = loadedLabelsVisible;
+        dotsVisible = loadedDotsVisible;
+
+        // Apply settings ke semua shapes yang baru di-load
+        for (auto& shape : templateShapes) {
+            shape->setLineWidth(currentLineWidth);
+
+            if (labelsVisible)
+                shape->showLabel();
+            else
+                shape->hideLabel();
+
+            if (dotsVisible)
+                shape->showDot();
+            else
+                shape->hideDot();
+
+            shape->setSequentialMode(false);  // PARALLEL mode (CTRL+O)
+        }
+
+        // Mulai staggered parallel load
+        showAllShapes();  // Ini akan memulai animasi dari awal
+
+        // Matikan parallel mode dulu supaya customLines tidak langsung di-animate
+        fileManager.setLoadParallelMode(false);
+
+        loadStage = LOAD_TEMPLATE;
+        isStaggeredLoad = true;
+        isSequentialShapeLoad = false;  // PARALLEL mode (CTRL+O)
+    }
+}
+
+void ofApp::loadWorkspaceSeq() {
+    // Sequential load dengan animasi
+    string loadedTemplateName;
+    float loadedRadius;
+    float loadedLineWidth;
+    bool loadedLabelsVisible;
+    bool loadedDotsVisible;
+
+    fileManager.loadAllSequential(loadedTemplateName, loadedRadius,
+        loadedLineWidth, loadedLabelsVisible, loadedDotsVisible,
+        customLines, polygonShapes);
+
+    // Clear customLines dan polygons yang sudah ada sebelumnya
+    customLines.clear();
+    selectedLineIndices.clear();
+    lastSelectedLineIndex = -1;
+    polygonShapes.clear();
+    selectedPolygonIndex = -1;
+
+    // Switch ke template yang di-load
+    switchTemplate(loadedTemplateName);
+    radiusCircle = loadedRadius;
+
+    // Update Settings
+    currentLineWidth = loadedLineWidth;
+    labelsVisible = loadedLabelsVisible;
+    dotsVisible = loadedDotsVisible;
+
+    // Apply settings ke semua template shapes
+    for (auto& shape : templateShapes) {
+        shape->setLineWidth(currentLineWidth);
+        if (labelsVisible)
+            shape->showLabel();
+        else
+            shape->hideLabel();
+        if (dotsVisible)
+            shape->showDot();
+        else
+            shape->hideDot();
+    }
+
+    showAllShapes();  // Reset animasi template
+
+    // Set sequential mode SETELAH showAllShapes (karena showAllShapes akan reset ke false)
+    for (auto& shape : templateShapes) {
+        shape->setSequentialMode(true);
+    }
+
+    fileManager.setLoadParallelMode(false);
+    loadStage = LOAD_TEMPLATE;
+    isStaggeredLoad = true;
+    isSequentialShapeLoad = true;  // Sequential per shape
+    currentTemplateIndex = 0;  // Reset index template
+}
+
+//--------------------------------------------------------------
 void ofApp::exit() {
   // Cleanup jika ada
 
@@ -1264,10 +1277,13 @@ void ofApp::drawImGui() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Save Workspace", "CTRL+S")) {
-                ofLogNotice("ImGui") << "Save clicked";
+                saveWorkspace();
             }
             if (ImGui::MenuItem("Load Workspace", "CTRL+O")) {
-                ofLogNotice("ImGui") << "Load clicked";
+                loadWorkspace();
+            }
+            if (ImGui::MenuItem("Load Workspace Seq", "CTRL+SHIFT+O")) {
+                loadWorkspaceSeq();
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Exit", "ALT+F4")) {
@@ -1277,25 +1293,15 @@ void ofApp::drawImGui() {
         }
 
         if (ImGui::BeginMenu("View")) {
-            if (ImGui::MenuItem("Toggle Labels", "L")) {
-                toggleLabels();
-            }
-            if (ImGui::MenuItem("Toggle Dots", "D")) {
-                toggleDots();
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Hide All Shapes")) {
-                hideAllShapes();
-            }
-            if (ImGui::MenuItem("Show All Shapes")) {
-                showAllShapes();
+            if (ImGui::MenuItem("Sacred Gemotery", "G")) {
+                
             }
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem("About")) {
-                ofLogNotice("ImGui") << "About clicked";
+                
             }
             ImGui::EndMenu();
         }

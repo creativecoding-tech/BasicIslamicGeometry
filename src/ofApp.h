@@ -116,6 +116,11 @@ class ofApp : public ofBaseApp{
 		void decreaseLineWidth();       // Kurangi line width
 		void increaseLineWidth();       // Tambah line width
 
+		// File operations
+		void saveWorkspace();          // Save workspace to file
+		void loadWorkspace();          // Load workspace from file
+		void loadWorkspaceSeq();          // Load workspace seq from file
+
 		// Interactive Line Creation helpers
 		const std::vector<DotInfo>& getAllDots();  // Return cached dots by reference
 		void updateDotsCache();  // Rebuild dots cache saat visibility berubah
