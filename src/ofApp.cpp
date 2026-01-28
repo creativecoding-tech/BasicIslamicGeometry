@@ -1188,6 +1188,14 @@ void ofApp::loadWorkspace() {
 }
 
 void ofApp::loadWorkspaceSeq() {
+    // Clear customLines dan polygons yang sudah ada sebelumnya
+    // HARUS DILAKUKAN SEBELUM loadAllSequential agar buffer diisi dengan benar!
+    customLines.clear();
+    selectedLineIndices.clear();
+    lastSelectedLineIndex = -1;
+    polygonShapes.clear();
+    selectedPolygonIndex = -1;
+
     // Sequential load dengan animasi
     string loadedTemplateName;
     float loadedRadius;
@@ -1198,13 +1206,6 @@ void ofApp::loadWorkspaceSeq() {
     fileManager.loadAllSequential(loadedTemplateName, loadedRadius,
         loadedLineWidth, loadedLabelsVisible, loadedDotsVisible,
         customLines, polygonShapes);
-
-    // Clear customLines dan polygons yang sudah ada sebelumnya
-    customLines.clear();
-    selectedLineIndices.clear();
-    lastSelectedLineIndex = -1;
-    polygonShapes.clear();
-    selectedPolygonIndex = -1;
 
     // Switch ke template yang di-load
     switchTemplate(loadedTemplateName);
