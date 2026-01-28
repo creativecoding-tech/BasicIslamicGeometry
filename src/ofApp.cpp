@@ -1268,6 +1268,10 @@ void ofApp::setupImGui() {
     ImGui_ImplOpenGL3_Init();
     HWND hwnd = ofGetWin32Window();
     ImGui_ImplWin32_Init(hwnd);
+
+    // Initialize GUI Components
+    guiComponents.push_back(std::make_unique<MenuBar>(this));
+    guiComponents.push_back(std::make_unique<LeftPanel>(this));
 }
 
 
@@ -1280,69 +1284,10 @@ void ofApp::drawImGui() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
 
-    // === MAIN MENU BAR ===
-    if (ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("Save Workspace", "CTRL+S")) {
-                saveWorkspace();
-            }
-            if (ImGui::MenuItem("Load Workspace", "CTRL+O")) {
-                loadWorkspace();
-            }
-            if (ImGui::MenuItem("Load Workspace Seq", "CTRL+SHIFT+O")) {
-                loadWorkspaceSeq();
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Exit", "ALT+F4")) {
-                ofExit();
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("View")) {
-            if (ImGui::MenuItem("Sacred Gemotery", "G")) {
-                
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Help")) {
-            if (ImGui::MenuItem("About")) {
-                
-            }
-            ImGui::EndMenu();
-        }
-
-        ImGui::EndMainMenuBar();
+    // Draw semua GUI components
+    for (auto& gui : guiComponents) {
+        gui->draw();
     }
-    // ==========================
-
-    // === SACRED GEOMETRY PANEL (LEFT SIDE) ===
-    ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_FirstUseEver); // Posisi kiri atas (bawah menu bar)
-    ImGui::SetNextWindowSize(ImVec2(250, 400), ImGuiCond_FirstUseEver);
-
-    if (ImGui::Begin("Sacred Geometry", nullptr, ImGuiWindowFlags_None)) {
-        // Contoh content
-        ImGui::Text("Template: %s", currentTemplate ? currentTemplate->getName().c_str() : "None");
-        ImGui::Separator();
-
-        if (ImGui::CollapsingHeader("Settings")) {
-            ImGui::SliderFloat("Radius", &radiusCircle, 100, 500);
-            ImGui::SliderFloat("Line Width", &currentLineWidth, 1, 10);
-        }
-
-        if (ImGui::CollapsingHeader("Display")) {
-            ImGui::Checkbox("Show Labels", &labelsVisible);
-            ImGui::Checkbox("Show Dots", &dotsVisible);
-        }
-
-        if (ImGui::CollapsingHeader("Stats")) {
-            ImGui::Text("Custom Lines: %zu", customLines.size());
-            ImGui::Text("Polygons: %zu", polygonShapes.size());
-        }
-    }
-    ImGui::End();
-    // ===========================================
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
