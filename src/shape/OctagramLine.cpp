@@ -1,10 +1,13 @@
 #include "OctagramLine.h"
 #include "DotInfo.h"
-OctagramLine::OctagramLine(vec2 start, vec2 end, std::optional<vec2> nextPoint, string label) :
+OctagramLine::OctagramLine(vec2 start, vec2 end, std::optional<vec2> nextPoint, string label, float radius) :
 	start(start),
 	end(end),
 	nextPoint(nextPoint),
-	label(label){
+	label(label),
+	radius(radius),
+	originalRadius(radius)  // Simpan original radius
+{
 	loadFonts();  // Load font dari AbstractShape
 	maxProgress = totalSegments;  // Set max progress untuk isComplete()
 }
@@ -23,6 +26,22 @@ void OctagramLine::showLabel() {
 
 void OctagramLine::hideLabel() {
 	labelVisible = false;
+}
+
+void OctagramLine::setRadius(float r) {
+	// Re-calculate secara proporsional
+	float scaleFactor = r / originalRadius;
+	start = start * scaleFactor;
+	end = end * scaleFactor;
+
+	// Jika nextPoint ada, re-calculate juga
+	if (nextPoint.has_value()) {
+		vec2 np = nextPoint.value();
+		nextPoint = np * scaleFactor;
+	}
+
+	radius = r;
+	originalRadius = r;  // Update originalRadius untuk scaling berikutnya
 }
 
 void OctagramLine::update() {
