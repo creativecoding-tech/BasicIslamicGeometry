@@ -6,18 +6,14 @@
 class CircleShape : public AbstractShape
 {
 public:
-	float radius;
 	std::string label = "";
-	float posX = 0;
-	float posY = 0;
-	CircleShape(float r, std::string label,float posX,float posY);
+	CircleShape(float r, std::string label, float angle, float distance);
 
 	// Override pure virtual methods dari AbstractShape
 	void update() override;
 	void draw() override;
-
 	void setLabel(std::string label);
-	void setPosition(float x, float y);
+	void setRadius(float r) override;  // Override setRadius untuk runtime update
 
 	// Label visibility control
 	void showLabel();
@@ -31,6 +27,10 @@ public:
 	void addDotsToCache(std::vector<DotInfo>& dots) override;
 
 private:
+	float radius;         // Radius lingkaran
+	float angle;          // Angle position (0, PI/2, PI, 3*PI/2)
+	float distance;       // Distance dari center (0 untuk Circle A, radius untuk lainnya)
+	float originalRadius; // Simpan radius awal untuk re-calculate distance
 	float totalSegments = 100;  // Circle-specific
 	bool labelVisible = true;   // Flag untuk label visibility
 	bool dotVisible = true;     // Flag untuk dot visibility

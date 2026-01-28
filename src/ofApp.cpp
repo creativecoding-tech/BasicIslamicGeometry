@@ -57,11 +57,8 @@ void ofApp::switchTemplate(const std::string &templateName) {
   templateShapes.clear();
 
   // Setup shapes baru dari template
+  currentTemplate->radius = radiusCircle;
   currentTemplate->setupShapes(templateShapes);
-
-  // Update radius dari template (SAFE: currentTemplate sudah di-check di atas)
-  radiusCircle = currentTemplate->getDefaultRadius();
-
   // Reset dots cache agar di-rebuild
   dotsCacheDirty = true;
 }
@@ -178,6 +175,7 @@ void ofApp::update() {
     // Update normal (bukan staggered load)
     // Update semua template shapes (untuk animasi progress)
     for (auto &shape : templateShapes) {
+      shape->setRadius(radiusCircle);
       shape->update();
     }
 

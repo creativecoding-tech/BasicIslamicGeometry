@@ -33,8 +33,8 @@ public:
 	// Shapes akan disimpan di vector yang di-pass by reference
 	virtual void setupShapes(std::vector<std::unique_ptr<AbstractShape>>& shapes) = 0;
 
-	// Get default radius untuk template ini
-	virtual float getDefaultRadius() = 0;
+	// Public radius - bisa diakses langsung
+	float radius = 240;
 
 	// Optional: Template-specific settings
 	virtual bool hasCustomSettings() { return false; }

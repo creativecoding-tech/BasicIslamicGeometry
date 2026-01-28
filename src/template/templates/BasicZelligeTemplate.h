@@ -25,11 +25,10 @@ public:
 
 	void setupShapes(std::vector<std::unique_ptr<AbstractShape>>& shapes) override;
 
-	float getDefaultRadius() override;
+	// radius diambil dari SacredGeometryTemplate::radius (public)
+	// Tidak perlu radius sendiri lagi
 
 private:
-	float radius = 240;
-
 	void setupCircles(std::vector<std::unique_ptr<AbstractShape>>& shapes);
 	void setupCartesianAxes(std::vector<std::unique_ptr<AbstractShape>>& shapes);
 	void setupCrossLines(std::vector<std::unique_ptr<AbstractShape>>& shapes);

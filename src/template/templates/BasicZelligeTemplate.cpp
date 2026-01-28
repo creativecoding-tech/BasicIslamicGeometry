@@ -19,11 +19,6 @@ std::string BasicZelligeTemplate::getDescription() {
 }
 
 //--------------------------------------------------------------
-float BasicZelligeTemplate::getDefaultRadius() {
-	return radius;
-}
-
-//--------------------------------------------------------------
 void BasicZelligeTemplate::setupShapes(std::vector<std::unique_ptr<AbstractShape>>& shapes) {
 	// Panggil semua setup methods dengan urutan yang BENAR
 	// CartesianAxes DULU sebagai fondasi/sumbu koordinat
@@ -37,11 +32,20 @@ void BasicZelligeTemplate::setupShapes(std::vector<std::unique_ptr<AbstractShape
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupCircles(std::vector<std::unique_ptr<AbstractShape>>& shapes) {
+	// Circle A: Center (0,0) → distance=0
 	shapes.push_back(std::make_unique<CircleShape>(radius, "A", 0, 0));
-	shapes.push_back(std::make_unique<CircleShape>(radius, "B", radius, 0));
-	shapes.push_back(std::make_unique<CircleShape>(radius, "C", -radius, 0));
-	shapes.push_back(std::make_unique<CircleShape>(radius, "D", 0, radius));
-	shapes.push_back(std::make_unique<CircleShape>(radius, "E", 0, -radius));
+
+	// Circle B: Kanan (0°) → distance=radius
+	shapes.push_back(std::make_unique<CircleShape>(radius, "B", 0, radius));
+
+	// Circle C: Kiri (180°) → distance=radius
+	shapes.push_back(std::make_unique<CircleShape>(radius, "C", PI, radius));
+
+	// Circle D: Atas (90°) → distance=radius
+	shapes.push_back(std::make_unique<CircleShape>(radius, "D", PI/2, radius));
+
+	// Circle E: Bawah (270°) → distance=radius
+	shapes.push_back(std::make_unique<CircleShape>(radius, "E", -PI/2, radius));
 }
 
 //--------------------------------------------------------------
@@ -66,25 +70,25 @@ void BasicZelligeTemplate::setupParallelograms(std::vector<std::unique_ptr<Abstr
 	float angleC_E_F = -3 * PI / 4;  // -135 derajat (Northwest)
 	float distC_E_F = radius * sqrt(2) / 2;
 	vec2 intersecC_E_F = vec2(cos(angleC_E_F) * distC_E_F, sin(angleC_E_F) * distC_E_F);
-	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(-radius, 0), vec2(0, -radius), intersecC_E_F, "N"));
+	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(-radius, 0), vec2(0, -radius), intersecC_E_F, "N", radius));
 
 	// E→B memotong G: Northeast (120, -120)
 	float angleE_B_G = -PI / 4;  // -45 derajat (Northeast)
 	float distE_B_G = radius * sqrt(2) / 2;
 	vec2 intersecE_B_G = vec2(cos(angleE_B_G) * distE_B_G, sin(angleE_B_G) * distE_B_G);
-	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(0, -radius), vec2(radius, 0), intersecE_B_G, "O"));
+	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(0, -radius), vec2(radius, 0), intersecE_B_G, "O", radius));
 
 	// B→D memotong I: Southeast (120, 120)
 	float angleB_D_I = PI / 4;  // 45 derajat (Southeast)
 	float distB_D_I = radius * sqrt(2) / 2;
 	vec2 intersecB_D_I = vec2(cos(angleB_D_I) * distB_D_I, sin(angleB_D_I) * distB_D_I);
-	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(radius, 0), vec2(0, radius), intersecB_D_I, "P"));
+	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(radius, 0), vec2(0, radius), intersecB_D_I, "P", radius));
 
 	// D→C memotong H: Southwest (-120, 120)
 	float angleD_C_H = 3 * PI / 4;  // 135 derajat (Southwest)
 	float distD_C_H = radius * sqrt(2) / 2;
 	vec2 intersecD_C_H = vec2(cos(angleD_C_H) * distD_C_H, sin(angleD_C_H) * distD_C_H);
-	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(0, radius), vec2(-radius, 0), intersecD_C_H, "Q"));
+	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(0, radius), vec2(-radius, 0), intersecD_C_H, "Q", radius));
 }
 
 //--------------------------------------------------------------
@@ -102,7 +106,7 @@ void BasicZelligeTemplate::setupRectangleLines(std::vector<std::unique_ptr<Abstr
 	// Hitung intersection F→G ∩ B→E (Dot S)
 	vec2 intersecS = vec2(radius * (1 - sqrt(2) / 2), posF.y);
 
-	shapes.push_back(std::make_unique<RectangleLine>(posF, posG, intersecR, intersecS, "R", "S"));
+	shapes.push_back(std::make_unique<RectangleLine>(posF, posG, intersecR, intersecS, "R", "S", radius));
 
 	// RectangleLine G ke I
 	float angleI = PI / 4; //45°
@@ -114,19 +118,19 @@ void BasicZelligeTemplate::setupRectangleLines(std::vector<std::unique_ptr<Abstr
 	// Hitung intersection G→I ∩ B→D (Dot U)
 	vec2 intersecU = vec2(radius * sqrt(2) / 2, radius * (1 - sqrt(2) / 2));
 
-	shapes.push_back(std::make_unique<RectangleLine>(posG, posI, intersecT, intersecU, "T", "U"));
+	shapes.push_back(std::make_unique<RectangleLine>(posG, posI, intersecT, intersecU, "T", "U", radius));
 
 	// RectangleLine I ke H
 	float angleH = 3 * PI / 4; //135°
 	vec2 posH = vec2(cos(angleH) * radius, sin(angleH) * radius);
 	vec2 intersecV = vec2(radius * (1 - sqrt(2) / 2), posH.y);
 	vec2 intersecW = vec2(-radius * (1 - sqrt(2) / 2), posH.y);
-	shapes.push_back(std::make_unique<RectangleLine>(posI, posH, intersecV, intersecW, "V", "W"));
+	shapes.push_back(std::make_unique<RectangleLine>(posI, posH, intersecV, intersecW, "V", "W", radius));
 
 	// RectangleLine H ke F
 	vec2 intersecX = vec2(-radius * sqrt(2) / 2, radius * (1 - sqrt(2) / 2));
 	vec2 intersecY = vec2(-radius * sqrt(2) / 2, radius * (sqrt(2) / 2 - 1));
-	shapes.push_back(std::make_unique<RectangleLine>(posH, posF, intersecX, intersecY, "X", "Y"));
+	shapes.push_back(std::make_unique<RectangleLine>(posH, posF, intersecX, intersecY, "X", "Y", radius));
 }
 
 //--------------------------------------------------------------

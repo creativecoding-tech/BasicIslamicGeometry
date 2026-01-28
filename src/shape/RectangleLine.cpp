@@ -1,13 +1,16 @@
 #include "RectangleLine.h"
 #include "DotInfo.h"
 
-RectangleLine::RectangleLine(vec2 start, vec2 end, vec2 intersec1, vec2 intersec2, string label1, string label2):
+RectangleLine::RectangleLine(vec2 start, vec2 end, vec2 intersec1, vec2 intersec2, string label1, string label2, float radius):
 start(start),
 end(end),
 intersec1(intersec1),
 intersec2(intersec2),
 label1(label1),
-label2(label2){
+label2(label2),
+radius(radius),
+originalRadius(radius)  // Simpan original radius
+{
 	loadFonts();  // Load font dari AbstractShape
 	maxProgress = totalSegments;  // Set max progress untuk isComplete()
 }
@@ -34,6 +37,17 @@ void RectangleLine::showLabel() {
 
 void RectangleLine::hideLabel() {
 	labelVisible = false;
+}
+
+void RectangleLine::setRadius(float r) {
+	// Re-calculate secara proporsional
+	float scaleFactor = r / originalRadius;
+	start = start * scaleFactor;
+	end = end * scaleFactor;
+	intersec1 = intersec1 * scaleFactor;
+	intersec2 = intersec2 * scaleFactor;
+	radius = r;
+	originalRadius = r;  // Update originalRadius untuk scaling berikutnya
 }
 
 void RectangleLine::update() {

@@ -64,3 +64,6 @@ void CartesianAxes::hideLabel() {
 	labelVisible = false;
 }
 
+void CartesianAxes::setRadius(float r) {
+	radius = r;  // CartesianAxes pakai radius langsung di draw(), jadi cukup assign
+}

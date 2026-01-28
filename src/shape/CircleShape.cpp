@@ -2,22 +2,27 @@
 #include "DotInfo.h"
 #include <ofMain.h>
 
-CircleShape::CircleShape(float r,std::string label,float posX,float posY) {
-	radius = r;
-	this->label = label;
-	loadFonts();  // Load font dari AbstractShape
-	this->posX = posX;
-	this->posY = posY;
-	maxProgress = totalSegments;  // Set max progress untuk isComplete()
+CircleShape::CircleShape(float r, std::string label, float angle, float distance) {
+    this->radius = r;
+    this->originalRadius = r;  // Simpan radius awal untuk proportional recalculation
+    this->label = label;
+    this->angle = angle;
+    this->distance = distance;
+
+    loadFonts();  // Load font dari AbstractShape
+    maxProgress = totalSegments;  // Set max progress untuk isComplete()
 }
 
 void CircleShape::setLabel(std::string label) {
 	this->label = label;
 }
 
-void CircleShape::setPosition(float x, float y) {
-	this->posX = x;
-	this->posY = y;
+void CircleShape::setRadius(float r) {
+	// Re-calculate distance secara proporsional
+	float scaleFactor = r / originalRadius;
+	distance = distance * scaleFactor;
+	radius = r;
+	originalRadius = r;  // Update originalRadius untuk scaling berikutnya
 }
 
 void CircleShape::showLabel() {
@@ -49,7 +54,11 @@ void CircleShape::update() {
 
 void CircleShape::draw() {
 	ofPushMatrix();
-	ofTranslate(posX, posY);
+
+	// Hitung pos dari angle dan distance
+	float x = cos(angle) * distance;
+	float y = sin(angle) * distance;
+	ofTranslate(x, y);
 
 	ofNoFill();
 	ofSetColor(0);
@@ -63,16 +72,16 @@ void CircleShape::draw() {
 	// Gambar arc - dari angle 0 sampai circle progress
 	for (int i = 0; i <= segmentsToDraw; i++) {
 		// Map dari 0-100 ke 0-TWO_PI, tapi tambahkan sedikit buffer
-		float angle = ofMap(i, 0, totalSegments, 0, TWO_PI);
+		float drawAngle = ofMap(i, 0, totalSegments, 0, TWO_PI);
 
 		// Kalau ini adalah segment terakhir dan kita sudah full, pastikan angle = 0 (tutup loop)
 		if (i == totalSegments && progress >= totalSegments) {
-			angle = 0;  // Kembali ke titik awal
+			drawAngle = 0;  // Kembali ke titik awal
 		}
 
-		float x = cos(angle) * radius;
-		float y = sin(angle) * radius;
-		polyline.addVertex(x, y);
+		float px = cos(drawAngle) * radius;
+		float py = sin(drawAngle) * radius;
+		polyline.addVertex(px, py);
 	}
 	polyline.close();
 	polyline.draw();
@@ -93,6 +102,8 @@ void CircleShape::draw() {
 
 //--------------------------------------------------------------
 void CircleShape::addDotsToCache(std::vector<DotInfo>& dots) {
-	// Circle hanya punya satu dot: center point (posX, posY)
-	dots.push_back({glm::vec2(posX, posY), "Circle"});
+	// Hitung pos dari angle dan distance
+	float x = cos(angle) * distance;
+	float y = sin(angle) * distance;
+	dots.push_back({glm::vec2(x, y), "Circle"});
 }

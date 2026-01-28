@@ -24,7 +24,7 @@ class ofApp : public ofBaseApp{
 		// TEMPLATE SYSTEM - Ganti semua individual shape unique_ptrs!
 		SacredGeometryTemplate* currentTemplate = nullptr;  // Template yang sedang aktif
 		std::vector<std::unique_ptr<AbstractShape>> templateShapes;  // Semua shapes dari template
-		float radiusCircle = 240;  // Radius default dari template
+		float radiusCircle = 100;  // Radius default dari template
 
 		bool cursorVisible = false;
 		bool imguiVisible = false;  // ImGui menu visibility

@@ -43,6 +43,9 @@ public:
 	// Common method untuk line width
 	virtual void setLineWidth(float width);
 
+	// Runtime radius update (default: no-op, shapes dengan radius akan override)
+	virtual void setRadius(float r) {}
+
 	// Optional - dapat di-override jika diperlukan
 	virtual void setThin(bool thin) { useThin = thin; }
 
