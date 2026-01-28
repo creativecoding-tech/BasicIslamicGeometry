@@ -120,8 +120,7 @@ class ofApp : public ofBaseApp{
 		void toggleDots();             // Toggle dot visibility
 		void hideAllShapes();           // Hide all shapes
 		void showAllShapes();           // Show all shapes
-		void decreaseLineWidth();       // Kurangi line width
-		void increaseLineWidth();       // Tambah line width
+		void updateLineWidth();
 
 		// File operations
 		void saveWorkspace();          // Save workspace to file

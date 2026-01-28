@@ -12,8 +12,10 @@ void LeftPanel::draw() {
         ImGui::Separator();
 
         if (ImGui::CollapsingHeader("Settings")) {
-            ImGui::SliderFloat("Radius", &app->radiusCircle, 100, 500);
-            ImGui::SliderFloat("Line Width", &app->currentLineWidth, 1, 10);
+            ImGui::SliderFloat("Radius", &app->radiusCircle, 100, 240);
+            if(ImGui::SliderFloat("Line Width", &app->currentLineWidth, 0, 4)){
+                app->updateLineWidth();
+            }
         }
 
         if (ImGui::CollapsingHeader("Display")) {

@@ -446,11 +446,25 @@ void ofApp::keyPressed(int key) {
   }
 
   if (key == '-' || key == '_') {
-    decreaseLineWidth();
+       // Kurangi line width secara bertahap
+      currentLineWidth -= 0.5f;
+
+      // Batasi minimum line width
+      if (currentLineWidth < 0.f) {
+          currentLineWidth = 0.f;
+      }
+    updateLineWidth();
   }
 
   if (key == '+' || key == '=') {
-    increaseLineWidth();
+      // Tambah line width secara bertahap
+      currentLineWidth += 0.5f;
+
+      // Batasi maximum line width
+      if (currentLineWidth > 4.0f) {
+          currentLineWidth = 4.0f;
+      }
+      updateLineWidth();
   }
 
   // Handle CTRL key ditekan
@@ -1103,35 +1117,10 @@ void ofApp::showAllShapes() {
 }
 
 //--------------------------------------------------------------
-void ofApp::decreaseLineWidth() {
-  // Kurangi line width secara bertahap
-  currentLineWidth -= 0.5f;
-
-  // Batasi minimum line width
-  if (currentLineWidth < 0.f) {
-    currentLineWidth = 0.f;
-  }
-
-  // Set line width ke semua shapes
-  for (auto &shape : templateShapes) {
-    shape->setLineWidth(currentLineWidth);
-  }
-}
-
-//--------------------------------------------------------------
-void ofApp::increaseLineWidth() {
-  // Tambah line width secara bertahap
-  currentLineWidth += 0.5f;
-
-  // Batasi maximum line width
-  if (currentLineWidth > 4.0f) {
-    currentLineWidth = 4.0f;
-  }
-
-  // Set line width ke semua shapes
-  for (auto &shape : templateShapes) {
-    shape->setLineWidth(currentLineWidth);
-  }
+void ofApp::updateLineWidth() {
+    for (auto& shape : templateShapes) {
+        shape->setLineWidth(currentLineWidth);
+    }
 }
 
 //--------------------------------------------------------------
