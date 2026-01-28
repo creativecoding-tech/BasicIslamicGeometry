@@ -9,6 +9,7 @@
 #include "operation/gui/AbstractGuiComponent.h"
 #include "operation/gui/MenuBar.h"
 #include "operation/gui/LeftPanel.h"
+#include "operation/gui/SuccessPopup.h"
 #include "template/SacredGeometryTemplate.h"
 #include "template/TemplateRegistry.h"
 #include "imgui/imgui.h"
@@ -97,6 +98,7 @@ class ofApp : public ofBaseApp{
 
 		// GUI Components
 		std::vector<std::unique_ptr<AbstractGuiComponent>> guiComponents;
+		std::unique_ptr<SuccessPopup> successPopup;  // Success popup dialog
 
 		void setup();
 		void setupTemplateSystem();  // Register semua templates ke registry

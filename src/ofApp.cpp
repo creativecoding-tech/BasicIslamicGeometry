@@ -1140,6 +1140,7 @@ void ofApp::saveWorkspace() {
     fileManager.saveAll(currentTemplate->getName(), radiusCircle,
                         customLines, polygonShapes, currentLineWidth,
                         labelsVisible, dotsVisible);
+    successPopup->show();  // Show popup with defaults
   }
 }
 
@@ -1272,6 +1273,9 @@ void ofApp::setupImGui() {
     // Initialize GUI Components
     guiComponents.push_back(std::make_unique<MenuBar>(this));
     guiComponents.push_back(std::make_unique<LeftPanel>(this));
+
+    // Initialize popup (not in guiComponents, drawn separately)
+    successPopup = std::make_unique<SuccessPopup>(this);
 }
 
 
@@ -1288,6 +1292,9 @@ void ofApp::drawImGui() {
     for (auto& gui : guiComponents) {
         gui->draw();
     }
+
+    // Draw popup dialogs
+    successPopup->draw();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
