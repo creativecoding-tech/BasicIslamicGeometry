@@ -23,6 +23,7 @@ class ofApp : public ofBaseApp{
 		float radiusCircle = 240;  // Radius default dari template
 
 		bool cursorVisible = false;
+		bool imguiVisible = false;  // ImGui menu visibility
 
 		ofTrueTypeFont fontNormal;  // Font untuk custom line labels
 

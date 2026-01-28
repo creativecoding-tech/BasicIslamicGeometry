@@ -221,8 +221,10 @@ void ofApp::draw() {
   // Reset transform
   ofPopMatrix();
 
-  //ImGUI
-  drawImGui();
+  //ImGUI (only if visible)
+  if (imguiVisible) {
+    drawImGui();
+  }
 }
 
 //--------------------------------------------------------------
@@ -493,6 +495,11 @@ void ofApp::keyPressed(int key) {
       createInvisiblePolygonFromSelected();
       break;
     }
+  }
+
+  // G/g - Toggle ImGui visibility (HANYA tanpa CTRL)
+  if ((key == 'g' || key == 'G') && !isCtrlPressed) {
+    imguiVisible = !imguiVisible;
   }
 
   // Keys 1-9 - Assign color to selected polygon
@@ -1309,6 +1316,33 @@ void ofApp::drawImGui() {
         ImGui::EndMainMenuBar();
     }
     // ==========================
+
+    // === SACRED GEOMETRY PANEL (LEFT SIDE) ===
+    ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_FirstUseEver); // Posisi kiri atas (bawah menu bar)
+    ImGui::SetNextWindowSize(ImVec2(250, 400), ImGuiCond_FirstUseEver);
+
+    if (ImGui::Begin("Sacred Geometry", nullptr, ImGuiWindowFlags_None)) {
+        // Contoh content
+        ImGui::Text("Template: %s", currentTemplate ? currentTemplate->getName().c_str() : "None");
+        ImGui::Separator();
+
+        if (ImGui::CollapsingHeader("Settings")) {
+            ImGui::SliderFloat("Radius", &radiusCircle, 100, 500);
+            ImGui::SliderFloat("Line Width", &currentLineWidth, 1, 10);
+        }
+
+        if (ImGui::CollapsingHeader("Display")) {
+            ImGui::Checkbox("Show Labels", &labelsVisible);
+            ImGui::Checkbox("Show Dots", &dotsVisible);
+        }
+
+        if (ImGui::CollapsingHeader("Stats")) {
+            ImGui::Text("Custom Lines: %zu", customLines.size());
+            ImGui::Text("Polygons: %zu", polygonShapes.size());
+        }
+    }
+    ImGui::End();
+    // ===========================================
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
