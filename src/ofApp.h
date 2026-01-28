@@ -101,7 +101,6 @@ class ofApp : public ofBaseApp{
 		void drawCustomLinesAndUI();  // Draw custom lines, curve label, preview, dan dot highlights
 
 		void setupImGui();
-		void updateImGui();
 		void drawImGui();
 		void exitImGui();
 

@@ -195,9 +195,6 @@ void ofApp::update() {
       }
     }
   }
-
-  //define ImGUI
-  updateImGui();
 }
 
 //--------------------------------------------------------------
@@ -1221,10 +1218,6 @@ void ofApp::setupImGui() {
     ImGui_ImplWin32_Init(hwnd);
 }
 
-void ofApp::updateImGui() {
-    // Update ImGui input handling dari Win32 backend
-    ImGui_ImplWin32_NewFrame();
-}
 
 //--------------------------------------------------------------
 void ofApp::drawImGui() {
