@@ -91,8 +91,6 @@ class ofApp : public ofBaseApp{
 		// File Manager untuk save/load custom lines
 		FileManager fileManager;
 
-		ImGuiContext* imguiContext = nullptr;
-
 		void setup();
 		void setupTemplateSystem();  // Register semua templates ke registry
 		void switchTemplate(const std::string& templateName);  // Switch ke template tertentu
