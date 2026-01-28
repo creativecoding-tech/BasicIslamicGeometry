@@ -179,6 +179,9 @@ void ofApp::update() {
       shape->update();
     }
 
+    // Rebuild dots cache agar mouse hover/drag bekerja dengan posisi baru
+    dotsCacheDirty = true;
+
     // Update sequential load logic dari FileManager (lines + polygons)
     // TAPI JANGAN panggil kalau sedang staggered load!
     if (!isStaggeredLoad) {
