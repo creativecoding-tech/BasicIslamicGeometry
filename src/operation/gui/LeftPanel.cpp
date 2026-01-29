@@ -8,22 +8,68 @@ void LeftPanel::draw() {
     ImGui::SetNextWindowSize(ImVec2(250, 400), ImGuiCond_FirstUseEver);
 
     if (ImGui::Begin("Sacred Geometry", nullptr, ImGuiWindowFlags_None)) {
-        ImGui::Text("Template: %s", app->currentTemplate ? app->currentTemplate->getName().c_str() : "None");
-        ImGui::Separator();
-
-        if (ImGui::CollapsingHeader("Settings")) {
+        string templateName = app->currentTemplate ? app->currentTemplate->getName() : string("None");
+        if (ImGui::CollapsingHeader(templateName.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Text("Draw Template");
+            // Radio button untuk Parallel/Sequential
+            static int drawMode = -1;  // 0 = Parallel, 1 = Sequential
+            if(ImGui::RadioButton("Parallel", &drawMode, 0)) {
+                if (!app->sequentialMode) {
+                    app->showAllShapes();
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Sequential", &drawMode, 1)) {
+                app->startSequentialDrawing();
+            }
+            ImGui::Separator();
+            ImGui::SetNextItemWidth(150.0f);
             ImGui::SliderFloat("Radius", &app->radiusCircle, 100, 240);
-            if(ImGui::SliderFloat("Line Width", &app->currentLineWidth, 0, 4)){
+            ImGui::SetNextItemWidth(150.0f);
+            if (ImGui::SliderFloat("Line Width", &app->currentLineWidth, 0, 4)) {
                 app->updateLineWidth();
             }
-        }
-
-        if (ImGui::CollapsingHeader("Display")) {
+            ImGui::Separator();
             if (ImGui::Checkbox("Show Labels", &app->labelsVisible)) {
                 app->toggleLabels();
             }
+            ImGui::SameLine();  // Pindah ke sebelah kanan
             if (ImGui::Checkbox("Show Dots", &app->dotsVisible)) {
                 app->toggleDots();
+            }
+            static bool showCartesian = true;
+            if (ImGui::Checkbox("Show Cartesian", &showCartesian)) {
+                if (!app->templateShapes.empty()) {
+                    AbstractShape* cartesianAxes =
+                        app->templateShapes[0].get(); // CartesianAxes selalu index 0
+                    if (showCartesian) {
+                        cartesianAxes->show();
+                    } else {
+                        cartesianAxes->hide();
+                    }
+                }
+            }
+            ImGui::Separator();
+            ImGui::Text("Clear or Hide");
+            if (ImGui::Button("Hide Template")) {
+                if (!app->isStaggeredLoad) app->hideAllShapes();
+            }
+
+            if (ImGui::Button("Clean Canvas")) {
+                if (app->fileManager.isLoadSequentialMode()) {
+                    // Skip kalau sedang load sequential
+                } else {
+                    // Hapus semua polygon, custom lines, dan hide template shapes
+                    if (!app->polygonShapes.empty()) {
+                        app->polygonShapes.clear();
+                        app->selectedPolygonIndex = -1;
+                    }
+                    FileManager::clearCustomLines(app->customLines);
+                    app->selectedLineIndices.clear();
+                    app->lastSelectedLineIndex = -1;
+
+                    app->hideAllShapes();
+                }
             }
         }
     }

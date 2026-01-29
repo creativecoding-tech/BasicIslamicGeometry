@@ -350,7 +350,7 @@ void ofApp::keyPressed(int key) {
       selectedLineIndices.clear();
       lastSelectedLineIndex = -1;
 
-      // Hide semua template shapes (BUKAN clear, supaya CTRL+)/CTRL+! bisa jalan lagi)
+      
       hideAllShapes();
 
       return; // Jangan lanjut ke logic DEL biasa
