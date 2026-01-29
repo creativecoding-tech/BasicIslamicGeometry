@@ -1206,13 +1206,21 @@ void ofApp::saveWorkspaceAs() {
     return;  // User cancel
   }
 
+  // Ambil filepath dari dialog
+  string filepath = saveDialog.getPath();
+
+  // Tambah extension .nay kalau belum ada
+  if (filepath.find(".nay") == string::npos) {
+    filepath += ".nay";
+  }
+
   // Simpan file sementara ke default location
   fileManager.saveAll(currentTemplate->getName(), radiusCircle,
                       customLines, polygonShapes, currentLineWidth,
                       labelsVisible, dotsVisible);
 
   // Copy file ke lokasi yang user pilih
-  ofFile::copyFromTo("workspace.nay", saveDialog.getPath(), true, true);
+  ofFile::copyFromTo("workspace.nay", filepath, true, true);
 
   successPopup->show();
 }
