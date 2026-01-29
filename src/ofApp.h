@@ -25,6 +25,7 @@ class ofApp : public ofBaseApp{
 		SacredGeometryTemplate* currentTemplate = nullptr;  // Template yang sedang aktif
 		std::vector<std::unique_ptr<AbstractShape>> templateShapes;  // Semua shapes dari template
 		float radiusCircle = 240;  // Radius default dari template
+		float previousRadius = 240;  // Untuk tracking perubahan radius (scaling customLines & polygons)
 
 		bool cursorVisible = false;
 		bool imguiVisible = false;  // ImGui menu visibility
@@ -121,6 +122,7 @@ class ofApp : public ofBaseApp{
 		void hideAllShapes();           // Hide all shapes
 		void showAllShapes();           // Show all shapes
 		void updateLineWidth();
+		void scaleCustomLinesAndPolygons(float oldRadius, float newRadius);  // Scale customLines & polygons saat radius berubah
 
 		// File operations
 		void saveWorkspace();          // Save workspace to file

@@ -142,6 +142,11 @@ void PolygonShape::setSelected(bool sel) {
 }
 
 //--------------------------------------------------------------
+void PolygonShape::setVertices(const vector<vec2>& verts) {
+	vertices = verts;
+}
+
+//--------------------------------------------------------------
 ofColor PolygonShape::getColor() const {
 	return fillColor;
 }

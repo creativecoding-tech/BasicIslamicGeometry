@@ -182,6 +182,12 @@ void ofApp::update() {
     // Rebuild dots cache agar mouse hover/drag bekerja dengan posisi baru
     dotsCacheDirty = true;
 
+    // Scale customLines & polygons jika radius berubah (realtime update)
+    if (radiusCircle != previousRadius) {
+      scaleCustomLinesAndPolygons(previousRadius, radiusCircle);
+      previousRadius = radiusCircle;  // Update tracking
+    }
+
     // Update sequential load logic dari FileManager (lines + polygons)
     // TAPI JANGAN panggil kalau sedang staggered load!
     if (!isStaggeredLoad) {
@@ -1125,6 +1131,35 @@ void ofApp::updateLineWidth() {
 }
 
 //--------------------------------------------------------------
+void ofApp::scaleCustomLinesAndPolygons(float oldRadius, float newRadius) {
+	// Hitung rasio scaling
+	float scaleRatio = newRadius / oldRadius;
+
+	// Hindari scaling jika ratio ~1 (untuk performance dan presisi)
+	if (std::abs(scaleRatio - 1.0f) < 0.0001f) {
+		return;
+	}
+
+	// Scale semua customLines
+	for (auto& line : customLines) {
+		vector<vec2> points = line.getPoints();
+		for (auto& point : points) {
+			point = point * scaleRatio;  // Scale setiap titik
+		}
+		line.setPoints(points);
+	}
+
+	// Scale semua polygons
+	for (auto& polygon : polygonShapes) {
+		vector<vec2> vertices = polygon.getVertices();
+		for (auto& vertex : vertices) {
+			vertex = vertex * scaleRatio;  // Scale setiap vertex
+		}
+		polygon.setVertices(vertices);
+	}
+}
+
+//--------------------------------------------------------------
 void ofApp::saveWorkspace() {
   if (currentTemplate) {
     fileManager.saveAll(currentTemplate->getName(), radiusCircle,
@@ -1272,9 +1307,17 @@ void ofApp::setupImGui() {
 
 //--------------------------------------------------------------
 void ofApp::drawImGui() {
+    // Skip ImGui render jika window minimized (DisplaySize = 0,0)
+    int width = ofGetWidth();
+    int height = ofGetHeight();
+
+    if (width <= 0 || height <= 0) {
+        return;  // Skip ImGui render jika window minimized
+    }
+
     // Update display size BEFORE NewFrame! (WAJIB!)
     ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(ofGetWidth(), ofGetHeight());
+    io.DisplaySize = ImVec2(width, height);
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();

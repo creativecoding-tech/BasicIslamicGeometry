@@ -41,6 +41,7 @@ public:
 	// Setters
 	void setColor(ofColor color);
 	void setSelected(bool sel);
+	void setVertices(const vector<vec2>& verts);  // Set vertices (untuk scaling)
 
 	// Getters
 	ofColor getColor() const;
