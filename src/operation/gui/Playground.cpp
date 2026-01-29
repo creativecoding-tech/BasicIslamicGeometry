@@ -26,7 +26,6 @@ void Playground::draw() {
 
         ImGui::Separator();
         ImGui::Text("Mode Draw");
-        static int playMode = -1;
         if (ImGui::RadioButton("Parallel Per Group", &playMode, 0)) {
 
         }
@@ -48,10 +47,12 @@ void Playground::draw() {
                 // Event handler play
                 switch (playMode) {
                 case 0:
-                    app->loadWorkspace();
-                    break;
                 case 1:
-                    app->loadWorkspaceSeq();
+                    // Set flag untuk delay load
+                    app->isWaitingForLoad = true;
+                    app->loadDelayTimer = ofGetElapsedTimef();
+                    app->pendingLoadMode = playMode;
+                    app->imguiVisible = false;  // Hide ImGui
                     break;
                 default:
                     // Belum pilih mode, munculkan error popup

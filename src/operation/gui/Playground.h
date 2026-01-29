@@ -12,4 +12,5 @@ public:
 
 private:
     ofApp* app;
+    int playMode = -1;  // -1 = belum pilih, 0 = Parallel, 1 = Sequential
 };

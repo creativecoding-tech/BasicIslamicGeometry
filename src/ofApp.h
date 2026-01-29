@@ -99,6 +99,11 @@ class ofApp : public ofBaseApp{
 		FileManager fileManager;
 		std::string lastSavedPath;  // Path file terakhir yang di-save/open (untuk Save As dan Load)
 
+		// Play button delay state
+		bool isWaitingForLoad = false;
+		float loadDelayTimer = 0.0f;
+		int pendingLoadMode = -1;  // 0 = Parallel, 1 = Sequential
+
 		// GUI Components
 		std::vector<std::unique_ptr<AbstractGuiComponent>> guiComponents;
 		std::unique_ptr<SuccessPopup> successPopup;  // Success popup dialog

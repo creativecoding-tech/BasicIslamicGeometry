@@ -70,6 +70,23 @@ void ofApp::update() {
     updateSequentialDrawing();
   }
 
+  // Check play button delay timer
+  if (isWaitingForLoad) {
+    float elapsed = ofGetElapsedTimef() - loadDelayTimer;
+    if (elapsed >= 1.5f) {
+      // Timer selesai, panggil load method
+      if (pendingLoadMode == 0) {
+        loadWorkspace();
+      } else if (pendingLoadMode == 1) {
+        loadWorkspaceSeq();
+      }
+
+      // Reset flag
+      isWaitingForLoad = false;
+      pendingLoadMode = -1;
+    }
+  }
+
   // Update staggered parallel load (CTRL+O)
   if (isStaggeredLoad) {
     switch (loadStage) {
@@ -1265,15 +1282,10 @@ void ofApp::openWorkspace() {
 //--------------------------------------------------------------
 void ofApp::loadWorkspace() {
     // VALIDASI: Cek apakah canvas benar-bener kosong
-    if (!isCanvasEmpty()) {
-        return;  // Tidak load jika canvas ada isinya
-    }
+    if (!isCanvasEmpty()) return;
 
     // Cek apakah ada file yang di-open (lastSavedPath)
-    if (lastSavedPath.empty()) {
-        // Tidak ada file yang di-open, gunakan default
-        return;
-    }
+    if (lastSavedPath.empty()) return;
 
     // Load workspace dengan template name, radius, dan ALL settings
     string loadedTemplateName;
@@ -1285,8 +1297,6 @@ void ofApp::loadWorkspace() {
     if (fileManager.loadAll(loadedTemplateName, loadedRadius, customLines,
         polygonShapes, loadedLineWidth,
         loadedLabelsVisible, loadedDotsVisible, lastSavedPath)) {
-
-        imguiVisible = !imguiVisible;
 
         // Update radius dengan loaded radius DULU (sebelum switchTemplate!)
         radiusCircle = loadedRadius;
@@ -1331,9 +1341,10 @@ void ofApp::loadWorkspace() {
 
 void ofApp::loadWorkspaceSeq() {
     // VALIDASI: Cek apakah canvas benar-bener kosong
-    if (!isCanvasEmpty()) {
-        return;  // Tidak load jika canvas ada isinya
-    }
+    if (!isCanvasEmpty()) return;  
+
+    // Cek apakah ada file yang di-open (lastSavedPath)
+    if (lastSavedPath.empty()) return;
 
     // Clear customLines dan polygons yang sudah ada sebelumnya
     // HARUS DILAKUKAN SEBELUM loadAllSequential agar buffer diisi dengan benar!
