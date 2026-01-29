@@ -70,11 +70,6 @@ bool FileManager::loadAll(std::string &outTemplateName, float &outGlobalRadius,
                           std::vector<PolygonShape> &polygons,
                           float &outLineWidth, bool &outLabelsVisible,
                           bool &outDotsVisible) {
-  // Cek apakah ada isinya dulu
-  if (!customLines.empty()) {
-    return false; // Tidak load jika sudah ada isinya
-  }
-
   // Cek apakah file exists
   ofFile file(FILENAME);
   if (!file.exists()) {

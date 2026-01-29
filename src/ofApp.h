@@ -45,7 +45,6 @@ class ofApp : public ofBaseApp{
 		vector<vec2> currentPolylinePoints;  // Capture points saat drag untuk polyline
 		vector<CustomLine> customLines;  // CustomLine dari FileManager
 
-		// Line selection (SATU SYSTEM UNTUK SEMUA!)
 		std::set<int> selectedLineIndices;  // Bisa select 1 atau banyak garis
 		int lastSelectedLineIndex = -1;  // Untuk track line terakhir di-klik
 
@@ -123,6 +122,7 @@ class ofApp : public ofBaseApp{
 		void showAllShapes();           // Show all shapes
 		void updateLineWidth();
 		void scaleCustomLinesAndPolygons(float oldRadius, float newRadius);  // Scale customLines & polygons saat radius berubah
+		bool isCanvasEmpty();  // Cek apakah canvas benar-bener kosong (tidak ada template showing, customLines, atau polygons)
 
 		// File operations
 		void saveWorkspace();          // Save workspace to file

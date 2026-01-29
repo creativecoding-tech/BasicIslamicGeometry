@@ -1160,6 +1160,28 @@ void ofApp::scaleCustomLinesAndPolygons(float oldRadius, float newRadius) {
 }
 
 //--------------------------------------------------------------
+bool ofApp::isCanvasEmpty() {
+	// Cek apakah ada template shapes yang showing
+	for (const auto& shape : templateShapes) {
+		if (shape && shape->showing) {
+			return false;  // Ada template yang showing, canvas tidak kosong
+		}
+	}
+
+	// Cek customLines
+	if (!customLines.empty()) {
+		return false;  // Ada customLines, canvas tidak kosong
+	}
+
+	// Cek polygons
+	if (!polygonShapes.empty()) {
+		return false;  // Ada polygons, canvas tidak kosong
+	}
+
+	return true;  // Canvas benar-bener kosong
+}
+
+//--------------------------------------------------------------
 void ofApp::saveWorkspace() {
   if (currentTemplate) {
     fileManager.saveAll(currentTemplate->getName(), radiusCircle,
@@ -1171,6 +1193,11 @@ void ofApp::saveWorkspace() {
 
 //--------------------------------------------------------------
 void ofApp::loadWorkspace() {
+    // VALIDASI: Cek apakah canvas benar-bener kosong
+    if (!isCanvasEmpty()) {
+        return;  // Tidak load jika canvas ada isinya
+    }
+
     // Load workspace dengan template name, radius, dan ALL settings
     string loadedTemplateName;
     float loadedRadius;
@@ -1182,11 +1209,12 @@ void ofApp::loadWorkspace() {
         polygonShapes, loadedLineWidth,
         loadedLabelsVisible, loadedDotsVisible)) {
 
-        // Switch ke template yang di-load
-        switchTemplate(loadedTemplateName);
-
-        // Update radius dengan loaded radius
+        // Update radius dengan loaded radius DULU (sebelum switchTemplate!)
         radiusCircle = loadedRadius;
+        previousRadius = loadedRadius;  // Reset tracking agar tidak scaling saat load
+
+        // Switch ke template yang di-load (sekarang radiusCircle sudah benar)
+        switchTemplate(loadedTemplateName);
 
         // Update Settings
         currentLineWidth = loadedLineWidth;
@@ -1223,6 +1251,11 @@ void ofApp::loadWorkspace() {
 }
 
 void ofApp::loadWorkspaceSeq() {
+    // VALIDASI: Cek apakah canvas benar-bener kosong
+    if (!isCanvasEmpty()) {
+        return;  // Tidak load jika canvas ada isinya
+    }
+
     // Clear customLines dan polygons yang sudah ada sebelumnya
     // HARUS DILAKUKAN SEBELUM loadAllSequential agar buffer diisi dengan benar!
     customLines.clear();
@@ -1242,9 +1275,12 @@ void ofApp::loadWorkspaceSeq() {
         loadedLineWidth, loadedLabelsVisible, loadedDotsVisible,
         customLines, polygonShapes);
 
-    // Switch ke template yang di-load
-    switchTemplate(loadedTemplateName);
+    // Update radius dengan loaded radius DULU (sebelum switchTemplate!)
     radiusCircle = loadedRadius;
+    previousRadius = loadedRadius;  // Reset tracking agar tidak scaling saat load
+
+    // Switch ke template yang di-load (sekarang radiusCircle sudah benar)
+    switchTemplate(loadedTemplateName);
 
     // Update Settings
     currentLineWidth = loadedLineWidth;
