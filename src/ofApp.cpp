@@ -765,12 +765,17 @@ void ofApp::createInvisiblePolygonFromSelected() {
 //--------------------------------------------------------------
 // Mouse Event Handlers
 void ofApp::mousePressed(int x, int y, int button) {
+  // Forward ke ImGui DULU (sebelum logic lain!)
+  ImGuiIO& io = ImGui::GetIO();
+  io.AddMouseButtonEvent(button, true);
+
+  // Cek apakah ImGui mau capture mouse (termasuk drag window)
+  if (io.WantCaptureMouse) {
+    return; // ImGui handle, jangan process di OF
+  }
+
   // Logic lama: Cursor toggle dengan right click (button 2)
   if (button == 2) {
-    // Forward ke ImGui
-    ImGuiIO& io = ImGui::GetIO();
-    io.AddMouseButtonEvent(button, true);
-
     cursorVisible = !cursorVisible;
     if (cursorVisible)
       ofShowCursor();
@@ -781,15 +786,6 @@ void ofApp::mousePressed(int x, int y, int button) {
 
   // CTRL+Click untuk multi-select
   if (button == 0 && isCtrlPressed) {
-    // Forward ke ImGui dulu
-    ImGuiIO& io = ImGui::GetIO();
-    io.AddMouseButtonEvent(button, true);
-
-    // Cek apakah ImGui mau capture mouse
-    if (io.WantCaptureMouse) {
-      return; // ImGui handle, jangan process di OF
-    }
-
     vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
     int clickedLineIndex = getLineIndexAtPosition(adjustedMousePos);
 
@@ -807,15 +803,6 @@ void ofApp::mousePressed(int x, int y, int button) {
 
   // Logic untuk interactive line creation & line selection
   if (button == 0) {
-    // Forward ke ImGui dulu (BIAR DROPDOWN MENU BISA DI-KLIK!)
-    ImGuiIO& io = ImGui::GetIO();
-    io.AddMouseButtonEvent(button, true);
-
-    // Cek apakah ImGui mau capture mouse
-    if (io.WantCaptureMouse) {
-      return; // ImGui handle, jangan process di OF
-    }
-
     // Adjust mouse position untuk center translation
     vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
     vector<DotInfo> dots = getAllDots();
@@ -871,6 +858,15 @@ void ofApp::mousePressed(int x, int y, int button) {
 }
 
 void ofApp::mouseDragged(int x, int y, int button) {
+  // Forward ke ImGui DULU (untuk drag window)
+  ImGuiIO& io = ImGui::GetIO();
+  io.AddMousePosEvent(x, y);
+
+  // Cek apakah ImGui mau capture mouse
+  if (io.WantCaptureMouse) {
+    return; // ImGui handle, jangan process di OF
+  }
+
   if (drawState == DRAGGING) {
     // Adjust mouse position untuk center translation
     vec2 currentPos = vec2(x - ofGetWidth() / 2, y - ofGetHeight() / 2);

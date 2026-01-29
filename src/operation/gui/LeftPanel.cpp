@@ -4,7 +4,6 @@
 LeftPanel::LeftPanel(ofApp* app) : app(app) {}
 
 void LeftPanel::draw() {
-    ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(250, 400), ImGuiCond_FirstUseEver);
 
     if (ImGui::Begin("Sacred Geometry", nullptr, ImGuiWindowFlags_None)) {
