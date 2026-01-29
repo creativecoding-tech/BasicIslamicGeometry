@@ -9,6 +9,10 @@ void MenuBar::draw() {
             if (ImGui::MenuItem("Save Workspace", "CTRL+S")) {
                 app->saveWorkspace();
             }
+            if (ImGui::MenuItem("Save As...", "CTRL+SHIFT+S")) {
+                app->saveWorkspaceAs();
+            }
+            ImGui::Separator();
             if (ImGui::MenuItem("Load Workspace", "CTRL+O")) {
                 app->loadWorkspace();
             }

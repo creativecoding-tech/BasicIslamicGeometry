@@ -126,6 +126,7 @@ class ofApp : public ofBaseApp{
 
 		// File operations
 		void saveWorkspace();          // Save workspace to file
+		void saveWorkspaceAs();        // Save workspace to custom location
 		void loadWorkspace();          // Load workspace from file
 		void loadWorkspaceSeq();          // Load workspace seq from file
 

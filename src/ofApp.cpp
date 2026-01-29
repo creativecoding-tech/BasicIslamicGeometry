@@ -500,7 +500,12 @@ void ofApp::keyPressed(int key) {
     case 's':
     case 'S':
     case 19: // CTRL+S (ASCII 19)
-      saveWorkspace();
+      // Cek apakah SHIFT juga ditekan
+      if (ofGetKeyPressed(OF_KEY_SHIFT)) {
+          saveWorkspaceAs();
+      } else {
+          saveWorkspace();
+      }
       break;
 
     case 'o':
@@ -1185,6 +1190,31 @@ void ofApp::saveWorkspace() {
                         labelsVisible, dotsVisible);
     successPopup->show();  // Show popup with defaults
   }
+}
+
+//--------------------------------------------------------------
+void ofApp::saveWorkspaceAs() {
+  if (!currentTemplate) {
+    return;  // Tidak ada template aktif
+  }
+
+  // Buka save dialog untuk pilih lokasi dan nama file
+  ofFileDialogResult saveDialog = ofSystemSaveDialog("workspace.nay", "Save Workspace As");
+
+  // Cek apakah user memilih file (tidak cancel)
+  if (saveDialog.getPath().empty()) {
+    return;  // User cancel
+  }
+
+  // Simpan file sementara ke default location
+  fileManager.saveAll(currentTemplate->getName(), radiusCircle,
+                      customLines, polygonShapes, currentLineWidth,
+                      labelsVisible, dotsVisible);
+
+  // Copy file ke lokasi yang user pilih
+  ofFile::copyFromTo("workspace.nay", saveDialog.getPath(), true, true);
+
+  successPopup->show();
 }
 
 //--------------------------------------------------------------
