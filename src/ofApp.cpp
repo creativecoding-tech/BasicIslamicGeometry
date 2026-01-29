@@ -1263,8 +1263,19 @@ void ofApp::openWorkspace() {
     return;
   }
 
-  // TODO: Lanjut load file .nay yang valid
-  // Untuk sekarang cuma validasi format dulu
+  // Copy file .nay ke default location
+  ofFile::copyFromTo(filepath, "bin/data/workspace_main.nay", true, true);
+
+  // Extract nama file dari full path (hanya filename dengan extension)
+  size_t lastSlash = filepath.find_last_of("\\/");
+  if (lastSlash != string::npos) {
+    lastOpenedFileName = filepath.substr(lastSlash + 1);
+  } else {
+    lastOpenedFileName = filepath;  // Kalau tidak ada slash, pakai full path
+  }
+
+  // TODO: Lanjut load file yang sudah di-copy
+  // Untuk sekarang cuma copy dan display nama file
 }
 
 //--------------------------------------------------------------
