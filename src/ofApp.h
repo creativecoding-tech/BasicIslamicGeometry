@@ -11,6 +11,7 @@
 #include "operation/gui/SacredGeometry.h"
 #include "operation/gui/Playground.h"
 #include "operation/gui/SuccessPopup.h"
+#include "operation/gui/ErrorPopup.h"
 #include "template/SacredGeometryTemplate.h"
 #include "template/TemplateRegistry.h"
 #include "imgui/imgui.h"
@@ -101,6 +102,7 @@ class ofApp : public ofBaseApp{
 		// GUI Components
 		std::vector<std::unique_ptr<AbstractGuiComponent>> guiComponents;
 		std::unique_ptr<SuccessPopup> successPopup;  // Success popup dialog
+		std::unique_ptr<ErrorPopup> errorPopup;  // Error popup dialog
 
 		void setup();
 		void setupTemplateSystem();  // Register semua templates ke registry

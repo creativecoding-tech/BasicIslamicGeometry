@@ -1389,6 +1389,7 @@ void ofApp::setupImGui() {
 
     // Initialize popup (not in guiComponents, drawn separately)
     successPopup = std::make_unique<SuccessPopup>(this);
+    errorPopup = std::make_unique<ErrorPopup>(this);
 }
 
 
@@ -1416,6 +1417,7 @@ void ofApp::drawImGui() {
 
     // Draw popup dialogs
     successPopup->draw();
+    errorPopup->draw();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
