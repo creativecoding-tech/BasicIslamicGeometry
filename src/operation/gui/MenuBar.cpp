@@ -6,6 +6,10 @@ MenuBar::MenuBar(ofApp* app) : app(app) {}
 void MenuBar::draw() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Open")) {
+                // Event handler nanti
+            }
+            ImGui::Separator();
             if (ImGui::MenuItem("Save Workspace", "CTRL+S")) {
                 app->saveWorkspace();
             }

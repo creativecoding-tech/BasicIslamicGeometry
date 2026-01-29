@@ -32,15 +32,15 @@ void SacredGeometry::draw() {
                 app->updateLineWidth();
             }
             ImGui::Separator();
-            if (ImGui::Checkbox("Show Labels", &app->labelsVisible)) {
+            if (ImGui::Checkbox("Labels", &app->labelsVisible)) {
                 app->toggleLabels();
             }
             ImGui::SameLine();  // Pindah ke sebelah kanan
-            if (ImGui::Checkbox("Show Dots", &app->dotsVisible)) {
+            if (ImGui::Checkbox("Dots", &app->dotsVisible)) {
                 app->toggleDots();
             }
             static bool showCartesian = true;
-            if (ImGui::Checkbox("Show Cartesian", &showCartesian)) {
+            if (ImGui::Checkbox("Cartesian", &showCartesian)) {
                 if (!app->templateShapes.empty()) {
                     AbstractShape* cartesianAxes =
                         app->templateShapes[0].get(); // CartesianAxes selalu index 0
