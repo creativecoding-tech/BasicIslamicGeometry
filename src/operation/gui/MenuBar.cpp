@@ -6,7 +6,7 @@ MenuBar::MenuBar(ofApp* app) : app(app) {}
 void MenuBar::draw() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("Open")) {
+            if (ImGui::MenuItem("Open","CTRL+O ")) {
                 app->openWorkspace();
             }
             ImGui::Separator();
@@ -15,13 +15,6 @@ void MenuBar::draw() {
             }
             if (ImGui::MenuItem("Save As...", "CTRL+SHIFT+S")) {
                 app->saveWorkspaceAs();
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Load Workspace", "CTRL+O")) {
-                app->loadWorkspace();
-            }
-            if (ImGui::MenuItem("Load Workspace Seq", "CTRL+SHIFT+O")) {
-                app->loadWorkspaceSeq();
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Exit", "ALT+F4")) {

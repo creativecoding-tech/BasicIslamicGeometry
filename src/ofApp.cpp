@@ -511,12 +511,7 @@ void ofApp::keyPressed(int key) {
     case 'o':
     case 'O':
     case 15: // CTRL+O (ASCII 15)
-      // Cek apakah SHIFT juga ditekan
-      if (ofGetKeyPressed(OF_KEY_SHIFT)) {
-          loadWorkspaceSeq();
-      } else {
-          loadWorkspace();
-      }
+        openWorkspace();
       break;
 
     case 'g':
