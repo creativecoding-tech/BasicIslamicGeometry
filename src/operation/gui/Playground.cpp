@@ -20,6 +20,7 @@ void Playground::draw() {
         }
 
         ImGui::Separator();
+        ImGui::Text("Mode Draw");
         static int playMode = -1;
         if (ImGui::RadioButton("Parallel Per Group", &playMode, 0)) {
 
@@ -42,10 +43,18 @@ void Playground::draw() {
                 // Event handler play
                 switch (playMode) {
                 case 0:
+                    app->imguiVisible = !app->imguiVisible;
                     app->loadWorkspace();
-                        break;
+                    break;
                 case 1:
+                    app->imguiVisible = !app->imguiVisible;
                     app->loadWorkspaceSeq();
+                    break;
+                default:
+                    // Belum pilih mode, munculkan error popup
+                    app->errorPopup->show("No Mode Selected",
+                                         "Please select a Draw Mode first!",
+                                         "OK");
                     break;
                 }
             }
