@@ -48,11 +48,9 @@ void Playground::draw() {
                 // Event handler play
                 switch (playMode) {
                 case 0:
-                    //app->imguiVisible = !app->imguiVisible;
                     app->loadWorkspace();
                     break;
                 case 1:
-                    //app->imguiVisible = !app->imguiVisible;
                     app->loadWorkspaceSeq();
                     break;
                 default:

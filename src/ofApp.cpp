@@ -1286,6 +1286,8 @@ void ofApp::loadWorkspace() {
         polygonShapes, loadedLineWidth,
         loadedLabelsVisible, loadedDotsVisible, lastSavedPath)) {
 
+        imguiVisible = !imguiVisible;
+
         // Update radius dengan loaded radius DULU (sebelum switchTemplate!)
         radiusCircle = loadedRadius;
         previousRadius = loadedRadius;  // Reset tracking agar tidak scaling saat load
