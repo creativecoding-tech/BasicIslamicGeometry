@@ -1274,8 +1274,8 @@ void ofApp::openWorkspace() {
     lastOpenedFileName = filepath;  // Kalau tidak ada slash, pakai full path
   }
 
-  // TODO: Lanjut load file yang sudah di-copy
-  // Untuk sekarang cuma copy dan display nama file
+  // Set lastSavedPath ke filepath yang di-open (supaya CTRL+S save ke file yang sama)
+  lastSavedPath = filepath;
 }
 
 //--------------------------------------------------------------

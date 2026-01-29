@@ -20,10 +20,35 @@ void Playground::draw() {
         }
 
         ImGui::Separator();
+        static int playMode = -1;
+        if (ImGui::RadioButton("Parallel Per Group", &playMode, 0)) {
+
+        }
+
+        if (ImGui::RadioButton("Sequential Per Group", &playMode, 1)) {
+
+        }
+        ImGui::Separator();
 
         // Play arrow button
         if (ImGui::ArrowButton("Play", ImGuiDir_Left)) {
-            // Event handler nanti
+            // Cek apakah sudah ada file yang di-open
+            if (app->lastOpenedFileName.empty()) {
+                // Belum ada file, munculkan error popup
+                app->errorPopup->show("No File Selected",
+                                     "Please open a .nay file first before clicking Play!",
+                                     "OK");
+            } else {
+                // Event handler play
+                switch (playMode) {
+                case 0:
+                    app->loadWorkspace();
+                        break;
+                case 1:
+                    app->loadWorkspaceSeq();
+                    break;
+                }
+            }
         }
         ImGui::SameLine();
         ImGui::Text("Play");
