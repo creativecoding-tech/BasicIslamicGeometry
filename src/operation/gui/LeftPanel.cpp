@@ -9,7 +9,7 @@ void LeftPanel::draw() {
     if (ImGui::Begin("Sacred Geometry", nullptr, ImGuiWindowFlags_None)) {
         string templateName = app->currentTemplate ? app->currentTemplate->getName() : string("None");
         if (ImGui::CollapsingHeader(templateName.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Text("Draw Template");
+            ImGui::Text("Show/Hide Template");
             // Radio button untuk Parallel/Sequential
             static int drawMode = -1;  // 0 = Parallel, 1 = Sequential
             if(ImGui::RadioButton("Parallel", &drawMode, 0)) {
@@ -20,6 +20,9 @@ void LeftPanel::draw() {
             ImGui::SameLine();
             if (ImGui::RadioButton("Sequential", &drawMode, 1)) {
                 app->startSequentialDrawing();
+            }
+            if (ImGui::RadioButton("Hide", &drawMode, 2)) {
+                if (!app->isStaggeredLoad) app->hideAllShapes();
             }
             ImGui::Separator();
             ImGui::SetNextItemWidth(150.0f);
@@ -49,11 +52,6 @@ void LeftPanel::draw() {
                 }
             }
             ImGui::Separator();
-            ImGui::Text("Clear or Hide");
-            if (ImGui::Button("Hide Template")) {
-                if (!app->isStaggeredLoad) app->hideAllShapes();
-            }
-
             if (ImGui::Button("Clean Canvas")) {
                 if (app->fileManager.isLoadSequentialMode()) {
                     // Skip kalau sedang load sequential
