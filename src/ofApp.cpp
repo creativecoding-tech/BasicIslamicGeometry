@@ -1242,6 +1242,32 @@ void ofApp::saveWorkspaceAs() {
 }
 
 //--------------------------------------------------------------
+void ofApp::openWorkspace() {
+  // Buka open file dialog
+  ofFileDialogResult openDialog = ofSystemLoadDialog("Open Workspace", false);
+
+  // Cek apakah user memilih file (tidak cancel)
+  if (openDialog.getPath().empty()) {
+    return;  // User cancel
+  }
+
+  // Ambil filepath dari dialog
+  string filepath = openDialog.getPath();
+
+  // Cek apakah file extension .nay
+  if (filepath.find(".nay") == string::npos) {
+    // File bukan format .nay, tampilkan error popup
+    errorPopup->show("Invalid File Format",
+                     "Please select a .nay file format!",
+                     "OK");
+    return;
+  }
+
+  // TODO: Lanjut load file .nay yang valid
+  // Untuk sekarang cuma validasi format dulu
+}
+
+//--------------------------------------------------------------
 void ofApp::loadWorkspace() {
     // VALIDASI: Cek apakah canvas benar-bener kosong
     if (!isCanvasEmpty()) {

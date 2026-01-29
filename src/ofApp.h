@@ -131,6 +131,7 @@ class ofApp : public ofBaseApp{
 		// File operations
 		void saveWorkspace();          // Save workspace to file
 		void saveWorkspaceAs();        // Save workspace to custom location
+		void openWorkspace();          // Open file dialog dengan validasi .nay
 		void loadWorkspace();          // Load workspace from file
 		void loadWorkspaceSeq();          // Load workspace seq from file
 

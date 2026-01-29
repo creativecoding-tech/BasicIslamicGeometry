@@ -7,7 +7,7 @@ void MenuBar::draw() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Open")) {
-                // Event handler nanti
+                app->openWorkspace();
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Save Workspace", "CTRL+S")) {
