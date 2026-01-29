@@ -1,9 +1,9 @@
-#include "LeftPanel.h"
+#include "SacredGeometry.h"
 #include "../../ofApp.h"
 
-LeftPanel::LeftPanel(ofApp* app) : app(app) {}
+SacredGeometry::SacredGeometry(ofApp* app) : app(app) {}
 
-void LeftPanel::draw() {
+void SacredGeometry::draw() {
     ImGui::SetNextWindowSize(ImVec2(250, 400), ImGuiCond_FirstUseEver);
 
     if (ImGui::Begin("Sacred Geometry", nullptr, ImGuiWindowFlags_None)) {

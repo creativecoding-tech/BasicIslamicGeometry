@@ -235,7 +235,7 @@
     <ClCompile Include="src\shape\PolygonShape.cpp" />
     <ClCompile Include="src\operation\FileManager.cpp" />
     <ClCompile Include="src\operation\gui\MenuBar.cpp" />
-    <ClCompile Include="src\operation\gui\LeftPanel.cpp" />
+    <ClCompile Include="src\operation\gui\SacredGeometry.cpp" />
     <ClCompile Include="src\operation\gui\SuccessPopup.cpp" />
     <ClCompile Include="src\template\TemplateRegistry.cpp" />
     <ClCompile Include="src\template\templates\BasicZelligeTemplate.cpp" />
@@ -263,7 +263,7 @@
     <ClInclude Include="src\operation\FileManager.h" />
     <ClInclude Include="src\operation\gui\AbstractGuiComponent.h" />
     <ClInclude Include="src\operation\gui\MenuBar.h" />
-    <ClInclude Include="src\operation\gui\LeftPanel.h" />
+    <ClInclude Include="src\operation\gui\SacredGeometry.h" />
     <ClInclude Include="src\operation\gui\SuccessPopup.h" />
     <ClInclude Include="src\template\SacredGeometryTemplate.h" />
     <ClInclude Include="src\template\TemplateRegistry.h" />

@@ -1384,7 +1384,7 @@ void ofApp::setupImGui() {
 
     // Initialize GUI Components
     guiComponents.push_back(std::make_unique<MenuBar>(this));
-    guiComponents.push_back(std::make_unique<LeftPanel>(this));
+    guiComponents.push_back(std::make_unique<SacredGeometry>(this));
 
     // Initialize popup (not in guiComponents, drawn separately)
     successPopup = std::make_unique<SuccessPopup>(this);

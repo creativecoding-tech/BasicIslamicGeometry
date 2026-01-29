@@ -5,9 +5,9 @@
 // Forward declaration
 class ofApp;
 
-class LeftPanel : public AbstractGuiComponent {
+class SacredGeometry : public AbstractGuiComponent {
 public:
-    LeftPanel(ofApp* app);
+    SacredGeometry(ofApp* app);
     void draw() override;
 
 private:

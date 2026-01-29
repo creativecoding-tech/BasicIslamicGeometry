@@ -8,7 +8,7 @@
 #include "operation/FileManager.h"
 #include "operation/gui/AbstractGuiComponent.h"
 #include "operation/gui/MenuBar.h"
-#include "operation/gui/LeftPanel.h"
+#include "operation/gui/SacredGeometry.h"
 #include "operation/gui/SuccessPopup.h"
 #include "template/SacredGeometryTemplate.h"
 #include "template/TemplateRegistry.h"
