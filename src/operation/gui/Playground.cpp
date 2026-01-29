@@ -34,7 +34,7 @@ void Playground::draw() {
             // Radio button changed
         }
         ImGui::Separator();
-        if (ImGui::Checkbox("Auto Clean Canvs", &autoCleanCanvas)) {
+        if (ImGui::Checkbox("Auto Clean Canvas", &autoCleanCanvas)) {
             // Checkbox changed
         }
 
