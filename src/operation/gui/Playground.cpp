@@ -27,13 +27,16 @@ void Playground::draw() {
         ImGui::Separator();
         ImGui::Text("Mode Draw");
         if (ImGui::RadioButton("Parallel Per Group", &playMode, 0)) {
-
+            // Radio button changed
         }
-
+        ImGui::SameLine();
         if (ImGui::RadioButton("Sequential Per Group", &playMode, 1)) {
-
+            // Radio button changed
         }
         ImGui::Separator();
+        if (ImGui::Checkbox("Auto Clean Canvs", &autoCleanCanvas)) {
+            // Checkbox changed
+        }
 
         // Play arrow button
         if (ImGui::ArrowButton("Play", ImGuiDir_Left)) {
@@ -43,8 +46,11 @@ void Playground::draw() {
                 app->errorPopup->show("No File Selected",
                                      "Please open a .nay file first before clicking Play!",
                                      "OK");
-            } else {
-                // Event handler play
+            } else if (app->isCanvasEmpty() || autoCleanCanvas) {
+                // Clean canvas dulu kalau autoCleanCanvas aktif
+                if (autoCleanCanvas && !app->isCanvasEmpty())  app->cleanCanvas();
+
+                // Canvas kosong, boleh load
                 switch (playMode) {
                 case 0:
                 case 1:
@@ -52,6 +58,7 @@ void Playground::draw() {
                     app->isWaitingForLoad = true;
                     app->loadDelayTimer = ofGetElapsedTimef();
                     app->pendingLoadMode = playMode;
+
                     app->imguiVisible = false;  // Hide ImGui
                     break;
                 default:
@@ -61,6 +68,11 @@ void Playground::draw() {
                                          "OK");
                     break;
                 }
+            } else {
+                // Canvas tidak kosong, munculkan error popup
+                app->errorPopup->show("Canvas Not Empty",
+                                     "Please clean canvas first or check auto clean canvas before loading!",
+                                     "OK");
             }
         }
         ImGui::SameLine();

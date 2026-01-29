@@ -353,23 +353,8 @@ void ofApp::keyPressed(int key) {
     bool isShiftPressed = ofGetKeyPressed(OF_KEY_SHIFT);
 
     if (isCtrlPressed && isShiftPressed) {
-      // Jangan hapus jika sedang sequential load
-      if (fileManager.isLoadSequentialMode()) {
-        return; // Aborted, sedang loading
-      }
-
-      // CTRL+SHIFT+DEL: Hapus semua polygon, custom lines, dan hide template shapes
-      if (!polygonShapes.empty()) {
-        polygonShapes.clear();
-        selectedPolygonIndex = -1;
-      }
-      FileManager::clearCustomLines(customLines);
-      selectedLineIndices.clear();
-      lastSelectedLineIndex = -1;
-
-      
-      hideAllShapes();
-
+      // CTRL+SHIFT+DEL: Clean canvas (hapus semua polygon, custom lines, dan hide template shapes)
+      cleanCanvas();
       return; // Jangan lanjut ke logic DEL biasa
     } else if (isCtrlPressed) {
       // Jangan hapus jika sedang sequential load
@@ -1141,6 +1126,28 @@ void ofApp::updateLineWidth() {
     for (auto& shape : templateShapes) {
         shape->setLineWidth(currentLineWidth);
     }
+}
+
+//--------------------------------------------------------------
+void ofApp::cleanCanvas() {
+    // Skip kalau sedang load sequential
+    if (fileManager.isLoadSequentialMode()) {
+        return;
+    }
+
+    // Hapus semua polygons
+    if (!polygonShapes.empty()) {
+        polygonShapes.clear();
+        selectedPolygonIndex = -1;
+    }
+
+    // Hapus semua custom lines
+    FileManager::clearCustomLines(customLines);
+    selectedLineIndices.clear();
+    lastSelectedLineIndex = -1;
+
+    // Hide semua template shapes
+    hideAllShapes();
 }
 
 //--------------------------------------------------------------

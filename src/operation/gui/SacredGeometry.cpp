@@ -53,20 +53,7 @@ void SacredGeometry::draw() {
             }
             ImGui::Separator();
             if (ImGui::Button("Clean Canvas")) {
-                if (app->fileManager.isLoadSequentialMode()) {
-                    // Skip kalau sedang load sequential
-                } else {
-                    // Hapus semua polygon, custom lines, dan hide template shapes
-                    if (!app->polygonShapes.empty()) {
-                        app->polygonShapes.clear();
-                        app->selectedPolygonIndex = -1;
-                    }
-                    FileManager::clearCustomLines(app->customLines);
-                    app->selectedLineIndices.clear();
-                    app->lastSelectedLineIndex = -1;
-
-                    app->hideAllShapes();
-                }
+                app->cleanCanvas();
             }
         }
     }
