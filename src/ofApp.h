@@ -95,6 +95,7 @@ class ofApp : public ofBaseApp{
 
 		// File Manager untuk save/load custom lines
 		FileManager fileManager;
+		std::string lastSavedPath;  // Path file terakhir yang di-save (untuk Save As)
 
 		// GUI Components
 		std::vector<std::unique_ptr<AbstractGuiComponent>> guiComponents;

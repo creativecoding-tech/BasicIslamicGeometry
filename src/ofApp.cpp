@@ -1184,12 +1184,25 @@ bool ofApp::isCanvasEmpty() {
 
 //--------------------------------------------------------------
 void ofApp::saveWorkspace() {
-  if (currentTemplate) {
-    fileManager.saveAll(currentTemplate->getName(), radiusCircle,
-                        customLines, polygonShapes, currentLineWidth,
-                        labelsVisible, dotsVisible);
-    successPopup->show();  // Show popup with defaults
+  if (!currentTemplate) {
+    return;
   }
+
+  // Kalau belum pernah Save As, langsung buka dialog (Save As)
+  if (lastSavedPath.empty()) {
+    saveWorkspaceAs();
+    return;
+  }
+
+  // Sudah ada Save As sebelumnya, save langsung ke file tersebut
+  // Simpan ke default location dulu
+  fileManager.saveAll(currentTemplate->getName(), radiusCircle,
+                      customLines, polygonShapes, currentLineWidth,
+                      labelsVisible, dotsVisible);
+  // Copy ke lastSavedPath
+  ofFile::copyFromTo("workspace.nay", lastSavedPath, true, true);
+
+  successPopup->show();
 }
 
 //--------------------------------------------------------------
@@ -1221,6 +1234,9 @@ void ofApp::saveWorkspaceAs() {
 
   // Copy file ke lokasi yang user pilih
   ofFile::copyFromTo("workspace.nay", filepath, true, true);
+
+  // Simpan path ini sebagai lastSavedPath (CTRL+S selanjutnya akan kesini)
+  lastSavedPath = filepath;
 
   successPopup->show();
 }
