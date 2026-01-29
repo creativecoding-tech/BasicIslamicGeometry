@@ -9,10 +9,8 @@ void Playground::draw() {
     ImGui::SetNextWindowSize(ImVec2(250, 400), ImGuiCond_FirstUseEver);
 
     if (ImGui::Begin("Playground", nullptr, ImGuiWindowFlags_None)) {
-        // Content playground di sini
-        ImGui::Text("Playground Panel");
+        ImGui::Text("");
         ImGui::Separator();
-        ImGui::Text("This is a playground window");
 
     }
     ImGui::End();
