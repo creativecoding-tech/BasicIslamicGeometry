@@ -12,9 +12,14 @@ void Playground::draw() {
         ImGui::Text("Opened File:");
         ImGui::Separator();
 
-        // Tampilkan nama file yang terakhir dibuka
-        if (!app->lastOpenedFileName.empty()) {
-            ImGui::Text("%s", app->lastOpenedFileName.c_str());
+        // Tampilkan nama file yang terakhir dibuka (extract dari lastSavedPath)
+        if (!app->lastSavedPath.empty()) {
+            // Extract filename dari full path
+            size_t lastSlash = app->lastSavedPath.find_last_of("/\\");
+            std::string filename = (lastSlash != std::string::npos)
+                ? app->lastSavedPath.substr(lastSlash + 1)
+                : app->lastSavedPath;
+            ImGui::Text("%s", filename.c_str());
         } else {
             ImGui::TextDisabled("(No file opened)");
         }
@@ -34,7 +39,7 @@ void Playground::draw() {
         // Play arrow button
         if (ImGui::ArrowButton("Play", ImGuiDir_Left)) {
             // Cek apakah sudah ada file yang di-open
-            if (app->lastOpenedFileName.empty()) {
+            if (app->lastSavedPath.empty()) {
                 // Belum ada file, munculkan error popup
                 app->errorPopup->show("No File Selected",
                                      "Please open a .nay file first before clicking Play!",
@@ -43,11 +48,11 @@ void Playground::draw() {
                 // Event handler play
                 switch (playMode) {
                 case 0:
-                    app->imguiVisible = !app->imguiVisible;
+                    //app->imguiVisible = !app->imguiVisible;
                     app->loadWorkspace();
                     break;
                 case 1:
-                    app->imguiVisible = !app->imguiVisible;
+                    //app->imguiVisible = !app->imguiVisible;
                     app->loadWorkspaceSeq();
                     break;
                 default:

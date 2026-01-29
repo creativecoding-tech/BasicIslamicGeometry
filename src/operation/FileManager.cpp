@@ -69,15 +69,16 @@ bool FileManager::loadAll(std::string &outTemplateName, float &outGlobalRadius,
                           std::vector<CustomLine> &customLines,
                           std::vector<PolygonShape> &polygons,
                           float &outLineWidth, bool &outLabelsVisible,
-                          bool &outDotsVisible) {
-  // Cek apakah file exists
-  ofFile file(FILENAME);
+                          bool &outDotsVisible,
+                          const std::string &filepath) {
+  // Baca dari filepath yang diberikan (wajib di-parameter)
+  ofFile file(filepath);
   if (!file.exists()) {
     return false;
   }
 
   // Read file ke buffer
-  ofBuffer buffer = ofBufferFromFile(FILENAME);
+  ofBuffer buffer = ofBufferFromFile(filepath);
   char *data = buffer.getData();
   size_t bufferSize = buffer.size();
 
@@ -379,15 +380,16 @@ FileManager::FileManager()
 void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlobalRadius,
                                     float &outLineWidth, bool &outLabelsVisible, bool &outDotsVisible,
                                     std::vector<CustomLine> &customLines,
-                                    std::vector<PolygonShape> &polygons) {
-  // Cek apakah file .na exists
-  ofFile file(FILENAME);
+                                    std::vector<PolygonShape> &polygons,
+                                    const std::string& filepath) {
+  // Cek apakah file exists
+  ofFile file(filepath);
   if (!file.exists()) {
     return;
   }
 
   // Read file ke buffer
-  ofBuffer buffer = ofBufferFromFile(FILENAME);
+  ofBuffer buffer = ofBufferFromFile(filepath);
   char *data = buffer.getData();
   size_t bufferSize = buffer.size();
 

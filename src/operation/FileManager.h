@@ -22,12 +22,14 @@ public:
     bool loadAll(std::string& outTemplateName, float& outGlobalRadius,
                  std::vector<CustomLine>& customLines,
                  std::vector<PolygonShape>& polygons,
-                 float& outLineWidth, bool& outLabelsVisible, bool& outDotsVisible);
+                 float& outLineWidth, bool& outLabelsVisible, bool& outDotsVisible,
+                 const std::string& filepath);
 
     // Load ALL data sequential dengan animasi (CTRL+SHIFT+O)
     void loadAllSequential(std::string& outTemplateName, float& outGlobalRadius,
                           float& outLineWidth, bool& outLabelsVisible, bool& outDotsVisible,
-                          std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons);
+                          std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons,
+                          const std::string& filepath);
 
     // Clear semua custom lines (CTRL+DEL)
     static void clearCustomLines(std::vector<CustomLine>& customLines);

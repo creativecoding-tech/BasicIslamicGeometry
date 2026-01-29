@@ -1258,18 +1258,7 @@ void ofApp::openWorkspace() {
     return;
   }
 
-  // Copy file .nay ke default location
-  ofFile::copyFromTo(filepath, "bin/data/workspace_main.nay", true, true);
-
-  // Extract nama file dari full path (hanya filename dengan extension)
-  size_t lastSlash = filepath.find_last_of("\\/");
-  if (lastSlash != string::npos) {
-    lastOpenedFileName = filepath.substr(lastSlash + 1);
-  } else {
-    lastOpenedFileName = filepath;  // Kalau tidak ada slash, pakai full path
-  }
-
-  // Set lastSavedPath ke filepath yang di-open (supaya CTRL+S save ke file yang sama)
+  // Set lastSavedPath ke filepath yang di-open (untuk load dan save)
   lastSavedPath = filepath;
 }
 
@@ -1278,6 +1267,12 @@ void ofApp::loadWorkspace() {
     // VALIDASI: Cek apakah canvas benar-bener kosong
     if (!isCanvasEmpty()) {
         return;  // Tidak load jika canvas ada isinya
+    }
+
+    // Cek apakah ada file yang di-open (lastSavedPath)
+    if (lastSavedPath.empty()) {
+        // Tidak ada file yang di-open, gunakan default
+        return;
     }
 
     // Load workspace dengan template name, radius, dan ALL settings
@@ -1289,7 +1284,7 @@ void ofApp::loadWorkspace() {
 
     if (fileManager.loadAll(loadedTemplateName, loadedRadius, customLines,
         polygonShapes, loadedLineWidth,
-        loadedLabelsVisible, loadedDotsVisible)) {
+        loadedLabelsVisible, loadedDotsVisible, lastSavedPath)) {
 
         // Update radius dengan loaded radius DULU (sebelum switchTemplate!)
         radiusCircle = loadedRadius;
@@ -1355,7 +1350,7 @@ void ofApp::loadWorkspaceSeq() {
 
     fileManager.loadAllSequential(loadedTemplateName, loadedRadius,
         loadedLineWidth, loadedLabelsVisible, loadedDotsVisible,
-        customLines, polygonShapes);
+        customLines, polygonShapes, lastSavedPath);
 
     // Update radius dengan loaded radius DULU (sebelum switchTemplate!)
     radiusCircle = loadedRadius;
