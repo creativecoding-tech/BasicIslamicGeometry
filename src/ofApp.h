@@ -23,9 +23,9 @@ using glm::vec2;
 class ofApp : public ofBaseApp{
 
 	public:
-		// TEMPLATE SYSTEM - Ganti semua individual shape unique_ptrs!
+		// TEMPLATE SYSTEM - Template sekarang self-contained!
+		// Template owns shapes sendiri, handle draw/update sendiri
 		SacredGeometryTemplate* currentTemplate = nullptr;  // Template yang sedang aktif
-		std::vector<std::unique_ptr<AbstractShape>> templateShapes;  // Semua shapes dari template
 		float radiusCircle = 240;  // Radius default dari template
 		float previousRadius = 240;  // Untuk tracking perubahan radius (scaling customLines & polygons)
 

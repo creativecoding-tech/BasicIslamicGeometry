@@ -19,19 +19,20 @@ std::string BasicZelligeTemplate::getDescription() {
 }
 
 //--------------------------------------------------------------
-void BasicZelligeTemplate::setupShapes(std::vector<std::unique_ptr<AbstractShape>>& shapes) {
+void BasicZelligeTemplate::setupShapes() {
 	// Panggil semua setup methods dengan urutan yang BENAR
 	// CartesianAxes DULU sebagai fondasi/sumbu koordinat
-	setupCartesianAxes(shapes);
-	setupCircles(shapes);
-	setupCrossLines(shapes);
-	setupParallelograms(shapes);
-	setupRectangleLines(shapes);
-	setupOctagramLines(shapes);
+	// Note: 'shapes' adalah protected member dari SacredGeometryTemplate
+	setupCartesianAxes();
+	setupCircles();
+	setupCrossLines();
+	setupParallelograms();
+	setupRectangleLines();
+	setupOctagramLines();
 }
 
 //--------------------------------------------------------------
-void BasicZelligeTemplate::setupCircles(std::vector<std::unique_ptr<AbstractShape>>& shapes) {
+void BasicZelligeTemplate::setupCircles() {
 	// Circle A: Center (0,0) → distance=0
 	shapes.push_back(std::make_unique<CircleShape>(radius, "A", 0, 0));
 
@@ -49,12 +50,12 @@ void BasicZelligeTemplate::setupCircles(std::vector<std::unique_ptr<AbstractShap
 }
 
 //--------------------------------------------------------------
-void BasicZelligeTemplate::setupCartesianAxes(std::vector<std::unique_ptr<AbstractShape>>& shapes) {
+void BasicZelligeTemplate::setupCartesianAxes() {
 	shapes.push_back(std::make_unique<CartesianAxes>(radius));
 }
 
 //--------------------------------------------------------------
-void BasicZelligeTemplate::setupCrossLines(std::vector<std::unique_ptr<AbstractShape>>& shapes) {
+void BasicZelligeTemplate::setupCrossLines() {
 	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(-radius, -radius), "F", "J", radius));
 	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(radius, -radius), "G", "K", radius));
 	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(-radius, radius), "H", "L", radius));
@@ -62,7 +63,7 @@ void BasicZelligeTemplate::setupCrossLines(std::vector<std::unique_ptr<AbstractS
 }
 
 //--------------------------------------------------------------
-void BasicZelligeTemplate::setupParallelograms(std::vector<std::unique_ptr<AbstractShape>>& shapes) {
+void BasicZelligeTemplate::setupParallelograms() {
 	// Parallelogram dengan Polar Thinking
 	// Intersection point dihitung menggunakan trigonometri: x = cos(angle) * distance, y = sin(angle) * distance
 
@@ -92,7 +93,7 @@ void BasicZelligeTemplate::setupParallelograms(std::vector<std::unique_ptr<Abstr
 }
 
 //--------------------------------------------------------------
-void BasicZelligeTemplate::setupRectangleLines(std::vector<std::unique_ptr<AbstractShape>>& shapes) {
+void BasicZelligeTemplate::setupRectangleLines() {
 	// RectangleLine dari F ke G dengan intersection points
 	float angleF = -3 * PI / 4;  // -135°
 	vec2 posF = vec2(cos(angleF) * radius, sin(angleF) * radius);
@@ -134,7 +135,7 @@ void BasicZelligeTemplate::setupRectangleLines(std::vector<std::unique_ptr<Abstr
 }
 
 //--------------------------------------------------------------
-void BasicZelligeTemplate::setupOctagramLines(std::vector<std::unique_ptr<AbstractShape>>& shapes) {
+void BasicZelligeTemplate::setupOctagramLines() {
 	// Posisi Circle E
 	vec2 posE = vec2(0, -radius);
 

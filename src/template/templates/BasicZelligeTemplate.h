@@ -23,16 +23,18 @@ public:
 	std::string getName() override;
 	std::string getDescription() override;
 
-	void setupShapes(std::vector<std::unique_ptr<AbstractShape>>& shapes) override;
+	// Setup shapes ke internal vector (inherited from SacredGeometryTemplate)
+	void setupShapes() override;
 
-	// radius diambil dari SacredGeometryTemplate::radius (public)
+	// radius diambil dari SacredGeometryTemplate::radius (protected)
 	// Tidak perlu radius sendiri lagi
 
 private:
-	void setupCircles(std::vector<std::unique_ptr<AbstractShape>>& shapes);
-	void setupCartesianAxes(std::vector<std::unique_ptr<AbstractShape>>& shapes);
-	void setupCrossLines(std::vector<std::unique_ptr<AbstractShape>>& shapes);
-	void setupParallelograms(std::vector<std::unique_ptr<AbstractShape>>& shapes);
-	void setupRectangleLines(std::vector<std::unique_ptr<AbstractShape>>& shapes);
-	void setupOctagramLines(std::vector<std::unique_ptr<AbstractShape>>& shapes);
+	// Setup methods populate this->shapes (inherited protected member)
+	void setupCircles();
+	void setupCartesianAxes();
+	void setupCrossLines();
+	void setupParallelograms();
+	void setupRectangleLines();
+	void setupOctagramLines();
 };

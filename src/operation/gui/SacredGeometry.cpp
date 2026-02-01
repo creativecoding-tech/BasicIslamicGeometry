@@ -41,13 +41,16 @@ void SacredGeometry::draw() {
             }
             static bool showCartesian = true;
             if (ImGui::Checkbox("Cartesian", &showCartesian)) {
-                if (!app->templateShapes.empty()) {
-                    AbstractShape* cartesianAxes =
-                        app->templateShapes[0].get(); // CartesianAxes selalu index 0
-                    if (showCartesian) {
-                        cartesianAxes->show();
-                    } else {
-                        cartesianAxes->hide();
+                if (app->currentTemplate) {
+                    const auto& shapes = app->currentTemplate->getShapes();
+                    if (!shapes.empty()) {
+                        AbstractShape* cartesianAxes =
+                            shapes[0].get(); // CartesianAxes selalu index 0
+                        if (showCartesian) {
+                            cartesianAxes->show();
+                        } else {
+                            cartesianAxes->hide();
+                        }
                     }
                 }
             }

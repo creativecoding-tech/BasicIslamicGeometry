@@ -53,12 +53,10 @@ void ofApp::switchTemplate(const std::string &templateName) {
     return;
   }
 
-  // Clear shapes lama
-  templateShapes.clear();
-
   // Setup shapes baru dari template
+  // Template sekarang populate shapes sendiri via setupShapes()
   currentTemplate->radius = radiusCircle;
-  currentTemplate->setupShapes(templateShapes);
+  currentTemplate->setupShapes();
   // Reset dots cache agar di-rebuild
   dotsCacheDirty = true;
 }
@@ -93,10 +91,11 @@ void ofApp::update() {
       case LOAD_TEMPLATE:
         if (isSequentialShapeLoad) {
           // SEQUENTIAL MODE (CTRL+SHIFT+O): Update satu per satu
-          if (currentTemplateIndex < templateShapes.size()) {
-            templateShapes[currentTemplateIndex]->update();
+          const auto& shapes = currentTemplate->getShapes();
+          if (currentTemplateIndex < shapes.size()) {
+            shapes[currentTemplateIndex]->update();
 
-            if (templateShapes[currentTemplateIndex]->isComplete()) {
+            if (shapes[currentTemplateIndex]->isComplete()) {
               currentTemplateIndex++;
             }
           } else {
@@ -105,12 +104,13 @@ void ofApp::update() {
           }
         } else {
           // PARALLEL MODE (CTRL+O): Update semua bareng
-          for (auto &shape : templateShapes) {
+          const auto& shapes = currentTemplate->getShapes();
+          for (auto &shape : shapes) {
             shape->update();
           }
 
           bool allComplete = true;
-          for (auto &shape : templateShapes) {
+          for (auto &shape : shapes) {
             if (!shape->isComplete()) {
               allComplete = false;
               break;
@@ -190,10 +190,9 @@ void ofApp::update() {
     }
   } else {
     // Update normal (bukan staggered load)
-    // Update semua template shapes (untuk animasi progress)
-    for (auto &shape : templateShapes) {
-      shape->setRadius(radiusCircle);
-      shape->update();
+    // Update template - template handle update sendiri
+    if (currentTemplate) {
+      currentTemplate->update();
     }
 
     // Rebuild dots cache agar mouse hover/drag bekerja dengan posisi baru
@@ -232,11 +231,9 @@ void ofApp::draw() {
   ofPushMatrix();
   ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
 
-  // Draw semua template shapes (polymorphic iteration)
-  for (auto &shape : templateShapes) {
-    if (shape) {
-      shape->draw();
-    }
+  // Draw template - template handle drawing sendiri!
+  if (currentTemplate) {
+    currentTemplate->draw();
   }
 
   // Draw custom lines dan UI elements
@@ -426,13 +423,16 @@ void ofApp::keyPressed(int key) {
     // Kalau tidak ada polygon dan customLine terselect, toggle CartesianAxes
     // (shape pertama di template)
     else {
-      if (!templateShapes.empty()) {
-        AbstractShape *cartesianAxes =
-            templateShapes[0].get(); // CartesianAxes selalu index 0
-        if (cartesianAxes->showing) {
-          cartesianAxes->hide();
-        } else {
-          cartesianAxes->show();
+      if (currentTemplate) {
+        const auto& shapes = currentTemplate->getShapes();
+        if (!shapes.empty()) {
+          AbstractShape *cartesianAxes =
+              shapes[0].get(); // CartesianAxes selalu index 0
+          if (cartesianAxes->showing) {
+            cartesianAxes->hide();
+          } else {
+            cartesianAxes->show();
+          }
         }
       }
     }
@@ -547,9 +547,12 @@ void ofApp::updateDotsCache() {
 
   // Iterate semua template shapes dan collect dots secara polymorphic
   // Setiap shape bertanggung jawab untuk menambahkan dots-nya sendiri
-  for (auto &shape : templateShapes) {
-    if (shape && shape->showing) {
-      shape->addDotsToCache(cachedDots);
+  if (currentTemplate) {
+    const auto& shapes = currentTemplate->getShapes();
+    for (auto &shape : shapes) {
+      if (shape && shape->showing) {
+        shape->addDotsToCache(cachedDots);
+      }
     }
   }
 
@@ -970,9 +973,13 @@ void ofApp::dragEvent(ofDragInfo dragInfo) {}
 
 //--------------------------------------------------------------
 void ofApp::startSequentialDrawing() {
+  if (!currentTemplate) return;
+
+  const auto& shapes = currentTemplate->getShapes();
+
   // Cek apakah semua shapes sudah visible/showing
   bool allVisible = true;
-  for (auto &shape : templateShapes) {
+  for (auto &shape : shapes) {
     if (!shape->showing) {
       allVisible = false;
       break;
@@ -986,7 +993,7 @@ void ofApp::startSequentialDrawing() {
 
   // Cek apakah ada shape yang sedang drawing (belum complete)
   bool stillDrawing = false;
-  for (auto &shape : templateShapes) {
+  for (auto &shape : shapes) {
     if (!shape->isComplete()) {
       stillDrawing = true;
       break;
@@ -1005,7 +1012,7 @@ void ofApp::startSequentialDrawing() {
   }
 
   // Reset semua shapes ke hidden
-  for (auto &shape : templateShapes) {
+  for (auto &shape : shapes) {
     shape->hide();
   }
 
@@ -1015,23 +1022,26 @@ void ofApp::startSequentialDrawing() {
   currentShapeIndex = 0;
 
   // Set sequential mode untuk semua shapes (setelah sequentialMode = true)
-  for (auto &shape : templateShapes) {
+  for (auto &shape : shapes) {
     shape->setSequentialMode(sequentialMode);
   }
 
   // Show shape pertama
-  if (!templateShapes.empty()) {
-    templateShapes[0]->show();
+  if (!shapes.empty()) {
+    shapes[0]->show();
   }
 }
 
 //--------------------------------------------------------------
 void ofApp::updateSequentialDrawing() {
+  if (!currentTemplate) return;
+
+  const auto& shapes = currentTemplate->getShapes();
   AbstractShape *currentShape = nullptr;
 
-  // Tentukan shape berdasarkan index (dari templateShapes)
-  if (currentShapeIndex >= 0 && currentShapeIndex < templateShapes.size()) {
-    currentShape = templateShapes[currentShapeIndex].get();
+  // Tentukan shape berdasarkan index
+  if (currentShapeIndex >= 0 && currentShapeIndex < shapes.size()) {
+    currentShape = shapes[currentShapeIndex].get();
   }
 
   // Cek jika current shape sudah complete
@@ -1040,8 +1050,8 @@ void ofApp::updateSequentialDrawing() {
     currentShapeIndex++;
 
     // Show shape berikutnya jika masih ada
-    if (currentShapeIndex < templateShapes.size()) {
-      templateShapes[currentShapeIndex]->show();
+    if (currentShapeIndex < shapes.size()) {
+      shapes[currentShapeIndex]->show();
     } else {
       // Semua shapes sudah complete, matikan sequential mode dan tandai selesai
       sequentialMode = false;
@@ -1053,8 +1063,11 @@ void ofApp::updateSequentialDrawing() {
 
 //--------------------------------------------------------------
 void ofApp::toggleLabels() {
+  if (!currentTemplate) return;
+
   // Iterate semua template shapes
-  for (auto &shape : templateShapes) {
+  const auto& shapes = currentTemplate->getShapes();
+  for (auto &shape : shapes) {
     if (labelsVisible) {
       shape->showLabel();
     } else {
@@ -1065,10 +1078,11 @@ void ofApp::toggleLabels() {
 
 //--------------------------------------------------------------
 void ofApp::toggleDots() {
-
+  if (!currentTemplate) return;
 
   // Iterate semua template shapes
-  for (auto &shape : templateShapes) {
+  const auto& shapes = currentTemplate->getShapes();
+  for (auto &shape : shapes) {
     if (dotsVisible) {
       shape->showDot();
     } else {
@@ -1079,16 +1093,20 @@ void ofApp::toggleDots() {
 
 //--------------------------------------------------------------
 void ofApp::hideAllShapes() {
+  if (!currentTemplate) return;
+
+  const auto& shapes = currentTemplate->getShapes();
+
   // Matikan sequential mode
   sequentialMode = false;
 
   // Set paralel mode untuk semua shapes (pakai sequentialMode yang sudah false)
-  for (auto &shape : templateShapes) {
+  for (auto &shape : shapes) {
     shape->setSequentialMode(sequentialMode);
   }
 
   // Hide semua shapes
-  for (auto &shape : templateShapes) {
+  for (auto &shape : shapes) {
     shape->hide();
   }
 
@@ -1101,16 +1119,20 @@ void ofApp::hideAllShapes() {
 
 //--------------------------------------------------------------
 void ofApp::showAllShapes() {
+  if (!currentTemplate) return;
+
+  const auto& shapes = currentTemplate->getShapes();
+
   // Matikan sequential mode (paralel mode)
   sequentialMode = false;
 
   // Set mode untuk semua shapes (pakai sequentialMode yang sudah false)
-  for (auto &shape : templateShapes) {
+  for (auto &shape : shapes) {
     shape->setSequentialMode(sequentialMode);
   }
 
   // Show semua shapes (akan animasi barengan/paralel)
-  for (auto &shape : templateShapes) {
+  for (auto &shape : shapes) {
     shape->show();
   }
 
@@ -1123,7 +1145,10 @@ void ofApp::showAllShapes() {
 
 //--------------------------------------------------------------
 void ofApp::updateLineWidth() {
-    for (auto& shape : templateShapes) {
+    if (!currentTemplate) return;
+
+    const auto& shapes = currentTemplate->getShapes();
+    for (auto& shape : shapes) {
         shape->setLineWidth(currentLineWidth);
     }
 }
@@ -1182,9 +1207,12 @@ void ofApp::scaleCustomLinesAndPolygons(float oldRadius, float newRadius) {
 //--------------------------------------------------------------
 bool ofApp::isCanvasEmpty() {
 	// Cek apakah ada template shapes yang showing
-	for (const auto& shape : templateShapes) {
-		if (shape && shape->showing) {
-			return false;  // Ada template yang showing, canvas tidak kosong
+	if (currentTemplate) {
+		const auto& shapes = currentTemplate->getShapes();
+		for (const auto& shape : shapes) {
+			if (shape && shape->showing) {
+				return false;  // Ada template yang showing, canvas tidak kosong
+			}
 		}
 	}
 
@@ -1318,7 +1346,8 @@ void ofApp::loadWorkspace() {
         dotsVisible = loadedDotsVisible;
 
         // Apply settings ke semua shapes yang baru di-load
-        for (auto& shape : templateShapes) {
+        const auto& shapes = currentTemplate->getShapes();
+        for (auto& shape : shapes) {
             shape->setLineWidth(currentLineWidth);
 
             if (labelsVisible)
@@ -1385,7 +1414,8 @@ void ofApp::loadWorkspaceSeq() {
     dotsVisible = loadedDotsVisible;
 
     // Apply settings ke semua template shapes
-    for (auto& shape : templateShapes) {
+    const auto& shapes = currentTemplate->getShapes();
+    for (auto& shape : shapes) {
         shape->setLineWidth(currentLineWidth);
         if (labelsVisible)
             shape->showLabel();
@@ -1400,7 +1430,7 @@ void ofApp::loadWorkspaceSeq() {
     showAllShapes();  // Reset animasi template
 
     // Set sequential mode SETELAH showAllShapes (karena showAllShapes akan reset ke false)
-    for (auto& shape : templateShapes) {
+    for (auto& shape : shapes) {
         shape->setSequentialMode(true);
     }
 
