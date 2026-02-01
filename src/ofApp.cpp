@@ -54,9 +54,8 @@ void ofApp::switchTemplate(const std::string &templateName) {
   }
 
   // Setup shapes baru dari template
-  // Template sekarang populate shapes sendiri via setupShapes()
-  currentTemplate->radius = radiusCircle;
-  currentTemplate->setupShapes();
+  // Gunakan setRadius() karena dia clear shapes dulu sebelum setupShapes()
+  currentTemplate->setRadius(radiusCircle);
   // Reset dots cache agar di-rebuild
   dotsCacheDirty = true;
 }
@@ -200,6 +199,16 @@ void ofApp::update() {
 
     // Scale customLines & polygons jika radius berubah (realtime update)
     if (radiusCircle != previousRadius) {
+      // Update template radius TANPA rebuild shapes!
+      if (currentTemplate) {
+        // Update radius property di template
+        currentTemplate->radius = radiusCircle;
+        // Update radius di setiap shape individual
+        const auto& shapes = currentTemplate->getShapes();
+        for (auto& shape : shapes) {
+          shape->setRadius(radiusCircle);
+        }
+      }
       scaleCustomLinesAndPolygons(previousRadius, radiusCircle);
       previousRadius = radiusCircle;  // Update tracking
     }
