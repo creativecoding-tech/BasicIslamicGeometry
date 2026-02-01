@@ -73,7 +73,7 @@ void ofApp::update() {
   // Check play button delay timer
   if (isWaitingForLoad) {
     float elapsed = ofGetElapsedTimef() - loadDelayTimer;
-    if (elapsed >= 1.5f) {
+    if (elapsed >= .5f) {
       // Timer selesai, panggil load method
       if (pendingLoadMode == 0) {
         loadWorkspace();

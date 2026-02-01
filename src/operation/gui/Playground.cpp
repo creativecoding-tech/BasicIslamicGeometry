@@ -29,7 +29,7 @@ void Playground::draw() {
         if (ImGui::RadioButton("Parallel Per Group", &playMode, 0)) {
             // Radio button changed
         }
-        ImGui::SameLine();
+        ImGui::SetNextItemWidth(150.0f);
         if (ImGui::RadioButton("Sequential Per Group", &playMode, 1)) {
             // Radio button changed
         }
