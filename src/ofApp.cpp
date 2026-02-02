@@ -302,7 +302,7 @@ void ofApp::drawCustomLinesAndUI() {
   // Draw preview polyline (sedang drag)
   if (drawState == DRAGGING && currentPolylinePoints.size() > 1) {
     ofPushStyle();
-    ofSetColor(0, 0, 255, 150);     // Biru transparan
+    ofSetColor(0, 0, 255, 255);    
     ofSetLineWidth(mouseLineWidth); // Pakai mouseLineWidth untuk preview
 
     // Gambar preview polyline
@@ -745,7 +745,6 @@ void ofApp::createInvisiblePolygonFromSelected() {
   vector<vec2> allPoints;
   for (int lineIndex : selectedLineIndices) {
     if (lineIndex >= 0 && lineIndex < customLines.size()) {
-      // Ambil sampled points (100 segments) untuk ikuti curve
       auto sampledPoints = customLines[lineIndex].getSampledPoints();
       if (!sampledPoints.empty()) {
         // Tambahkan semua sampled points ke allPoints
@@ -761,11 +760,11 @@ void ofApp::createInvisiblePolygonFromSelected() {
     return;
   }
 
-  // 2. Create polygon dengan default color MERAH TRANSPARENT dan index
+  
   int polygonIndex =
-      static_cast<int>(polygonShapes.size()); // Index polygon yang akan dibuat
-  PolygonShape newPolygon(allPoints, ofColor(255, 0, 0, 150),
-                          polygonIndex); // Alpha 150 (semi-transparent)
+      static_cast<int>(polygonShapes.size());
+  PolygonShape newPolygon(allPoints, ofColor(255, 0, 0, 255),
+                          polygonIndex);
   polygonShapes.push_back(newPolygon);
 
   // 3. Clear selection
