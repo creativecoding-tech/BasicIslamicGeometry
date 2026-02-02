@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--islamic--geometry--studio-orange)
+![Branch](https://img.shields.io/badge/Branch-sketch--islamic--gs--modular--template-orange)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -14,7 +14,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 
 ## 📺 Demo Video
 
-Lihat hasilnya di YouTube: [Watch Demo](https://youtu.be/fr0wx18GXeI)
+Lihat hasilnya di YouTube: [Watch Demo](https://youtu.be/_VGDcTeWVa0)
 
 ---
 
@@ -57,11 +57,14 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 ### GUI System (ImGui Integration)
 - **ImGui Integration** - Complete ImGui dengan OpenGL3 dan Win32 backends
 - **AbstractGuiComponent** - Base class untuk reusable GUI components
-- **MenuBar** - Top menu bar dengan File menu (Save/Load workspace)
-- **LeftPanel** - Side panel dengan settings (radius slider, line width, toggles)
-- **SuccessPopup** - Modal popup untuk save/load confirmations
-- **Template Name Display** - Menampilkan nama template saat ini di panel
+- **MenuBar** - Top menu bar dengan File menu (Save/Save As/Open workspace)
+- **SacredGeometry Panel** - Template controls panel dengan radius slider, line width, labels/dots/cartesian toggles, draw mode selection, dan clean canvas button
+- **Playground Panel** - Playback panel dengan file display, mode draw selection (Parallel/Sequential), auto clean canvas, dan play button dengan error handling
+- **SuccessPopup** - Modal popup untuk save/load success confirmations
+- **ErrorPopup** - Modal popup untuk error handling (no file selected, canvas not empty, no mode selected)
+- **Template Name Display** - Menampilkan nama template saat ini di SacredGeometry panel
 - **Realtime Controls** - Semua settings apply secara realtime tanpa restart
+- **Delay Load System** - Smooth transition dengan delay saat play button diklik untuk hide ImGui sebelum animation starts
 
 ### Animation System
 - **Sequential Drawing Mode** - Animasi drawing berurutan dari satu shape ke shape berikutnya
@@ -83,14 +86,17 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Undo System** - CTRL+Z untuk undo garis terakhir
 
 ### Workspace Save/Load
-- **Centralized Save/Load** - Satu method `saveWorkspace()` dan `loadWorkspace()` untuk semua state
+- **Centralized Save/Load** - Satu method `saveWorkspace()`, `saveWorkspaceAs()`, dan `loadWorkspace()` untuk semua state
 - **.nay Binary Format** - Workspace format dengan magic number "NA01" dan versioning
-- **Complete State Persistence** - Save template name, radius, custom lines, polygons, semua settings
-- **Two Load Modes**:
-  - **Parallel (CTRL+O)**: Semua shapes animate simultaneously
-  - **Sequential (CTRL+SHIFT+O)**: Shapes animate satu per satu (template → lines → polygons)
-- **Staggered Loading** - 3-stage loading process dengan buffer system
+- **Complete State Persistence** - Save template name, radius, custom lines, polygons, semua settings (labels, dots, line width, cartesian visibility)
+- **File Dialog Integration** - Native Windows file dialog untuk Save As dan Open operations dengan .nay filter validation
+- **Two Load Modes via Playground**:
+  - **Parallel Per Group**: Semua groups animate simultaneously (template → lines → polygons barengan)
+  - **Sequential Per Group**: Groups animate satu per satu dengan delay antar stages
+- **Auto Clean Canvas** - Otomatis bersihkan canvas sebelum load jika checkbox dicentang
+- **Delay Load System** - Smooth transition dengan 0.5s delay sebelum animation starts (untuk hide ImGui terlebih dahulu)
 - **Animation State Preservation** - State animasi di-save dan di-restore dengan benar
+- **Error Handling** - Comprehensive error handling untuk no file selected, canvas not empty, dan no mode selected scenarios
 
 ### Performance & Rendering
 - **Performance Optimization - Cached Dots** - Sistem lazy cache untuk getAllDots() dengan dirty flag, hanya rebuild saat visibility berubah (reduce dari 180 vector copies/detik menjadi 0)
@@ -121,25 +127,45 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 ### GUI Controls (ImGui Panel)
 
-**Left Panel Settings:**
+**Sacred Geometry Panel Settings:**
 | Control | Action |
 | --- | --- |
+| **Template Name Display** | Menampilkan nama template yang sedang aktif (Basic Zellige) |
+| **Parallel Radio Button** | Show semua shapes secara parallel (barengan) |
+| **Sequential Radio Button** | Start sequential drawing animation (shapes muncul berurutan) |
+| **Hide Radio Button** | Hide semua shapes |
 | **Radius Slider** | Adjust template radius (100 - 240) secara realtime - semua shapes update posisinya secara proporsional |
 | **Line Width Slider** | Adjust ketebalan garis (0 - 4px) untuk semua shapes |
-| **Show Labels Checkbox** | Toggle visibility untuk semua label shapes |
-| **Show Dots Checkbox** | Toggle visibility untuk semua dots di intersection points |
+| **Labels Checkbox** | Toggle visibility untuk semua label shapes |
+| **Dots Checkbox** | Toggle visibility untuk semua dots di intersection points |
+| **Cartesian Checkbox** | Toggle visibility untuk CartesianAxes secara terpisah |
+| **Clean Canvas Button** | Clear semua polygons, custom lines, dan hide template shapes |
+
+**Playground Panel:**
+| Control | Action |
+| --- | --- |
+| **Opened File Display** | Menampilkan nama file .nay yang terakhir dibuka |
+| **Parallel Per Group Radio Button** | Set draw mode ke parallel (semua groups animate barengan) |
+| **Sequential Per Group Radio Button** | Set draw mode ke sequential (groups animate satu per satu) |
+| **Auto Clean Canvas Checkbox** | Otomatis bersihkan canvas sebelum load workspace |
+| **Play Arrow Button** | Load dan animate workspace sesuai mode yang dipilih (dengan delay untuk smooth transition) |
 
 **MenuBar (File Menu):**
 | Menu Item | Action | Keyboard Shortcut |
 | --- | --- | --- |
 | **Save Workspace** | Simpan semua state (template, radius, custom lines, polygons, settings) ke .nay file | **CTRL+S** |
-| **Load Workspace (Parallel)** | Load workspace dengan animasi parallel (semua shapes barengan) | **CTRL+O** |
-| **Load Workspace (Sequential)** | Load workspace dengan animasi sequential (shapes satu per satu) | **CTRL+SHIFT+O** |
+| **Save As Workspace** | Simpan workspace ke lokasi custom (file dialog) | |
+| **Open Workspace** | Buka file dialog untuk load workspace .nay dengan validasi | **CTRL+O** |
 
 **Success Popup:**
 - Muncul setelah save/load berhasil
 - Menampilkan pesan konfirmasi
 - Auto-close setelah 2 detik atau klik anywhere
+
+**Error Popup:**
+- Muncul saat ada error (no file selected, canvas not empty, no mode selected)
+- Menampilkan pesan error dengan tombol OK
+- Auto-close setelah klik tombol OK
 
 ---
 
@@ -148,10 +174,10 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 **Main Canvas Controls:**
 | Input | Action |
 | --- | --- |
-| **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan (CartesianAxes → Circle A-E → CrossLine F-I → Parallelogram N-Q → Rectangle R-Y → OctagramLine 0-7) |
+| **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan (CartesianAxes → Circle A-E → CrossLine F-I → Parallelogram N-Q → Rectangle F→G/G→I/I→H/H→F → OctagramLine 0-7) |
 | **SHIFT + )** | Show semua shapes (Circle, CrossLine, Parallelogram, Rectangle, OctagramLine, CartesianAxes) |
 | **DEL** | Hide semua shapes (termasuk CartesianAxes) |
-| **BACKSPACE** | Toggle CartesianAxes saja (hide/show) |
+| **BACKSPACE** | Toggle CartesianAxes saja (hide/show) ATAU hapus polygon/line yang selected |
 | **\`** atau **~** | Toggle label visibility (semua label) |
 | **.** atau **>** | Toggle dot visibility (semua dot di intersection points) |
 | **+** atau **=** | Increase line width (+0.5px, max 4px) |
@@ -168,12 +194,13 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Mouse Scroll** | Adjust curvature garis yang sedang di-select (scroll up = melengkung satu arah, scroll down = melengkung arah sebaliknya, 0 = lurus) |
 | **CTRL + Z** | Undo garis terakhir yang dibuat |
 | **CTRL + G** | Buat polygon dari selected customLines (minimum 3 garis untuk buat polygon, otomatis ikuti curve shape) |
-| **CTRL + S** | Simpan semua custom lines dan polygons ke file binary (custom_lines.bin + polygons.bin) |
-| **CTRL + O** | Load semua custom lines dan polygons dengan animasi parallel (barengan dengan fade-in) |
-| **CTRL + SHIFT + O** | Load semua custom lines dan polygons dengan animasi sequential (lines dulu, baru polygons satu per satu) |
-| **CTRL + DEL** | Hapus semua polygons dan custom lines (hanya jika animasi sudah selesai, tidak bisa saat sedang loading) |
-| **BACKSPACE** | Hapus polygon/line yang sedang di-select (jika tidak ada yang selected dan sedang sequential load, cancel load. Jika tidak ada yang selected dan tidak sedang loading, toggle CartesianAxes) |
 | **1 - 9** | Assign color ke polygon yang sedang di-select (1=Merah, 2=Hijau, 3=Biru, 4=Kuning, 5=Magenta, 6=Cyan, 7=Orange, 8=Ungu, 9=Abu-abu) |
+
+**File Operations (Keyboard Shortcuts):**
+| Input | Action |
+| --- | --- |
+| **CTRL + S** | Save workspace ke file terakhir yang disimpan (atau Save As jika belum pernah save) |
+| **CTRL + O** | Buka file dialog untuk load workspace .nay |
 
 **Polygon Controls:**
 | Input | Action |
@@ -181,7 +208,22 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Mouse Click** | Select polygon (muncul label "Polygon0", "Polygon1", dst di tengah polygon) |
 | **1 - 9** | Ganti warna polygon yang sedang di-select secara realtime |
 | **CTRL + DEL** | Hapus semua polygons dan custom lines (hanya jika animasi sudah selesai) |
-| **BACKSPACE** | Hapus polygon yang sedang di-select (hanya jika animasi sudah selesai) |
+| **BACKSPACE** | Hapus polygon yang sedang di-select (hanya jika animasi sudah selesai, jika tidak ada yang selected dan tidak sedang loading, toggle CartesianAxes) |
+
+**Playground Panel Playback Controls:**
+| Control | Action |
+| --- | --- |
+| **Play Arrow Button** | Load dan animate workspace file yang terakhir dibuka sesuai mode yang dipilih (dengan 0.5s delay untuk hide ImGui) |
+| **Parallel Per Group** | Load workspace dengan animasi parallel per group (template shapes bareng, lalu customLines bareng, lalu polygons bareng) |
+| **Sequential Per Group** | Load workspace dengan animasi sequential per group (template shapes dulu, lalu customLines satu per satu, lalu polygons satu per satu) |
+| **Auto Clean Canvas** | Otomatis clean canvas sebelum load jika checkbox dicentang |
+
+**Error Handling (Playground):**
+| Scenario | Action |
+| --- | --- |
+| **No File Selected** | Munculkan error popup jika Play diklik tapi belum ada file yang di-open |
+| **Canvas Not Empty** | Munculkan error popup jika Play diklik tapi canvas tidak kosong (kecuali Auto Clean Canvas dicentang) |
+| **No Mode Selected** | Munculkan error popup jika Play diklik tapi belum pilih mode draw |
 
 **Shape Count:**
 - 5 CircleShape (A, B, C, D, E)
@@ -219,8 +261,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 # Clone repository ini
 git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 
-# Checkout branch sketch-islamic-geometry-studio
-git checkout sketch-islamic-geometry-studio
+# Checkout branch sketch-islamic-gs-modular-template
+git checkout sketch-islamic-gs-modular-template
 
 # Jalankan OpenFrameworks Project Generator
 # Buka: openFrameworks/apps/projectGenerator/projectGenerator.exe
@@ -248,16 +290,21 @@ Setiap lingkaran digambar dengan animasi **segment-based drawing**:
 
 ```cpp
 // Map dari 0-100 segments ke 0-TWO_PI
-float angle = ofMap(i, 0, totalSegments, 0, TWO_PI);
+float drawAngle = ofMap(i, 0, totalSegments, 0, TWO_PI);
+
+// Untuk segment terakhir, kembali ke angle 0 (tutup loop)
+if (i == totalSegments && progress >= totalSegments) {
+    drawAngle = 0;  // Kembali ke titik awal
+}
 
 // Hitung posisi X, Y untuk setiap segment
-float x = cos(angle) * radius;
-float y = sin(angle) * radius;
+float px = cos(drawAngle) * radius;
+float py = sin(drawAngle) * radius;
 ```
 
 **Parameter Animation:**
 - **totalSegments**: 100 segments untuk full circle
-- **circleSpeed**: 0.5 segments per frame (drawing speed)
+- **circleSpeed**: Variable speed per shape (drawing speed)
 - **lineWidth**: 0.5px (tipis) sampai 4px (tebal)
 
 ### Cartesian Axes Scaling
@@ -279,23 +326,31 @@ ofDrawLine(0, -currentLength, 0, currentLength);
 
 ### Five Circle Pattern Configuration
 
-Pola lingkaran didasarkan pada **posisi relatif** terhadap lingkaran utama:
+Pola lingkaran didasarkan pada **polar coordinates (angle + distance)** terhadap lingkaran utama:
 
 ```cpp
-// Circle A di tengah (0, 0)
+// Circle A di tengah (0, 0) - angle=0, distance=0
 circleA = CircleShape(radius, "A", 0, 0);
 
-// Circle B di kanan (radius, 0) - sentuh Circle A di 0°
-circleB = CircleShape(radius, "B", radius, 0);
+// Circle B di kanan (0°) - angle=0, distance=radius
+circleB = CircleShape(radius, "B", 0, radius);
 
-// Circle C di kiri (-radius, 0) - sentuh Circle A di 180°
-circleC = CircleShape(radius, "C", -radius, 0);
+// Circle C di kiri (180°) - angle=PI, distance=radius
+circleC = CircleShape(radius, "C", PI, radius);
 
-// Circle D di bawah (0, radius) - sentuh Circle A di 90°
-circleD = CircleShape(radius, "D", 0, radius);
+// Circle D di atas (90°) - angle=PI/2, distance=radius
+circleD = CircleShape(radius, "D", PI/2, radius);
 
-// Circle E di atas (0, -radius) - sentuh Circle A di 270°
-circleE = CircleShape(radius, "E", 0, -radius);
+// Circle E di bawah (270°) - angle=-PI/2, distance=radius
+circleE = CircleShape(radius, "E", -PI/2, radius);
+```
+
+**Draw Position Calculation:**
+```cpp
+// Hitung posisi dari angle dan distance saat draw
+float x = cos(angle) * distance;
+float y = sin(angle) * distance;
+ofTranslate(x, y);
 ```
 
 ### Static Font System
@@ -374,7 +429,7 @@ void CircleShape::draw() {
     float x = cos(angle) * distance;
     float y = sin(angle) * distance;
     ofTranslate(x, y);
-    // ... draw circle
+    // ... draw circle dengan segment-based animation
 }
 
 // setRadius - re-calculate distance secara proporsional
@@ -384,6 +439,30 @@ void CircleShape::setRadius(float r) {
     radius = r;
     originalRadius = r;
 }
+```
+
+**Implementasi per Shape:**
+
+- **CircleShape**: `angle` dan `distance` di-scale secara proporsional (baris 20-26 di CircleShape.cpp)
+- **CrossLine**: `end` dan `radiusDot` di-scale
+- **ParallelogramLine**: `start`, `end`, `intersecCrossLine` di-scale
+- **RectangleLine**: `start`, `end`, `intersec1`, `intersec2` di-scale
+- **OctagramLine**: `start`, `end`, `nextPoint` (optional) di-scale
+- **CartesianAxes**: Radius langsung di-update di draw() (baris 68 di CartesianAxes.cpp)
+
+**Dot Cache Auto-Rebuild:**
+
+Setiap kali radius berubah via slider, dot cache otomatis di-rebuild:
+
+```cpp
+// Di ofApp.cpp - saat radius slider berubah
+for (auto &shape : templateShapes) {
+    shape->setRadius(radiusCircle);
+    shape->update();
+}
+
+// Rebuild dot cache agar mouse hover/drag akurat
+dotsCacheDirty = true;
 ```
 
 **Implementasi per Shape:**
@@ -509,47 +588,15 @@ void FileManager::loadAllSequential(
 );
 ```
 
-**Centralized Save/Load:**
+**File Manager Methods:**
+- `saveAll()` - Save workspace ke file path yang ditentukan
+- `loadAll()` - Load workspace dari file path dengan semua state
+- `validateNayFile()` - Validasi file format .nay sebelum load
 
-Di ofApp, semua save/load operations di-centralize:
-
-```cpp
-void ofApp::saveWorkspace() {
-    if (currentTemplate) {
-        fileManager.saveAll(
-            currentTemplate->getName(),
-            radiusCircle,
-            customLines,
-            polygonShapes,
-            currentLineWidth,
-            labelsVisible,
-            dotsVisible
-        );
-        successPopup->show();
-    }
-}
-
-void ofApp::loadWorkspace(bool sequential) {
-    // Load settings
-    LoadedData data = fileManager.loadAll();
-
-    // Apply settings
-    radiusCircle = data.radius;
-    currentLineWidth = data.lineWidth;
-    labelsVisible = data.labelsVisible;
-    dotsVisible = data.dotsVisible;
-
-    // Switch template dan setup shapes
-    switchTemplate(data.templateName);
-
-    // Load lines & polygons dengan animation
-    if (sequential) {
-        startSequentialLoad(data);
-    } else {
-        startParallelLoad(data);
-    }
-}
-```
+**GUI Integration:**
+- MenuBar untuk Save/Save As/Open operations
+- Playground panel untuk playback dengan error handling
+- Success/Error popups untuk user feedback
 
 ---
 
@@ -569,21 +616,24 @@ BasicIslamicGeometry/
 │   │   ├── RectangleLine.cpp/h         # Garis rectangle dengan 2 dot & proportional scaling
 │   │   ├── OctagramLine.cpp/h          # Garis octagram dengan 2-phase animation
 │   │   ├── CustomLine.cpp/h            # Custom user-created lines dengan bezier curve
-│   │   └── PolygonShape.cpp/h          # Polygon fill-only dengan fade-in animation
+│   │   ├── PolygonShape.cpp/h          # Polygon fill-only dengan fade-in animation
+│   │   └── DotInfo.h                   # Common struct untuk dot information
 │   ├── anim/                 # Animation system implementations
 │   │   ├── AbstractAnimation.cpp/h    # Base class untuk semua animation
 │   │   └── FadeInAnimation.cpp/h      # Fade-in animation untuk polygon
 │   ├── template/             # Template system untuk geometric patterns
 │   │   ├── SacredGeometryTemplate.cpp/h  # Abstract base class untuk templates
-│   │   ├── SacredGeometryTemplateRegistry.cpp/h  # Singleton registry untuk templates
+│   │   ├── TemplateRegistry.cpp/h        # Singleton registry untuk managing templates
 │   │   └── templates/              # Template implementations
 │   │       └── BasicZelligeTemplate.cpp/h  # Moroccan pattern (26 shapes)
 │   └── operation/            # File operations & GUI components
 │       ├── gui/              # ImGui GUI components
 │       │   ├── AbstractGuiComponent.cpp/h  # Base class untuk GUI components
 │       │   ├── MenuBar.cpp/h            # Top menu bar (File menu)
-│       │   ├── LeftPanel.cpp/h          # Settings panel (sliders, toggles)
-│       │   └── SuccessPopup.cpp/h       # Modal popup untuk confirmations
+│       │   ├── SacredGeometry.cpp/h     # Sacred Geometry panel (template controls)
+│       │   ├── Playground.cpp/h         # Playground panel (playback workspace)
+│       │   ├── SuccessPopup.cpp/h       # Modal popup untuk success confirmations
+│       │   └── ErrorPopup.cpp/h         # Modal popup untuk error handling
 │       └── FileManager.cpp/h           # Save/load workspace (.nay format)
 ├── bin/                      # Compiled executable
 │   └── data/                 # Data files (saved workspaces .nay)
@@ -594,7 +644,8 @@ BasicIslamicGeometry/
 
 **Architecture Highlights:**
 - **Template System**: `SacredGeometryTemplate` base class untuk easy pattern extensibility
-- **GUI System**: Modular ImGui components dengan `AbstractGuiComponent` base class
+- **Template Registry**: Singleton pattern untuk managing multiple geometric patterns
+- **GUI System**: Modular ImGui components dengan `AbstractGuiComponent` base class (MenuBar, SacredGeometry, Playground, Popups)
 - **Shape Hierarchy**: Semua shapes inherit dari `AbstractShape` dengan consistent interface
 - **Operation Layer**: Terpisah antara file operations (FileManager) dan GUI components
 - **Polymorphic Design**: Template pattern, Strategy pattern, Registry pattern untuk scalability
@@ -624,18 +675,20 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **sketch-islamic-geometry-studio**
+## 📝 Current Status: **sketch-islamic-gs-modular-template**
 
-Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui dan sistem template yang modular.
+Branch ini adalah **Islamic Geometry Studio with Modular Template System & GUI Playground** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, dan playground panel untuk playback workspace.
 
 ### 🎨 GUI System (ImGui Integration)
 
 ✅ **Complete ImGui Integration**: Full ImGui dengan OpenGL3 dan Win32 backends
 ✅ **AbstractGuiComponent Base Class**: Reusable base class untuk GUI components
 ✅ **MenuBar Component**: Top menu bar dengan File menu (Save/Load workspace)
-✅ **LeftPanel Component**: Side panel dengan radius slider, line width, dan toggles
+✅ **Sacred Geometry Panel**: Side panel dengan template controls (radius, line width, labels, dots, cartesian, draw modes)
+✅ **Playground Panel**: Playback panel untuk memainkan workspace dengan mode draw (Parallel/Sequential) dan auto clean canvas
 ✅ **SuccessPopup Component**: Modal popup untuk save/load confirmations
-✅ **Template Name Display**: Menampilkan nama template saat ini di panel
+✅ **ErrorPopup Component**: Modal popup untuk error handling (no file selected, canvas not empty, no mode selected)
+✅ **Template Name Display**: Menampilkan nama template saat ini di Sacred Geometry panel
 ✅ **Realtime Updates**: Semua GUI controls apply secara realtime tanpa restart
 
 ### 🔄 Template System
@@ -659,15 +712,17 @@ Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk memb
 
 ### 💾 Workspace Save/Load System
 
-✅ **Centralized Save/Load**: Satu method `saveWorkspace()` dan `loadWorkspace()` untuk semua state
+✅ **Centralized Save/Load**: Satu method `saveWorkspace()`, `saveWorkspaceAs()`, dan `loadWorkspace()` untuk semua state
 ✅ **.nay Binary Format**: Workspace format dengan magic number "NA01" dan versioning
-✅ **Complete State Persistence**: Save template name, radius, custom lines, polygons, semua settings (labels, dots, line width)
-✅ **Parallel Load Mode (CTRL+O)**: Load workspace dengan animasi parallel (semua shapes barengan)
-✅ **Sequential Load Mode (CTRL+SHIFT+O)**: Load workspace dengan animasi sequential (shapes satu per satu)
-✅ **Staggered Loading**: 3-stage loading process (template → custom lines → polygons)
+✅ **Complete State Persistence**: Save template name, radius, custom lines, polygons, semua settings (labels, dots, line width, cartesian visibility)
+✅ **File Dialog Integration**: Native Windows file dialog untuk Save As/Open operations dengan .nay filter validation
+✅ **Parallel Load Mode**: Load workspace dengan animasi parallel per group (template → lines → polygons barengan)
+✅ **Sequential Load Mode**: Load workspace dengan animasi sequential per group (shapes satu per satu)
+✅ **Auto Clean Canvas**: Otomatis bersihkan canvas sebelum load jika checkbox dicentang
+✅ **Delay Load System**: Smooth transition dengan 0.5s delay sebelum animation starts
 ✅ **Animation State Preservation**: State animasi di-save dan di-restore dengan benar
-✅ **Speed Control**: Configurable speed untuk sequential load animation
-✅ **File Menu Integration**: Save/Load dapat diakses via ImGui MenuBar atau keyboard shortcuts
+✅ **Error Handling**: Comprehensive error handling untuk no file selected, canvas not empty, dan no mode selected
+✅ **Last Path Tracking**: Track last saved/opened file untuk quick save dan playback
 
 ### 🖱️ Mouse Interaction & Custom Lines
 
@@ -719,7 +774,8 @@ Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk memb
 ✅ **Static Font System**: Semua label menggunakan Calibri 15px untuk konsistensi
 ✅ **Angle Labels**: Format "radians (degrees)" di setiap ujung sumbu Cartesian
 ✅ **Label Toggle**: Show/hide label untuk semua shapes via GUI atau keyboard
-✅ **Dot Toggle**: Show/hide dot di intersection points via GUI or keyboard
+✅ **Dot Toggle**: Show/hide dot di intersection points via GUI atau keyboard
+✅ **Cartesian Toggle**: Show/hide CartesianAxes secara terpisah via GUI
 ✅ **Trails Effect**: Semi-transparent overlay untuk efek jejak visual
 ✅ **Anti-aliased Rendering**: Garis smooth untuk kualitas visual tinggi
 ✅ **60 FPS Performance**: Solid performance dengan CPU-based rendering
@@ -730,10 +786,11 @@ Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk memb
 ✅ **Memory-safe Implementation**: `std::unique_ptr` untuk resource management
 ✅ **Modular Design**: Terpisah dalam `shape/`, `anim/`, `operation/`, `template/`, `operation/gui/`
 ✅ **Template Pattern**: SacredGeometryTemplate untuk extensibility geometric patterns
-✅ **Strategy Pattern**: Different loading modes (parallel/sequential)
-✅ **Registry Pattern**: Template registry untuk managing multiple patterns
+✅ **Registry Pattern**: Template registry (singleton) untuk managing multiple patterns
+✅ **Component Pattern**: AbstractGuiComponent untuk reusable GUI components
+✅ **State Pattern**: Different loading modes (parallel/sequential) dan draw states
 ✅ **Modern C++17**: RAII, smart pointers, move semantics
-✅ **Comprehensive Documentation**: Well-documented codebase
+✅ **Comprehensive Documentation**: Well-documented codebase dengan clear separation of concerns
 
 ---
 
@@ -761,7 +818,7 @@ This project is licensed under the **Apache License 2.0** - see the LICENSE file
 ## 🔗 Links
 
 - **[OpenFrameworks](https://openframeworks.cc/)** - openframeworks.cc
-- **[Watch Demo](https://youtu.be/fr0wx18GXeI)** - YouTube demonstration
+- **[Watch Demo](https://youtu.be/_VGDcTeWVa0)** - YouTube demonstration
 - **[SandyKurt Tutorials](https://sandykurt.com/free-tutorials)** - Free Islamic geometric patterns tutorials
 - **[Support Me](https://sociabuzz.com/abdkdhni)** - Fund the experiments ☕
 
