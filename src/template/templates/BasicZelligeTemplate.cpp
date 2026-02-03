@@ -6,6 +6,7 @@
 #include "../../shape/RectangleLine.h"
 #include "../../shape/OctagramLine.h"
 #include "../../imgui/imgui.h"
+#include "../../ofApp.h"
 
 using glm::vec2;
 
@@ -228,4 +229,65 @@ void BasicZelligeTemplate::showSettingsUI() {
 	if (ImGui::SliderInt("Octagram Points", &octagramPoints, 4, 12)) {
 		// TODO: Rebuild octagram with new point count
 	}
+}
+
+//--------------------------------------------------------------
+bool BasicZelligeTemplate::hasPlaybackSettings() {
+	return true;
+}
+
+//--------------------------------------------------------------
+void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
+	ImGui::Text("Mode Draw");
+	static int playMode = -1;  // -1 = belum pilih, 0 = Parallel, 1 = Sequential
+
+	if (ImGui::RadioButton("Parallel Per Group", &playMode, 0)) {
+		// Radio button changed
+	}
+	ImGui::SetNextItemWidth(150.0f);
+	if (ImGui::RadioButton("Sequential Per Group", &playMode, 1)) {
+		// Radio button changed
+	}
+	ImGui::Separator();
+
+	static bool autoCleanCanvas = false;
+	if (ImGui::Checkbox("Auto Clean Canvas", &autoCleanCanvas)) {
+		// Checkbox changed
+	}
+
+	// Play arrow button
+	if (ImGui::ArrowButton("Play", ImGuiDir_Left)) {
+		// Cek apakah sudah ada file yang di-open
+		if (app->lastSavedPath.empty()) {
+			// Belum ada file, munculkan error popup
+			app->errorPopup->show("No File Selected",
+								 "Please open a .nay file first before clicking Play!",
+								 "OK");
+		} else if (app->isCanvasEmpty() || autoCleanCanvas) {
+			// Clean canvas dulu kalau autoCleanCanvas aktif
+			if (autoCleanCanvas && !app->isCanvasEmpty())  app->cleanCanvas();
+
+			// Canvas kosong, boleh load
+			if (playMode == 0 || playMode == 1) {
+				// Set flag untuk delay load
+				app->isWaitingForLoad = true;
+				app->loadDelayTimer = ofGetElapsedTimef();
+				app->pendingLoadMode = playMode;
+
+				app->imguiVisible = false;  // Hide ImGui
+			} else {
+				// Belum pilih mode, munculkan error popup
+				app->errorPopup->show("No Mode Selected",
+									 "Please select a Draw Mode first!",
+									 "OK");
+			}
+		} else {
+			// Canvas tidak kosong, munculkan error popup
+			app->errorPopup->show("Canvas Not Empty",
+								 "Please clean canvas first or check auto clean canvas before loading!",
+								 "OK");
+		}
+	}
+	ImGui::SameLine();
+	ImGui::Text("Play");
 }

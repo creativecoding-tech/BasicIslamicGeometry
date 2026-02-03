@@ -84,6 +84,10 @@ public:
 	virtual bool hasCustomSettings() { return false; }
 	virtual void showSettingsUI() {}
 
+	// Optional: Template-specific playback settings (Mode Draw, Auto Clean, Play)
+	virtual bool hasPlaybackSettings() { return false; }
+	virtual void showPlaybackUI(class ofApp* app) {}
+
 protected:
 	// Template sekarang OWN shapes-nya sendiri!
 	// Derived classes populate ini via setupShapes()

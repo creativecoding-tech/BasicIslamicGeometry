@@ -30,6 +30,10 @@ public:
 	bool hasCustomSettings() override;
 	void showSettingsUI() override;
 
+	// Template-specific playback UI
+	bool hasPlaybackSettings() override;
+	void showPlaybackUI(class ofApp* app) override;
+
 	// radius diambil dari SacredGeometryTemplate::radius (protected)
 	// Tidak perlu radius sendiri lagi
 
