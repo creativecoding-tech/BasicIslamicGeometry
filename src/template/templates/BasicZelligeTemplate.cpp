@@ -251,9 +251,12 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 	ImGui::Separator();
 	ImGui::Text("Hide");
 	if (ImGui::Checkbox("Cartesian", &showCartesianOnPlay)) {
-		// Checkbox simpan preferensi untuk saat Play diklik
 		// JANGAN langsung apply Cartesian visibility di sini!
 	}
+	ImGui::SameLine();
+	static bool showCircles = true;
+	ImGui::Checkbox("Circles", &showCircles);
+
 	ImGui::Separator();
 
 	// Play arrow button
@@ -273,6 +276,9 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 			// Semua validasi OK! Lanjut load
 			// NOTE: loadWorkspace() akan otomatis menimpa semua data dengan yang baru
 			// Jadi tidak perlu cek canvas kosong atau clean canvas dulu
+
+			// Sinkronisasi SacredGeometry state dengan Playground preference
+			app->currentTemplate->showCartesianInSacredGeometry = showCartesianOnPlay;
 
 			// Set flag untuk delay load dan update state
 			app->isWaitingForLoad = true;

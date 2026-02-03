@@ -88,8 +88,9 @@ public:
 	bool dotsVisible = true;
 	float lineWidth = 4.0f;
 
-	// Playground preferences (public agar bisa diakses dari ofApp)
-	bool showCartesianOnPlay = true;  // Preferensi Cartesian visibility saat Play
+	// Cartesian visibility preferences (public agar bisa diakses dari UI)
+	bool showCartesianOnPlay = true;  // Playground panel preference saat Play
+	bool showCartesianInSacredGeometry = true;  // SacredGeometry panel preference (realtime)
 
 	// Template control methods - fully autonomous!
 	virtual void startSequentialDrawing();
