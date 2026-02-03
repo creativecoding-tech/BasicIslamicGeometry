@@ -329,6 +329,10 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 	if (ImGui::RadioButton("FadeIn", &polygonAnimationMode, 1)) {
 		// Radio button changed
 	}
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Wobble", &polygonAnimationMode, 2)) {
+		// Radio button changed
+	}
 
 	// Play arrow button
 	if (ImGui::ArrowButton("Play", ImGuiDir_Left)) {
@@ -352,9 +356,20 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 			app->currentTemplate->showCartesianInSacredGeometry = showCartesianOnPlay;
 
 			// Simpan polygon animation mode - convert int ke PolygonAnimationMode
-			// polygonAnimationMode: 0 = No Animation, 1 = FadeIn
-			PolygonAnimationMode polyMode = (polygonAnimationMode == 1) ?
-				PolygonAnimationMode::FADE_IN : PolygonAnimationMode::NO_ANIMATION;
+			// polygonAnimationMode: 0 = No Animation, 1 = FadeIn, 2 = Wobble
+			PolygonAnimationMode polyMode;
+			switch (polygonAnimationMode) {
+				case 1:
+					polyMode = PolygonAnimationMode::FADE_IN;
+					break;
+				case 2:
+					polyMode = PolygonAnimationMode::WOBBLE;
+					break;
+				case 0:
+				default:
+					polyMode = PolygonAnimationMode::NO_ANIMATION;
+					break;
+			}
 			app->fileManager.setPolygonAnimationMode(polyMode);
 
 			// Set flag untuk delay load dan update state

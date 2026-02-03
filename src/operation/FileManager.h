@@ -10,7 +10,8 @@ using glm::vec2;
 // Enum untuk Polygon Animation Mode
 enum class PolygonAnimationMode {
     NO_ANIMATION,  // 0
-    FADE_IN        // 1
+    FADE_IN,       // 1
+    WOBBLE         // 2
 };
 
 class FileManager {

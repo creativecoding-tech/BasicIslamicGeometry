@@ -2,13 +2,13 @@
 
 #include "ofMain.h"
 #include <memory>
-#include "../anim/FadeInAnimation.h"
+#include "../anim/AbstractAnimation.h"
 using glm::vec2;
 
 /**
  * PolygonShape - Polygon dengan fill TANPA outline (invisible edge)
  * Digunakan untuk membuat area berwarna tanpa garis tepi
- * Mendukung animation system (FadeInAnimation)
+ * Mendukung animation system (FadeInAnimation, WobbleAnimation, dll)
  */
 class PolygonShape {
 public:
@@ -16,7 +16,7 @@ public:
 	PolygonShape();
 	PolygonShape(vector<vec2> verts, ofColor color);
 	PolygonShape(vector<vec2> verts, ofColor color, int index);  // Dengan index untuk label
-	PolygonShape(vector<vec2> verts, ofColor color, int index, std::unique_ptr<FadeInAnimation> anim);  // Dengan animation (untuk load dari file)
+	PolygonShape(vector<vec2> verts, ofColor color, int index, std::unique_ptr<AbstractAnimation> anim);  // Dengan animation (untuk load dari file)
 
 	// Copy constructor (animation tidak dicopy)
 	PolygonShape(const PolygonShape& other);
@@ -56,5 +56,5 @@ private:
 	ofColor fillColor;
 	bool selected;
 	int index;  // Index polygon untuk label
-	std::unique_ptr<FadeInAnimation> animation;  // Animation system (optional)
+	std::unique_ptr<AbstractAnimation> animation;  // Animation system (optional)
 };

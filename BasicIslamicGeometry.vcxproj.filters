@@ -26,6 +26,7 @@
     <ClCompile Include="src\template\templates\BasicZelligeTemplate.cpp" />
     <ClCompile Include="src\anim\AbstractAnimation.cpp" />
     <ClCompile Include="src\anim\FadeInAnimation.cpp" />
+    <ClCompile Include="src\anim\WobbleAnimation.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp" />
     <ClCompile Include="src\imgui\imgui_draw.cpp" />
     <ClCompile Include="src\imgui\imgui_widgets.cpp" />
@@ -63,6 +64,7 @@
     <ClInclude Include="src\template\templates\BasicZelligeTemplate.h" />
     <ClInclude Include="src\anim\AbstractAnimation.h" />
     <ClInclude Include="src\anim\FadeInAnimation.h" />
+    <ClInclude Include="src\anim\WobbleAnimation.h" />
     <ClInclude Include="src\imgui\imgui.h" />
     <ClInclude Include="src\imgui\imgui_internal.h" />
     <ClInclude Include="src\imgui\imconfig.h" />

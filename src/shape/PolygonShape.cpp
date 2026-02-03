@@ -1,5 +1,6 @@
 #include "PolygonShape.h"
 #include "../anim/FadeInAnimation.h"
+#include "../anim/WobbleAnimation.h"
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape()
@@ -14,7 +15,7 @@ PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int idx)
 	: vertices(verts), fillColor(color), selected(false), index(idx), animation(nullptr) {}
 
 //--------------------------------------------------------------
-PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index, std::unique_ptr<FadeInAnimation> anim)
+PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index, std::unique_ptr<AbstractAnimation> anim)
 	: vertices(verts), fillColor(color), selected(false), index(index), animation(std::move(anim)) {}
 
 //--------------------------------------------------------------
@@ -64,33 +65,65 @@ void PolygonShape::draw() const {
 	ofPushStyle();
 	ofFill();
 
-	// Gunakan animation alpha untuk fade-in
+	// Cek tipe animation dan apply effect yang sesuai
 	if (animation) {
 		ofColor animatedColor = fillColor;
 
-		// DEBUG: Cek progress
-		float progress = animation->getProgress();
+		// Cek FadeInAnimation
+		if (auto* fadeAnim = dynamic_cast<FadeInAnimation*>(animation.get())) {
+			float progress = animation->getProgress();
 
-		// Kalau progress masih 0, alpha harus 0 (BENAR-BENAR HIDDEN)
-		if (progress == 0.0f) {
-			animatedColor.a = 0;  // FORCE alpha 0!
-		} else {
-			// Progress > 0, pakai current alpha
-			float currentAlpha = animation->getCurrentAlpha();
-			animatedColor.a = static_cast<int>(currentAlpha);
+			// Kalau progress masih 0, alpha harus 0 (BENAR-BENAR HIDDEN)
+			if (progress == 0.0f) {
+				animatedColor.a = 0;  // FORCE alpha 0!
+			} else {
+				// Progress > 0, pakai current alpha
+				float currentAlpha = fadeAnim->getCurrentAlpha();
+				animatedColor.a = static_cast<int>(currentAlpha);
+			}
+
+			ofSetColor(animatedColor);
+
+			// Gambar polygon tanpa wobble
+			ofBeginShape();
+			for (auto& v : vertices) {
+				ofVertex(v.x, v.y);
+			}
+			ofEndShape(true);
 		}
+		// Cek WobbleAnimation
+		else if (auto* wobbleAnim = dynamic_cast<WobbleAnimation*>(animation.get())) {
+			ofSetColor(animatedColor);
 
-		ofSetColor(animatedColor);
+			// Gambar polygon dengan wobble effect pada vertices
+			glm::vec2 offset = wobbleAnim->getWobbleOffset();
+
+			ofBeginShape();
+			for (auto& v : vertices) {
+				// Setiap vertex diberi offset yang sama (seluruh polygon bergoyang)
+				ofVertex(v.x + offset.x, v.y + offset.y);
+			}
+			ofEndShape(true);
+		}
+		// Unknown animation type - fallback ke no animation
+		else {
+			ofSetColor(fillColor);
+			ofBeginShape();
+			for (auto& v : vertices) {
+				ofVertex(v.x, v.y);
+			}
+			ofEndShape(true);
+		}
 	} else {
 		// Tidak ada animation, pakai fillColor asli
 		ofSetColor(fillColor);
-	}
 
-	ofBeginShape();
-	for (auto& v : vertices) {
-		ofVertex(v.x, v.y);
+		ofBeginShape();
+		for (auto& v : vertices) {
+			ofVertex(v.x, v.y);
+		}
+		ofEndShape(true);
 	}
-	ofEndShape(true);
 
 	// Jika selected, gambar label di tengah polygon
 	if (selected && index >= 0) {

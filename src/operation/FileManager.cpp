@@ -1,5 +1,6 @@
 #include "FileManager.h"
 #include "../anim/FadeInAnimation.h"
+#include "../anim/WobbleAnimation.h"
 
 // Konstanta filename
 const std::string FileManager::FILENAME = "workspace.nay";
@@ -369,6 +370,13 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
           polygons.push_back(std::move(polygon));
         }
         break;
+      case PolygonAnimationMode::WOBBLE:
+        {
+          auto wobble = std::make_unique<WobbleAnimation>(30.0f, 5.0f, 0.03f);
+          PolygonShape polygon(vertices, fillColor, i, std::move(wobble));
+          polygons.push_back(std::move(polygon));
+        }
+        break;
       case PolygonAnimationMode::NO_ANIMATION:
       default:
         {
@@ -609,6 +617,13 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
           {
             auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
             PolygonShape polygon(vertices, fillColor, i, std::move(fadeIn));
+            loadedPolygonsBuffer.push_back(std::move(polygon));
+          }
+          break;
+        case PolygonAnimationMode::WOBBLE:
+          {
+            auto wobble = std::make_unique<WobbleAnimation>(30.0f, 5.0f, 0.03f);
+            PolygonShape polygon(vertices, fillColor, i, std::move(wobble));
             loadedPolygonsBuffer.push_back(std::move(polygon));
           }
           break;
