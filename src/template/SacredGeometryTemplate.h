@@ -104,6 +104,10 @@ public:
 	bool showParallelogramsOnPlay = true;  // Playground panel preference saat Play
 	std::vector<int> parallelogramIndices;  // Daftar index parallelograms di template (fleksibel!)
 
+	// RectangleLine visibility preferences (public agar bisa diakses dari UI)
+	bool showRectangleLinesOnPlay = true;  // Playground panel preference saat Play
+	std::vector<int> rectangleLineIndices;  // Daftar index rectangleLines di template (fleksibel!)
+
 	// Template control methods - fully autonomous!
 	virtual void startSequentialDrawing();
 	virtual bool updateSequentialDrawing();  // Return true jika complete

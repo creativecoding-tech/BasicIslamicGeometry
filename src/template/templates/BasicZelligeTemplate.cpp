@@ -125,6 +125,9 @@ void BasicZelligeTemplate::setupParallelograms() {
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupRectangleLines() {
+	// Clear daftar rectangleLines dulu
+	rectangleLineIndices.clear();
+
 	// RectangleLine dari F ke G dengan intersection points
 	float angleF = -3 * PI / 4;  // -135°
 	vec2 posF = vec2(cos(angleF) * radius, sin(angleF) * radius);
@@ -139,6 +142,7 @@ void BasicZelligeTemplate::setupRectangleLines() {
 	vec2 intersecS = vec2(radius * (1 - sqrt(2) / 2), posF.y);
 
 	shapes.push_back(std::make_unique<RectangleLine>(posF, posG, intersecR, intersecS, "R", "S", radius));
+	rectangleLineIndices.push_back(shapes.size() - 1);  // Simpan index RectangleLine RS
 
 	// RectangleLine G ke I
 	float angleI = PI / 4; //45°
@@ -151,6 +155,7 @@ void BasicZelligeTemplate::setupRectangleLines() {
 	vec2 intersecU = vec2(radius * sqrt(2) / 2, radius * (1 - sqrt(2) / 2));
 
 	shapes.push_back(std::make_unique<RectangleLine>(posG, posI, intersecT, intersecU, "T", "U", radius));
+	rectangleLineIndices.push_back(shapes.size() - 1);  // Simpan index RectangleLine TU
 
 	// RectangleLine I ke H
 	float angleH = 3 * PI / 4; //135°
@@ -158,11 +163,13 @@ void BasicZelligeTemplate::setupRectangleLines() {
 	vec2 intersecV = vec2(radius * (1 - sqrt(2) / 2), posH.y);
 	vec2 intersecW = vec2(-radius * (1 - sqrt(2) / 2), posH.y);
 	shapes.push_back(std::make_unique<RectangleLine>(posI, posH, intersecV, intersecW, "V", "W", radius));
+	rectangleLineIndices.push_back(shapes.size() - 1);  // Simpan index RectangleLine VW
 
 	// RectangleLine H ke F
 	vec2 intersecX = vec2(-radius * sqrt(2) / 2, radius * (1 - sqrt(2) / 2));
 	vec2 intersecY = vec2(-radius * sqrt(2) / 2, radius * (sqrt(2) / 2 - 1));
 	shapes.push_back(std::make_unique<RectangleLine>(posH, posF, intersecX, intersecY, "X", "Y", radius));
+	rectangleLineIndices.push_back(shapes.size() - 1);  // Simpan index RectangleLine XY
 }
 
 //--------------------------------------------------------------
@@ -291,6 +298,10 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 		// Checkbox simpan preferensi untuk saat Play diklik
 	}
 	if (ImGui::Checkbox("Parallelograms", &showParallelogramsOnPlay)) {
+		// Checkbox simpan preferensi untuk saat Play diklik
+	}
+	ImGui::SameLine();
+	if (ImGui::Checkbox("RectangleLines", &showRectangleLinesOnPlay)) {
 		// Checkbox simpan preferensi untuk saat Play diklik
 	}
 

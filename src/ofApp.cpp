@@ -1414,6 +1414,17 @@ void ofApp::loadWorkspace() {
                         }
                     }
                 }
+
+                // RectangleLine RS, TU, VW, XY menggunakan rectangleLineIndices (fleksibel!)
+                for (int rectangleLineIndex : currentTemplate->rectangleLineIndices) {
+                    if (rectangleLineIndex < shapes.size()) {
+                        if (currentTemplate->showRectangleLinesOnPlay) {
+                            shapes[rectangleLineIndex]->show();
+                        } else {
+                            shapes[rectangleLineIndex]->hide();
+                        }
+                    }
+                }
             }
         }
 
@@ -1524,6 +1535,17 @@ void ofApp::loadWorkspaceSeq() {
                         shapes[parallelogramIndex]->show();
                     } else {
                         shapes[parallelogramIndex]->hide();
+                    }
+                }
+            }
+
+            // RectangleLine RS, TU, VW, XY menggunakan rectangleLineIndices (fleksibel!)
+            for (int rectangleLineIndex : currentTemplate->rectangleLineIndices) {
+                if (rectangleLineIndex < shapes.size()) {
+                    if (currentTemplate->showRectangleLinesOnPlay) {
+                        shapes[rectangleLineIndex]->show();
+                    } else {
+                        shapes[rectangleLineIndex]->hide();
                     }
                 }
             }
