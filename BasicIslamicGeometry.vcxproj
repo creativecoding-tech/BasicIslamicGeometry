@@ -240,6 +240,7 @@
     <ClCompile Include="src\operation\gui\SuccessPopup.cpp" />
     <ClCompile Include="src\operation\gui\ErrorPopup.cpp" />
     <ClCompile Include="src\template\TemplateRegistry.cpp" />
+    <ClCompile Include="src\template\SacredGeometryTemplate.cpp" />
     <ClCompile Include="src\template\templates\BasicZelligeTemplate.cpp" />
     <ClCompile Include="src\anim\AbstractAnimation.cpp" />
     <ClCompile Include="src\anim\FadeInAnimation.cpp" />

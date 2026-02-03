@@ -13,7 +13,7 @@ void SacredGeometry::draw() {
             // Radio button untuk Parallel/Sequential
             static int drawMode = -1;  // 0 = Parallel, 1 = Sequential
             if(ImGui::RadioButton("Parallel", &drawMode, 0)) {
-                if (!app->sequentialMode) {
+                if (app->currentTemplate && !app->currentTemplate->sequentialMode) {
                     app->showAllShapes();
                 }
             }
@@ -25,19 +25,23 @@ void SacredGeometry::draw() {
                 if (!app->isStaggeredLoad) app->hideAllShapes();
             }
             ImGui::Separator();
+            if (app->currentTemplate) {
+                ImGui::SetNextItemWidth(150.0f);
+                ImGui::SliderFloat("Radius", &app->currentTemplate->radius, 100, 240);
+            }
             ImGui::SetNextItemWidth(150.0f);
-            ImGui::SliderFloat("Radius", &app->radiusCircle, 100, 240);
-            ImGui::SetNextItemWidth(150.0f);
-            if (ImGui::SliderFloat("Line Width", &app->currentLineWidth, 0, 4)) {
+            if (app->currentTemplate && ImGui::SliderFloat("Line Width", &app->currentTemplate->lineWidth, 0, 4)) {
                 app->updateLineWidth();
             }
             ImGui::Separator();
-            if (ImGui::Checkbox("Labels", &app->labelsVisible)) {
-                app->toggleLabels();
-            }
-            ImGui::SameLine();  // Pindah ke sebelah kanan
-            if (ImGui::Checkbox("Dots", &app->dotsVisible)) {
-                app->toggleDots();
+            if (app->currentTemplate) {
+                if (ImGui::Checkbox("Labels", &app->currentTemplate->labelsVisible)) {
+                    app->toggleLabels();
+                }
+                ImGui::SameLine();  // Pindah ke sebelah kanan
+                if (ImGui::Checkbox("Dots", &app->currentTemplate->dotsVisible)) {
+                    app->toggleDots();
+                }
             }
             static bool showCartesian = true;
             if (ImGui::Checkbox("Cartesian", &showCartesian)) {

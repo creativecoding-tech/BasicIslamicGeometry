@@ -26,7 +26,6 @@ class ofApp : public ofBaseApp{
 		// TEMPLATE SYSTEM - Template sekarang self-contained!
 		// Template owns shapes sendiri, handle draw/update sendiri
 		SacredGeometryTemplate* currentTemplate = nullptr;  // Template yang sedang aktif
-		float radiusCircle = 240;  // Radius default dari template
 		float previousRadius = 240;  // Untuk tracking perubahan radius (scaling customLines & polygons)
 
 		bool cursorVisible = false;
@@ -68,14 +67,8 @@ class ofApp : public ofBaseApp{
 		};
 
 		// Line width control
-		float currentLineWidth = 4.0f;  // Current line width untuk shapes
 		float mouseLineWidth = 3.f;    // Line width khusus untuk mouse drag lines
 
-		bool sequentialMode = false; // Sequential drawing mode
-		int currentShapeIndex = 0;
-		bool sequentialCompleted = false;  // Flag untuk track apakah sequential sudah selesai
-		bool labelsVisible = true;      // Flag untuk track label visibility
-		bool dotsVisible = true;        // Flag untuk track dot visibility
 		float threshold = 10.0f; //dalam radius saat mouse hover pada dot
 		bool isCtrlPressed = false;
 
@@ -122,7 +115,7 @@ class ofApp : public ofBaseApp{
 
 		// Sequential drawing methods
 		void startSequentialDrawing();
-		void updateSequentialDrawing();
+		// NOTE: updateSequentialDrawing() removed - template handles it autonomously
 
 		// Shape control methods
 		void toggleLabels();           // Toggle label visibility

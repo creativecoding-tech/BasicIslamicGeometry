@@ -45,6 +45,7 @@ void ofApp::setupTemplateSystem() {
 void ofApp::switchTemplate(const std::string &templateName) {
   // Get template dari registry
   TemplateRegistry &registry = TemplateRegistry::getInstance();
+  SacredGeometryTemplate* oldTemplate = currentTemplate;
   currentTemplate = registry.getTemplate(templateName);
 
   // Null check - template tidak ditemukan
@@ -53,18 +54,26 @@ void ofApp::switchTemplate(const std::string &templateName) {
     return;
   }
 
+  // Keep previous radius setting if available
+  if (oldTemplate) {
+      currentTemplate->setRadius(oldTemplate->radius);
+  }
+
   // Setup shapes baru dari template
-  // Gunakan setRadius() karena dia clear shapes dulu sebelum setupShapes()
-  currentTemplate->setRadius(radiusCircle);
+  currentTemplate->setRadius(currentTemplate->radius);
   // Reset dots cache agar di-rebuild
   dotsCacheDirty = true;
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
-  // Update sequential drawing logic
-  if (sequentialMode) {
-    updateSequentialDrawing();
+  // Update template sequential drawing - template fully autonomous
+  if (currentTemplate && currentTemplate->sequentialMode) {
+    bool complete = currentTemplate->updateSequentialDrawing();
+    if (complete) {
+      // Sequential drawing selesai, rebuild dots cache
+      dotsCacheDirty = true;
+    }
   }
 
   // Check play button delay timer
@@ -88,38 +97,43 @@ void ofApp::update() {
   if (isStaggeredLoad) {
     switch (loadStage) {
       case LOAD_TEMPLATE:
-        if (isSequentialShapeLoad) {
-          // SEQUENTIAL MODE (CTRL+SHIFT+O): Update satu per satu
-          const auto& shapes = currentTemplate->getShapes();
-          if (currentTemplateIndex < shapes.size()) {
-            shapes[currentTemplateIndex]->update();
+        // Delegate ke template untuk update shapes
+        if (currentTemplate) {
+          if (isSequentialShapeLoad) {
+            // SEQUENTIAL MODE: Update satu per satu
+            const auto& shapes = currentTemplate->getShapes();
+            if (currentTemplateIndex < shapes.size()) {
+              shapes[currentTemplateIndex]->update();
 
-            if (shapes[currentTemplateIndex]->isComplete()) {
-              currentTemplateIndex++;
+              if (shapes[currentTemplateIndex]->isComplete()) {
+                currentTemplateIndex++;
+              }
+            } else {
+              loadStage = LOAD_CUSTOMLINES;
+              currentTemplateIndex = 0;
             }
           } else {
-            loadStage = LOAD_CUSTOMLINES;
-            currentTemplateIndex = 0;
-          }
-        } else {
-          // PARALLEL MODE (CTRL+O): Update semua bareng
-          const auto& shapes = currentTemplate->getShapes();
-          for (auto &shape : shapes) {
-            shape->update();
-          }
+            // PARALLEL MODE: Update semua bareng
+            currentTemplate->update();
 
-          bool allComplete = true;
-          for (auto &shape : shapes) {
-            if (!shape->isComplete()) {
-              allComplete = false;
-              break;
+            // Cek apakah semua complete
+            bool allComplete = true;
+            const auto& shapes = currentTemplate->getShapes();
+            for (auto &shape : shapes) {
+              if (!shape->isComplete()) {
+                allComplete = false;
+                break;
+              }
+            }
+
+            if (allComplete) {
+              loadStage = LOAD_CUSTOMLINES;
+              fileManager.setLoadParallelMode(true);
             }
           }
-
-          if (allComplete) {
-            loadStage = LOAD_CUSTOMLINES;
-            fileManager.setLoadParallelMode(true);
-          }
+        } else {
+          // Tidak ada template, lanjut
+          loadStage = LOAD_CUSTOMLINES;
         }
         break;
 
@@ -198,19 +212,16 @@ void ofApp::update() {
     dotsCacheDirty = true;
 
     // Scale customLines & polygons jika radius berubah (realtime update)
-    if (radiusCircle != previousRadius) {
-      // Update template radius TANPA rebuild shapes!
-      if (currentTemplate) {
-        // Update radius property di template
-        currentTemplate->radius = radiusCircle;
-        // Update radius di setiap shape individual
-        const auto& shapes = currentTemplate->getShapes();
-        for (auto& shape : shapes) {
-          shape->setRadius(radiusCircle);
-        }
+    if (currentTemplate && currentTemplate->radius != previousRadius) {
+      // Update radius di setiap shape individual TANPA rebuild
+      const auto& shapes = currentTemplate->getShapes();
+      for (auto& shape : shapes) {
+        shape->setRadius(currentTemplate->radius);
       }
-      scaleCustomLinesAndPolygons(previousRadius, radiusCircle);
-      previousRadius = radiusCircle;  // Update tracking
+
+      // Scale customLines & polygons
+      scaleCustomLinesAndPolygons(previousRadius, currentTemplate->radius);
+      previousRadius = currentTemplate->radius;  // Update tracking
     }
 
     // Update sequential load logic dari FileManager (lines + polygons)
@@ -317,7 +328,7 @@ void ofApp::drawCustomLinesAndUI() {
 
   // Draw dot highlights (hover state) - HANYA ketika TIDAK sedang drag DAN dots
   // visible
-  if (drawState != DRAGGING && dotsVisible) {
+  if (drawState != DRAGGING && (!currentTemplate || currentTemplate->dotsVisible)) {
     vector<DotInfo> dots = getAllDots();
     for (auto &dot : dots) {
       if (isMouseOverDot(mousePos, dot.position)) {
@@ -343,16 +354,20 @@ void ofApp::keyPressed(int key) {
 
   // Toggle label visibility dengan ` atau ~
   if (key == '`' || key == '~') {
-    // Toggle label visibility
-    labelsVisible = !labelsVisible;
-    toggleLabels();
+    // Toggle label visibility - delegate ke template
+    if (currentTemplate) {
+      currentTemplate->labelsVisible = !currentTemplate->labelsVisible;
+      currentTemplate->toggleLabels();
+    }
   }
 
   // Toggle dot visibility dengan . atau >
   if (key == '.' || key == '>') {
-    // Toggle dot visibility
-    dotsVisible = !dotsVisible;
-    toggleDots();
+    // Toggle dot visibility - delegate ke template
+    if (currentTemplate) {
+      currentTemplate->dotsVisible = !currentTemplate->dotsVisible;
+      currentTemplate->toggleDots();
+    }
   }
 
   if (key == OF_KEY_DEL) {
@@ -449,7 +464,7 @@ void ofApp::keyPressed(int key) {
 
   if (key == ')' && ofGetKeyPressed(OF_KEY_SHIFT)) {
     // Hanya boleh show semua jika TIDAK sedang sequential drawing
-    if (!sequentialMode) {
+    if (!currentTemplate || !currentTemplate->sequentialMode) {
       showAllShapes();
     }
   }
@@ -457,7 +472,7 @@ void ofApp::keyPressed(int key) {
   // FIX: Juga handle SHIFT+) yang terbaca sebagai '+' atau '='
   if ((key == '+' || key == '=') && ofGetKeyPressed(OF_KEY_SHIFT)) {
     // Hanya boleh show semua jika TIDAK sedang sequential drawing
-    if (!sequentialMode) {
+    if (!currentTemplate || !currentTemplate->sequentialMode) {
       showAllShapes();
       return; // Return agar tidak trigger increaseLineWidth
     }
@@ -465,24 +480,28 @@ void ofApp::keyPressed(int key) {
 
   if (key == '-' || key == '_') {
        // Kurangi line width secara bertahap
-      currentLineWidth -= 0.5f;
+      if (currentTemplate) {
+          currentTemplate->lineWidth -= 0.5f;
 
-      // Batasi minimum line width
-      if (currentLineWidth < 0.f) {
-          currentLineWidth = 0.f;
+          // Batasi minimum line width
+          if (currentTemplate->lineWidth < 0.f) {
+              currentTemplate->lineWidth = 0.f;
+          }
+          updateLineWidth();
       }
-    updateLineWidth();
   }
 
   if (key == '+' || key == '=') {
       // Tambah line width secara bertahap
-      currentLineWidth += 0.5f;
+      if (currentTemplate) {
+          currentTemplate->lineWidth += 0.5f;
 
-      // Batasi maximum line width
-      if (currentLineWidth > 4.0f) {
-          currentLineWidth = 4.0f;
+          // Batasi maximum line width
+          if (currentTemplate->lineWidth > 4.0f) {
+              currentTemplate->lineWidth = 4.0f;
+          }
+          updateLineWidth();
       }
-      updateLineWidth();
   }
 
   // Handle CTRL key ditekan
@@ -983,143 +1002,39 @@ void ofApp::dragEvent(ofDragInfo dragInfo) {}
 void ofApp::startSequentialDrawing() {
   if (!currentTemplate) return;
 
-  const auto& shapes = currentTemplate->getShapes();
-
-  // Cek apakah semua shapes sudah visible/showing
-  bool allVisible = true;
-  for (auto &shape : shapes) {
-    if (!shape->showing) {
-      allVisible = false;
-      break;
-    }
-  }
-
-  if (allVisible) {
-    // Semua shapes sudah visible, jangan jalankan sequential
-    return;
-  }
-
-  // Cek apakah ada shape yang sedang drawing (belum complete)
-  bool stillDrawing = false;
-  for (auto &shape : shapes) {
-    if (!shape->isComplete()) {
-      stillDrawing = true;
-      break;
-    }
-  }
-
-  if (stillDrawing) {
-    // Ada shape yang masih drawing, jangan jalankan sequential
-    return;
-  }
-
-  // Cek apakah sequential sudah pernah selesai
-  if (sequentialCompleted) {
-    // Sequential sudah selesai sebelumnya, jangan jalankan lagi
-    return;
-  }
-
-  // Reset semua shapes ke hidden
-  for (auto &shape : shapes) {
-    shape->hide();
-  }
-
-  // Mulai sequential mode
-  sequentialMode = true;
-  sequentialCompleted = false; // Reset flag
-  currentShapeIndex = 0;
-
-  // Set sequential mode untuk semua shapes (setelah sequentialMode = true)
-  for (auto &shape : shapes) {
-    shape->setSequentialMode(sequentialMode);
-  }
-
-  // Show shape pertama
-  if (!shapes.empty()) {
-    shapes[0]->show();
-  }
+  // Delegate ke template
+  currentTemplate->startSequentialDrawing();
 }
 
 //--------------------------------------------------------------
-void ofApp::updateSequentialDrawing() {
-  if (!currentTemplate) return;
-
-  const auto& shapes = currentTemplate->getShapes();
-  AbstractShape *currentShape = nullptr;
-
-  // Tentukan shape berdasarkan index
-  if (currentShapeIndex >= 0 && currentShapeIndex < shapes.size()) {
-    currentShape = shapes[currentShapeIndex].get();
-  }
-
-  // Cek jika current shape sudah complete
-  if (currentShape && currentShape->isComplete()) {
-    // Pindah ke shape berikutnya
-    currentShapeIndex++;
-
-    // Show shape berikutnya jika masih ada
-    if (currentShapeIndex < shapes.size()) {
-      shapes[currentShapeIndex]->show();
-    } else {
-      // Semua shapes sudah complete, matikan sequential mode dan tandai selesai
-      sequentialMode = false;
-      sequentialCompleted = true;
-      dotsCacheDirty = true; // Rebuild dots cache agar mouse hover bekerja
-    }
-  }
-}
+// NOTE: updateSequentialDrawing() sudah dihapus!
+// Logic sekarang ada di SacredGeometryTemplate::updateSequentialDrawing()
+// Template handle sequential drawing secara autonomous
 
 //--------------------------------------------------------------
 void ofApp::toggleLabels() {
   if (!currentTemplate) return;
 
-  // Iterate semua template shapes
-  const auto& shapes = currentTemplate->getShapes();
-  for (auto &shape : shapes) {
-    if (labelsVisible) {
-      shape->showLabel();
-    } else {
-      shape->hideLabel();
-    }
-  }
+  // NOTE: ImGui Checkbox SUDAH mengubah nilai labelsVisible
+  // Jadi JANGAN toggle lagi, langsung apply saja
+  currentTemplate->toggleLabels();
 }
 
 //--------------------------------------------------------------
 void ofApp::toggleDots() {
   if (!currentTemplate) return;
 
-  // Iterate semua template shapes
-  const auto& shapes = currentTemplate->getShapes();
-  for (auto &shape : shapes) {
-    if (dotsVisible) {
-      shape->showDot();
-    } else {
-      shape->hideDot();
-    }
-  }
+  // NOTE: ImGui Checkbox SUDAH mengubah nilai dotsVisible
+  // Jadi JANGAN toggle lagi, langsung apply saja
+  currentTemplate->toggleDots();
 }
 
 //--------------------------------------------------------------
 void ofApp::hideAllShapes() {
   if (!currentTemplate) return;
 
-  const auto& shapes = currentTemplate->getShapes();
-
-  // Matikan sequential mode
-  sequentialMode = false;
-
-  // Set paralel mode untuk semua shapes (pakai sequentialMode yang sudah false)
-  for (auto &shape : shapes) {
-    shape->setSequentialMode(sequentialMode);
-  }
-
-  // Hide semua shapes
-  for (auto &shape : shapes) {
-    shape->hide();
-  }
-
-  // Reset sequential completed flag agar bisa jalankan lagi
-  sequentialCompleted = false;
+  // Delegate ke template
+  currentTemplate->hideAllShapes();
 
   // Mark dots cache dirty karena visibility berubah
   dotsCacheDirty = true;
@@ -1129,23 +1044,8 @@ void ofApp::hideAllShapes() {
 void ofApp::showAllShapes() {
   if (!currentTemplate) return;
 
-  const auto& shapes = currentTemplate->getShapes();
-
-  // Matikan sequential mode (paralel mode)
-  sequentialMode = false;
-
-  // Set mode untuk semua shapes (pakai sequentialMode yang sudah false)
-  for (auto &shape : shapes) {
-    shape->setSequentialMode(sequentialMode);
-  }
-
-  // Show semua shapes (akan animasi barengan/paralel)
-  for (auto &shape : shapes) {
-    shape->show();
-  }
-
-  // Reset sequential completed flag agar bisa jalankan lagi
-  sequentialCompleted = false;
+  // Delegate ke template
+  currentTemplate->showAllShapes();
 
   // Mark dots cache dirty karena visibility berubah
   dotsCacheDirty = true;
@@ -1155,10 +1055,8 @@ void ofApp::showAllShapes() {
 void ofApp::updateLineWidth() {
     if (!currentTemplate) return;
 
-    const auto& shapes = currentTemplate->getShapes();
-    for (auto& shape : shapes) {
-        shape->setLineWidth(currentLineWidth);
-    }
+    // Delegate ke template - pakai nilai yang sudah ada di template
+    currentTemplate->updateLineWidth(currentTemplate->lineWidth);
 }
 
 //--------------------------------------------------------------
@@ -1179,8 +1077,10 @@ void ofApp::cleanCanvas() {
     selectedLineIndices.clear();
     lastSelectedLineIndex = -1;
 
-    // Hide semua template shapes
-    hideAllShapes();
+    // Hide semua template shapes - delegate ke template
+    if (currentTemplate) {
+        currentTemplate->hideAllShapes();
+    }
 }
 
 //--------------------------------------------------------------
@@ -1251,9 +1151,9 @@ void ofApp::saveWorkspace() {
 
   // Sudah ada Save As sebelumnya, save langsung ke file tersebut
   // Simpan ke default location dulu
-  fileManager.saveAll(currentTemplate->getName(), radiusCircle,
-                      customLines, polygonShapes, currentLineWidth,
-                      labelsVisible, dotsVisible);
+  fileManager.saveAll(currentTemplate->getName(), currentTemplate->radius,
+                      customLines, polygonShapes, currentTemplate->lineWidth,
+                      currentTemplate->labelsVisible, currentTemplate->dotsVisible);
   // Copy ke lastSavedPath
   ofFile::copyFromTo("workspace.nay", lastSavedPath, true, true);
 
@@ -1283,9 +1183,9 @@ void ofApp::saveWorkspaceAs() {
   }
 
   // Simpan file sementara ke default location
-  fileManager.saveAll(currentTemplate->getName(), radiusCircle,
-                      customLines, polygonShapes, currentLineWidth,
-                      labelsVisible, dotsVisible);
+  fileManager.saveAll(currentTemplate->getName(), currentTemplate->radius,
+                      customLines, polygonShapes, currentTemplate->lineWidth,
+                      currentTemplate->labelsVisible, currentTemplate->dotsVisible);
 
   // Copy file ke lokasi yang user pilih
   ofFile::copyFromTo("workspace.nay", filepath, true, true);
@@ -1341,29 +1241,31 @@ void ofApp::loadWorkspace() {
         polygonShapes, loadedLineWidth,
         loadedLabelsVisible, loadedDotsVisible, lastSavedPath)) {
 
-        // Update radius dengan loaded radius DULU (sebelum switchTemplate!)
-        radiusCircle = loadedRadius;
-        previousRadius = loadedRadius;  // Reset tracking agar tidak scaling saat load
-
-        // Switch ke template yang di-load (sekarang radiusCircle sudah benar)
+        // Switch ke template yang di-load DULU
         switchTemplate(loadedTemplateName);
 
-        // Update Settings
-        currentLineWidth = loadedLineWidth;
-        labelsVisible = loadedLabelsVisible;
-        dotsVisible = loadedDotsVisible;
+        // Rebuild shapes dengan loaded radius yang benar!
+        currentTemplate->setRadius(loadedRadius);
+
+        // Update tracking untuk scaling
+        previousRadius = loadedRadius;  // Reset tracking agar tidak scaling saat load
+
+        // Sync Settings ke template
+        currentTemplate->lineWidth = loadedLineWidth;
+        currentTemplate->labelsVisible = loadedLabelsVisible;
+        currentTemplate->dotsVisible = loadedDotsVisible;
 
         // Apply settings ke semua shapes yang baru di-load
         const auto& shapes = currentTemplate->getShapes();
         for (auto& shape : shapes) {
-            shape->setLineWidth(currentLineWidth);
+            shape->setLineWidth(currentTemplate->lineWidth);
 
-            if (labelsVisible)
+            if (currentTemplate->labelsVisible)
                 shape->showLabel();
             else
                 shape->hideLabel();
 
-            if (dotsVisible)
+            if (currentTemplate->dotsVisible)
                 shape->showDot();
             else
                 shape->hideDot();
@@ -1409,27 +1311,29 @@ void ofApp::loadWorkspaceSeq() {
         loadedLineWidth, loadedLabelsVisible, loadedDotsVisible,
         customLines, polygonShapes, lastSavedPath);
 
-    // Update radius dengan loaded radius DULU (sebelum switchTemplate!)
-    radiusCircle = loadedRadius;
-    previousRadius = loadedRadius;  // Reset tracking agar tidak scaling saat load
-
-    // Switch ke template yang di-load (sekarang radiusCircle sudah benar)
+    // Switch ke template yang di-load DULU
     switchTemplate(loadedTemplateName);
 
-    // Update Settings
-    currentLineWidth = loadedLineWidth;
-    labelsVisible = loadedLabelsVisible;
-    dotsVisible = loadedDotsVisible;
+    // Rebuild shapes dengan loaded radius yang benar!
+    currentTemplate->setRadius(loadedRadius);
+
+    // Update tracking untuk scaling
+    previousRadius = loadedRadius;  // Reset tracking agar tidak scaling saat load
+
+    // Sync Settings ke template
+    currentTemplate->lineWidth = loadedLineWidth;
+    currentTemplate->labelsVisible = loadedLabelsVisible;
+    currentTemplate->dotsVisible = loadedDotsVisible;
 
     // Apply settings ke semua template shapes
     const auto& shapes = currentTemplate->getShapes();
     for (auto& shape : shapes) {
-        shape->setLineWidth(currentLineWidth);
-        if (labelsVisible)
+        shape->setLineWidth(currentTemplate->lineWidth);
+        if (currentTemplate->labelsVisible)
             shape->showLabel();
         else
             shape->hideLabel();
-        if (dotsVisible)
+        if (currentTemplate->dotsVisible)
             shape->showDot();
         else
             shape->hideDot();

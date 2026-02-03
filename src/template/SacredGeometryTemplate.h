@@ -80,6 +80,24 @@ public:
 	// Public radius - bisa diakses langsung
 	float radius = 240;
 
+	// Template state
+	bool sequentialMode = false;
+	int currentShapeIndex = 0;
+	bool sequentialCompleted = false;
+	bool labelsVisible = true;
+	bool dotsVisible = true;
+	float lineWidth = 4.0f;
+
+	// Template control methods - fully autonomous!
+	virtual void startSequentialDrawing();
+	virtual bool updateSequentialDrawing();  // Return true jika complete
+	virtual void showAllShapes();
+	virtual void hideAllShapes();
+	virtual void toggleLabels();
+	virtual void toggleDots();
+	virtual void setLineWidth(float width);
+	virtual void updateLineWidth(float width);  // Realtime update tanpa rebuild
+
 	// Optional: Template-specific settings
 	virtual bool hasCustomSettings() { return false; }
 	virtual void showSettingsUI() {}
