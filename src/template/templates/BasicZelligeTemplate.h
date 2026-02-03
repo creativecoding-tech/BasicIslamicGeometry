@@ -26,6 +26,10 @@ public:
 	// Setup shapes ke internal vector (inherited from SacredGeometryTemplate)
 	void setupShapes() override;
 
+	// Template-specific UI
+	bool hasCustomSettings() override;
+	void showSettingsUI() override;
+
 	// radius diambil dari SacredGeometryTemplate::radius (protected)
 	// Tidak perlu radius sendiri lagi
 

@@ -5,6 +5,7 @@
 #include "../../shape/ParallelogramLine.h"
 #include "../../shape/RectangleLine.h"
 #include "../../shape/OctagramLine.h"
+#include "../../imgui/imgui.h"
 
 using glm::vec2;
 
@@ -187,4 +188,44 @@ void BasicZelligeTemplate::setupOctagramLines() {
 	float angle7 = angle6;  // -135°
 	vec2 posEnd7 = vec2(posE.x + cos(angle7) * radius, posE.y + sin(angle7) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posF, posEnd7, posE, "7", radius));
+}
+
+//--------------------------------------------------------------
+bool BasicZelligeTemplate::hasCustomSettings() {
+	return false;
+}
+
+//--------------------------------------------------------------
+void BasicZelligeTemplate::showSettingsUI() {
+	ImGui::Text("Zellige Pattern Controls");
+
+	static bool showCircles = true;
+	static bool showCrossLines = true;
+	static bool showParallelograms = true;
+	static bool showRectangleLines = true;
+	static bool showOctagramLines = true;
+
+	if (ImGui::Checkbox("Show Circles (A-E)", &showCircles)) {
+		// TODO: Toggle circle shapes visibility
+	}
+	if (ImGui::Checkbox("Show Cross Lines (F-I)", &showCrossLines)) {
+		// TODO: Toggle cross lines visibility
+	}
+	if (ImGui::Checkbox("Show Parallelograms (N-Q)", &showParallelograms)) {
+		// TODO: Toggle parallelogram lines visibility
+	}
+	if (ImGui::Checkbox("Show Rectangle Lines", &showRectangleLines)) {
+		// TODO: Toggle rectangle lines visibility
+	}
+	if (ImGui::Checkbox("Show Octagram Lines (0-7)", &showOctagramLines)) {
+		// TODO: Toggle octagram lines visibility
+	}
+
+	ImGui::Separator();
+
+	static int octagramPoints = 8;
+	ImGui::SetNextItemWidth(150.0f);
+	if (ImGui::SliderInt("Octagram Points", &octagramPoints, 4, 12)) {
+		// TODO: Rebuild octagram with new point count
+	}
 }

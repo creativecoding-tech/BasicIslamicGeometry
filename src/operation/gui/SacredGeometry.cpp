@@ -58,6 +58,14 @@ void SacredGeometry::draw() {
             if (ImGui::Button("Clean Canvas")) {
                 app->cleanCanvas();
             }
+
+            // Template-Specific Settings
+            if (app->currentTemplate && app->currentTemplate->hasCustomSettings()) {
+                ImGui::Separator();
+                if (ImGui::CollapsingHeader("Template-Specific", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    app->currentTemplate->showSettingsUI();
+                }
+            }
         }
     }
     ImGui::End();
