@@ -249,11 +249,12 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 		// Radio button changed
 	}
 	ImGui::Separator();
-
-	static bool autoCleanCanvas = false;
-	if (ImGui::Checkbox("Auto Clean Canvas", &autoCleanCanvas)) {
-		// Checkbox changed
+	ImGui::Text("Hide");
+	if (ImGui::Checkbox("Cartesian", &showCartesianOnPlay)) {
+		// Checkbox simpan preferensi untuk saat Play diklik
+		// JANGAN langsung apply Cartesian visibility di sini!
 	}
+	ImGui::Separator();
 
 	// Play arrow button
 	if (ImGui::ArrowButton("Play", ImGuiDir_Left)) {
@@ -263,30 +264,23 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 			app->errorPopup->show("No File Selected",
 								 "Please open a .nay file first before clicking Play!",
 								 "OK");
-		} else if (app->isCanvasEmpty() || autoCleanCanvas) {
-			// Clean canvas dulu kalau autoCleanCanvas aktif
-			if (autoCleanCanvas && !app->isCanvasEmpty())  app->cleanCanvas();
-
-			// Canvas kosong, boleh load
-			if (playMode == 0 || playMode == 1) {
-				// Set flag untuk delay load dan update state
-				app->isWaitingForLoad = true;
-				app->loadDelayTimer = ofGetElapsedTimef();
-				app->pendingLoadMode = playMode;
-				app->currentState = ofApp::UpdateState::DELAYED_LOAD;  // STRATEGY PATTERN: Set state ke DELAYED_LOAD
-
-				app->imguiVisible = false;  // Hide ImGui
-			} else {
-				// Belum pilih mode, munculkan error popup
-				app->errorPopup->show("No Mode Selected",
-									 "Please select a Draw Mode first!",
-									 "OK");
-			}
-		} else {
-			// Canvas tidak kosong, munculkan error popup
-			app->errorPopup->show("Canvas Not Empty",
-								 "Please clean canvas first or check auto clean canvas before loading!",
+		} else if (playMode != 0 && playMode != 1) {
+			// Belum pilih mode, munculkan error popup
+			app->errorPopup->show("No Mode Selected",
+								 "Please select a Draw Mode first!",
 								 "OK");
+		} else {
+			// Semua validasi OK! Lanjut load
+			// NOTE: loadWorkspace() akan otomatis menimpa semua data dengan yang baru
+			// Jadi tidak perlu cek canvas kosong atau clean canvas dulu
+
+			// Set flag untuk delay load dan update state
+			app->isWaitingForLoad = true;
+			app->loadDelayTimer = ofGetElapsedTimef();
+			app->pendingLoadMode = playMode;
+			app->currentState = ofApp::UpdateState::DELAYED_LOAD;  // STRATEGY PATTERN: Set state ke DELAYED_LOAD
+
+			app->imguiVisible = false;  // Hide ImGui
 		}
 	}
 	ImGui::SameLine();

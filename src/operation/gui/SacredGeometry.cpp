@@ -45,20 +45,13 @@ void SacredGeometry::draw() {
             }
             static bool showCartesian = true;
             if (ImGui::Checkbox("Cartesian", &showCartesian)) {
-                if (app->currentTemplate) {
-                    const auto& shapes = app->currentTemplate->getShapes();
-                    if (!shapes.empty()) {
-                        AbstractShape* cartesianAxes =
-                            shapes[0].get(); // CartesianAxes selalu index 0
-                        if (showCartesian) {
-                            cartesianAxes->show();
-                        } else {
-                            cartesianAxes->hide();
-                        }
-                    }
-                }
+                app->setCartesianAxesVisibility(showCartesian);
             }
             ImGui::Separator();
+            // Center the Clean Canvas button
+            float buttonWidth = ImGui::CalcTextSize("Clean Canvas").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+            float windowWidth = ImGui::GetContentRegionAvail().x;
+            ImGui::SetCursorPosX((windowWidth - buttonWidth) / 2.0f);
             if (ImGui::Button("Clean Canvas")) {
                 app->cleanCanvas();
             }

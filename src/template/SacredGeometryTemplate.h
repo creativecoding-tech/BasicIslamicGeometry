@@ -88,6 +88,9 @@ public:
 	bool dotsVisible = true;
 	float lineWidth = 4.0f;
 
+	// Playground preferences (public agar bisa diakses dari ofApp)
+	bool showCartesianOnPlay = true;  // Preferensi Cartesian visibility saat Play
+
 	// Template control methods - fully autonomous!
 	virtual void startSequentialDrawing();
 	virtual bool updateSequentialDrawing();  // Return true jika complete

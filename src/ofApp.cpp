@@ -56,11 +56,13 @@ void ofApp::switchTemplate(const std::string &templateName) {
 
   // Keep previous radius setting if available
   if (oldTemplate) {
-      currentTemplate->setRadius(oldTemplate->radius);
+      currentTemplate->radius = oldTemplate->radius;  // Copy radius dari template lama
   }
 
-  // Setup shapes baru dari template
-  currentTemplate->setRadius(currentTemplate->radius);
+  // PENTING: Selalu setup shapes saat switch template!
+  // Ini diperlukan untuk pertama kali atau saat template benar-benar berubah
+  currentTemplate->setupShapes();  // Setup/populate shapes vector
+
   // Reset dots cache agar di-rebuild
   dotsCacheDirty = true;
 }
@@ -520,18 +522,12 @@ void ofApp::keyPressed(int key) {
       selectedLineIndices.clear();
     }
     // Kalau tidak ada polygon dan customLine terselect, toggle CartesianAxes
-    // (shape pertama di template)
     else {
       if (currentTemplate) {
         const auto& shapes = currentTemplate->getShapes();
         if (!shapes.empty()) {
-          AbstractShape *cartesianAxes =
-              shapes[0].get(); // CartesianAxes selalu index 0
-          if (cartesianAxes->showing) {
-            cartesianAxes->hide();
-          } else {
-            cartesianAxes->show();
-          }
+          AbstractShape* cartesianAxes = shapes[0].get();
+          setCartesianAxesVisibility(!cartesianAxes->showing);  // Toggle
         }
       }
     }
@@ -1132,6 +1128,24 @@ void ofApp::showAllShapes() {
 }
 
 //--------------------------------------------------------------
+void ofApp::setCartesianAxesVisibility(bool show) {
+  if (!currentTemplate) return;
+
+  const auto& shapes = currentTemplate->getShapes();
+  if (!shapes.empty()) {
+    AbstractShape* cartesianAxes = shapes[0].get(); // CartesianAxes selalu index 0
+    if (show) {
+      cartesianAxes->show();
+    } else {
+      cartesianAxes->hide();
+    }
+  }
+
+  // Mark dots cache dirty karena visibility berubah
+  dotsCacheDirty = true;
+}
+
+//--------------------------------------------------------------
 void ofApp::updateLineWidth() {
     if (!currentTemplate) return;
 
@@ -1304,8 +1318,8 @@ void ofApp::openWorkspace() {
 
 //--------------------------------------------------------------
 void ofApp::loadWorkspace() {
-    // VALIDASI: Cek apakah canvas benar-bener kosong
-    if (!isCanvasEmpty()) return;
+    // NOTE: Validasi canvas sudah dilakukan di UI level (Playground)
+    // Jangan cek lagi di sini agar autoCleanCanvas bisa berfungsi
 
     // Cek apakah ada file yang di-open (lastSavedPath)
     if (lastSavedPath.empty()) return;
@@ -1356,6 +1370,20 @@ void ofApp::loadWorkspace() {
         // Mulai staggered parallel load
         showAllShapes();  // Ini akan memulai animasi dari awal
 
+        // Apply Cartesian preferensi dari Playground SETELAH shapes dibuat
+        if (currentTemplate) {
+            const auto& shapes = currentTemplate->getShapes();
+            if (!shapes.empty()) {
+                AbstractShape* cartesianAxes = shapes[0].get();
+                // showCartesianOnPlay sekarang public member di SacredGeometryTemplate
+                if (currentTemplate->showCartesianOnPlay) {
+                    cartesianAxes->show();
+                } else {
+                    cartesianAxes->hide();
+                }
+            }
+        }
+
         // Matikan parallel mode dulu supaya customLines tidak langsung di-animate
         fileManager.setLoadParallelMode(false);
 
@@ -1367,8 +1395,8 @@ void ofApp::loadWorkspace() {
 }
 
 void ofApp::loadWorkspaceSeq() {
-    // VALIDASI: Cek apakah canvas benar-bener kosong
-    if (!isCanvasEmpty()) return;  
+    // NOTE: Validasi canvas sudah dilakukan di UI level (Playground)
+    // Jangan cek lagi di sini agar autoCleanCanvas bisa berfungsi
 
     // Cek apakah ada file yang di-open (lastSavedPath)
     if (lastSavedPath.empty()) return;
@@ -1421,6 +1449,20 @@ void ofApp::loadWorkspaceSeq() {
     }
 
     showAllShapes();  // Reset animasi template
+
+    // Apply Cartesian preferensi dari Playground SETELAH showAllShapes
+    if (currentTemplate) {
+        const auto& shapes = currentTemplate->getShapes();
+        if (!shapes.empty()) {
+            AbstractShape* cartesianAxes = shapes[0].get();
+            // showCartesianOnPlay adalah public member di SacredGeometryTemplate
+            if (currentTemplate->showCartesianOnPlay) {
+                cartesianAxes->show();
+            } else {
+                cartesianAxes->hide();
+            }
+        }
+    }
 
     // Set sequential mode SETELAH showAllShapes (karena showAllShapes akan reset ke false)
     for (auto& shape : shapes) {
