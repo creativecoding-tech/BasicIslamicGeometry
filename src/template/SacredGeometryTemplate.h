@@ -96,6 +96,10 @@ public:
 	bool showCirclesOnPlay = true;  // Playground panel preference saat Play
 	std::vector<int> circleIndices;  // Daftar index circles di template (fleksibel!)
 
+	// CrossLine visibility preferences (public agar bisa diakses dari UI)
+	bool showCrossLinesOnPlay = true;  // Playground panel preference saat Play
+	std::vector<int> crossLineIndices;  // Daftar index crosslines di template (fleksibel!)
+
 	// Template control methods - fully autonomous!
 	virtual void startSequentialDrawing();
 	virtual bool updateSequentialDrawing();  // Return true jika complete

@@ -1370,7 +1370,7 @@ void ofApp::loadWorkspace() {
         // Mulai staggered parallel load
         showAllShapes();  // Ini akan memulai animasi dari awal
 
-        // Apply Cartesian & Circle preferensi dari Playground SETELAH shapes dibuat
+        // Apply Cartesian, Circle, & CrossLine preferensi dari Playground SETELAH shapes dibuat
         if (currentTemplate) {
             const auto& shapes = currentTemplate->getShapes();
             if (!shapes.empty()) {
@@ -1389,6 +1389,17 @@ void ofApp::loadWorkspace() {
                             shapes[circleIndex]->show();
                         } else {
                             shapes[circleIndex]->hide();
+                        }
+                    }
+                }
+
+                // CrossLine F-I menggunakan crossLineIndices (fleksibel!)
+                for (int crossLineIndex : currentTemplate->crossLineIndices) {
+                    if (crossLineIndex < shapes.size()) {
+                        if (currentTemplate->showCrossLinesOnPlay) {
+                            shapes[crossLineIndex]->show();
+                        } else {
+                            shapes[crossLineIndex]->hide();
                         }
                     }
                 }
@@ -1461,7 +1472,7 @@ void ofApp::loadWorkspaceSeq() {
 
     showAllShapes();  // Reset animasi template
 
-    // Apply Cartesian & Circle preferensi dari Playground SETELAH showAllShapes
+    // Apply Cartesian, Circle, & CrossLine preferensi dari Playground SETELAH showAllShapes
     if (currentTemplate) {
         const auto& shapes = currentTemplate->getShapes();
         if (!shapes.empty()) {
@@ -1480,6 +1491,17 @@ void ofApp::loadWorkspaceSeq() {
                         shapes[circleIndex]->show();
                     } else {
                         shapes[circleIndex]->hide();
+                    }
+                }
+            }
+
+            // CrossLine F-I menggunakan crossLineIndices (fleksibel!)
+            for (int crossLineIndex : currentTemplate->crossLineIndices) {
+                if (crossLineIndex < shapes.size()) {
+                    if (currentTemplate->showCrossLinesOnPlay) {
+                        shapes[crossLineIndex]->show();
+                    } else {
+                        shapes[crossLineIndex]->hide();
                     }
                 }
             }

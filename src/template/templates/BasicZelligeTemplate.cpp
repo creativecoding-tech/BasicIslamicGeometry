@@ -66,10 +66,24 @@ void BasicZelligeTemplate::setupCartesianAxes() {
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupCrossLines() {
+	// Clear daftar crosslines dulu
+	crossLineIndices.clear();
+
+	// CrossLine F
 	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(-radius, -radius), "F", "J", radius));
+	crossLineIndices.push_back(shapes.size() - 1);  // Simpan index CrossLine F
+
+	// CrossLine G
 	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(radius, -radius), "G", "K", radius));
+	crossLineIndices.push_back(shapes.size() - 1);  // Simpan index CrossLine G
+
+	// CrossLine H
 	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(-radius, radius), "H", "L", radius));
+	crossLineIndices.push_back(shapes.size() - 1);  // Simpan index CrossLine H
+
+	// CrossLine I
 	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(radius, radius), "I", "M", radius));
+	crossLineIndices.push_back(shapes.size() - 1);  // Simpan index CrossLine I
 }
 
 //--------------------------------------------------------------
@@ -257,12 +271,16 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 		// Radio button changed
 	}
 	ImGui::Separator();
-	ImGui::Text("Hide");
+	ImGui::Text("Hide/Show");
 	if (ImGui::Checkbox("Cartesian", &showCartesianOnPlay)) {
 		// JANGAN langsung apply Cartesian visibility di sini!
 	}
 	ImGui::SameLine();
 	if (ImGui::Checkbox("Circles", &showCirclesOnPlay)) {
+		// Checkbox simpan preferensi untuk saat Play diklik
+	}
+	ImGui::SameLine();
+	if (ImGui::Checkbox("CrossLines", &showCrossLinesOnPlay)) {
 		// Checkbox simpan preferensi untuk saat Play diklik
 	}
 
