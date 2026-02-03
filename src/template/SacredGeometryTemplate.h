@@ -100,6 +100,10 @@ public:
 	bool showCrossLinesOnPlay = true;  // Playground panel preference saat Play
 	std::vector<int> crossLineIndices;  // Daftar index crosslines di template (fleksibel!)
 
+	// Parallelogram visibility preferences (public agar bisa diakses dari UI)
+	bool showParallelogramsOnPlay = true;  // Playground panel preference saat Play
+	std::vector<int> parallelogramIndices;  // Daftar index parallelograms di template (fleksibel!)
+
 	// Template control methods - fully autonomous!
 	virtual void startSequentialDrawing();
 	virtual bool updateSequentialDrawing();  // Return true jika complete

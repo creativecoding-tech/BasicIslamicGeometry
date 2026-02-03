@@ -88,6 +88,9 @@ void BasicZelligeTemplate::setupCrossLines() {
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupParallelograms() {
+	// Clear daftar parallelograms dulu
+	parallelogramIndices.clear();
+
 	// Parallelogram dengan Polar Thinking
 	// Intersection point dihitung menggunakan trigonometri: x = cos(angle) * distance, y = sin(angle) * distance
 
@@ -96,24 +99,28 @@ void BasicZelligeTemplate::setupParallelograms() {
 	float distC_E_F = radius * sqrt(2) / 2;
 	vec2 intersecC_E_F = vec2(cos(angleC_E_F) * distC_E_F, sin(angleC_E_F) * distC_E_F);
 	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(-radius, 0), vec2(0, -radius), intersecC_E_F, "N", radius));
+	parallelogramIndices.push_back(shapes.size() - 1);  // Simpan index Parallelogram N
 
 	// E→B memotong G: Northeast (120, -120)
 	float angleE_B_G = -PI / 4;  // -45 derajat (Northeast)
 	float distE_B_G = radius * sqrt(2) / 2;
 	vec2 intersecE_B_G = vec2(cos(angleE_B_G) * distE_B_G, sin(angleE_B_G) * distE_B_G);
 	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(0, -radius), vec2(radius, 0), intersecE_B_G, "O", radius));
+	parallelogramIndices.push_back(shapes.size() - 1);  // Simpan index Parallelogram O
 
 	// B→D memotong I: Southeast (120, 120)
 	float angleB_D_I = PI / 4;  // 45 derajat (Southeast)
 	float distB_D_I = radius * sqrt(2) / 2;
 	vec2 intersecB_D_I = vec2(cos(angleB_D_I) * distB_D_I, sin(angleB_D_I) * distB_D_I);
 	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(radius, 0), vec2(0, radius), intersecB_D_I, "P", radius));
+	parallelogramIndices.push_back(shapes.size() - 1);  // Simpan index Parallelogram P
 
 	// D→C memotong H: Southwest (-120, 120)
 	float angleD_C_H = 3 * PI / 4;  // 135 derajat (Southwest)
 	float distD_C_H = radius * sqrt(2) / 2;
 	vec2 intersecD_C_H = vec2(cos(angleD_C_H) * distD_C_H, sin(angleD_C_H) * distD_C_H);
 	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(0, radius), vec2(-radius, 0), intersecD_C_H, "Q", radius));
+	parallelogramIndices.push_back(shapes.size() - 1);  // Simpan index Parallelogram Q
 }
 
 //--------------------------------------------------------------
@@ -281,6 +288,9 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 	}
 	ImGui::SameLine();
 	if (ImGui::Checkbox("CrossLines", &showCrossLinesOnPlay)) {
+		// Checkbox simpan preferensi untuk saat Play diklik
+	}
+	if (ImGui::Checkbox("Parallelograms", &showParallelogramsOnPlay)) {
 		// Checkbox simpan preferensi untuk saat Play diklik
 	}
 

@@ -1403,6 +1403,17 @@ void ofApp::loadWorkspace() {
                         }
                     }
                 }
+
+                // Parallelogram N-Q menggunakan parallelogramIndices (fleksibel!)
+                for (int parallelogramIndex : currentTemplate->parallelogramIndices) {
+                    if (parallelogramIndex < shapes.size()) {
+                        if (currentTemplate->showParallelogramsOnPlay) {
+                            shapes[parallelogramIndex]->show();
+                        } else {
+                            shapes[parallelogramIndex]->hide();
+                        }
+                    }
+                }
             }
         }
 
@@ -1502,6 +1513,17 @@ void ofApp::loadWorkspaceSeq() {
                         shapes[crossLineIndex]->show();
                     } else {
                         shapes[crossLineIndex]->hide();
+                    }
+                }
+            }
+
+            // Parallelogram N-Q menggunakan parallelogramIndices (fleksibel!)
+            for (int parallelogramIndex : currentTemplate->parallelogramIndices) {
+                if (parallelogramIndex < shapes.size()) {
+                    if (currentTemplate->showParallelogramsOnPlay) {
+                        shapes[parallelogramIndex]->show();
+                    } else {
+                        shapes[parallelogramIndex]->hide();
                     }
                 }
             }
