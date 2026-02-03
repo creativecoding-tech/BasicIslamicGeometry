@@ -108,6 +108,10 @@ public:
 	bool showRectangleLinesOnPlay = true;  // Playground panel preference saat Play
 	std::vector<int> rectangleLineIndices;  // Daftar index rectangleLines di template (fleksibel!)
 
+	// OctagramLine visibility preferences (public agar bisa diakses dari UI)
+	bool showOctagramLinesOnPlay = true;  // Playground panel preference saat Play
+	std::vector<int> octagramLineIndices;  // Daftar index octagramLines di template (fleksibel!)
+
 	// Template control methods - fully autonomous!
 	virtual void startSequentialDrawing();
 	virtual bool updateSequentialDrawing();  // Return true jika complete

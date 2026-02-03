@@ -174,6 +174,9 @@ void BasicZelligeTemplate::setupRectangleLines() {
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupOctagramLines() {
+	// Clear daftar octagramLines dulu
+	octagramLineIndices.clear();
+
 	// Posisi Circle E
 	vec2 posE = vec2(0, -radius);
 
@@ -185,46 +188,54 @@ void BasicZelligeTemplate::setupOctagramLines() {
 	vec2 posG = vec2(cos(angle0) * radius, sin(angle0) * radius);
 
 	shapes.push_back(std::make_unique<OctagramLine>(posE, posEnd, posG, "0", radius));
+	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 0
 
 	// OctagramLine 2: Dot G → -45° dari Circle B → pusat Circle B
 	vec2 posB = vec2(radius, 0);  // (240, 0)
 	vec2 posEnd1 = vec2(posB.x + cos(angle0) * radius, posB.y + sin(angle0) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posG, posEnd1, posB, "1", radius));
+	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 1
 
 	// OctagramLine 3: Circle B → 45° dari Circle B → Dot I
 	float angle2 = PI / 4;  // 45°
 	vec2 posEnd2 = vec2(posB.x + cos(angle2) * radius, posB.y + sin(angle2) * radius);
 	vec2 posI = vec2(cos(angle2) * radius, sin(angle2) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posB, posEnd2, posI, "2", radius));
+	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 2
 
 	// OctagramLine 4: Circle D → +45° dari Dot I → Circle D
 	vec2 posD = vec2(0, radius);
 	float angle3 = angle2;  // 45°
 	vec2 posEnd3 = vec2(posD.x + cos(angle3) * radius, posD.y + sin(angle3) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posI, posEnd3, posD, "3", radius));
+	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 3
 
 	// OctagramLine 5: Dot D → posEnd
 	float angle4 = 3 * angle2;  // 135°
 	vec2 posEnd4 = vec2(posD.x + cos(angle4) * radius, posD.y + sin(angle4) * radius);
 	vec2 posH = vec2(cos(angle4) * radius, sin(angle4) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posD, posEnd4, posH, "4", radius));
+	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 4
 
 	// OctagramLine 6: posH → posEnd5 → posC
 	vec2 posC = vec2(-radius, 0);
 	float angle5 = angle4;  // 135°
 	vec2 posEnd5 = vec2(posC.x + cos(angle5) * radius, posC.y + sin(angle5) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posH, posEnd5, posC, "5", radius));
+	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 5
 
 	// OctagramLine 7: posC → posEnd6 → posF
 	float angle6 = -angle5;  // -135°
 	vec2 posEnd6 = vec2(posC.x + cos(angle6) * radius, posC.y + sin(angle6) * radius);
 	vec2 posF = vec2(cos(angle6) * radius, sin(angle6) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posC, posEnd6, posF, "6", radius));
+	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 6
 
 	// OctagramLine 8: posF → posEnd7 → posE
 	float angle7 = angle6;  // -135°
 	vec2 posEnd7 = vec2(posE.x + cos(angle7) * radius, posE.y + sin(angle7) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posF, posEnd7, posE, "7", radius));
+	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 7
 }
 
 //--------------------------------------------------------------
@@ -302,6 +313,9 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 	}
 	ImGui::SameLine();
 	if (ImGui::Checkbox("RectangleLines", &showRectangleLinesOnPlay)) {
+		// Checkbox simpan preferensi untuk saat Play diklik
+	}
+	if (ImGui::Checkbox("OctagramLines", &showOctagramLinesOnPlay)) {
 		// Checkbox simpan preferensi untuk saat Play diklik
 	}
 

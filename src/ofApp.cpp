@@ -1425,10 +1425,21 @@ void ofApp::loadWorkspace() {
                         }
                     }
                 }
+
+                // OctagramLine 0-7 menggunakan octagramLineIndices (fleksibel!)
+                for (int octagramLineIndex : currentTemplate->octagramLineIndices) {
+                    if (octagramLineIndex < shapes.size()) {
+                        if (currentTemplate->showOctagramLinesOnPlay) {
+                            shapes[octagramLineIndex]->show();
+                        } else {
+                            shapes[octagramLineIndex]->hide();
+                        }
+                    }
+                }
             }
         }
 
-        // Matikan parallel mode dulu supaya customLines tidak langsung di-animate
+        // Matikan parallel dulu supaya customLines tidak langsung di-animate
         fileManager.setLoadParallelMode(false);
 
         loadStage = LOAD_TEMPLATE;
@@ -1546,6 +1557,17 @@ void ofApp::loadWorkspaceSeq() {
                         shapes[rectangleLineIndex]->show();
                     } else {
                         shapes[rectangleLineIndex]->hide();
+                    }
+                }
+            }
+
+            // OctagramLine 0-7 menggunakan octagramLineIndices (fleksibel!)
+            for (int octagramLineIndex : currentTemplate->octagramLineIndices) {
+                if (octagramLineIndex < shapes.size()) {
+                    if (currentTemplate->showOctagramLinesOnPlay) {
+                        shapes[octagramLineIndex]->show();
+                    } else {
+                        shapes[octagramLineIndex]->hide();
                     }
                 }
             }
