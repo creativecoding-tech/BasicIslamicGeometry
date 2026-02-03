@@ -5,6 +5,7 @@
 #include "../../shape/ParallelogramLine.h"
 #include "../../shape/RectangleLine.h"
 #include "../../shape/OctagramLine.h"
+#include "../../operation/FileManager.h"
 #include "../../imgui/imgui.h"
 #include "../../ofApp.h"
 
@@ -320,6 +321,14 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 	}
 
 	ImGui::Separator();
+	ImGui::Text("Polygon Animate");
+	if (ImGui::RadioButton("No Animation", &polygonAnimationMode, 0)) {
+		// Radio button changed
+	}
+	ImGui::SameLine();
+	if (ImGui::RadioButton("FadeIn", &polygonAnimationMode, 1)) {
+		// Radio button changed
+	}
 
 	// Play arrow button
 	if (ImGui::ArrowButton("Play", ImGuiDir_Left)) {
@@ -341,6 +350,12 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 
 			// Sinkronisasi SacredGeometry state dengan Playground preference
 			app->currentTemplate->showCartesianInSacredGeometry = showCartesianOnPlay;
+
+			// Simpan polygon animation mode - convert int ke PolygonAnimationMode
+			// polygonAnimationMode: 0 = No Animation, 1 = FadeIn
+			PolygonAnimationMode polyMode = (polygonAnimationMode == 1) ?
+				PolygonAnimationMode::FADE_IN : PolygonAnimationMode::NO_ANIMATION;
+			app->fileManager.setPolygonAnimationMode(polyMode);
 
 			// Set flag untuk delay load dan update state
 			app->isWaitingForLoad = true;

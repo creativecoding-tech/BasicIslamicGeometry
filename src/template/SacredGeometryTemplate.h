@@ -112,6 +112,9 @@ public:
 	bool showOctagramLinesOnPlay = true;  // Playground panel preference saat Play
 	std::vector<int> octagramLineIndices;  // Daftar index octagramLines di template (fleksibel!)
 
+	// Polygon animation mode (public agar bisa diakses dari UI)
+	int polygonAnimationMode = 0;  // 0 = No Animation, 1 = FadeIn
+
 	// Template control methods - fully autonomous!
 	virtual void startSequentialDrawing();
 	virtual bool updateSequentialDrawing();  // Return true jika complete

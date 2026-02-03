@@ -360,12 +360,23 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
     ofColor fillColor = *reinterpret_cast<ofColor *>(data + offset);
     offset += sizeof(ofColor);
 
-    // Buat PolygonShape dengan index (PAKAI ORIGINAL ALPHA)
-    auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
-    PolygonShape polygon(vertices, fillColor, i, std::move(fadeIn));
-
-    // Add ke vector dengan std::move untuk transfer animation ownership
-    polygons.push_back(std::move(polygon));
+    // Buat PolygonShape dengan atau tanpa animation tergantung mode
+    switch (polygonAnimationMode) {
+      case PolygonAnimationMode::FADE_IN:
+        {
+          auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
+          PolygonShape polygon(vertices, fillColor, i, std::move(fadeIn));
+          polygons.push_back(std::move(polygon));
+        }
+        break;
+      case PolygonAnimationMode::NO_ANIMATION:
+      default:
+        {
+          PolygonShape polygon(vertices, fillColor, i);
+          polygons.push_back(std::move(polygon));
+        }
+        break;
+    }
   }
 
   return true;
@@ -374,7 +385,8 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
 //--------------------------------------------------------------
 FileManager::FileManager()
     : loadSequentialMode(false), loadParallelMode(false), currentLineIndex(0),
-      loadSpeed(0.05f), loadAccumulator(0.0f), currentPolygonIndex(0) {}
+      loadSpeed(0.05f), loadAccumulator(0.0f), currentPolygonIndex(0),
+      polygonAnimationMode(PolygonAnimationMode::NO_ANIMATION) {}
 
 //--------------------------------------------------------------
 void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlobalRadius,
@@ -591,12 +603,23 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
       ofColor fillColor = *reinterpret_cast<ofColor *>(data + offset);
       offset += sizeof(ofColor);
 
-      // Buat PolygonShape dengan index dan animation langsung
-      auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
-      PolygonShape polygon(vertices, fillColor, i, std::move(fadeIn));
-
-      // Add ke buffer
-      loadedPolygonsBuffer.push_back(std::move(polygon));
+      // Buat PolygonShape dengan atau tanpa animation tergantung mode
+      switch (polygonAnimationMode) {
+        case PolygonAnimationMode::FADE_IN:
+          {
+            auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
+            PolygonShape polygon(vertices, fillColor, i, std::move(fadeIn));
+            loadedPolygonsBuffer.push_back(std::move(polygon));
+          }
+          break;
+        case PolygonAnimationMode::NO_ANIMATION:
+        default:
+          {
+            PolygonShape polygon(vertices, fillColor, i);
+            loadedPolygonsBuffer.push_back(std::move(polygon));
+          }
+          break;
+      }
     }
   }
 
@@ -752,6 +775,12 @@ void FileManager::setLoadSpeed(float speed) { loadSpeed = speed; }
 
 //--------------------------------------------------------------
 float FileManager::getLoadSpeed() const { return loadSpeed; }
+
+//--------------------------------------------------------------
+void FileManager::setPolygonAnimationMode(PolygonAnimationMode mode) { polygonAnimationMode = mode; }
+
+//--------------------------------------------------------------
+PolygonAnimationMode FileManager::getPolygonAnimationMode() const { return polygonAnimationMode; }
 
 //--------------------------------------------------------------
 void FileManager::setLoadParallelMode(bool enabled) {

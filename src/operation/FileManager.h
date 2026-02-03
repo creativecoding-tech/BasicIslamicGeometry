@@ -7,6 +7,12 @@
 #include <string>
 using glm::vec2;
 
+// Enum untuk Polygon Animation Mode
+enum class PolygonAnimationMode {
+    NO_ANIMATION,  // 0
+    FADE_IN        // 1
+};
+
 class FileManager {
 public:
     // Constructor
@@ -53,6 +59,10 @@ public:
     void setLoadSpeed(float speed);
     float getLoadSpeed() const;
 
+    // Polygon animation mode control
+    void setPolygonAnimationMode(PolygonAnimationMode mode);
+    PolygonAnimationMode getPolygonAnimationMode() const;
+
 private:
     // Helper methods untuk .na format
     void saveCustomLinesNA(ofBuffer& buffer, const std::vector<CustomLine>& customLines, float radius);
@@ -74,6 +84,9 @@ private:
     // Sequential load state untuk Polygons
     std::vector<PolygonShape> loadedPolygonsBuffer;
     int currentPolygonIndex;
+
+    // Polygon animation mode
+    PolygonAnimationMode polygonAnimationMode;
 
     // Konstanta
     static const std::string FILENAME;
