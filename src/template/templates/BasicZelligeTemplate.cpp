@@ -233,7 +233,7 @@ void BasicZelligeTemplate::showSettingsUI() {
 
 //--------------------------------------------------------------
 bool BasicZelligeTemplate::hasPlaybackSettings() {
-	return true;
+	return false;
 }
 
 //--------------------------------------------------------------

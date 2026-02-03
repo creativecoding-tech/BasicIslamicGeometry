@@ -30,7 +30,7 @@ void Playground::draw() {
         if (app->currentTemplate && app->currentTemplate->hasPlaybackSettings()) {
             app->currentTemplate->showPlaybackUI(app);
         } else {
-            ImGui::TextDisabled("No template selected");
+            ImGui::TextDisabled("No playground");
         }
 
     }
