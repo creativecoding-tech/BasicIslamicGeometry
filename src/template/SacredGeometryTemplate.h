@@ -92,6 +92,10 @@ public:
 	bool showCartesianOnPlay = true;  // Playground panel preference saat Play
 	bool showCartesianInSacredGeometry = true;  // SacredGeometry panel preference (realtime)
 
+	// Circle visibility preferences (public agar bisa diakses dari UI)
+	bool showCirclesOnPlay = true;  // Playground panel preference saat Play
+	std::vector<int> circleIndices;  // Daftar index circles di template (fleksibel!)
+
 	// Template control methods - fully autonomous!
 	virtual void startSequentialDrawing();
 	virtual bool updateSequentialDrawing();  // Return true jika complete

@@ -1370,16 +1370,27 @@ void ofApp::loadWorkspace() {
         // Mulai staggered parallel load
         showAllShapes();  // Ini akan memulai animasi dari awal
 
-        // Apply Cartesian preferensi dari Playground SETELAH shapes dibuat
+        // Apply Cartesian & Circle preferensi dari Playground SETELAH shapes dibuat
         if (currentTemplate) {
             const auto& shapes = currentTemplate->getShapes();
             if (!shapes.empty()) {
+                // Index 0: CartesianAxes
                 AbstractShape* cartesianAxes = shapes[0].get();
-                // showCartesianOnPlay sekarang public member di SacredGeometryTemplate
                 if (currentTemplate->showCartesianOnPlay) {
                     cartesianAxes->show();
                 } else {
                     cartesianAxes->hide();
+                }
+
+                // Circle A-E menggunakan circleIndices (fleksibel!)
+                for (int circleIndex : currentTemplate->circleIndices) {
+                    if (circleIndex < shapes.size()) {
+                        if (currentTemplate->showCirclesOnPlay) {
+                            shapes[circleIndex]->show();
+                        } else {
+                            shapes[circleIndex]->hide();
+                        }
+                    }
                 }
             }
         }
@@ -1450,16 +1461,27 @@ void ofApp::loadWorkspaceSeq() {
 
     showAllShapes();  // Reset animasi template
 
-    // Apply Cartesian preferensi dari Playground SETELAH showAllShapes
+    // Apply Cartesian & Circle preferensi dari Playground SETELAH showAllShapes
     if (currentTemplate) {
         const auto& shapes = currentTemplate->getShapes();
         if (!shapes.empty()) {
+            // Index 0: CartesianAxes
             AbstractShape* cartesianAxes = shapes[0].get();
-            // showCartesianOnPlay adalah public member di SacredGeometryTemplate
             if (currentTemplate->showCartesianOnPlay) {
                 cartesianAxes->show();
             } else {
                 cartesianAxes->hide();
+            }
+
+            // Circle A-E menggunakan circleIndices (fleksibel!)
+            for (int circleIndex : currentTemplate->circleIndices) {
+                if (circleIndex < shapes.size()) {
+                    if (currentTemplate->showCirclesOnPlay) {
+                        shapes[circleIndex]->show();
+                    } else {
+                        shapes[circleIndex]->hide();
+                    }
+                }
             }
         }
     }

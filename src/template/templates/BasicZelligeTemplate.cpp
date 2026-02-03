@@ -35,20 +35,28 @@ void BasicZelligeTemplate::setupShapes() {
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupCircles() {
+	// Clear daftar circles dulu
+	circleIndices.clear();
+
 	// Circle A: Center (0,0) → distance=0
 	shapes.push_back(std::make_unique<CircleShape>(radius, "A", 0, 0));
+	circleIndices.push_back(shapes.size() - 1);  // Simpan index Circle A
 
 	// Circle B: Kanan (0°) → distance=radius
 	shapes.push_back(std::make_unique<CircleShape>(radius, "B", 0, radius));
+	circleIndices.push_back(shapes.size() - 1);  // Simpan index Circle B
 
 	// Circle C: Kiri (180°) → distance=radius
 	shapes.push_back(std::make_unique<CircleShape>(radius, "C", PI, radius));
+	circleIndices.push_back(shapes.size() - 1);  // Simpan index Circle C
 
 	// Circle D: Atas (90°) → distance=radius
 	shapes.push_back(std::make_unique<CircleShape>(radius, "D", PI/2, radius));
+	circleIndices.push_back(shapes.size() - 1);  // Simpan index Circle D
 
 	// Circle E: Bawah (270°) → distance=radius
 	shapes.push_back(std::make_unique<CircleShape>(radius, "E", -PI/2, radius));
+	circleIndices.push_back(shapes.size() - 1);  // Simpan index Circle E
 }
 
 //--------------------------------------------------------------
@@ -254,8 +262,9 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 		// JANGAN langsung apply Cartesian visibility di sini!
 	}
 	ImGui::SameLine();
-	static bool showCircles = true;
-	ImGui::Checkbox("Circles", &showCircles);
+	if (ImGui::Checkbox("Circles", &showCirclesOnPlay)) {
+		// Checkbox simpan preferensi untuk saat Play diklik
+	}
 
 	ImGui::Separator();
 
