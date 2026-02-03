@@ -278,7 +278,7 @@ bool FileManager::loadCustomLinesNA(ofBuffer &buffer, size_t &offset,
 
     // Set progress ke 0.0 untuk parallel animation (semua barengan)
     line.setProgress(0.0f);
-    line.setSpeed(0.005f);
+    line.setSpeed(0.003f);
 
     // Add ke vector
     customLines.push_back(line);
@@ -532,7 +532,7 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
 
       // Set initial animation state
       line.setProgress(0.0f);
-      line.setSpeed(0.02f);
+      line.setSpeed(0.03f);
 
       // Add ke buffer
       loadedLinesBuffer.push_back(line);
@@ -654,43 +654,53 @@ void FileManager::updateSequentialLoad(std::vector<CustomLine> &customLines,
     return;
   }
 
+  // === UPDATE PROGRESS DULU ===
+  // Hanya update line terakhir yang sedang animate
+  if (!customLines.empty() && currentLineIndex > 0) {
+    customLines.back().updateProgress();
+  }
+
+  // Update animation untuk semua polygons yang sudah ada
+  for (auto &polygon : polygons) {
+    polygon.update();
+  }
+
   // === ADD NEW ITEMS (lines + polygons) ===
   // Cek apakah masih ada item yang belum di-load (lines ATAU polygons)
   bool stillHasItems =
       (currentLineIndex < static_cast<int>(loadedLinesBuffer.size())) ||
       (currentPolygonIndex < static_cast<int>(loadedPolygonsBuffer.size()));
 
-  // Add item baru dengan delay
   if (stillHasItems) {
-    loadAccumulator += loadSpeed;
-  }
-
-  // Cek apakah saatnya add item baru (line atau polygon)
-  if (loadAccumulator >= 1.0f) {
-    // Prioritas: Add line dulu kalau ada
-    if (currentLineIndex < static_cast<int>(loadedLinesBuffer.size())) {
-      customLines.push_back(loadedLinesBuffer[currentLineIndex]);
-      currentLineIndex++;
-      loadAccumulator = 0.0f;
+    // Cek apakah line terakhir sudah complete sebelum add baru
+    bool canAddNew = true;
+    if (!customLines.empty() && currentLineIndex > 0) {
+      if (customLines.back().getProgress() < 1.0f) {
+        canAddNew = false; // Line terakhir belum complete, jangan add baru
+      }
     }
-    // Kalau tidak ada line lagi, add polygon
-    else if (currentPolygonIndex <
-             static_cast<int>(loadedPolygonsBuffer.size())) {
-      polygons.push_back(std::move(loadedPolygonsBuffer[currentPolygonIndex]));
-      currentPolygonIndex++;
-      loadAccumulator = 0.0f;
+
+    if (canAddNew) {
+      // Add item baru
+      loadAccumulator += loadSpeed;
+
+      // Cek apakah saatnya add item baru (line atau polygon)
+      if (loadAccumulator >= 1.0f) {
+        // Prioritas: Add line dulu kalau ada
+        if (currentLineIndex < static_cast<int>(loadedLinesBuffer.size())) {
+          customLines.push_back(loadedLinesBuffer[currentLineIndex]);
+          currentLineIndex++;
+          loadAccumulator = 0.0f;
+        }
+        // Kalau tidak ada line lagi, add polygon
+        else if (currentPolygonIndex <
+                 static_cast<int>(loadedPolygonsBuffer.size())) {
+          polygons.push_back(std::move(loadedPolygonsBuffer[currentPolygonIndex]));
+          currentPolygonIndex++;
+          loadAccumulator = 0.0f;
+        }
+      }
     }
-  }
-
-  // === UPDATE PROGRESS ===
-  // Update progress untuk semua lines yang belum complete
-  for (auto &line : customLines) {
-    line.updateProgress();
-  }
-
-  // Update animation untuk semua polygons
-  for (auto &polygon : polygons) {
-    polygon.update();
   }
 
   // === CEK SELESAI ===
