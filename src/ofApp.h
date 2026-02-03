@@ -26,7 +26,7 @@ class ofApp : public ofBaseApp{
 		// TEMPLATE SYSTEM - Template sekarang self-contained!
 		// Template owns shapes sendiri, handle draw/update sendiri
 		SacredGeometryTemplate* currentTemplate = nullptr;  // Template yang sedang aktif
-		float previousRadius = 240;  // Untuk tracking perubahan radius (scaling customLines & polygons)
+		float previousRadius = 0;  // Untuk tracking perubahan radius (scaling customLines & polygons)
 
 		bool cursorVisible = false;
 		bool imguiVisible = false;  // ImGui menu visibility

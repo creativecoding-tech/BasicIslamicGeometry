@@ -78,7 +78,7 @@ public:
 	}
 
 	// Public radius - bisa diakses langsung
-	float radius = 240;
+	float radius = 214;
 
 	// Template state
 	bool sequentialMode = false;
