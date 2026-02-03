@@ -72,6 +72,9 @@ private:
     void savePolygonsNA(ofBuffer& buffer, const std::vector<PolygonShape>& polygons, float radius);
     bool loadPolygonsNA(ofBuffer& buffer, size_t& offset, std::vector<PolygonShape>& polygons, float radius);
 
+    // Helper method untuk create polygon dengan animation berdasarkan mode
+    PolygonShape createPolygonWithAnimation(const std::vector<vec2>& vertices, ofColor color, int index);
+
     // Load state flags
     bool loadSequentialMode;
     bool loadParallelMode;

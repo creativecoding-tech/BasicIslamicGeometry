@@ -362,29 +362,8 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
     offset += sizeof(ofColor);
 
     // Buat PolygonShape dengan atau tanpa animation tergantung mode
-    switch (polygonAnimationMode) {
-      case PolygonAnimationMode::FADE_IN:
-        {
-          auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
-          PolygonShape polygon(vertices, fillColor, i, std::move(fadeIn));
-          polygons.push_back(std::move(polygon));
-        }
-        break;
-      case PolygonAnimationMode::WOBBLE:
-        {
-          auto wobble = std::make_unique<WobbleAnimation>(30.0f, 5.0f, 0.03f);
-          PolygonShape polygon(vertices, fillColor, i, std::move(wobble));
-          polygons.push_back(std::move(polygon));
-        }
-        break;
-      case PolygonAnimationMode::NO_ANIMATION:
-      default:
-        {
-          PolygonShape polygon(vertices, fillColor, i);
-          polygons.push_back(std::move(polygon));
-        }
-        break;
-    }
+    PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
+    polygons.push_back(std::move(polygon));
   }
 
   return true;
@@ -612,29 +591,8 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
       offset += sizeof(ofColor);
 
       // Buat PolygonShape dengan atau tanpa animation tergantung mode
-      switch (polygonAnimationMode) {
-        case PolygonAnimationMode::FADE_IN:
-          {
-            auto fadeIn = std::make_unique<FadeInAnimation>(fillColor.a, 0.003f);
-            PolygonShape polygon(vertices, fillColor, i, std::move(fadeIn));
-            loadedPolygonsBuffer.push_back(std::move(polygon));
-          }
-          break;
-        case PolygonAnimationMode::WOBBLE:
-          {
-            auto wobble = std::make_unique<WobbleAnimation>(30.0f, 5.0f, 0.03f);
-            PolygonShape polygon(vertices, fillColor, i, std::move(wobble));
-            loadedPolygonsBuffer.push_back(std::move(polygon));
-          }
-          break;
-        case PolygonAnimationMode::NO_ANIMATION:
-        default:
-          {
-            PolygonShape polygon(vertices, fillColor, i);
-            loadedPolygonsBuffer.push_back(std::move(polygon));
-          }
-          break;
-      }
+      PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
+      loadedPolygonsBuffer.push_back(std::move(polygon));
     }
   }
 
@@ -783,6 +741,28 @@ int FileManager::getCurrentLoadIndex() const { return currentLineIndex; }
 //--------------------------------------------------------------
 int FileManager::getTotalLoadedLines() const {
   return static_cast<int>(loadedLinesBuffer.size());
+}
+
+//--------------------------------------------------------------
+PolygonShape FileManager::createPolygonWithAnimation(const std::vector<vec2>& vertices, ofColor color, int index) {
+  // Buat PolygonShape dengan animation berdasarkan polygonAnimationMode
+  switch (polygonAnimationMode) {
+    case PolygonAnimationMode::FADE_IN:
+      {
+        auto fadeIn = std::make_unique<FadeInAnimation>(color.a, 0.003f);
+        return PolygonShape(vertices, color, index, std::move(fadeIn));
+      }
+    case PolygonAnimationMode::WOBBLE:
+      {
+        auto wobble = std::make_unique<WobbleAnimation>(30.0f, 5.0f, 0.03f);
+        return PolygonShape(vertices, color, index, std::move(wobble));
+      }
+    case PolygonAnimationMode::NO_ANIMATION:
+    default:
+      {
+        return PolygonShape(vertices, color, index);
+      }
+  }
 }
 
 //--------------------------------------------------------------
