@@ -67,175 +67,250 @@ void ofApp::switchTemplate(const std::string &templateName) {
 
 //--------------------------------------------------------------
 void ofApp::update() {
-  // Update template sequential drawing - template fully autonomous
+  // STRATEGY PATTERN: Delegate update ke method yang sesuai berdasarkan state
+  switch (currentState) {
+    case UpdateState::NORMAL:
+      updateNormal();
+      break;
+
+    case UpdateState::SEQUENTIAL_DRAWING:
+      updateSequentialDrawing();
+      break;
+
+    case UpdateState::DELAYED_LOAD:
+      updateDelayedLoad();
+      break;
+
+    case UpdateState::STAGGERED_LOAD:
+      updateStaggeredLoad();
+      break;
+  }
+}
+
+
+//--------------------------------------------------------------
+// UPDATE STRATEGIES - Strategy Pattern Implementation
+//--------------------------------------------------------------
+
+void ofApp::updateNormal() {
+  // Template sequential drawing
   if (currentTemplate && currentTemplate->sequentialMode) {
     bool complete = currentTemplate->updateSequentialDrawing();
     if (complete) {
-      // Sequential drawing selesai, rebuild dots cache
       dotsCacheDirty = true;
     }
   }
 
-  // Check play button delay timer
-  if (isWaitingForLoad) {
-    float elapsed = ofGetElapsedTimef() - loadDelayTimer;
-    if (elapsed >= .5f) {
-      // Timer selesai, panggil load method
-      if (pendingLoadMode == 0) {
-        loadWorkspace();
-      } else if (pendingLoadMode == 1) {
-        loadWorkspaceSeq();
-      }
+  // Update template shapes
+  updateTemplateShapes();
 
-      // Reset flag
-      isWaitingForLoad = false;
-      pendingLoadMode = -1;
+  // Rebuild dots cache
+  dotsCacheDirty = true;
+
+  // Handle scaling
+  updateScaling();
+
+  // Update custom lines & polygons
+  updateCustomLines();
+  updatePolygons();
+}
+
+//--------------------------------------------------------------
+void ofApp::updateSequentialDrawing() {
+  // Template fully autonomous - template handles sequential drawing
+  if (currentTemplate && currentTemplate->sequentialMode) {
+    bool complete = currentTemplate->updateSequentialDrawing();
+    if (complete) {
+      dotsCacheDirty = true;
+      currentState = UpdateState::NORMAL;  // Kembali ke normal setelah selesai
+    }
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::updateDelayedLoad() {
+  // Check play button delay timer
+  if (!isWaitingForLoad) {
+    currentState = UpdateState::NORMAL;
+    return;
+  }
+
+  float elapsed = ofGetElapsedTimef() - loadDelayTimer;
+  if (elapsed >= 0.5f) {
+    // Timer selesai, panggil load method
+    if (pendingLoadMode == 0) {
+      loadWorkspace();
+    } else if (pendingLoadMode == 1) {
+      loadWorkspaceSeq();
+    }
+
+    // Reset flag
+    isWaitingForLoad = false;
+    pendingLoadMode = -1;
+    currentState = UpdateState::STAGGERED_LOAD;  // Lanjut ke staggered load
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::updateStaggeredLoad() {
+  switch (loadStage) {
+    case LOAD_TEMPLATE:
+      updateStaggeredTemplate();
+      break;
+
+    case LOAD_CUSTOMLINES:
+      updateStaggeredCustomLines();
+      break;
+
+    case LOAD_POLYGONS:
+      updateStaggeredPolygons();
+      break;
+
+    case LOAD_DONE:
+      // Selesai, kembali ke normal
+      isStaggeredLoad = false;
+      isSequentialShapeLoad = false;
+      currentState = UpdateState::NORMAL;
+      break;
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::updateStaggeredTemplate() {
+  if (!currentTemplate) {
+    loadStage = LOAD_CUSTOMLINES;
+    return;
+  }
+
+  if (isSequentialShapeLoad) {
+    // SEQUENTIAL MODE: Update satu per satu
+    const auto& shapes = currentTemplate->getShapes();
+    if (currentTemplateIndex < shapes.size()) {
+      shapes[currentTemplateIndex]->update();
+
+      if (shapes[currentTemplateIndex]->isComplete()) {
+        currentTemplateIndex++;
+      }
+    } else {
+      loadStage = LOAD_CUSTOMLINES;
+      currentTemplateIndex = 0;
+    }
+  } else {
+    // PARALLEL MODE: Update semua bareng
+    currentTemplate->update();
+
+    // Cek apakah semua complete
+    bool allComplete = true;
+    const auto& shapes = currentTemplate->getShapes();
+    for (auto& shape : shapes) {
+      if (!shape->isComplete()) {
+        allComplete = false;
+        break;
+      }
+    }
+
+    if (allComplete) {
+      loadStage = LOAD_CUSTOMLINES;
+      fileManager.setLoadParallelMode(true);
+    }
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::updateStaggeredCustomLines() {
+  // Sequential load: updateSequentialLoad akan menambah customLines bertahap
+  fileManager.updateSequentialLoad(customLines, polygonShapes);
+
+  // Update progress semua customLines yang sudah ada
+  for (auto& line : customLines) {
+    line.updateProgress();
+  }
+
+  // Cek apakah semua customLines sudah complete DAN semua sudah di-load
+  bool allComplete = true;
+  bool allLoaded = (fileManager.getCurrentLoadIndex() >= fileManager.getTotalLoadedLines());
+
+  for (const auto& line : customLines) {
+    if (line.getProgress() < 1.0f) {
+      allComplete = false;
+      break;
     }
   }
 
-  // Update staggered parallel load (CTRL+O)
-  if (isStaggeredLoad) {
-    switch (loadStage) {
-      case LOAD_TEMPLATE:
-        // Delegate ke template untuk update shapes
-        if (currentTemplate) {
-          if (isSequentialShapeLoad) {
-            // SEQUENTIAL MODE: Update satu per satu
-            const auto& shapes = currentTemplate->getShapes();
-            if (currentTemplateIndex < shapes.size()) {
-              shapes[currentTemplateIndex]->update();
+  // Pindah ke stage POLYGONS jika semua complete DAN semua sudah di-load
+  if (allComplete && allLoaded) {
+    loadStage = LOAD_POLYGONS;
+  }
+}
 
-              if (shapes[currentTemplateIndex]->isComplete()) {
-                currentTemplateIndex++;
-              }
-            } else {
-              loadStage = LOAD_CUSTOMLINES;
-              currentTemplateIndex = 0;
-            }
-          } else {
-            // PARALLEL MODE: Update semua bareng
-            currentTemplate->update();
+//--------------------------------------------------------------
+void ofApp::updateStaggeredPolygons() {
+  // Sequential load: updateSequentialLoad akan menambah polygons bertahap
+  fileManager.updateSequentialLoad(customLines, polygonShapes);
 
-            // Cek apakah semua complete
-            bool allComplete = true;
-            const auto& shapes = currentTemplate->getShapes();
-            for (auto &shape : shapes) {
-              if (!shape->isComplete()) {
-                allComplete = false;
-                break;
-              }
-            }
+  // Update animation semua polygons yang sudah ada
+  for (auto& polygon : polygonShapes) {
+    polygon.update();
+  }
 
-            if (allComplete) {
-              loadStage = LOAD_CUSTOMLINES;
-              fileManager.setLoadParallelMode(true);
-            }
-          }
-        } else {
-          // Tidak ada template, lanjut
-          loadStage = LOAD_CUSTOMLINES;
-        }
-        break;
+  // Cek apakah semua polygons sudah complete DAN sequential load sudah selesai
+  bool allComplete = true;
+  bool allLoaded = !fileManager.isLoadSequentialMode();
 
-      case LOAD_CUSTOMLINES:
-        // Untuk sequential load: updateSequentialLoad akan menambah customLines bertahap
-        fileManager.updateSequentialLoad(customLines, polygonShapes);
-
-        // Update progress semua customLines yang sudah ada
-        for (auto &line : customLines) {
-          line.updateProgress();
-        }
-
-        // Cek apakah semua customLines sudah complete ATAU sequential load sudah selesai
-        {
-          bool allComplete = true;
-          bool allLoaded = (fileManager.getCurrentLoadIndex() >= fileManager.getTotalLoadedLines());
-
-          for (const auto &line : customLines) {
-            if (line.getProgress() < 1.0f) {
-              allComplete = false;
-              break;
-            }
-          }
-
-          // Pindah ke stage POLYGONS jika semua complete DAN semua sudah di-load
-          if (allComplete && allLoaded) {
-            loadStage = LOAD_POLYGONS;
-          }
-        }
-        break;
-
-      case LOAD_POLYGONS:
-        // Untuk sequential load: updateSequentialLoad akan menambah polygons bertahap
-        fileManager.updateSequentialLoad(customLines, polygonShapes);
-
-        // Update animation semua polygons yang sudah ada
-        for (auto &polygon : polygonShapes) {
-          polygon.update();
-        }
-
-        // Cek apakah semua polygons sudah complete DAN sequential load sudah selesai
-        {
-          bool allComplete = true;
-          bool allLoaded = !fileManager.isLoadSequentialMode();  // Sequential mode selesai
-
-          for (const auto &polygon : polygonShapes) {
-            if (!polygon.isAnimationComplete()) {
-              allComplete = false;
-              break;
-            }
-          }
-
-          // Selesai staggered load jika semua complete DAN semua sudah di-load
-          if (allComplete && allLoaded) {
-            loadStage = LOAD_DONE;
-            isStaggeredLoad = false;
-            isSequentialShapeLoad = false;
-            // Matikan sequential mode di FileManager supaya CTRL+SHIFT+DEL bisa dipakai
-            fileManager.cancelSequentialLoad();  // Reset semua flag sequential
-          }
-        }
-        break;
-
-      case LOAD_DONE:
-        // Selesai, tidak ada update khusus
-        break;
+  for (const auto& polygon : polygonShapes) {
+    if (!polygon.isAnimationComplete()) {
+      allComplete = false;
+      break;
     }
-  } else {
-    // Update normal (bukan staggered load)
-    // Update template - template handle update sendiri
-    if (currentTemplate) {
-      currentTemplate->update();
-    }
+  }
 
-    // Rebuild dots cache agar mouse hover/drag bekerja dengan posisi baru
-    dotsCacheDirty = true;
+  // Selesai staggered load jika semua complete DAN semua sudah di-load
+  if (allComplete && allLoaded) {
+    loadStage = LOAD_DONE;
+    fileManager.cancelSequentialLoad();
+  }
+}
 
-    // Scale customLines & polygons jika radius berubah (realtime update)
-    if (currentTemplate && currentTemplate->radius != previousRadius) {
-      // Update radius di setiap shape individual TANPA rebuild
-      const auto& shapes = currentTemplate->getShapes();
-      for (auto& shape : shapes) {
-        shape->setRadius(currentTemplate->radius);
-      }
+//--------------------------------------------------------------
+// NORMAL UPDATE HELPERS
+//--------------------------------------------------------------
 
-      // Scale customLines & polygons
-      scaleCustomLinesAndPolygons(previousRadius, currentTemplate->radius);
-      previousRadius = currentTemplate->radius;  // Update tracking
-    }
+void ofApp::updateTemplateShapes() {
+  if (currentTemplate) {
+    currentTemplate->update();
+  }
+}
 
-    // Update sequential load logic dari FileManager (lines + polygons)
-    // TAPI JANGAN panggil kalau sedang staggered load!
-    if (!isStaggeredLoad) {
-      fileManager.updateSequentialLoad(customLines, polygonShapes);
-    }
+//--------------------------------------------------------------
+void ofApp::updateScaling() {
+  if (!currentTemplate || currentTemplate->radius == previousRadius) {
+    return;
+  }
 
-    // Update polygon animations (untuk parallel mode)
-    // TAPI jangan kalau sedang staggered load!
-    if (fileManager.isLoadParallelMode() && !isStaggeredLoad) {
-      for (auto &polygon : polygonShapes) {
-        polygon.update();
-      }
+  // Update radius di setiap shape individual
+  const auto& shapes = currentTemplate->getShapes();
+  for (auto& shape : shapes) {
+    shape->setRadius(currentTemplate->radius);
+  }
+
+  // Scale customLines & polygons
+  scaleCustomLinesAndPolygons(previousRadius, currentTemplate->radius);
+  previousRadius = currentTemplate->radius;
+}
+
+//--------------------------------------------------------------
+void ofApp::updateCustomLines() {
+  fileManager.updateSequentialLoad(customLines, polygonShapes);
+  for (auto& line : customLines) {
+    line.updateProgress();
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::updatePolygons() {
+  if (fileManager.isLoadParallelMode()) {
+    for (auto& polygon : polygonShapes) {
+      polygon.update();
     }
   }
 }
@@ -1004,6 +1079,11 @@ void ofApp::startSequentialDrawing() {
 
   // Delegate ke template
   currentTemplate->startSequentialDrawing();
+
+  // NOTE: JANGAN ubah currentState di sini!
+  // sequentialMode adalah flag TEMPLATE level, bukan application state
+  // Sequential drawing di-handle langsung di updateNormal() line 97-102
+  // Jadi biarkan currentState tetap NORMAL
 }
 
 //--------------------------------------------------------------
@@ -1282,6 +1362,7 @@ void ofApp::loadWorkspace() {
         loadStage = LOAD_TEMPLATE;
         isStaggeredLoad = true;
         isSequentialShapeLoad = false;  // PARALLEL mode (CTRL+O)
+        currentState = UpdateState::STAGGERED_LOAD;  // STRATEGY PATTERN: Set state ke STAGGERED_LOAD
     }
 }
 
@@ -1351,6 +1432,7 @@ void ofApp::loadWorkspaceSeq() {
     isStaggeredLoad = true;
     isSequentialShapeLoad = true;  // Sequential per shape
     currentTemplateIndex = 0;  // Reset index template
+    currentState = UpdateState::STAGGERED_LOAD;  // STRATEGY PATTERN: Set state ke STAGGERED_LOAD
 }
 
 //--------------------------------------------------------------

@@ -23,6 +23,15 @@ using glm::vec2;
 class ofApp : public ofBaseApp{
 
 	public:
+		// UPDATE STATE - Strategy Pattern untuk Update Logic
+		enum class UpdateState {
+			NORMAL,              // Normal update mode
+			SEQUENTIAL_DRAWING,  // Template sequential drawing mode
+			DELAYED_LOAD,        // Delayed load waiting for timer
+			STAGGERED_LOAD       // Staggered parallel load mode
+		};
+		UpdateState currentState = UpdateState::NORMAL;
+
 		// TEMPLATE SYSTEM - Template sekarang self-contained!
 		// Template owns shapes sendiri, handle draw/update sendiri
 		SacredGeometryTemplate* currentTemplate = nullptr;  // Template yang sedang aktif
@@ -112,6 +121,23 @@ class ofApp : public ofBaseApp{
 		void setupImGui();
 		void drawImGui();
 		void exitImGui();
+
+		// UPDATE STRATEGIES - Strategy Pattern untuk Update Logic
+		void updateNormal();           // Normal update mode
+		void updateSequentialDrawing(); // Template sequential drawing mode
+		void updateDelayedLoad();       // Delayed load waiting for timer
+		void updateStaggeredLoad();     // Staggered parallel load mode
+
+		// Staggered load helpers
+		void updateStaggeredTemplate();    // LOAD_TEMPLATE stage
+		void updateStaggeredCustomLines(); // LOAD_CUSTOMLINES stage
+		void updateStaggeredPolygons();    // LOAD_POLYGONS stage
+
+		// Normal update helpers
+		void updateTemplateShapes();  // Update template di normal mode
+		void updateScaling();         // Handle radius scaling
+		void updateCustomLines();     // Update custom lines
+		void updatePolygons();        // Update polygons
 
 		// Sequential drawing methods
 		void startSequentialDrawing();

@@ -233,7 +233,7 @@ void BasicZelligeTemplate::showSettingsUI() {
 
 //--------------------------------------------------------------
 bool BasicZelligeTemplate::hasPlaybackSettings() {
-	return false;
+	return true;
 }
 
 //--------------------------------------------------------------
@@ -269,10 +269,11 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 
 			// Canvas kosong, boleh load
 			if (playMode == 0 || playMode == 1) {
-				// Set flag untuk delay load
+				// Set flag untuk delay load dan update state
 				app->isWaitingForLoad = true;
 				app->loadDelayTimer = ofGetElapsedTimef();
 				app->pendingLoadMode = playMode;
+				app->currentState = ofApp::UpdateState::DELAYED_LOAD;  // STRATEGY PATTERN: Set state ke DELAYED_LOAD
 
 				app->imguiVisible = false;  // Hide ImGui
 			} else {
