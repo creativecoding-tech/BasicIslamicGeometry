@@ -472,29 +472,8 @@ void ofApp::keyPressed(int key) {
       cleanCanvas();
       return; // Jangan lanjut ke logic DEL biasa
     } else if (isCtrlPressed) {
-      // Jangan hapus jika sedang sequential load
-      if (fileManager.isLoadSequentialMode()) {
-        return; // Aborted, sedang loading
-      }
-
-      // Jangan hapus jika sedang parallel load dan masih ada polygon animasi
-      if (fileManager.isLoadParallelMode()) {
-        // Cek apakah masih ada polygon yang sedang animasi
-        for (const auto &polygon : polygonShapes) {
-          if (polygon.hasAnimation()) {
-            return; // Masih ada polygon yang animasi, tunggu kelar
-          }
-        }
-      }
-
       // CTRL+DEL: Hapus semua polygon dan semua custom lines
-      if (!polygonShapes.empty()) {
-        polygonShapes.clear();
-        selectedPolygonIndex = -1;
-      }
-      if (!fileManager.isLoadParallelMode()) {
-        FileManager::clearCustomLines(customLines);
-      }
+      clearCustomLinesAndPolygons();
       return; // Jangan lanjut ke hideAllShapes()
     } else {
       // DEL saja: Hide semua shapes (hanya jika TIDAK staggered load)
@@ -1642,22 +1621,45 @@ void ofApp::syncColorPickerFromLoadedPolygons() {
 }
 
 //--------------------------------------------------------------
+void ofApp::clearCustomLinesAndPolygons() {
+	// Jangan hapus jika sedang sequential load
+	if (fileManager.isLoadSequentialMode()) {
+		return; // Aborted, sedang loading
+	}
+
+	// Jangan hapus jika sedang parallel load dan masih ada polygon animasi
+	if (fileManager.isLoadParallelMode()) {
+		// Cek apakah masih ada polygon yang sedang animasi
+		for (const auto &polygon : polygonShapes) {
+			if (polygon.hasAnimation()) {
+				return; // Masih ada polygon yang animasi, tunggu kelar
+			}
+		}
+	}
+
+	// Hapus semua polygons
+	if (!polygonShapes.empty()) {
+		polygonShapes.clear();
+		selectedPolygonIndex = -1;
+	}
+
+	// Hapus semua custom lines
+	if (!fileManager.isLoadParallelMode()) {
+		FileManager::clearCustomLines(customLines);
+	}
+	selectedLineIndices.clear();
+	lastSelectedLineIndex = -1;
+}
+
+//--------------------------------------------------------------
 void ofApp::cleanCanvas() {
     // Skip kalau sedang load sequential
     if (fileManager.isLoadSequentialMode()) {
         return;
     }
 
-    // Hapus semua polygons
-    if (!polygonShapes.empty()) {
-        polygonShapes.clear();
-        selectedPolygonIndex = -1;
-    }
-
-    // Hapus semua custom lines
-    FileManager::clearCustomLines(customLines);
-    selectedLineIndices.clear();
-    lastSelectedLineIndex = -1;
+    // Hapus semua polygons dan custom lines
+    clearCustomLinesAndPolygons();
 
     // Hide semua template shapes - delegate ke template
     if (currentTemplate) {
