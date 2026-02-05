@@ -1183,9 +1183,19 @@ void ofApp::updateCustomLineColor(ofColor color) {
 	// Update variabel global untuk customLine baru
 	customLineColor = color;
 
-	// Update semua customLines yang sudah ada
-	for (auto& line : customLines) {
-		line.setColor(color);
+	// Jika ada customLine yang selected, hanya update yang selected saja
+	if (!selectedLineIndices.empty()) {
+		for (int lineIndex : selectedLineIndices) {
+			if (lineIndex >= 0 && lineIndex < customLines.size()) {
+				customLines[lineIndex].setColor(color);
+			}
+		}
+	}
+	// Jika tidak ada yang selected, update semua customLines
+	else {
+		for (auto& line : customLines) {
+			line.setColor(color);
+		}
 	}
 }
 
