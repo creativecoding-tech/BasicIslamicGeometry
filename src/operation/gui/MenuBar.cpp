@@ -53,11 +53,11 @@ void MenuBar::draw() {
             if (ImGui::MenuItem("Sacred Gemotery")) {
                 app->toggleSacredGeometryWindow();
             }
-            if (ImGui::MenuItem("Playground")) {
-                app->togglePlaygroundWindow();
-            }
             if (ImGui::MenuItem("User Custom")) {
                 app->toggleUserCustomWindow();
+            }
+            if (ImGui::MenuItem("Playground")) {
+                app->togglePlaygroundWindow();
             }
             ImGui::EndMenu();
         }

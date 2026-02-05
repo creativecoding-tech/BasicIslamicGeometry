@@ -1777,14 +1777,6 @@ void ofApp::updateLineWidth() {
 
     // Delegate ke template - pakai nilai yang sudah ada di template
     currentTemplate->updateLineWidth(currentTemplate->lineWidth);
-
-    // Update semua userDots radius agar mengikuti lineWidth template
-    float newRadius = currentTemplate->lineWidth * 2.0f;
-    for (auto& dot : userDots) {
-        if (dot) {
-            dot->setRadius(newRadius);
-        }
-    }
 }
 
 //--------------------------------------------------------------
@@ -1874,6 +1866,54 @@ void ofApp::updatePolygonColor(ofColor color) {
 }
 
 //--------------------------------------------------------------
+void ofApp::updateUserDotRadius(float radius) {
+	// Update variabel global
+	userDotRadius = radius;
+
+	// Jika ada userDot yang terseleksi, update hanya yang terseleksi
+	if (!selectedUserDotIndices.empty()) {
+		for (int index : selectedUserDotIndices) {
+			if (index >= 0 && index < userDots.size()) {
+				if (userDots[index]) {
+					userDots[index]->setRadius(radius);
+				}
+			}
+		}
+	} else {
+		// Jika tidak ada yang terseleksi, update semua userDots
+		for (auto& dot : userDots) {
+			if (dot) {
+				dot->setRadius(radius);
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::updateUserDotColor(ofColor color) {
+	// Update variabel global
+	userDotColor = color;
+
+	// Jika ada userDot yang terseleksi, update hanya yang terseleksi
+	if (!selectedUserDotIndices.empty()) {
+		for (int index : selectedUserDotIndices) {
+			if (index >= 0 && index < userDots.size()) {
+				if (userDots[index]) {
+					userDots[index]->setColor(color);
+				}
+			}
+		}
+	} else {
+		// Jika tidak ada yang terseleksi, update semua userDots
+		for (auto& dot : userDots) {
+			if (dot) {
+				dot->setColor(color);
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------
 void ofApp::syncColorPickerFromLoadedLines() {
 	// Ambil warna dari customLine pertama yang diload (jika ada)
 	if (!customLines.empty()) {
@@ -1909,6 +1949,29 @@ void ofApp::syncColorPickerFromLoadedPolygons() {
 			UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
 			if (userCustom) {
 				userCustom->updatePolygonColorFromApp();
+				break; // Found, no need to continue
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::syncUserDotFromLoaded() {
+	// Ambil radius dan warna dari userDot pertama yang diload (jika ada)
+	if (!userDots.empty() && userDots[0]) {
+		float loadedRadius = userDots[0]->getRadius();
+		ofColor loadedColor = userDots[0]->getColor();
+
+		// Update global radius dan color
+		userDotRadius = loadedRadius;
+		userDotColor = loadedColor;
+
+		// Update UserCustom color picker UI
+		for (auto& gui : guiComponents) {
+			// Cari UserCustom component
+			UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
+			if (userCustom) {
+				userCustom->updateUserDotColorFromApp();
 				break; // Found, no need to continue
 			}
 		}
@@ -2059,6 +2122,11 @@ void ofApp::cleanCanvas() {
     // Hapus semua polygons dan custom lines
     clearCustomLinesAndPolygons();
 
+    // Hapus semua userDots
+    userDots.clear();
+    selectedUserDotIndices.clear();
+    lastSelectedUserDotIndex = -1;
+
     // Hide semua template shapes - delegate ke template
     if (currentTemplate) {
         currentTemplate->hideAllShapes();
@@ -2156,16 +2224,18 @@ void ofApp::duplicateDotAbove() {
         return;
     }
 
-    // Ambil ukuran dot dari template (lineWidth * 2)
+    // Ambil radius dari dot original (lineWidth * 2)
     float dotRadius = currentTemplate->lineWidth * 2.0f;
+    userDotRadius = dotRadius;  // Simpan ke userDotRadius
 
     // Gunakan offset distance dari member variable
     vec2 newDotPos = hoveredDotPos + vec2(0, -duplicateDotOffsetDistance);  // Ke atas (Y negatif)
 
-    // Buat DotShape baru dengan radius dari template
-    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", dotRadius);
+    // Buat DotShape baru dengan userDotRadius
+    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
     dotShape->showing = true;
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
+    dotShape->setColor(userDotColor);  // Set warna dari userDotColor
 
     // Set lower bound ke hoveredDotPos (dot parent)
     dotShape->setLowerBound(hoveredDotPos);
@@ -2191,16 +2261,18 @@ void ofApp::duplicateDotBelow() {
         return;
     }
 
-    // Ambil ukuran dot dari template (lineWidth * 2)
+    // Ambil radius dari dot original (lineWidth * 2)
     float dotRadius = currentTemplate->lineWidth * 2.0f;
+    userDotRadius = dotRadius;  // Simpan ke userDotRadius
 
     // Gunakan offset distance dari member variable - arah ke bawah (Y positif)
     vec2 newDotPos = hoveredDotPos + vec2(0, duplicateDotOffsetDistance);  // Ke bawah (Y positif)
 
-    // Buat DotShape baru dengan radius dari template
-    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", dotRadius);
+    // Buat DotShape baru dengan userDotRadius
+    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
     dotShape->showing = true;
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
+    dotShape->setColor(userDotColor);  // Set warna dari userDotColor
 
     // Set lower bound ke hoveredDotPos (dot parent)
     dotShape->setLowerBound(hoveredDotPos);
@@ -2226,16 +2298,18 @@ void ofApp::duplicateDotLeft() {
         return;
     }
 
-    // Ambil ukuran dot dari template (lineWidth * 2)
+    // Ambil radius dari dot original (lineWidth * 2)
     float dotRadius = currentTemplate->lineWidth * 2.0f;
+    userDotRadius = dotRadius;  // Simpan ke userDotRadius
 
     // Offset ke kiri (X negatif)
     vec2 newDotPos = hoveredDotPos + vec2(-duplicateDotOffsetDistance, 0);
 
-    // Buat DotShape baru dengan radius dari template
-    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", dotRadius);
+    // Buat DotShape baru dengan userDotRadius
+    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
     dotShape->showing = true;
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
+    dotShape->setColor(userDotColor);  // Set warna dari userDotColor
 
     // Set lower bound ke hoveredDotPos (dot parent)
     dotShape->setLowerBound(hoveredDotPos);
@@ -2261,16 +2335,18 @@ void ofApp::duplicateDotRight() {
         return;
     }
 
-    // Ambil ukuran dot dari template (lineWidth * 2)
+    // Ambil radius dari dot original (lineWidth * 2)
     float dotRadius = currentTemplate->lineWidth * 2.0f;
+    userDotRadius = dotRadius;  // Simpan ke userDotRadius
 
     // Offset ke kanan (X positif)
     vec2 newDotPos = hoveredDotPos + vec2(duplicateDotOffsetDistance, 0);
 
-    // Buat DotShape baru dengan radius dari template
-    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", dotRadius);
+    // Buat DotShape baru dengan userDotRadius
+    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
     dotShape->showing = true;
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
+    dotShape->setColor(userDotColor);  // Set warna dari userDotColor
 
     // Set lower bound ke hoveredDotPos (dot parent)
     dotShape->setLowerBound(hoveredDotPos);
@@ -2291,30 +2367,35 @@ void ofApp::duplicateDotRight() {
 
 //--------------------------------------------------------------
 void ofApp::drawUserDots() {
-    
-    for (auto& dot : userDots) {
-        if (dot) {
-            dot->draw();
+
+    // Hanya draw userDot jika showUserDot == true
+    if (showUserDot) {
+        for (auto& dot : userDots) {
+            if (dot) {
+                dot->draw();
+            }
         }
     }
 
-    // Draw label untuk SEMUA selected userDots
-    for (int index : selectedUserDotIndices) {
-        if (index >= 0 && index < userDots.size()) {
-            vec2 dotPos = userDots[index]->getPosition();
-            vec2 lowerBound = userDots[index]->getLowerBound();
+    // Draw label untuk SEMUA selected userDots HANYA jika showUserDot == true
+    if (showUserDot) {
+        for (int index : selectedUserDotIndices) {
+            if (index >= 0 && index < userDots.size()) {
+                vec2 dotPos = userDots[index]->getPosition();
+                vec2 lowerBound = userDots[index]->getLowerBound();
 
-            ofSetColor(0);  // Warna hitam
+                ofSetColor(0);  // Warna hitam
 
-            // Cek apakah dot ini horizontal (sumbu X) atau vertical (sumbu Y)
-            if (dotPos.x != lowerBound.x) {
-                // Horizontal dot (Dot Left/Right): label offset X saja
-                float offsetX = dotPos.x - lowerBound.x;
-                fontNormal.drawString("offset = " + ofToString(offsetX, 1), dotPos.x + 10, dotPos.y);
-            } else {
-                // Vertical dot (Dot Above/Below): label offset Y saja
-                float offsetY = dotPos.y - lowerBound.y;
-                fontNormal.drawString("offset = " + ofToString(offsetY, 1), dotPos.x + 10, dotPos.y);
+                // Cek apakah dot ini horizontal (sumbu X) atau vertical (sumbu Y)
+                if (dotPos.x != lowerBound.x) {
+                    // Horizontal dot (Dot Left/Right): label offset X saja
+                    float offsetX = dotPos.x - lowerBound.x;
+                    fontNormal.drawString("offset = " + ofToString(offsetX, 1), dotPos.x + 10, dotPos.y);
+                } else {
+                    // Vertical dot (Dot Above/Below): label offset Y saja
+                    float offsetY = dotPos.y - lowerBound.y;
+                    fontNormal.drawString("offset = " + ofToString(offsetY, 1), dotPos.x + 10, dotPos.y);
+                }
             }
         }
     }
@@ -2403,14 +2484,12 @@ void ofApp::saveWorkspace() {
 
   // Sudah ada Save As sebelumnya, save langsung ke file tersebut
   fileManager.saveAll(currentTemplate->getName(), currentTemplate->radius,
-                      customLines, polygonShapes, currentTemplate->lineWidth,
+                      customLines, polygonShapes, userDots, currentTemplate->lineWidth,
                       currentTemplate->labelsVisible, currentTemplate->dotsVisible,
-                      lastSavedPath);
+                      showUserDot, lastSavedPath);
 
   // Show MenuBar agar popup terlihat
   imguiVisible = true;
-  showSacredGeometry = false;
-  showPlayground = false;
   successPopup->show();
 }
 
@@ -2438,17 +2517,15 @@ void ofApp::saveWorkspaceAs() {
 
   // Simpan langsung ke filepath yang user pilih
   fileManager.saveAll(currentTemplate->getName(), currentTemplate->radius,
-                      customLines, polygonShapes, currentTemplate->lineWidth,
+                      customLines, polygonShapes, userDots, currentTemplate->lineWidth,
                       currentTemplate->labelsVisible, currentTemplate->dotsVisible,
-                      filepath);
+                      showUserDot, filepath);
 
   // Simpan path ini sebagai lastSavedPath (CTRL+S selanjutnya akan kesini)
   lastSavedPath = filepath;
 
   // Show MenuBar agar popup terlihat
   imguiVisible = true;
-  showSacredGeometry = false;
-  showPlayground = false;
   successPopup->show();
 }
 
@@ -2512,8 +2589,8 @@ void ofApp::loadWorkspace() {
     bool loadedDotsVisible;
 
     if (fileManager.loadAll(loadedTemplateName, loadedRadius, customLines,
-        polygonShapes, loadedLineWidth,
-        loadedLabelsVisible, loadedDotsVisible, lastSavedPath)) {
+        polygonShapes, userDots, loadedLineWidth,
+        loadedLabelsVisible, loadedDotsVisible, showUserDot, lastSavedPath)) {
 
         // Switch ke template yang di-load DULU
         switchTemplate(loadedTemplateName);
@@ -2625,6 +2702,7 @@ void ofApp::loadWorkspace() {
         // Sync ColorPicker dengan warna customLines yang diload
         syncColorPickerFromLoadedLines();
         syncColorPickerFromLoadedPolygons();
+        syncUserDotFromLoaded();
 
         loadStage = LOAD_TEMPLATE;
         isStaggeredLoad = true;
@@ -2658,7 +2736,10 @@ void ofApp::loadWorkspaceSeq() {
 
     fileManager.loadAllSequential(loadedTemplateName, loadedRadius,
         loadedLineWidth, loadedLabelsVisible, loadedDotsVisible,
-        customLines, polygonShapes, lastSavedPath);
+        customLines, polygonShapes, userDots, showUserDot, lastSavedPath);
+
+    // Sync userDotRadius dan userDotColor dari userDots yang diload
+    syncUserDotFromLoaded();
 
     // Switch ke template yang di-load DULU
     switchTemplate(loadedTemplateName);

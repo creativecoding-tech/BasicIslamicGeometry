@@ -8,8 +8,10 @@
 void FileManager::saveAll(const std::string &templateName, float globalRadius,
                           const std::vector<CustomLine> &customLines,
                           const std::vector<PolygonShape> &polygons,
+                          const std::vector<std::unique_ptr<DotShape>> &userDots,
                           float currentLineWidth, bool labelsVisible,
-                          bool dotsVisible, const std::string &filepath) {
+                          bool dotsVisible, bool showUserDot,
+                          const std::string &filepath) {
   ofBuffer buffer;
 
   // ===== HEADER (64 bytes) =====
@@ -41,9 +43,12 @@ void FileManager::saveAll(const std::string &templateName, float globalRadius,
   // Byte 5: dotsVisible (bool/1 byte)
   buffer.append(reinterpret_cast<const char *>(&dotsVisible), sizeof(bool));
 
-  // Byte 6-19: Remaining Reserved (14 bytes)
-  char reserved[14] = {0};
-  buffer.append(reserved, 14);
+  // Byte 6: showUserDot (bool/1 byte)
+  buffer.append(reinterpret_cast<const char *>(&showUserDot), sizeof(bool));
+
+  // Byte 7-19: Remaining Reserved (13 bytes)
+  char reserved[13] = {0};
+  buffer.append(reserved, 13);
 
   // ===== CUSTOM LINES =====
   int numLines = static_cast<int>(customLines.size());
@@ -59,6 +64,13 @@ void FileManager::saveAll(const std::string &templateName, float globalRadius,
   // Simpan polygons dengan NORMALIZED positions (dibagi radius)
   savePolygonsNA(buffer, polygons, globalRadius);
 
+  // ===== USER DOTS =====
+  int numDots = static_cast<int>(userDots.size());
+  buffer.append(reinterpret_cast<const char *>(&numDots), sizeof(int));
+
+  // Simpan userDots dengan NORMALIZED positions (dibagi radius)
+  saveUserDotsNA(buffer, userDots, globalRadius);
+
   // Write ke file langsung ke filepath
   ofBufferToFile(filepath, buffer);
 }
@@ -67,8 +79,9 @@ void FileManager::saveAll(const std::string &templateName, float globalRadius,
 bool FileManager::loadAll(std::string &outTemplateName, float &outGlobalRadius,
                           std::vector<CustomLine> &customLines,
                           std::vector<PolygonShape> &polygons,
+                          std::vector<std::unique_ptr<DotShape>> &userDots,
                           float &outLineWidth, bool &outLabelsVisible,
-                          bool &outDotsVisible,
+                          bool &outDotsVisible, bool &outShowUserDot,
                           const std::string &filepath) {
   // Baca dari filepath yang diberikan (wajib di-parameter)
   ofFile file(filepath);
@@ -128,6 +141,7 @@ bool FileManager::loadAll(std::string &outTemplateName, float &outGlobalRadius,
     outLineWidth = 4.0f;
     outLabelsVisible = true;
     outDotsVisible = true;
+    outShowUserDot = true;  // Default true
     offset += 20;
   } else if (version == 2) {
     // Version 2: Read from what was previously reserved
@@ -144,8 +158,12 @@ bool FileManager::loadAll(std::string &outTemplateName, float &outGlobalRadius,
     outDotsVisible = *reinterpret_cast<bool *>(data + offset);
     offset += sizeof(bool);
 
-    // Skip remaining reserved (14 bytes)
-    offset += 14;
+    // showUserDot (bool)
+    outShowUserDot = *reinterpret_cast<bool *>(data + offset);
+    offset += sizeof(bool);
+
+    // Skip remaining reserved (13 bytes)
+    offset += 13;
   }
 
   // ===== LOAD CUSTOM LINES =====
@@ -176,6 +194,21 @@ bool FileManager::loadAll(std::string &outTemplateName, float &outGlobalRadius,
   if (!loadPolygonsNA(buffer, offset, polygons, outGlobalRadius)) {
     ofLog() << "Error: Failed to load polygons";
     return false;
+  }
+
+  // ===== LOAD USER DOTS =====
+  if (offset >= bufferSize) {
+    // Backward compatibility: file lama tidak punya userDots
+    userDots.clear();
+  } else {
+    int numDots = *reinterpret_cast<int *>(data + offset);
+    offset += sizeof(int);
+
+    userDots.clear();
+    if (!loadUserDotsNA(buffer, offset, userDots, outGlobalRadius)) {
+      ofLog() << "Error: Failed to load user dots";
+      return false;
+    }
   }
 
   return true;
@@ -368,6 +401,96 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
 }
 
 //--------------------------------------------------------------
+void FileManager::saveUserDotsNA(ofBuffer &buffer,
+                                  const std::vector<std::unique_ptr<DotShape>> &userDots,
+                                  float radius) {
+  // Write jumlah dot
+  int numDots = static_cast<int>(userDots.size());
+  buffer.append(reinterpret_cast<const char *>(&numDots), sizeof(int));
+
+  // Write setiap dot dengan NORMALIZED positions
+  for (const auto &dot : userDots) {
+    if (!dot) continue;
+
+    // Write position (NORMALIZED)
+    vec2 pos = dot->getPosition();
+    vec2 normalizedPos = pos / radius; // Normalize
+    buffer.append(reinterpret_cast<const char *>(&normalizedPos), sizeof(vec2));
+
+    // Write lower bound (NORMALIZED)
+    vec2 lowerBound = dot->getLowerBound();
+    vec2 normalizedLowerBound = lowerBound / radius; // Normalize
+    buffer.append(reinterpret_cast<const char *>(&normalizedLowerBound), sizeof(vec2));
+
+    // Write radius
+    float dotRadius = dot->getRadius();
+    buffer.append(reinterpret_cast<const char *>(&dotRadius), sizeof(float));
+
+    // Write color
+    ofColor color = dot->getColor();
+    buffer.append(reinterpret_cast<const char *>(&color), sizeof(ofColor));
+  }
+}
+
+//--------------------------------------------------------------
+bool FileManager::loadUserDotsNA(ofBuffer &buffer, size_t &offset,
+                                 std::vector<std::unique_ptr<DotShape>> &userDots,
+                                 float radius) {
+  char *data = buffer.getData();
+  size_t bufferSize = buffer.size();
+
+  // Read jumlah dot
+  if (offset + sizeof(int) > bufferSize) {
+    return false;
+  }
+  int numDots = *reinterpret_cast<int *>(data + offset);
+  offset += sizeof(int);
+
+  // Read setiap dot
+  for (int i = 0; i < numDots; i++) {
+    // Read position dan DENORMALIZE (kali radius)
+    if (offset + sizeof(vec2) > bufferSize) {
+      return false;
+    }
+    vec2 normalizedPos = *reinterpret_cast<vec2 *>(data + offset);
+    offset += sizeof(vec2);
+    vec2 pos = normalizedPos * radius; // Denormalize
+
+    // Read lower bound dan DENORMALIZE
+    if (offset + sizeof(vec2) > bufferSize) {
+      return false;
+    }
+    vec2 normalizedLowerBound = *reinterpret_cast<vec2 *>(data + offset);
+    offset += sizeof(vec2);
+    vec2 lowerBound = normalizedLowerBound * radius; // Denormalize
+
+    // Read radius
+    if (offset + sizeof(float) > bufferSize) {
+      return false;
+    }
+    float dotRadius = *reinterpret_cast<float *>(data + offset);
+    offset += sizeof(float);
+
+    // Read color
+    if (offset + sizeof(ofColor) > bufferSize) {
+      return false;
+    }
+    ofColor color = *reinterpret_cast<ofColor *>(data + offset);
+    offset += sizeof(ofColor);
+
+    // Buat DotShape
+    auto dotShape = std::make_unique<DotShape>(pos, "Dot", dotRadius);
+    dotShape->setLowerBound(lowerBound);
+    dotShape->setColor(color);
+    dotShape->showing = true;
+    dotShape->progress = 1.0f;
+    userDots.push_back(std::move(dotShape));
+  }
+
+  return true;
+}
+
+//--------------------------------------------------------------
 FileManager::FileManager()
     : loadSequentialMode(false), loadParallelMode(false), currentLineIndex(0),
       loadSpeed(0.05f), loadAccumulator(0.0f), currentPolygonIndex(0),
@@ -376,8 +499,9 @@ FileManager::FileManager()
 //--------------------------------------------------------------
 void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlobalRadius,
                                     float &outLineWidth, bool &outLabelsVisible, bool &outDotsVisible,
-                                    std::vector<CustomLine> &customLines,
-                                    std::vector<PolygonShape> &polygons,
+                                    std::vector<CustomLine> &customLines, std::vector<PolygonShape> &polygons,
+                                    std::vector<std::unique_ptr<DotShape>> &userDots,
+                                    bool &outShowUserDot,
                                     const std::string& filepath) {
   // Cek apakah file exists
   ofFile file(filepath);
@@ -437,6 +561,7 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
     outLineWidth = 4.0f;
     outLabelsVisible = true;
     outDotsVisible = true;
+    outShowUserDot = true;  // Default true
     offset += 20;
   } else if (version == 2) {
     // Version 2: Read dari apa yang sebelumnya reserved
@@ -449,8 +574,12 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
     outDotsVisible = *reinterpret_cast<bool *>(data + offset);
     offset += sizeof(bool);
 
-    // Skip remaining reserved (14 bytes)
-    offset += 14;
+    // showUserDot (bool)
+    outShowUserDot = *reinterpret_cast<bool *>(data + offset);
+    offset += sizeof(bool);
+
+    // Skip remaining reserved (13 bytes)
+    offset += 13;
   }
 
   // ===== LOAD CUSTOM LINES KE BUFFER =====
@@ -591,6 +720,22 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
       // Buat PolygonShape dengan atau tanpa animation tergantung mode
       PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
       loadedPolygonsBuffer.push_back(std::move(polygon));
+    }
+  }
+
+  // ===== LOAD USER DOTS (langsung, bukan sequential) =====
+  if (offset >= bufferSize) {
+    // Backward compatibility: file lama tidak punya userDots
+    userDots.clear();
+  } else {
+    int numDots = *reinterpret_cast<int *>(data + offset);
+    offset += sizeof(int);
+
+    userDots.clear();
+    // Load userDots langsung (tanpa buffer sequential)
+    if (!loadUserDotsNA(buffer, offset, userDots, outGlobalRadius)) {
+      ofLog() << "Error: Failed to load user dots";
+      return;
     }
   }
 

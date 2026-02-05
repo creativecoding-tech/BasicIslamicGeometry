@@ -43,6 +43,7 @@ class ofApp : public ofBaseApp{
 		bool showSacredGeometry = false;  // SacredGeometry window visibility
 		bool showPlayground = false;  // Playground window visibility
 		bool showUserCustom = false;  // UserCustom window visibility
+		bool showUserDot = true;  // UserDot visibility
 
 		ofTrueTypeFont fontNormal;  // Font untuk custom line labels
 
@@ -101,8 +102,12 @@ class ofApp : public ofBaseApp{
 		// Polygon color control
 		ofColor polygonColor = ofColor(0, 0, 255);  // Default biru
 
+		// UserDot color control
+		ofColor userDotColor = ofColor(0, 0, 255);  // Default biru
+
 		float threshold = 5.0f; //dalam radius saat mouse hover pada dot
 		float duplicateDotOffsetDistance = 7.0f;  // Jarak offset duplikat dot ke atas (dalam pixels)
+		float userDotRadius = 8.0f;  // Radius untuk userDot/duplicate dot
 		bool isCtrlPressed = false;
 
 		// Undo System (Max 100 steps)
@@ -224,8 +229,11 @@ class ofApp : public ofBaseApp{
 		void updateLineWidth();
 		void updateCustomLineColor(ofColor color);  // Update warna semua customLines
 		void updatePolygonColor(ofColor color);  // Update warna semua polygons
+		void updateUserDotColor(ofColor color);  // Update warna semua userDots
+		void updateUserDotRadius(float radius);  // Update radius semua userDots
 		void syncColorPickerFromLoadedLines();  // Sync ColorPicker dari customLines yang diload
 		void syncColorPickerFromLoadedPolygons();  // Sync ColorPicker dari polygons yang diload
+		void syncUserDotFromLoaded();  // Sync userDotRadius dan userDotColor dari userDots yang diload
 		void cleanCanvas();             // Clear all polygons, custom lines, and hide template shapes
 		void scaleCustomLinesAndPolygons(float oldRadius, float newRadius);  // Scale customLines & polygons saat radius berubah
 		bool isCanvasEmpty();  // Cek apakah canvas benar-bener kosong (tidak ada template showing, customLines, atau polygons)

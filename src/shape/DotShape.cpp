@@ -38,7 +38,7 @@ void DotShape::draw() {
     ofTranslate(position.x, position.y);
 
     ofFill();
-    ofSetColor(0);  // Warna hitam seperti dot di template
+    ofSetColor(color);  // Gunakan warna dari member variable
 
     // Animasi scale dot
     float scale = progress;  // Scale dari 0 ke 1

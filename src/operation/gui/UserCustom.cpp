@@ -13,6 +13,12 @@ UserCustom::UserCustom(ofApp* app) : app(app) {
     polygonColor[1] = app->polygonColor.g / 255.0f; // G
     polygonColor[2] = app->polygonColor.b / 255.0f; // B
     polygonColor[3] = app->polygonColor.a / 255.0f; // A
+
+    // Initialize color picker dari app->userDotColor (default biru)
+    userDotColor[0] = app->userDotColor.r / 255.0f; // R
+    userDotColor[1] = app->userDotColor.g / 255.0f; // G
+    userDotColor[2] = app->userDotColor.b / 255.0f; // B
+    userDotColor[3] = app->userDotColor.a / 255.0f; // A
 }
 
 //--------------------------------------------------------------
@@ -31,6 +37,67 @@ void UserCustom::updatePolygonColorFromApp() {
     polygonColor[1] = app->polygonColor.g / 255.0f; // G
     polygonColor[2] = app->polygonColor.b / 255.0f; // B
     polygonColor[3] = app->polygonColor.a / 255.0f; // A
+}
+
+//--------------------------------------------------------------
+void UserCustom::updateUserDotColorFromApp() {
+    // Update userDot color picker values dari app->userDotColor
+    userDotColor[0] = app->userDotColor.r / 255.0f; // R
+    userDotColor[1] = app->userDotColor.g / 255.0f; // G
+    userDotColor[2] = app->userDotColor.b / 255.0f; // B
+    userDotColor[3] = app->userDotColor.a / 255.0f; // A
+}
+
+//--------------------------------------------------------------
+void UserCustom::syncUserDotFromSelection() {
+    // Jika ada userDot yang terseleksi, sync radius dan color dengan dot pertama yang terseleksi
+    if (!app->selectedUserDotIndices.empty()) {
+        int firstIndex = *app->selectedUserDotIndices.begin();
+        if (firstIndex >= 0 && firstIndex < app->userDots.size()) {
+            auto& dot = app->userDots[firstIndex];
+            if (dot) {
+                // Sync radius
+                app->userDotRadius = dot->getRadius();
+
+                // Sync color
+                ofColor dotColor = dot->getColor();
+                userDotColor[0] = dotColor.r / 255.0f;
+                userDotColor[1] = dotColor.g / 255.0f;
+                userDotColor[2] = dotColor.b / 255.0f;
+                userDotColor[3] = dotColor.a / 255.0f;
+            }
+        }
+    }
+}
+
+//--------------------------------------------------------------
+void UserCustom::syncLineColorFromSelection() {
+    // Jika ada customLine yang terseleksi, sync color dengan line pertama yang terseleksi
+    if (!app->selectedLineIndices.empty()) {
+        int firstIndex = *app->selectedLineIndices.begin();
+        if (firstIndex >= 0 && firstIndex < app->customLines.size()) {
+            ofColor lineColor = app->customLines[firstIndex].getColor();
+            customLineColor[0] = lineColor.r / 255.0f;
+            customLineColor[1] = lineColor.g / 255.0f;
+            customLineColor[2] = lineColor.b / 255.0f;
+            customLineColor[3] = lineColor.a / 255.0f;
+        }
+    }
+}
+
+//--------------------------------------------------------------
+void UserCustom::syncPolygonColorFromSelection() {
+    // Jika ada polygon yang terseleksi, sync color dengan polygon pertama yang terseleksi
+    if (!app->selectedPolygonIndices.empty()) {
+        int firstIndex = *app->selectedPolygonIndices.begin();
+        if (firstIndex >= 0 && firstIndex < app->polygonShapes.size()) {
+            ofColor polyColor = app->polygonShapes[firstIndex].getColor();
+            polygonColor[0] = polyColor.r / 255.0f;
+            polygonColor[1] = polyColor.g / 255.0f;
+            polygonColor[2] = polyColor.b / 255.0f;
+            polygonColor[3] = polyColor.a / 255.0f;
+        }
+    }
 }
 
 //--------------------------------------------------------------
@@ -56,7 +123,40 @@ void UserCustom::draw() {
 
     // Begin window dengan close button (windowOpen flag)
     if (ImGui::Begin("User Custom", &windowOpen, ImGuiWindowFlags_None)) {
-        ImGui::Text("Custom Line");
+        ImGui::Text("Dot");
+
+        // Sync radius dan color dengan selected userDot (setiap frame)
+        syncUserDotFromSelection();
+
+        if (ImGui::Checkbox("Show/Hide", &app->showUserDot)) {
+            // Event handler: toggle userDot visibility
+            if (!app->showUserDot) {
+                // Unselect semua userDot ketika di-hide
+                app->selectedUserDotIndices.clear();
+                app->lastSelectedUserDotIndex = -1;
+            }
+        }
+        ImGui::SetNextItemWidth(100.0f);
+        ImGui::SameLine();
+        if (ImGui::SliderFloat("Radius", &app->userDotRadius, 0.0f, 8.0f)) {
+            // Event handler: update selected userDots radius saja
+            app->updateUserDotRadius(app->userDotRadius);
+        }
+        if (ImGui::ColorEdit4("D Color", userDotColor)) {
+            // Event handler: warna berubah, update selected userDots saja
+            ofColor newColor(
+                userDotColor[0] * 255,
+                userDotColor[1] * 255,
+                userDotColor[2] * 255,
+                userDotColor[3] * 255
+            );
+            app->updateUserDotColor(newColor);
+        }
+        ImGui::Separator();
+
+        ImGui::Text("Line");
+        // Sync color dengan selected customLine (setiap frame)
+        syncLineColorFromSelection();
         // Color picker untuk custom line (bentuk melingkar)
         if (ImGui::ColorPicker4("L Color", customLineColor,
             ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_AlphaBar)) {
@@ -71,6 +171,8 @@ void UserCustom::draw() {
         }
         ImGui::Separator();
         ImGui::Text("Polygon");
+        // Sync color dengan selected polygon (setiap frame)
+        syncPolygonColorFromSelection();
         // Color picker untuk polygon (bentuk melingkar)
         if (ImGui::ColorPicker4("P Color", polygonColor,
             ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_AlphaBar)) {

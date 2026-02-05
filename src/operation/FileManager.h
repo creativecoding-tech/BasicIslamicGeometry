@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "../shape/CustomLine.h"
 #include "../shape/PolygonShape.h"
+#include "../shape/DotShape.h"
 #include "../template/SacredGeometryTemplate.h"
 #include <string>
 using glm::vec2;
@@ -24,21 +25,24 @@ public:
     void saveAll(const std::string& templateName, float globalRadius,
                  const std::vector<CustomLine>& customLines,
                  const std::vector<PolygonShape>& polygons,
+                 const std::vector<std::unique_ptr<DotShape>>& userDots,
                  float currentLineWidth, bool labelsVisible, bool dotsVisible,
-                 const std::string& filepath);
+                 bool showUserDot, const std::string& filepath);
 
     // Load ALL data dari .na format - return template name
     bool loadAll(std::string& outTemplateName, float& outGlobalRadius,
                  std::vector<CustomLine>& customLines,
                  std::vector<PolygonShape>& polygons,
+                 std::vector<std::unique_ptr<DotShape>>& userDots,
                  float& outLineWidth, bool& outLabelsVisible, bool& outDotsVisible,
-                 const std::string& filepath);
+                 bool& outShowUserDot, const std::string& filepath);
 
     // Load ALL data sequential dengan animasi (CTRL+SHIFT+O)
     void loadAllSequential(std::string& outTemplateName, float& outGlobalRadius,
                           float& outLineWidth, bool& outLabelsVisible, bool& outDotsVisible,
                           std::vector<CustomLine>& customLines, std::vector<PolygonShape>& polygons,
-                          const std::string& filepath);
+                          std::vector<std::unique_ptr<DotShape>>& userDots,
+                          bool& outShowUserDot, const std::string& filepath);
 
     // Clear semua custom lines (CTRL+DEL)
     static void clearCustomLines(std::vector<CustomLine>& customLines);
@@ -73,6 +77,9 @@ private:
 
     void savePolygonsNA(ofBuffer& buffer, const std::vector<PolygonShape>& polygons, float radius);
     bool loadPolygonsNA(ofBuffer& buffer, size_t& offset, std::vector<PolygonShape>& polygons, float radius);
+
+    void saveUserDotsNA(ofBuffer& buffer, const std::vector<std::unique_ptr<DotShape>>& userDots, float radius);
+    bool loadUserDotsNA(ofBuffer& buffer, size_t& offset, std::vector<std::unique_ptr<DotShape>>& userDots, float radius);
 
     // Helper method untuk create polygon dengan animation berdasarkan mode
     PolygonShape createPolygonWithAnimation(const std::vector<vec2>& vertices, ofColor color, int index);
