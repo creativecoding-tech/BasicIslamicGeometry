@@ -27,6 +27,9 @@ void MenuBar::draw() {
             if (ImGui::MenuItem("Undo", "CTRL+Z")) {
                 app->undo();
             }
+            if (ImGui::MenuItem("Redo", "CTRL+SHIFT+Z")) {
+                app->redo();
+            }
             ImGui::EndMenu();
         }
 

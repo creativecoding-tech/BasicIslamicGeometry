@@ -630,7 +630,12 @@ void ofApp::keyPressed(int key) {
     case 'z':
     case 'Z':
     case 26: // CTRL+Z (ASCII 26)
-      undo();
+      // Cek apakah SHIFT juga ditekan (CTRL+SHIFT+Z untuk Redo)
+      if (ofGetKeyPressed(OF_KEY_SHIFT)) {
+        redo();
+      } else {
+        undo();
+      }
       break;
 
     case 's':
@@ -854,6 +859,9 @@ int ofApp::getLineIndexAtPosition(vec2 pos) {
 
 //--------------------------------------------------------------
 void ofApp::pushUndoAction(UndoAction action) {
+	// Saat action baru, clear redo stack (redo tidak valid lagi)
+	clearRedoStack();
+
 	// Add ke stack, jika sudah full, hapus yang paling lama
 	if (undoStack.size() >= MAX_UNDO_STEPS) {
 		undoStack.erase(undoStack.begin());  // Hapus yang paling lama (front)
@@ -867,6 +875,11 @@ void ofApp::clearUndoStack() {
 }
 
 //--------------------------------------------------------------
+void ofApp::clearRedoStack() {
+	redoStack.clear();
+}
+
+//--------------------------------------------------------------
 void ofApp::undo() {
 	if (undoStack.empty()) {
 		return;  // Tidak ada apa-apa untuk di-undo
@@ -876,73 +889,270 @@ void ofApp::undo() {
 	UndoAction action = undoStack.back();
 	undoStack.pop_back();
 
+	// Siapkan redo action (perlu modifikasi untuk CHANGE actions)
+	UndoAction redoAction = action;
+
 	// Handle berdasarkan tipe action
 	switch (action.type) {
 		case CREATE_LINE:
+		{
 			// Undo create line = hapus line terakhir
 			if (!customLines.empty()) {
+				// SIMPAN line yang akan dihapus ke redoAction SEBELUM pop_back
+				redoAction.deletedLine = customLines.back();
+				redoAction.deletedLineIndex = static_cast<int>(customLines.size()) - 1;
+
 				customLines.pop_back();
+
 				// Clear selection jika index yang dipilih tidak valid lagi
 				if (!selectedLineIndices.empty()) {
 					selectedLineIndices.clear();
 					lastSelectedLineIndex = -1;
 				}
 			}
+			// Push ke redo stack
+			redoStack.push_back(redoAction);
 			break;
+		}
 
 		case CREATE_POLYGON:
+		{
 			// Undo create polygon = hapus polygon terakhir
 			if (!polygonShapes.empty()) {
+				// SIMPAN polygon yang akan dihapus ke redoAction SEBELUM pop_back
+				redoAction.deletedPolygon = polygonShapes.back();
+				redoAction.deletedPolygonIndex = static_cast<int>(polygonShapes.size()) - 1;
+
 				polygonShapes.pop_back();
 				selectedPolygonIndex = -1;
 			}
+			// Push ke redo stack
+			redoStack.push_back(redoAction);
 			break;
+		}
 
 		case CHANGE_COLOR_LINE:
-			// Restore old color ke semua lines yang diubah (support multi-select)
+		{
+			// Capture current colors dulu (sebelum restore) untuk redo
+			std::vector<ofColor> currentColors;
+			for (size_t i = 0; i < action.colorIndices.size(); i++) {
+				int idx = static_cast<int>(action.colorIndices[i]);
+				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+					currentColors.push_back(customLines[idx].getColor());
+				}
+			}
+
+			// Restore old colors
 			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
-				int idx = action.colorIndices[i];
-				if (idx >= 0 && idx < customLines.size()) {
+				int idx = static_cast<int>(action.colorIndices[i]);
+				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
 					customLines[idx].setColor(action.oldColors[i]);
 				}
 			}
+
+			// Setup redo action: redo akan apply new color (current colors)
+			redoAction.oldColors = currentColors;
+			redoStack.push_back(redoAction);
 			break;
+		}
 
 		case CHANGE_COLOR_POLYGON:
-			// Restore old color ke polygon yang diubah (single select only)
+		{
+			// Capture current color dulu (sebelum restore) untuk redo
+			ofColor currentColor;
+			if (!action.colorIndices.empty() && action.colorIndices[0] >= 0 && action.colorIndices[0] < static_cast<int>(polygonShapes.size())) {
+				currentColor = polygonShapes[action.colorIndices[0]].getColor();
+			}
+
+			// Restore old color
 			if (!action.colorIndices.empty() && !action.oldColors.empty()) {
 				int idx = action.colorIndices[0];
-				if (idx >= 0 && idx < polygonShapes.size()) {
+				if (idx >= 0 && idx < static_cast<int>(polygonShapes.size())) {
 					polygonShapes[idx].setColor(action.oldColors[0]);
 				}
 			}
+
+			// Setup redo action: redo akan apply new color (current color)
+			if (!redoAction.oldColors.empty()) {
+				redoAction.oldColors[0] = currentColor;
+			}
+			redoStack.push_back(redoAction);
 			break;
+		}
 
 		case DELETE_LINE:
 			// Restore line yang dihapus
-			if (action.deletedLineIndex >= 0 && action.deletedLineIndex <= customLines.size()) {
+			if (action.deletedLineIndex >= 0 && action.deletedLineIndex <= static_cast<int>(customLines.size())) {
 				customLines.insert(customLines.begin() + action.deletedLineIndex, action.deletedLine);
 			}
+			// Push ke redo stack
+			redoStack.push_back(redoAction);
 			break;
 
 		case DELETE_POLYGON:
 			// Restore polygon yang dihapus
-			if (action.deletedPolygonIndex >= 0 && action.deletedPolygonIndex <= polygonShapes.size()) {
+			if (action.deletedPolygonIndex >= 0 && action.deletedPolygonIndex <= static_cast<int>(polygonShapes.size())) {
 				polygonShapes.insert(polygonShapes.begin() + action.deletedPolygonIndex, action.deletedPolygon);
 			}
+			// Push ke redo stack
+			redoStack.push_back(redoAction);
 			break;
 
 		case CHANGE_CURVE:
-			// Restore old curve value (support multi-select)
+		{
+			// Capture current curves dulu (sebelum restore) untuk redo
+			std::vector<float> currentCurves;
+			for (size_t i = 0; i < action.curveLineIndices.size(); i++) {
+				int idx = static_cast<int>(action.curveLineIndices[i]);
+				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+					currentCurves.push_back(customLines[idx].getCurve());
+				}
+			}
+
+			// Restore old curves
 			for (size_t i = 0; i < action.curveLineIndices.size() && i < action.oldCurves.size(); i++) {
-				int idx = action.curveLineIndices[i];
-				if (idx >= 0 && idx < customLines.size()) {
+				int idx = static_cast<int>(action.curveLineIndices[i]);
+				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
 					customLines[idx].setCurve(action.oldCurves[i]);
 				}
 			}
+
+			// Setup redo action: redo akan apply new curve (current curves)
+			redoAction.oldCurves = currentCurves;
+			redoStack.push_back(redoAction);
 			break;
+		}
 	}
 }
+
+//--------------------------------------------------------------
+void ofApp::redo() {
+	if (redoStack.empty()) {
+		return;  // Tidak ada apa-apa untuk di-redo
+	}
+
+	// Ambil redo action terakhir
+	UndoAction action = redoStack.back();
+	redoStack.pop_back();
+
+	// Handle berdasarkan tipe action
+	switch (action.type) {
+		case CREATE_LINE:
+			// Redo create line = create line lagi
+			customLines.push_back(action.deletedLine);
+			// Push langsung ke undo stack (TANPA clearRedoStack)
+			if (undoStack.size() >= MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(action);
+			break;
+
+		case CREATE_POLYGON:
+			// Redo create polygon = create polygon lagi
+			polygonShapes.push_back(action.deletedPolygon);
+			// Push langsung ke undo stack
+			if (undoStack.size() >= MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(action);
+			break;
+
+		case CHANGE_COLOR_LINE:
+		{
+			// Capture current colors dulu untuk membuat undo action baru
+			UndoAction newUndoAction;
+			newUndoAction.type = CHANGE_COLOR_LINE;
+			newUndoAction.colorIndices = action.colorIndices;
+			newUndoAction.newColor = action.newColor;
+
+			// Apply redo colors dan simpan current colors
+			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
+				int idx = action.colorIndices[i];
+				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+					newUndoAction.oldColors.push_back(customLines[idx].getColor());
+					customLines[idx].setColor(action.oldColors[i]);
+				}
+			}
+			// Push langsung ke undo stack
+			if (undoStack.size() >= MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(newUndoAction);
+			break;
+		}
+
+		case CHANGE_COLOR_POLYGON:
+		{
+			// Capture current color
+			UndoAction newUndoActionPoly;
+			newUndoActionPoly.type = CHANGE_COLOR_POLYGON;
+			newUndoActionPoly.newColor = action.newColor;
+
+			if (!action.colorIndices.empty()) {
+				int idx = action.colorIndices[0];
+				if (idx >= 0 && idx < static_cast<int>(polygonShapes.size())) {
+					newUndoActionPoly.colorIndices = action.colorIndices;
+					newUndoActionPoly.oldColors.push_back(polygonShapes[idx].getColor());
+					polygonShapes[idx].setColor(action.oldColors[0]);
+				}
+			}
+			// Push langsung ke undo stack
+			if (undoStack.size() >= MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(newUndoActionPoly);
+			break;
+		}
+
+		case DELETE_LINE:
+			// Redo = delete line lagi
+			if (action.deletedLineIndex >= 0 && action.deletedLineIndex < static_cast<int>(customLines.size())) {
+				customLines.erase(customLines.begin() + action.deletedLineIndex);
+			}
+			// Push langsung ke undo stack
+			if (undoStack.size() >= MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(action);
+			break;
+
+		case DELETE_POLYGON:
+			// Redo = delete polygon lagi
+			if (action.deletedPolygonIndex >= 0 && action.deletedPolygonIndex < static_cast<int>(polygonShapes.size())) {
+				polygonShapes.erase(polygonShapes.begin() + action.deletedPolygonIndex);
+			}
+			// Push langsung ke undo stack
+			if (undoStack.size() >= MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(action);
+			break;
+
+		case CHANGE_CURVE:
+		{
+			// Capture current curves dan apply redo curves
+			UndoAction newUndoActionCurve;
+			newUndoActionCurve.type = CHANGE_CURVE;
+			newUndoActionCurve.curveLineIndices = action.curveLineIndices;
+			newUndoActionCurve.newCurve = action.newCurve;
+
+			for (size_t i = 0; i < action.curveLineIndices.size() && i < action.oldCurves.size(); i++) {
+				int idx = action.curveLineIndices[i];
+				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+					newUndoActionCurve.oldCurves.push_back(customLines[idx].getCurve());
+					customLines[idx].setCurve(action.oldCurves[i]);
+				}
+			}
+			// Push langsung ke undo stack
+			if (undoStack.size() >= MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(newUndoActionCurve);
+			break;
+		}
+	}
+}
+
 
 //--------------------------------------------------------------
 void ofApp::createInvisiblePolygonFromSelected() {

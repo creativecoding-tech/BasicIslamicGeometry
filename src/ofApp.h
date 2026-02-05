@@ -123,9 +123,11 @@ class ofApp : public ofBaseApp{
 
 		static const int MAX_UNDO_STEPS = 7;
 		std::vector<UndoAction> undoStack;
+		std::vector<UndoAction> redoStack;  // Redo stack
 
 		void pushUndoAction(UndoAction action);
 		void clearUndoStack();
+		void clearRedoStack();  // Clear redo stack saat action baru
 
 		// Staggered parallel load mode (CTRL+O)
 		enum LoadStage {
@@ -220,6 +222,7 @@ class ofApp : public ofBaseApp{
 		int getLineIndexAtPosition(vec2 pos);  // Get index line di posisi mouse (-1 jika tidak ada)
 		bool lineExists(vec2 from, vec2 to);
 		void undo();  // Undo last action (CTRL+Z) - customLine atau polygon
+		void redo();  // Redo last undone action (CTRL+Y or CTRL+SHIFT+Z)
 		void createInvisiblePolygonFromSelected();  // Create invisible polygon from selected lines (CTRL+G)
 
 		void keyPressed(int key);
