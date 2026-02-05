@@ -31,6 +31,9 @@ void MenuBar::draw() {
                 app->redo();
             }
             ImGui::Separator();
+            if (ImGui::MenuItem("Delete All Custom Lines")) {
+                app->deleteAllCustomLines();
+            }
             if (ImGui::MenuItem("Delete Lines & Polygons", "CTRL+DEL")) {
                 app->clearCustomLinesAndPolygons();
             }

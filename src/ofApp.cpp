@@ -1643,6 +1643,17 @@ void ofApp::clearCustomLinesAndPolygons() {
 		selectedPolygonIndex = -1;
 	}
 
+	// Hapus semua custom lines - delegate ke deleteAllCustomLines()
+	deleteAllCustomLines();
+}
+
+//--------------------------------------------------------------
+void ofApp::deleteAllCustomLines() {
+	// Jangan hapus jika sedang sequential load
+	if (fileManager.isLoadSequentialMode()) {
+		return;
+	}
+
 	// Hapus semua custom lines
 	if (!fileManager.isLoadParallelMode()) {
 		FileManager::clearCustomLines(customLines);

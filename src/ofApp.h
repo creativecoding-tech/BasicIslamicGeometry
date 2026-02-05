@@ -224,6 +224,7 @@ class ofApp : public ofBaseApp{
 		void undo();  // Undo last action (CTRL+Z) - customLine atau polygon
 		void redo();  // Redo last undone action (CTRL+Y or CTRL+SHIFT+Z)
 		void clearCustomLinesAndPolygons();  // Hapus semua customLines & polygons (CTRL+DEL)
+		void deleteAllCustomLines();  // Hapus semua customLines saja (tanpa shortcut)
 		void createInvisiblePolygonFromSelected();  // Create invisible polygon from selected lines (CTRL+G)
 
 		void keyPressed(int key);
