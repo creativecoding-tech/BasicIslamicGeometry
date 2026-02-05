@@ -1706,10 +1706,10 @@ void ofApp::cleanCanvas() {
 //--------------------------------------------------------------
 void ofApp::toggleSacredGeometryWindow() {
     if (!imguiVisible || !showSacredGeometry) {
-        // Show SacredGeometry window (dengan MenuBar, tanpa Playground)
+        // Show SacredGeometry window
         imguiVisible = true;
         showSacredGeometry = true;
-        showPlayground = false;  // Pastikan Playground tetap hidden
+        // Jangan hide Playground, biarkan user punya banyak windows terbuka
 
         // Set windowOpen flag di SacredGeometry
         for (auto& gui : guiComponents) {
@@ -1725,6 +1725,34 @@ void ofApp::toggleSacredGeometryWindow() {
             SacredGeometry* sacredGeo = dynamic_cast<SacredGeometry*>(gui.get());
             if (sacredGeo) {
                 sacredGeo->focusWindow();
+                break;
+            }
+        }
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::togglePlaygroundWindow() {
+    if (!imguiVisible || !showPlayground) {
+        // Show Playground window
+        imguiVisible = true;
+        showPlayground = true;
+        // Jangan hide SacredGeometry, biarkan user punya banyak windows terbuka
+
+        // Set windowOpen flag di Playground
+        for (auto& gui : guiComponents) {
+            Playground* playground = dynamic_cast<Playground*>(gui.get());
+            if (playground) {
+                playground->showWindow();
+                break;
+            }
+        }
+    } else {
+        // Playground already visible, focus it
+        for (auto& gui : guiComponents) {
+            Playground* playground = dynamic_cast<Playground*>(gui.get());
+            if (playground) {
+                playground->focusWindow();
                 break;
             }
         }

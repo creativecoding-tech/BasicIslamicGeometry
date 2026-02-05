@@ -208,6 +208,7 @@ class ofApp : public ofBaseApp{
 		void scaleCustomLinesAndPolygons(float oldRadius, float newRadius);  // Scale customLines & polygons saat radius berubah
 		bool isCanvasEmpty();  // Cek apakah canvas benar-bener kosong (tidak ada template showing, customLines, atau polygons)
 		void toggleSacredGeometryWindow();  // Show or focus Sacred Geometry window
+		void togglePlaygroundWindow();  // Show or focus Playground window
 
 		// File operations
 		void saveWorkspace();          // Save workspace to file

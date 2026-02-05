@@ -3,12 +3,30 @@
 
 Playground::Playground(ofApp* app) : app(app) {}
 
+//--------------------------------------------------------------
+void Playground::focusWindow() {
+    focusRequested = true;
+}
+
+//--------------------------------------------------------------
+void Playground::showWindow() {
+    windowOpen = true;
+}
+
+//--------------------------------------------------------------
 void Playground::draw() {
     // Set posisi window di sebelah kanan canvas
     ImGui::SetNextWindowPos(ImVec2(ofGetWidth() - 260, 30), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(250, 400), ImGuiCond_FirstUseEver);
 
-    if (ImGui::Begin("Playground", nullptr, ImGuiWindowFlags_None)) {
+    // Focus window jika di-request
+    if (focusRequested) {
+        ImGui::SetNextWindowFocus();
+        focusRequested = false;
+    }
+
+    // Begin window dengan close button (windowOpen flag)
+    if (ImGui::Begin("Playground", &windowOpen, ImGuiWindowFlags_None)) {
         ImGui::Text("Opened File:");
         ImGui::Separator();
 
@@ -35,4 +53,7 @@ void Playground::draw() {
 
     }
     ImGui::End();
+
+    // Sync window open state ke app
+    app->showPlayground = windowOpen;
 }

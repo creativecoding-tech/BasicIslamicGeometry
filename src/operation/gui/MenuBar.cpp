@@ -47,8 +47,11 @@ void MenuBar::draw() {
         }
 
         if (ImGui::BeginMenu("View")) {
-            if (ImGui::MenuItem("Sacred Gemotery", "G")) {
+            if (ImGui::MenuItem("Sacred Gemotery")) {
                 app->toggleSacredGeometryWindow();
+            }
+            if (ImGui::MenuItem("Playground")) {
+                app->togglePlaygroundWindow();
             }
             ImGui::EndMenu();
         }
