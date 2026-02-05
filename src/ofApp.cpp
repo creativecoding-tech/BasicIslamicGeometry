@@ -255,7 +255,13 @@ void ofApp::updateStaggeredCustomLines() {
 //--------------------------------------------------------------
 void ofApp::updateStaggeredPolygons() {
   // Sequential load: updateSequentialLoad akan menambah polygons bertahap
+  size_t previousSize = polygonShapes.size();
   fileManager.updateSequentialLoad(customLines, polygonShapes);
+
+  // Sync ColorPicker saat polygons pertama kali muncul (sequential load)
+  if (previousSize == 0 && !polygonShapes.empty()) {
+    syncColorPickerFromLoadedPolygons();
+  }
 
   // Update animation semua polygons yang sudah ada
   for (auto& polygon : polygonShapes) {
@@ -864,7 +870,7 @@ void ofApp::createInvisiblePolygonFromSelected() {
   
   int polygonIndex =
       static_cast<int>(polygonShapes.size());
-  PolygonShape newPolygon(allPoints, ofColor(255, 0, 0, 255),
+  PolygonShape newPolygon(allPoints, polygonColor,
                           polygonIndex);
   polygonShapes.push_back(newPolygon);
 
@@ -1043,6 +1049,14 @@ void ofApp::mouseReleased(int x, int y, int button) {
 
 //--------------------------------------------------------------
 void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
+  // Forward ke ImGui DULU
+  ImGuiIO& io = ImGui::GetIO();
+  io.AddMouseWheelEvent(scrollX, scrollY);
+
+  // Cek apakah ImGui mau capture mouse
+  if (io.WantCaptureMouse) {
+    return; // ImGui handle, jangan process di OF
+  }
 
   // Update curve untuk SEMUA garis yang selected
   if (!selectedLineIndices.empty()) {
@@ -1176,6 +1190,23 @@ void ofApp::updateCustomLineColor(ofColor color) {
 }
 
 //--------------------------------------------------------------
+void ofApp::updatePolygonColor(ofColor color) {
+	// Update variabel global untuk polygon baru
+	polygonColor = color;
+
+	// Jika ada polygon yang selected, hanya update yang selected saja
+	if (selectedPolygonIndex >= 0 && selectedPolygonIndex < polygonShapes.size()) {
+		polygonShapes[selectedPolygonIndex].setColor(color);
+	}
+	// Jika tidak ada yang selected, update semua polygons
+	else {
+		for (auto& polygon : polygonShapes) {
+			polygon.setColor(color);
+		}
+	}
+}
+
+//--------------------------------------------------------------
 void ofApp::syncColorPickerFromLoadedLines() {
 	// Ambil warna dari customLine pertama yang diload (jika ada)
 	if (!customLines.empty()) {
@@ -1190,6 +1221,27 @@ void ofApp::syncColorPickerFromLoadedLines() {
 			SacredGeometry* sacredGeo = dynamic_cast<SacredGeometry*>(gui.get());
 			if (sacredGeo) {
 				sacredGeo->updateColorFromApp();
+				break; // Found, no need to continue
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::syncColorPickerFromLoadedPolygons() {
+	// Ambil warna dari polygon pertama yang diload (jika ada)
+	if (!polygonShapes.empty()) {
+		ofColor loadedColor = polygonShapes[0].getColor();
+
+		// Update global color
+		polygonColor = loadedColor;
+
+		// Update SacredGeometry color picker UI
+		for (auto& gui : guiComponents) {
+			// Cari SacredGeometry component
+			SacredGeometry* sacredGeo = dynamic_cast<SacredGeometry*>(gui.get());
+			if (sacredGeo) {
+				sacredGeo->updatePolygonColorFromApp();
 				break; // Found, no need to continue
 			}
 		}
@@ -1487,6 +1539,7 @@ void ofApp::loadWorkspace() {
 
         // Sync ColorPicker dengan warna customLines yang diload
         syncColorPickerFromLoadedLines();
+        syncColorPickerFromLoadedPolygons();
 
         loadStage = LOAD_TEMPLATE;
         isStaggeredLoad = true;

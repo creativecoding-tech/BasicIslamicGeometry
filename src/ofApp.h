@@ -81,6 +81,9 @@ class ofApp : public ofBaseApp{
 		// CustomLine color control
 		ofColor customLineColor = ofColor(0, 0, 255);  // Default biru
 
+		// Polygon color control
+		ofColor polygonColor = ofColor(0, 0, 255);  // Default biru
+
 		float threshold = 10.0f; //dalam radius saat mouse hover pada dot
 		bool isCtrlPressed = false;
 
@@ -154,7 +157,9 @@ class ofApp : public ofBaseApp{
 		void showAllShapes();           // Show all shapes
 		void updateLineWidth();
 		void updateCustomLineColor(ofColor color);  // Update warna semua customLines
+		void updatePolygonColor(ofColor color);  // Update warna semua polygons
 		void syncColorPickerFromLoadedLines();  // Sync ColorPicker dari customLines yang diload
+		void syncColorPickerFromLoadedPolygons();  // Sync ColorPicker dari polygons yang diload
 		void cleanCanvas();             // Clear all polygons, custom lines, and hide template shapes
 		void scaleCustomLinesAndPolygons(float oldRadius, float newRadius);  // Scale customLines & polygons saat radius berubah
 		bool isCanvasEmpty();  // Cek apakah canvas benar-bener kosong (tidak ada template showing, customLines, atau polygons)
