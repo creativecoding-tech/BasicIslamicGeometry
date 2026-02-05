@@ -1904,6 +1904,20 @@ void ofApp::openWorkspace() {
 
   // Set lastSavedPath ke filepath yang di-open (untuk load dan save)
   lastSavedPath = filepath;
+
+  // Show dan focus Playground window (file valid, akan diload)
+  imguiVisible = true;
+  showPlayground = true;
+
+  // Set windowOpen flag dan focus ke Playground
+  for (auto& gui : guiComponents) {
+    Playground* playground = dynamic_cast<Playground*>(gui.get());
+    if (playground) {
+      playground->showWindow();
+      playground->focusWindow();
+      break;
+    }
+  }
 }
 
 //--------------------------------------------------------------
