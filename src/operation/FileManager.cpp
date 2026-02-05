@@ -3,16 +3,13 @@
 #include "../anim/WobbleAnimation.h"
 #include "../anim/FillAnimation.h"
 
-// Konstanta filename
-const std::string FileManager::FILENAME = "workspace.nay";
-
 //--------------------------------------------------------------
 //--------------------------------------------------------------
 void FileManager::saveAll(const std::string &templateName, float globalRadius,
                           const std::vector<CustomLine> &customLines,
                           const std::vector<PolygonShape> &polygons,
                           float currentLineWidth, bool labelsVisible,
-                          bool dotsVisible) {
+                          bool dotsVisible, const std::string &filepath) {
   ofBuffer buffer;
 
   // ===== HEADER (64 bytes) =====
@@ -62,8 +59,8 @@ void FileManager::saveAll(const std::string &templateName, float globalRadius,
   // Simpan polygons dengan NORMALIZED positions (dibagi radius)
   savePolygonsNA(buffer, polygons, globalRadius);
 
-  // Write ke file
-  ofBufferToFile(FILENAME, buffer);
+  // Write ke file langsung ke filepath
+  ofBufferToFile(filepath, buffer);
 }
 
 //--------------------------------------------------------------

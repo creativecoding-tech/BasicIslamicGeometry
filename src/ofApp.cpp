@@ -1826,12 +1826,10 @@ void ofApp::saveWorkspace() {
   }
 
   // Sudah ada Save As sebelumnya, save langsung ke file tersebut
-  // Simpan ke default location dulu
   fileManager.saveAll(currentTemplate->getName(), currentTemplate->radius,
                       customLines, polygonShapes, currentTemplate->lineWidth,
-                      currentTemplate->labelsVisible, currentTemplate->dotsVisible);
-  // Copy ke lastSavedPath
-  ofFile::copyFromTo("workspace.nay", lastSavedPath, true, true);
+                      currentTemplate->labelsVisible, currentTemplate->dotsVisible,
+                      lastSavedPath);
 
   // Show MenuBar agar popup terlihat
   imguiVisible = true;
@@ -1862,13 +1860,11 @@ void ofApp::saveWorkspaceAs() {
     filepath += ".nay";
   }
 
-  // Simpan file sementara ke default location
+  // Simpan langsung ke filepath yang user pilih
   fileManager.saveAll(currentTemplate->getName(), currentTemplate->radius,
                       customLines, polygonShapes, currentTemplate->lineWidth,
-                      currentTemplate->labelsVisible, currentTemplate->dotsVisible);
-
-  // Copy file ke lokasi yang user pilih
-  ofFile::copyFromTo("workspace.nay", filepath, true, true);
+                      currentTemplate->labelsVisible, currentTemplate->dotsVisible,
+                      filepath);
 
   // Simpan path ini sebagai lastSavedPath (CTRL+S selanjutnya akan kesini)
   lastSavedPath = filepath;

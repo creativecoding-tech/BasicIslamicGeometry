@@ -24,7 +24,8 @@ public:
     void saveAll(const std::string& templateName, float globalRadius,
                  const std::vector<CustomLine>& customLines,
                  const std::vector<PolygonShape>& polygons,
-                 float currentLineWidth, bool labelsVisible, bool dotsVisible);
+                 float currentLineWidth, bool labelsVisible, bool dotsVisible,
+                 const std::string& filepath);
 
     // Load ALL data dari .na format - return template name
     bool loadAll(std::string& outTemplateName, float& outGlobalRadius,
@@ -92,9 +93,6 @@ private:
 
     // Polygon animation mode
     PolygonAnimationMode polygonAnimationMode;
-
-    // Konstanta
-    static const std::string FILENAME;
 
     // Format constants
     static constexpr char MAGIC_NUMBER[4] = {'N', 'A', '0', '1'};
