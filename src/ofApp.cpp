@@ -1637,11 +1637,8 @@ void ofApp::clearCustomLinesAndPolygons() {
 		}
 	}
 
-	// Hapus semua polygons
-	if (!polygonShapes.empty()) {
-		polygonShapes.clear();
-		selectedPolygonIndex = -1;
-	}
+	// Hapus semua polygons - delegate ke deleteAllPolygons()
+	deleteAllPolygons();
 
 	// Hapus semua custom lines - delegate ke deleteAllCustomLines()
 	deleteAllCustomLines();
@@ -1660,6 +1657,20 @@ void ofApp::deleteAllCustomLines() {
 	}
 	selectedLineIndices.clear();
 	lastSelectedLineIndex = -1;
+}
+
+//--------------------------------------------------------------
+void ofApp::deleteAllPolygons() {
+	// Jangan hapus jika sedang sequential load
+	if (fileManager.isLoadSequentialMode()) {
+		return;
+	}
+
+	// Hapus semua polygons
+	if (!polygonShapes.empty()) {
+		polygonShapes.clear();
+		selectedPolygonIndex = -1;
+	}
 }
 
 //--------------------------------------------------------------
