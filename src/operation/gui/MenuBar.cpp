@@ -23,6 +23,13 @@ void MenuBar::draw() {
             ImGui::EndMenu();
         }
 
+        if (ImGui::BeginMenu("Edit")) {
+            if (ImGui::MenuItem("Undo", "CTRL+Z")) {
+                app->undo();
+            }
+            ImGui::EndMenu();
+        }
+
         if (ImGui::BeginMenu("View")) {
             if (ImGui::MenuItem("Sacred Gemotery", "G")) {
 
