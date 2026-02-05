@@ -522,17 +522,35 @@ void ofApp::keyPressed(int key) {
 
     // Prioritas: Hapus polygon selected dulu
     if (selectedPolygonIndex != -1) {
+      // Push undo action SEBELUM hapus
+      UndoAction undoAction;
+      undoAction.type = DELETE_POLYGON;
+      undoAction.deletedPolygon = polygonShapes[selectedPolygonIndex];
+      undoAction.deletedPolygonIndex = selectedPolygonIndex;
+      pushUndoAction(undoAction);
+
       // Hapus polygon yang selected
       polygonShapes.erase(polygonShapes.begin() + selectedPolygonIndex);
       selectedPolygonIndex = -1;
     }
     // Kalau tidak ada polygon selected, cek customLine
     else if (!selectedLineIndices.empty()) {
-      // Hapus SEMUA garis yang terselect
+      // Hapus SEMUA garis yang terselect (support multi-delete)
       // Sort descending agar aman untuk erase
       vector<int> toDelete(selectedLineIndices.begin(),
                            selectedLineIndices.end());
       std::sort(toDelete.rbegin(), toDelete.rend()); // Descending
+
+      // Push undo action untuk setiap line yang dihapus (reverse order)
+      for (int index : toDelete) {
+        UndoAction undoAction;
+        undoAction.type = DELETE_LINE;
+        undoAction.deletedLine = customLines[index];
+        undoAction.deletedLineIndex = index;
+        pushUndoAction(undoAction);
+      }
+
+      // Hapus lines
       for (int index : toDelete) {
         customLines.erase(customLines.begin() + index);
       }
@@ -612,7 +630,7 @@ void ofApp::keyPressed(int key) {
     case 'z':
     case 'Z':
     case 26: // CTRL+Z (ASCII 26)
-      undoLastLine();
+      undo();
       break;
 
     case 's':
@@ -835,11 +853,95 @@ int ofApp::getLineIndexAtPosition(vec2 pos) {
 }
 
 //--------------------------------------------------------------
-void ofApp::undoLastLine() {
-  // Hapus garis terakhir yang dibuat user
-  if (!customLines.empty()) {
-    customLines.pop_back();
-  }
+void ofApp::pushUndoAction(UndoAction action) {
+	// Add ke stack, jika sudah full, hapus yang paling lama
+	if (undoStack.size() >= MAX_UNDO_STEPS) {
+		undoStack.erase(undoStack.begin());  // Hapus yang paling lama (front)
+	}
+	undoStack.push_back(action);
+}
+
+//--------------------------------------------------------------
+void ofApp::clearUndoStack() {
+	undoStack.clear();
+}
+
+//--------------------------------------------------------------
+void ofApp::undo() {
+	if (undoStack.empty()) {
+		return;  // Tidak ada apa-apa untuk di-undo
+	}
+
+	// Ambil action terakhir
+	UndoAction action = undoStack.back();
+	undoStack.pop_back();
+
+	// Handle berdasarkan tipe action
+	switch (action.type) {
+		case CREATE_LINE:
+			// Undo create line = hapus line terakhir
+			if (!customLines.empty()) {
+				customLines.pop_back();
+				// Clear selection jika index yang dipilih tidak valid lagi
+				if (!selectedLineIndices.empty()) {
+					selectedLineIndices.clear();
+					lastSelectedLineIndex = -1;
+				}
+			}
+			break;
+
+		case CREATE_POLYGON:
+			// Undo create polygon = hapus polygon terakhir
+			if (!polygonShapes.empty()) {
+				polygonShapes.pop_back();
+				selectedPolygonIndex = -1;
+			}
+			break;
+
+		case CHANGE_COLOR_LINE:
+			// Restore old color ke semua lines yang diubah (support multi-select)
+			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
+				int idx = action.colorIndices[i];
+				if (idx >= 0 && idx < customLines.size()) {
+					customLines[idx].setColor(action.oldColors[i]);
+				}
+			}
+			break;
+
+		case CHANGE_COLOR_POLYGON:
+			// Restore old color ke polygon yang diubah (single select only)
+			if (!action.colorIndices.empty() && !action.oldColors.empty()) {
+				int idx = action.colorIndices[0];
+				if (idx >= 0 && idx < polygonShapes.size()) {
+					polygonShapes[idx].setColor(action.oldColors[0]);
+				}
+			}
+			break;
+
+		case DELETE_LINE:
+			// Restore line yang dihapus
+			if (action.deletedLineIndex >= 0 && action.deletedLineIndex <= customLines.size()) {
+				customLines.insert(customLines.begin() + action.deletedLineIndex, action.deletedLine);
+			}
+			break;
+
+		case DELETE_POLYGON:
+			// Restore polygon yang dihapus
+			if (action.deletedPolygonIndex >= 0 && action.deletedPolygonIndex <= polygonShapes.size()) {
+				polygonShapes.insert(polygonShapes.begin() + action.deletedPolygonIndex, action.deletedPolygon);
+			}
+			break;
+
+		case CHANGE_CURVE:
+			// Restore old curve value (support multi-select)
+			for (size_t i = 0; i < action.curveLineIndices.size() && i < action.oldCurves.size(); i++) {
+				int idx = action.curveLineIndices[i];
+				if (idx >= 0 && idx < customLines.size()) {
+					customLines[idx].setCurve(action.oldCurves[i]);
+				}
+			}
+			break;
+	}
 }
 
 //--------------------------------------------------------------
@@ -873,6 +975,12 @@ void ofApp::createInvisiblePolygonFromSelected() {
   PolygonShape newPolygon(allPoints, polygonColor,
                           polygonIndex);
   polygonShapes.push_back(newPolygon);
+
+  // Push undo action
+  UndoAction undoAction;
+  undoAction.type = CREATE_POLYGON;
+  undoAction.isCreate = true;
+  pushUndoAction(undoAction);
 
   // 3. Clear selection
   selectedLineIndices.clear();
@@ -1036,6 +1144,12 @@ void ofApp::mouseReleased(int x, int y, int button) {
           CustomLine newLine(currentPolylinePoints, customLineColor,
                              mouseLineWidth);
           customLines.push_back(newLine);
+
+          // Push undo action
+          UndoAction undoAction;
+          undoAction.type = CREATE_LINE;
+          undoAction.isCreate = true;
+          pushUndoAction(undoAction);
         }
       }
       break;
@@ -1060,13 +1174,27 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
 
   // Update curve untuk SEMUA garis yang selected
   if (!selectedLineIndices.empty()) {
+    // Siapkan undo action
+    UndoAction undoAction;
+    undoAction.type = CHANGE_CURVE;
+    undoAction.newCurve = 0.0f;  // Placeholder, tidak dipakai
+
     float curveSpeed = 5.0f; // Kecepatan perubahan curve
     for (int lineIndex : selectedLineIndices) {
       if (lineIndex >= 0 && lineIndex < customLines.size()) {
-        float newCurve =
-            customLines[lineIndex].getCurve() + scrollY * curveSpeed;
+        // Simpan old curve SEBELUM mengubah
+        undoAction.curveLineIndices.push_back(lineIndex);
+        undoAction.oldCurves.push_back(customLines[lineIndex].getCurve());
+
+        // Hitung new curve dan update
+        float newCurve = customLines[lineIndex].getCurve() + scrollY * curveSpeed;
+        undoAction.newCurve = newCurve;  // Semua lines dapat curve baru yang sama
         customLines[lineIndex].setCurve(newCurve);
       }
+    }
+    // Push undo action hanya jika ada yang diubah
+    if (!undoAction.curveLineIndices.empty()) {
+      pushUndoAction(undoAction);
     }
   }
 }
@@ -1183,18 +1311,41 @@ void ofApp::updateCustomLineColor(ofColor color) {
 	// Update variabel global untuk customLine baru
 	customLineColor = color;
 
+	// Siapkan undo action
+	UndoAction undoAction;
+	undoAction.type = CHANGE_COLOR_LINE;
+	undoAction.newColor = color;
+
 	// Jika ada customLine yang selected, hanya update yang selected saja
 	if (!selectedLineIndices.empty()) {
 		for (int lineIndex : selectedLineIndices) {
 			if (lineIndex >= 0 && lineIndex < customLines.size()) {
+				// Simpan old color SEBELUM mengubah
+				undoAction.colorIndices.push_back(lineIndex);
+				undoAction.oldColors.push_back(customLines[lineIndex].getColor());
+
+				// Ubah warna
 				customLines[lineIndex].setColor(color);
 			}
+		}
+		// Push undo action hanya jika ada yang diubah
+		if (!undoAction.colorIndices.empty()) {
+			pushUndoAction(undoAction);
 		}
 	}
 	// Jika tidak ada yang selected, update semua customLines
 	else {
-		for (auto& line : customLines) {
-			line.setColor(color);
+		for (size_t i = 0; i < customLines.size(); i++) {
+			// Simpan old color SEBELUM mengubah
+			undoAction.colorIndices.push_back(i);
+			undoAction.oldColors.push_back(customLines[i].getColor());
+
+			// Ubah warna
+			customLines[i].setColor(color);
+		}
+		// Push undo action hanya jika ada yang diubah
+		if (!undoAction.colorIndices.empty()) {
+			pushUndoAction(undoAction);
 		}
 	}
 }
@@ -1204,14 +1355,36 @@ void ofApp::updatePolygonColor(ofColor color) {
 	// Update variabel global untuk polygon baru
 	polygonColor = color;
 
+	// Siapkan undo action
+	UndoAction undoAction;
+	undoAction.type = CHANGE_COLOR_POLYGON;
+	undoAction.newColor = color;
+
 	// Jika ada polygon yang selected, hanya update yang selected saja
 	if (selectedPolygonIndex >= 0 && selectedPolygonIndex < polygonShapes.size()) {
+		// Simpan old color SEBELUM mengubah
+		undoAction.colorIndices.push_back(selectedPolygonIndex);
+		undoAction.oldColors.push_back(polygonShapes[selectedPolygonIndex].getColor());
+
+		// Ubah warna
 		polygonShapes[selectedPolygonIndex].setColor(color);
+
+		// Push undo action
+		pushUndoAction(undoAction);
 	}
 	// Jika tidak ada yang selected, update semua polygons
 	else {
-		for (auto& polygon : polygonShapes) {
-			polygon.setColor(color);
+		for (size_t i = 0; i < polygonShapes.size(); i++) {
+			// Simpan old color SEBELUM mengubah
+			undoAction.colorIndices.push_back(i);
+			undoAction.oldColors.push_back(polygonShapes[i].getColor());
+
+			// Ubah warna
+			polygonShapes[i].setColor(color);
+		}
+		// Push undo action hanya jika ada yang diubah
+		if (!undoAction.colorIndices.empty()) {
+			pushUndoAction(undoAction);
 		}
 	}
 }

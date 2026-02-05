@@ -87,6 +87,46 @@ class ofApp : public ofBaseApp{
 		float threshold = 10.0f; //dalam radius saat mouse hover pada dot
 		bool isCtrlPressed = false;
 
+		// Undo System (Max 7 steps)
+		enum UndoActionType {
+			CREATE_LINE,
+			CREATE_POLYGON,
+			CHANGE_COLOR_LINE,
+			CHANGE_COLOR_POLYGON,
+			DELETE_LINE,
+			DELETE_POLYGON,
+			CHANGE_CURVE
+		};
+
+		struct UndoAction {
+			UndoActionType type;
+
+			// For CREATE actions
+			bool isCreate;
+
+			// For CHANGE_COLOR actions (support multi-select)
+			std::vector<int> colorIndices;
+			std::vector<ofColor> oldColors;
+			ofColor newColor;
+
+			// For DELETE actions
+			CustomLine deletedLine;
+			int deletedLineIndex;
+			PolygonShape deletedPolygon;
+			int deletedPolygonIndex;
+
+			// For CHANGE_CURVE (support multi-select)
+			std::vector<int> curveLineIndices;
+			std::vector<float> oldCurves;
+			float newCurve;
+		};
+
+		static const int MAX_UNDO_STEPS = 7;
+		std::vector<UndoAction> undoStack;
+
+		void pushUndoAction(UndoAction action);
+		void clearUndoStack();
+
 		// Staggered parallel load mode (CTRL+O)
 		enum LoadStage {
 			LOAD_TEMPLATE,      // Stage 1: Draw template shapes paralel
@@ -179,7 +219,7 @@ class ofApp : public ofBaseApp{
 		float distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd, float curve = 0.0f);
 		int getLineIndexAtPosition(vec2 pos);  // Get index line di posisi mouse (-1 jika tidak ada)
 		bool lineExists(vec2 from, vec2 to);
-		void undoLastLine();  // Undo last custom line (CTRL+Z)
+		void undo();  // Undo last action (CTRL+Z) - customLine atau polygon
 		void createInvisiblePolygonFromSelected();  // Create invisible polygon from selected lines (CTRL+G)
 
 		void keyPressed(int key);
