@@ -3,6 +3,7 @@
 #include "shape/DotShape.h"
 #include "template/templates/BasicZelligeTemplate.h"
 #include "operation/gui/SacredGeometry.h"
+#include "operation/gui/UserCustom.h"
 
 
 //--------------------------------------------------------------
@@ -659,15 +660,18 @@ void ofApp::keyPressed(int key) {
       imguiVisible = true;
       showSacredGeometry = false;
       showPlayground = false;
-    } else if (!showSacredGeometry && !showPlayground) {
+      showUserCustom = false;
+    } else if (!showSacredGeometry && !showPlayground && !showUserCustom) {
       // Show all windows
       showSacredGeometry = true;
       showPlayground = true;
+      showUserCustom = true;
     } else {
       // Hide all
       imguiVisible = false;
       showSacredGeometry = false;
       showPlayground = false;
+      showUserCustom = false;
     }
   }
 
@@ -1878,12 +1882,12 @@ void ofApp::syncColorPickerFromLoadedLines() {
 		// Update global color
 		customLineColor = loadedColor;
 
-		// Update SacredGeometry color picker UI
+		// Update UserCustom color picker UI
 		for (auto& gui : guiComponents) {
-			// Cari SacredGeometry component
-			SacredGeometry* sacredGeo = dynamic_cast<SacredGeometry*>(gui.get());
-			if (sacredGeo) {
-				sacredGeo->updateColorFromApp();
+			// Cari UserCustom component
+			UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
+			if (userCustom) {
+				userCustom->updateColorFromApp();
 				break; // Found, no need to continue
 			}
 		}
@@ -1899,12 +1903,12 @@ void ofApp::syncColorPickerFromLoadedPolygons() {
 		// Update global color
 		polygonColor = loadedColor;
 
-		// Update SacredGeometry color picker UI
+		// Update UserCustom color picker UI
 		for (auto& gui : guiComponents) {
-			// Cari SacredGeometry component
-			SacredGeometry* sacredGeo = dynamic_cast<SacredGeometry*>(gui.get());
-			if (sacredGeo) {
-				sacredGeo->updatePolygonColorFromApp();
+			// Cari UserCustom component
+			UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
+			if (userCustom) {
+				userCustom->updatePolygonColorFromApp();
 				break; // Found, no need to continue
 			}
 		}
@@ -2111,6 +2115,34 @@ void ofApp::togglePlaygroundWindow() {
             Playground* playground = dynamic_cast<Playground*>(gui.get());
             if (playground) {
                 playground->focusWindow();
+                break;
+            }
+        }
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::toggleUserCustomWindow() {
+    if (!imguiVisible || !showUserCustom) {
+        // Show UserCustom window
+        imguiVisible = true;
+        showUserCustom = true;
+        // Jangan hide SacredGeometry dan Playground, biarkan user punya banyak windows terbuka
+
+        // Set windowOpen flag di UserCustom
+        for (auto& gui : guiComponents) {
+            UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
+            if (userCustom) {
+                userCustom->showWindow();
+                break;
+            }
+        }
+    } else {
+        // UserCustom already visible, focus it
+        for (auto& gui : guiComponents) {
+            UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
+            if (userCustom) {
+                userCustom->focusWindow();
                 break;
             }
         }
@@ -2762,6 +2794,7 @@ void ofApp::setupImGui() {
     guiComponents.push_back(std::make_unique<MenuBar>(this));
     guiComponents.push_back(std::make_unique<SacredGeometry>(this));
     guiComponents.push_back(std::make_unique<Playground>(this));
+    guiComponents.push_back(std::make_unique<UserCustom>(this));
 
     // Initialize popup (not in guiComponents, drawn separately)
     successPopup = std::make_unique<SuccessPopup>(this);
@@ -2800,6 +2833,11 @@ void ofApp::drawImGui() {
     // Playground (component 2)
     if (imguiVisible && showPlayground && guiComponents.size() > 2) {
         guiComponents[2]->draw();  // Playground
+    }
+
+    // UserCustom (component 3)
+    if (imguiVisible && showUserCustom && guiComponents.size() > 3) {
+        guiComponents[3]->draw();  // UserCustom
     }
 
     // Draw popup dialogs

@@ -56,6 +56,9 @@ void MenuBar::draw() {
             if (ImGui::MenuItem("Playground")) {
                 app->togglePlaygroundWindow();
             }
+            if (ImGui::MenuItem("User Custom")) {
+                app->toggleUserCustomWindow();
+            }
             ImGui::EndMenu();
         }
 

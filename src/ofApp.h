@@ -42,6 +42,7 @@ class ofApp : public ofBaseApp{
 		bool imguiVisible = false;  // ImGui menu visibility
 		bool showSacredGeometry = false;  // SacredGeometry window visibility
 		bool showPlayground = false;  // Playground window visibility
+		bool showUserCustom = false;  // UserCustom window visibility
 
 		ofTrueTypeFont fontNormal;  // Font untuk custom line labels
 
@@ -230,6 +231,7 @@ class ofApp : public ofBaseApp{
 		bool isCanvasEmpty();  // Cek apakah canvas benar-bener kosong (tidak ada template showing, customLines, atau polygons)
 		void toggleSacredGeometryWindow();  // Show or focus Sacred Geometry window
 		void togglePlaygroundWindow();  // Show or focus Playground window
+		void toggleUserCustomWindow();  // Show or focus User Custom window
 		void duplicateDotAbove();  // Duplicate dot yang di-hover dengan offset ke atas
 		void duplicateDotBelow();  // Duplicate dot yang di-hover dengan offset ke bawah
 		void duplicateDotLeft();  // Duplicate dot yang di-hover dengan offset ke kiri
