@@ -1,10 +1,26 @@
 #include "SacredGeometry.h"
 #include "../../ofApp.h"
 
-SacredGeometry::SacredGeometry(ofApp* app) : app(app) {}
+SacredGeometry::SacredGeometry(ofApp* app) : app(app) {
+    // Initialize color picker dari app->customLineColor (default biru)
+    customLineColor[0] = app->customLineColor.r / 255.0f; // R
+    customLineColor[1] = app->customLineColor.g / 255.0f; // G
+    customLineColor[2] = app->customLineColor.b / 255.0f; // B
+    customLineColor[3] = app->customLineColor.a / 255.0f; // A
+}
 
+//--------------------------------------------------------------
+void SacredGeometry::updateColorFromApp() {
+    // Update color picker values dari app->customLineColor
+    customLineColor[0] = app->customLineColor.r / 255.0f; // R
+    customLineColor[1] = app->customLineColor.g / 255.0f; // G
+    customLineColor[2] = app->customLineColor.b / 255.0f; // B
+    customLineColor[3] = app->customLineColor.a / 255.0f; // A
+}
+
+//--------------------------------------------------------------
 void SacredGeometry::draw() {
-    ImGui::SetNextWindowSize(ImVec2(250, 400), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(250, 500), ImGuiCond_FirstUseEver);
 
     if (ImGui::Begin("Sacred Geometry", nullptr, ImGuiWindowFlags_None)) {
         string templateName = app->currentTemplate ? app->currentTemplate->getName() : string("None");
@@ -47,6 +63,20 @@ void SacredGeometry::draw() {
             if (ImGui::Checkbox("Cartesian", &showCartesian)) {
                 app->currentTemplate->showCartesianInSacredGeometry = showCartesian;
                 app->setCartesianAxesVisibility(showCartesian);
+            }
+            ImGui::Separator();
+            ImGui::Text("Custom Line");
+            // Color picker untuk custom line (bentuk melingkar)
+            if (ImGui::ColorPicker4("Line Color", customLineColor,
+                ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_AlphaBar)) {
+                // Event handler: warna berubah, update semua customLines
+                ofColor newColor(
+                    customLineColor[0] * 255,
+                    customLineColor[1] * 255,
+                    customLineColor[2] * 255,
+                    customLineColor[3] * 255
+                );
+                app->updateCustomLineColor(newColor);
             }
             ImGui::Separator();
             // Center the Clean Canvas button

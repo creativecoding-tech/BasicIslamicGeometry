@@ -28,12 +28,8 @@ void CustomLine::draw() const {
 	vec2 start = points[0];
 	vec2 end = points[1];
 
-	// Set warna: merah jika selected, original color jika tidak
-	if (selected) {
-		ofSetColor(255, 0, 0);  // Merah untuk selected
-	} else {
-		ofSetColor(color);
-	}
+	// Set warna: selalu pakai original color (tidak berubah saat selected)
+	ofSetColor(color);
 
 	ofSetLineWidth(lineWidth);
 
@@ -42,17 +38,6 @@ void CustomLine::draw() const {
 		drawCurvedLine(start, end);
 	} else {
 		drawStraightLine(start, end);
-	}
-
-	// Draw curve value label jika selected
-	if (selected) {
-		vec2 midPoint = (start + end) / 2.0f;
-		ofPushStyle();
-		ofSetColor(0, 0, 0);  // Hitam untuk label
-
-		// Need font for drawString - will be handled externally atau load di sini
-		// Untuk sekarang skip, font akan di-handle di ofApp level
-		ofPopStyle();
 	}
 }
 

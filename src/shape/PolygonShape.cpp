@@ -200,7 +200,7 @@ void PolygonShape::draw() const {
 
 		// Gambar label "Polygon[index]"
 		ofNoFill();
-		ofSetColor(255, 255, 255);  // Putih
+		ofSetColor(0, 0, 0);
 		ofDrawBitmapString("Polygon" + ofToString(index), centroid.x - 10,centroid.y);
 	}
 

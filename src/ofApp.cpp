@@ -1,6 +1,7 @@
 #include "ofApp.h"
 #include "shape/AbstractShape.h"
 #include "template/templates/BasicZelligeTemplate.h"
+#include "operation/gui/SacredGeometry.h"
 
 
 //--------------------------------------------------------------
@@ -221,7 +222,13 @@ void ofApp::updateStaggeredTemplate() {
 //--------------------------------------------------------------
 void ofApp::updateStaggeredCustomLines() {
   // Sequential load: updateSequentialLoad akan menambah customLines bertahap
+  size_t previousSize = customLines.size();
   fileManager.updateSequentialLoad(customLines, polygonShapes);
+
+  // Sync ColorPicker saat customLines pertama kali muncul (sequential load)
+  if (previousSize == 0 && !customLines.empty()) {
+    syncColorPickerFromLoadedLines();
+  }
 
   // Update progress semua customLines yang sudah ada
   for (auto& line : customLines) {
@@ -379,6 +386,10 @@ void ofApp::drawCustomLinesAndUI() {
 
           ofPushStyle();
           ofSetColor(0, 0, 0); // Hitam untuk label
+          // Label "CustomLine" + index (di atas)
+          fontNormal.drawString("CustomLine" + ofToString(lineIndex),
+                                midPoint.x + 10, midPoint.y - 25);
+          // Label "Curve: ..." (di bawah)
           fontNormal.drawString("Curve: " + ofToString(line.getCurve(), 1),
                                 midPoint.x + 10, midPoint.y - 10);
           ofPopStyle();
@@ -390,7 +401,7 @@ void ofApp::drawCustomLinesAndUI() {
   // Draw preview polyline (sedang drag)
   if (drawState == DRAGGING && currentPolylinePoints.size() > 1) {
     ofPushStyle();
-    ofSetColor(0, 0, 255, 255);    
+    ofSetColor(customLineColor);
     ofSetLineWidth(mouseLineWidth); // Pakai mouseLineWidth untuk preview
 
     // Gambar preview polyline
@@ -1016,7 +1027,7 @@ void ofApp::mouseReleased(int x, int y, int button) {
           }
 
           // Simpan polyline dengan 2 points (start dan end)
-          CustomLine newLine(currentPolylinePoints, ofColor(0, 0, 255),
+          CustomLine newLine(currentPolylinePoints, customLineColor,
                              mouseLineWidth);
           customLines.push_back(newLine);
         }
@@ -1151,6 +1162,38 @@ void ofApp::updateLineWidth() {
 
     // Delegate ke template - pakai nilai yang sudah ada di template
     currentTemplate->updateLineWidth(currentTemplate->lineWidth);
+}
+
+//--------------------------------------------------------------
+void ofApp::updateCustomLineColor(ofColor color) {
+	// Update variabel global untuk customLine baru
+	customLineColor = color;
+
+	// Update semua customLines yang sudah ada
+	for (auto& line : customLines) {
+		line.setColor(color);
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::syncColorPickerFromLoadedLines() {
+	// Ambil warna dari customLine pertama yang diload (jika ada)
+	if (!customLines.empty()) {
+		ofColor loadedColor = customLines[0].getColor();
+
+		// Update global color
+		customLineColor = loadedColor;
+
+		// Update SacredGeometry color picker UI
+		for (auto& gui : guiComponents) {
+			// Cari SacredGeometry component
+			SacredGeometry* sacredGeo = dynamic_cast<SacredGeometry*>(gui.get());
+			if (sacredGeo) {
+				sacredGeo->updateColorFromApp();
+				break; // Found, no need to continue
+			}
+		}
+	}
 }
 
 //--------------------------------------------------------------
@@ -1441,6 +1484,9 @@ void ofApp::loadWorkspace() {
 
         // Matikan parallel dulu supaya customLines tidak langsung di-animate
         fileManager.setLoadParallelMode(false);
+
+        // Sync ColorPicker dengan warna customLines yang diload
+        syncColorPickerFromLoadedLines();
 
         loadStage = LOAD_TEMPLATE;
         isStaggeredLoad = true;
