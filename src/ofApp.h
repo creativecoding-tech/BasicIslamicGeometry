@@ -5,6 +5,7 @@
 #include "shape/CustomLine.h"
 #include "shape/PolygonShape.h"
 #include "shape/DotInfo.h"
+#include "shape/DotShape.h"
 #include "operation/FileManager.h"
 #include "operation/gui/AbstractGuiComponent.h"
 #include "operation/gui/MenuBar.h"
@@ -44,6 +45,13 @@ class ofApp : public ofBaseApp{
 
 		ofTrueTypeFont fontNormal;  // Font untuk custom line labels
 
+		// Context menu state
+		bool showContextMenu = false;  // Show context menu (right-click menu)
+		vec2 contextMenuPos;  // Position untuk context menu
+		vec2 hoveredDotPos;  // Position dari dot yang sedang di-hover (untuk context menu)
+		bool hasValidHoveredDot = false;  // Flag untuk track apakah hoveredDotPos valid (bukan (0,0) default)
+
+
 		// DotInfo sekarang didefinisikan di src/shape/DotInfo.h (common struct)
 
 		enum DrawState {
@@ -60,9 +68,15 @@ class ofApp : public ofBaseApp{
 		std::set<int> selectedLineIndices;  // Bisa select 1 atau banyak garis
 		int lastSelectedLineIndex = -1;  // Untuk track line terakhir di-klik
 
+		// User-created dots system (untuk fitur "Duplicate Dot Above")
+		vector<std::unique_ptr<DotShape>> userDots;
+		std::set<int> selectedUserDotIndices;  // Bisa select 1 atau banyak userDot
+		int lastSelectedUserDotIndex = -1;  // Untuk track userDot terakhir di-klik
+
 		// Invisible polygon system
 		vector<PolygonShape> polygonShapes;
-		int selectedPolygonIndex = -1;
+		std::set<int> selectedPolygonIndices;  // Bisa select 1 atau banyak polygons
+		int lastSelectedPolygonIndex = -1;  // Untuk track polygon terakhir di-klik
 
 		// Preset warna untuk polygon
 		vector<ofColor> polygonPresetColors = {
@@ -86,17 +100,20 @@ class ofApp : public ofBaseApp{
 		// Polygon color control
 		ofColor polygonColor = ofColor(0, 0, 255);  // Default biru
 
-		float threshold = 10.0f; //dalam radius saat mouse hover pada dot
+		float threshold = 5.0f; //dalam radius saat mouse hover pada dot
+		float duplicateDotOffsetDistance = 7.0f;  // Jarak offset duplikat dot ke atas (dalam pixels)
 		bool isCtrlPressed = false;
 
-		// Undo System (Max 7 steps)
+		// Undo System (Max 100 steps)
 		enum UndoActionType {
 			CREATE_LINE,
 			CREATE_POLYGON,
+			CREATE_DOT,
 			CHANGE_COLOR_LINE,
 			CHANGE_COLOR_POLYGON,
 			DELETE_LINE,
 			DELETE_POLYGON,
+			DELETE_DOT,
 			CHANGE_CURVE
 		};
 
@@ -116,6 +133,10 @@ class ofApp : public ofBaseApp{
 			int deletedLineIndex;
 			PolygonShape deletedPolygon;
 			int deletedPolygonIndex;
+			vec2 deletedDotPos;  // For CREATE_DOT undo/redo (position dot yang dihapus)
+			vec2 deletedDotLowerBound;  // For DELETE_DOT undo/redo (lowerBound dot yang dihapus)
+			float deletedDotRadius;  // For DELETE_DOT undo/redo (radius dot yang dihapus)
+			int deletedDotIndex;  // For DELETE_DOT undo/redo (index dot yang dihapus)
 
 			// For CHANGE_CURVE (support multi-select)
 			std::vector<int> curveLineIndices;
@@ -209,6 +230,11 @@ class ofApp : public ofBaseApp{
 		bool isCanvasEmpty();  // Cek apakah canvas benar-bener kosong (tidak ada template showing, customLines, atau polygons)
 		void toggleSacredGeometryWindow();  // Show or focus Sacred Geometry window
 		void togglePlaygroundWindow();  // Show or focus Playground window
+		void duplicateDotAbove();  // Duplicate dot yang di-hover dengan offset ke atas
+		void duplicateDotBelow();  // Duplicate dot yang di-hover dengan offset ke bawah
+		void duplicateDotLeft();  // Duplicate dot yang di-hover dengan offset ke kiri
+		void duplicateDotRight();  // Duplicate dot yang di-hover dengan offset ke kanan
+	void drawUserDots();  // Draw user-created dots dan label
 
 		// File operations
 		void saveWorkspace();          // Save workspace to file
@@ -230,6 +256,9 @@ class ofApp : public ofBaseApp{
 		void clearCustomLinesAndPolygons();  // Hapus semua customLines & polygons (CTRL+DEL)
 		void deleteAllCustomLines();  // Hapus semua customLines saja (tanpa shortcut)
 		void deleteAllPolygons();  // Hapus semua polygons saja (tanpa shortcut)
+		void deleteAllUserDots();  // Hapus semua userDots saja (tanpa shortcut)
+		void deleteSelectedPolygons();  // Hapus polygon yang terseleksi (backspace)
+		void deleteSelectedUserDot();  // Hapus userDot yang terseleksi (backspace)
 		void createInvisiblePolygonFromSelected();  // Create invisible polygon from selected lines (CTRL+G)
 
 		void keyPressed(int key);

@@ -13,6 +13,7 @@ public:
     void show(const std::string& title = "Save Success",
               const std::string& message = "File saved successfully!",
               const std::string& buttonLabel = "OK");
+    bool isVisible() const { return showPopup; }
 
 private:
     ofApp* app;

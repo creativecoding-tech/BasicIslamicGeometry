@@ -14,6 +14,7 @@
     <ClCompile Include="src\shape\ParallelogramLine.cpp" />
     <ClCompile Include="src\shape\RectangleLine.cpp" />
     <ClCompile Include="src\shape\OctagramLine.cpp" />
+    <ClCompile Include="src\shape\DotShape.cpp" />
     <ClCompile Include="src\shape\PolygonShape.cpp" />
     <ClCompile Include="src\operation\FileManager.cpp" />
     <ClCompile Include="src\operation\gui\MenuBar.cpp" />
@@ -49,6 +50,7 @@
     <ClInclude Include="src\shape\CartesianAxes.h" />
     <ClInclude Include="src\shape\CrossLine.h" />
     <ClInclude Include="src\shape\DotInfo.h" />
+    <ClInclude Include="src\shape\DotShape.h" />
     <ClInclude Include="src\shape\ParallelogramLine.h" />
     <ClInclude Include="src\shape\RectangleLine.h" />
     <ClInclude Include="src\shape\OctagramLine.h" />

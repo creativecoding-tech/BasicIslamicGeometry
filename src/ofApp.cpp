@@ -1,5 +1,6 @@
 #include "ofApp.h"
 #include "shape/AbstractShape.h"
+#include "shape/DotShape.h"
 #include "template/templates/BasicZelligeTemplate.h"
 #include "operation/gui/SacredGeometry.h"
 
@@ -116,6 +117,13 @@ void ofApp::updateNormal() {
   // Update custom lines & polygons
   updateCustomLines();
   updatePolygons();
+
+  // Update user-created dots
+  for (auto& dot : userDots) {
+    if (dot) {
+      dot->update();
+    }
+  }
 }
 
 //--------------------------------------------------------------
@@ -346,14 +354,17 @@ void ofApp::draw() {
     currentTemplate->draw();
   }
 
+  
+  drawUserDots();
+
   // Draw custom lines dan UI elements
   drawCustomLinesAndUI();
 
   // Reset transform
   ofPopMatrix();
 
-  //ImGUI (only if visible)
-  if (imguiVisible) {
+  //ImGUI (always render if context menu, popups, or visible)
+  if (imguiVisible || showContextMenu || successPopup->isVisible() || errorPopup->isVisible()) {
     drawImGui();
   }
 }
@@ -376,7 +387,7 @@ void ofApp::drawCustomLinesAndUI() {
 
   if (shouldDrawPolygons) {
     for (int i = 0; i < polygonShapes.size(); i++) {
-      polygonShapes[i].setSelected(i == selectedPolygonIndex);
+      polygonShapes[i].setSelected(selectedPolygonIndices.count(i) > 0);
       polygonShapes[i].draw();
     }
   }
@@ -499,21 +510,20 @@ void ofApp::keyPressed(int key) {
       }
     }
 
-    // Prioritas: Hapus polygon selected dulu
-    if (selectedPolygonIndex != -1) {
-      // Push undo action SEBELUM hapus
-      UndoAction undoAction;
-      undoAction.type = DELETE_POLYGON;
-      undoAction.deletedPolygon = polygonShapes[selectedPolygonIndex];
-      undoAction.deletedPolygonIndex = selectedPolygonIndex;
-      pushUndoAction(undoAction);
-
-      // Hapus polygon yang selected
-      polygonShapes.erase(polygonShapes.begin() + selectedPolygonIndex);
-      selectedPolygonIndex = -1;
+    // Prioritas 1: Hapus userDot selected dulu (highest priority)
+    if (!selectedUserDotIndices.empty()) {
+      deleteSelectedUserDot();
+      return; // Return agar tidak trigger delete lainnya
     }
-    // Kalau tidak ada polygon selected, cek customLine
-    else if (!selectedLineIndices.empty()) {
+
+    // Prioritas 2: Hapus polygon selected
+    if (!selectedPolygonIndices.empty()) {
+      deleteSelectedPolygons();
+      return; // Return agar tidak trigger delete lainnya
+    }
+
+    // Prioritas 3: Hapus customLine selected
+    if (!selectedLineIndices.empty()) {
       // Hapus SEMUA garis yang terselect (support multi-delete)
       // Sort descending agar aman untuk erase
       vector<int> toDelete(selectedLineIndices.begin(),
@@ -661,13 +671,14 @@ void ofApp::keyPressed(int key) {
     }
   }
 
-  // Keys 1-9 - Assign color to selected polygon
+  // Keys 1-9 - Assign color to selected polygon(s)
   if (key >= 49 && key <= 57) { // '1' to '9'
     int colorIndex = key - 49;  // 0 to 8
-    if (selectedPolygonIndex >= 0 &&
-        selectedPolygonIndex < polygonShapes.size()) {
-      polygonShapes[selectedPolygonIndex].setColor(
-          polygonPresetColors[colorIndex]);
+    // Apply ke SEMUA selected polygons
+    for (int index : selectedPolygonIndices) {
+      if (index >= 0 && index < polygonShapes.size()) {
+        polygonShapes[index].setColor(polygonPresetColors[colorIndex]);
+      }
     }
   }
 }
@@ -685,6 +696,13 @@ void ofApp::updateDotsCache() {
       if (shape && shape->showing) {
         shape->addDotsToCache(cachedDots);
       }
+    }
+  }
+
+  // Tambahkan user-created dots ke cache untuk hover detection
+  for (auto& dot : userDots) {
+    if (dot && dot->showing) {
+      dot->addDotsToCache(cachedDots);
     }
   }
 
@@ -917,7 +935,23 @@ void ofApp::undo() {
 				redoAction.deletedPolygonIndex = static_cast<int>(polygonShapes.size()) - 1;
 
 				polygonShapes.pop_back();
-				selectedPolygonIndex = -1;
+				selectedPolygonIndices.clear();
+				lastSelectedPolygonIndex = -1;
+			}
+			// Push ke redo stack
+			redoStack.push_back(redoAction);
+			break;
+		}
+
+		case CREATE_DOT:
+		{
+			// Undo create dot = hapus dot terakhir
+			if (!userDots.empty()) {
+				// SIMPAN position dot yang akan dihapus ke redoAction SEBELUM pop_back
+				redoAction.deletedDotPos = userDots.back()->getPosition();
+
+				// Hapus dot terakhir
+				userDots.pop_back();
 			}
 			// Push ke redo stack
 			redoStack.push_back(redoAction);
@@ -991,6 +1025,21 @@ void ofApp::undo() {
 			redoStack.push_back(redoAction);
 			break;
 
+		case DELETE_DOT:
+		{
+			// Restore userDot yang dihapus
+			if (action.deletedDotIndex >= 0 && action.deletedDotIndex <= static_cast<int>(userDots.size())) {
+				auto dotShape = std::make_unique<DotShape>(action.deletedDotPos, "Dot", action.deletedDotRadius);
+				dotShape->showing = true;
+				dotShape->progress = 1.0f;
+				dotShape->setLowerBound(action.deletedDotLowerBound);
+				userDots.insert(userDots.begin() + action.deletedDotIndex, std::move(dotShape));
+			}
+			// Push ke redo stack
+			redoStack.push_back(redoAction);
+			break;
+		}
+
 		case CHANGE_CURVE:
 		{
 			// Capture current curves dulu (sebelum restore) untuk redo
@@ -1043,6 +1092,21 @@ void ofApp::redo() {
 		case CREATE_POLYGON:
 			// Redo create polygon = create polygon lagi
 			polygonShapes.push_back(action.deletedPolygon);
+			// Push langsung ke undo stack
+			if (undoStack.size() >= MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(action);
+			break;
+
+		case CREATE_DOT:
+			// Redo create dot = buat dot baru dari position yang tersimpan
+			{
+				auto dotShape = std::make_unique<DotShape>(action.deletedDotPos, "Dot");
+				dotShape->showing = true;
+				dotShape->progress = 1.0f;
+				userDots.push_back(std::move(dotShape));
+			}
 			// Push langsung ke undo stack
 			if (undoStack.size() >= MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
@@ -1114,6 +1178,22 @@ void ofApp::redo() {
 			if (action.deletedPolygonIndex >= 0 && action.deletedPolygonIndex < static_cast<int>(polygonShapes.size())) {
 				polygonShapes.erase(polygonShapes.begin() + action.deletedPolygonIndex);
 			}
+			selectedPolygonIndices.clear();
+			lastSelectedPolygonIndex = -1;
+			// Push langsung ke undo stack
+			if (undoStack.size() >= MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(action);
+			break;
+
+		case DELETE_DOT:
+			// Redo = delete userDot lagi
+			if (action.deletedDotIndex >= 0 && action.deletedDotIndex < static_cast<int>(userDots.size())) {
+				userDots.erase(userDots.begin() + action.deletedDotIndex);
+			}
+			selectedUserDotIndices.clear();
+			lastSelectedUserDotIndex = -1;
 			// Push langsung ke undo stack
 			if (undoStack.size() >= MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
@@ -1205,23 +1285,88 @@ void ofApp::mousePressed(int x, int y, int button) {
     return; // ImGui handle, jangan process di OF
   }
 
-  // Logic lama: Cursor toggle dengan right click (button 2)
+  // Klik kanan untuk context menu pada DOT
   if (button == 2) {
-    cursorVisible = !cursorVisible;
-    if (cursorVisible)
-      ofShowCursor();
-    if (!cursorVisible)
-      ofHideCursor();
-    return; // Jangan lanjut ke interactive line creation untuk right click
+    // Cek apakah klik kanan pada dot ORIGINAL (hanya dari template)
+    vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+    vector<DotInfo> allDots = getAllDots();
+
+    // Filter HANYA dots dari template (exclude userDots yang shapeType = "Dot")
+    vector<DotInfo> templateDots;
+    for (const auto& dot : allDots) {
+      if (dot.shapeType != "Dot") {  // "Dot" = userDot, exclude
+        templateDots.push_back(dot);
+      }
+    }
+
+    // Reset hovered state
+    hoveredDotPos = vec2(0, 0);
+    hasValidHoveredDot = false;
+
+    // Cek apakah klik pada dot original (template dots only)
+    for (const auto& dot : templateDots) {
+      if (isMouseOverDot(adjustedMousePos, dot.position)) {
+        hoveredDotPos = dot.position;
+        hasValidHoveredDot = true;  // Tandai bahwa kita menemukan dot valid
+        break;
+      }
+    }
+
+    // SELALU tampilkan context menu (di mana saja klik kanan)
+    showContextMenu = true;
+    contextMenuPos = vec2(x, y);
+    imguiVisible = true;  // Pastikan ImGui aktif agar context menu bisa interaktif
+    return;
   }
 
-  // CTRL+Click untuk multi-select
+  // Klik kiri tutup context menu
+  if (button == 0 && showContextMenu) {
+    showContextMenu = false;
+    hoveredDotPos = vec2(0, 0);  // Reset hovered dot
+    hasValidHoveredDot = false;  // Reset valid flag
+    return;
+  }
+
+  // CTRL+Click untuk multi-select (userDot PRIORITY lebih tinggi dari customLine)
   if (button == 0 && isCtrlPressed) {
     vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
-    int clickedLineIndex = getLineIndexAtPosition(adjustedMousePos);
 
+    // CEK USER DOTS DULU (priority tertinggi)
+    for (int i = 0; i < userDots.size(); i++) {
+      if (userDots[i] && userDots[i]->showing) {
+        vec2 dotPos = userDots[i]->getPosition();
+        float dist = glm::length(adjustedMousePos - dotPos);
+        if (dist < 15.0f) {
+          // Toggle selection userDot
+          if (selectedUserDotIndices.count(i)) {
+            selectedUserDotIndices.erase(i); // Deselect
+          } else {
+            selectedUserDotIndices.insert(i); // Select
+          }
+          lastSelectedUserDotIndex = i;
+          return; // Jangan lanjut ke logic lain
+        }
+      }
+    }
+
+    // Kalau tidak klik userDot, cek polygon
+    for (int i = 0; i < polygonShapes.size(); i++) {
+      if (polygonShapes[i].containsPoint(adjustedMousePos)) {
+        // Toggle selection polygon
+        if (selectedPolygonIndices.count(i)) {
+          selectedPolygonIndices.erase(i); // Deselect
+        } else {
+          selectedPolygonIndices.insert(i); // Select
+        }
+        lastSelectedPolygonIndex = i;
+        return; // Jangan lanjut ke logic lain
+      }
+    }
+
+    // Kalau tidak klik polygon, cek customLine
+    int clickedLineIndex = getLineIndexAtPosition(adjustedMousePos);
     if (clickedLineIndex >= 0) {
-      // Toggle selection
+      // Toggle selection customLine
       if (selectedLineIndices.count(clickedLineIndex)) {
         selectedLineIndices.erase(clickedLineIndex); // Deselect
       } else {
@@ -1236,6 +1381,31 @@ void ofApp::mousePressed(int x, int y, int button) {
   if (button == 0) {
     // Adjust mouse position untuk center translation
     vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+
+    // CEK USER DOTS (normal click tanpa CTRL)
+    bool clickedOnUserDot = false;
+    for (int i = 0; i < userDots.size(); i++) {
+      if (userDots[i] && userDots[i]->showing) {
+        vec2 dotPos = userDots[i]->getPosition();
+        // Gunakan threshold yang lebih besar untuk userDot (15px) agar mudah diklik
+        float dist = glm::length(adjustedMousePos - dotPos);
+        if (dist < 15.0f) {
+          // Single select (hapus yang lama, select yang baru)
+          selectedUserDotIndices.clear();
+          selectedUserDotIndices.insert(i);
+          lastSelectedUserDotIndex = i;
+          clickedOnUserDot = true;
+          // JANGAN return, biarkan lanjut ke line creation
+        }
+      }
+    }
+
+    // Jika tidak klik userDot, deselect semua userDot
+    if (!clickedOnUserDot) {
+      selectedUserDotIndices.clear();
+      lastSelectedUserDotIndex = -1;
+    }
+
     vector<DotInfo> dots = getAllDots();
 
     // Check jika klik di atas dot - HANYA bisa mulai dari dot
@@ -1262,9 +1432,11 @@ void ofApp::mousePressed(int x, int y, int button) {
       bool clickedOnPolygon = false;
       for (int i = 0; i < polygonShapes.size(); i++) {
         if (polygonShapes[i].containsPoint(adjustedMousePos)) {
-          // Select polygon ini
-          selectedPolygonIndex = i;
+          // Select polygon ini (single select: hapus yang lama, select yang baru)
+          selectedPolygonIndices.clear();
+          selectedPolygonIndices.insert(i);
           selectedLineIndices.clear(); // Deselect semua lines
+          lastSelectedPolygonIndex = i;
           clickedOnPolygon = true;
           break;
         }
@@ -1277,11 +1449,15 @@ void ofApp::mousePressed(int x, int y, int button) {
           // Select garis ini (single select: hapus yang lama, select yang baru)
           selectedLineIndices.clear();
           selectedLineIndices.insert(lineIndex);
-          selectedPolygonIndex = -1; // Deselect polygon
+          lastSelectedLineIndex = lineIndex;
+          selectedPolygonIndices.clear(); // Deselect polygon
+          lastSelectedPolygonIndex = -1;
         } else {
           // Klik di tempat kosong → deselect semua
           selectedLineIndices.clear();
-          selectedPolygonIndex = -1; // Deselect polygon
+          lastSelectedLineIndex = -1;
+          selectedPolygonIndices.clear(); // Deselect polygon
+          lastSelectedPolygonIndex = -1;
         }
       }
     }
@@ -1373,6 +1549,96 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
   // Cek apakah ImGui mau capture mouse
   if (io.WantCaptureMouse) {
     return; // ImGui handle, jangan process di OF
+  }
+
+  // Handle scroll userDot (vertical untuk above/below, horizontal untuk left)
+  if (!selectedUserDotIndices.empty()) {
+    float scrollSpeed = 2.0f;  // Kecepatan scroll (lebih presise)
+
+    // Scroll semua selected dots
+    for (int index : selectedUserDotIndices) {
+      if (index >= 0 && index < userDots.size()) {
+        vec2 oldPos = userDots[index]->getPosition();  // Simpan posisi lama
+        vec2 lowerBound = userDots[index]->getLowerBound();
+
+        vec2 newPos = oldPos;
+
+        // Cek apakah dot ini di sumbu Y (above/below) atau sumbu X (left)
+        // dengan membandingkan posisi X dengan lowerBound X
+        bool isHorizontalDot = (oldPos.x != lowerBound.x);
+
+        if (isHorizontalDot) {
+          // DOT LEFT/RIGHT: scroll di sumbu X
+          // Scroll ke depan (scrollY positif) = X minus (ke kiri, makin X minus)
+          // Scroll ke belakang (scrollY negatif) = X positif (ke kanan)
+          float newX = oldPos.x - scrollY * scrollSpeed;
+
+          // Tentukan batas berdasarkan posisi userDot relative terhadap dot original
+          if (oldPos.x < lowerBound.x) {
+            // DOT LEFT: batas kanan = dot original (tidak boleh ke kanan melewati dot original)
+            float maxX = lowerBound.x - 1.0f;  // Jarak minimum 1 pixel dari dot original
+            if (newX > maxX) {
+              newX = maxX;  // Clamp ke batas kanan
+            }
+          } else if (oldPos.x > lowerBound.x) {
+            // DOT RIGHT: batas kiri = dot original (tidak boleh ke kiri melewati dot original)
+            float minX = lowerBound.x + 1.0f;  // Jarak minimum 1 pixel dari dot original
+            if (newX < minX) {
+              newX = minX;  // Clamp ke batas kiri
+            }
+          }
+
+          newPos.x = newX;
+        } else {
+          // DOT ABOVE/BELOW: scroll di sumbu Y
+          // Scroll maju (scrollY positif) = Y minus (ke atas, Y negatif)
+          // Scroll mundur (scrollY negatif) = Y positif (ke bawah, Y positif)
+          float newY = oldPos.y - scrollY * scrollSpeed;
+
+          // Tentukan batas berdasarkan posisi userDot relative terhadap dot original
+          if (oldPos.y < lowerBound.y) {
+            // DOT ABOVE: batas bawah = dot original (tidak boleh ke bawah melewati dot original)
+            float maxY = lowerBound.y - 1.0f;  // Jarak minimum 1 pixel dari dot original
+            if (newY > maxY) {
+              newY = maxY;  // Clamp ke batas bawah
+            }
+          } else if (oldPos.y > lowerBound.y) {
+            // DOT BELOW: batas atas = dot original (tidak boleh ke atas melewati dot original)
+            float minY = lowerBound.y + 1.0f;  // Jarak minimum 1 pixel dari dot original
+            if (newY < minY) {
+              newY = minY;  // Clamp ke batas atas
+            }
+          }
+
+          newPos.y = newY;
+        }
+
+        // Update posisi dot
+        userDots[index]->setPosition(newPos);
+
+        // Update semua customLines yang terhubung ke userDot ini
+        for (auto& line : customLines) {
+          vector<vec2> points = line.getPoints();
+          bool lineUpdated = false;
+
+          // Cek setiap point di customLine
+          for (size_t i = 0; i < points.size(); i++) {
+            // Jika point sama dengan posisi lama (dengan toleransi kecil untuk floating point)
+            if (glm::length(points[i] - oldPos) < 0.1f) {
+              points[i] = newPos;  // Update ke posisi baru
+              lineUpdated = true;
+            }
+          }
+
+          // Jika ada yang diupdate, set kembali points ke customLine
+          if (lineUpdated) {
+            line.setPoints(points);
+          }
+        }
+      }
+    }
+
+    return;  // Jangan lanjut ke logic curve
   }
 
   // Update curve untuk SEMUA garis yang selected
@@ -1507,6 +1773,14 @@ void ofApp::updateLineWidth() {
 
     // Delegate ke template - pakai nilai yang sudah ada di template
     currentTemplate->updateLineWidth(currentTemplate->lineWidth);
+
+    // Update semua userDots radius agar mengikuti lineWidth template
+    float newRadius = currentTemplate->lineWidth * 2.0f;
+    for (auto& dot : userDots) {
+        if (dot) {
+            dot->setRadius(newRadius);
+        }
+    }
 }
 
 //--------------------------------------------------------------
@@ -1564,14 +1838,17 @@ void ofApp::updatePolygonColor(ofColor color) {
 	undoAction.newColor = color;
 
 	// Jika ada polygon yang selected, hanya update yang selected saja
-	if (selectedPolygonIndex >= 0 && selectedPolygonIndex < polygonShapes.size()) {
-		// Simpan old color SEBELUM mengubah
-		undoAction.colorIndices.push_back(selectedPolygonIndex);
-		undoAction.oldColors.push_back(polygonShapes[selectedPolygonIndex].getColor());
+	if (!selectedPolygonIndices.empty()) {
+		// Simpan old color SEBELUM mengubah untuk SEMUA selected polygons
+		for (int index : selectedPolygonIndices) {
+			if (index >= 0 && index < polygonShapes.size()) {
+				undoAction.colorIndices.push_back(index);
+				undoAction.oldColors.push_back(polygonShapes[index].getColor());
 
-		// Ubah warna
-		polygonShapes[selectedPolygonIndex].setColor(color);
-
+				// Ubah warna
+				polygonShapes[index].setColor(color);
+			}
+		}
 		// Push undo action
 		pushUndoAction(undoAction);
 	}
@@ -1683,8 +1960,89 @@ void ofApp::deleteAllPolygons() {
 	// Hapus semua polygons
 	if (!polygonShapes.empty()) {
 		polygonShapes.clear();
-		selectedPolygonIndex = -1;
+		selectedPolygonIndices.clear();
+		lastSelectedPolygonIndex = -1;
 	}
+}
+
+//--------------------------------------------------------------
+void ofApp::deleteAllUserDots() {
+	// Hapus semua userDots (duplicat dots)
+	if (!userDots.empty()) {
+		userDots.clear();
+		selectedUserDotIndices.clear();
+		lastSelectedUserDotIndex = -1;
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::deleteSelectedUserDot() {
+	// Cek apakah ada userDot yang terseleksi
+	if (selectedUserDotIndices.empty()) {
+		return;
+	}
+
+	// Hapus SEMUA userDots yang terselect (support multi-delete)
+	// Sort descending agar aman untuk erase
+	vector<int> toDelete(selectedUserDotIndices.begin(),
+						 selectedUserDotIndices.end());
+	std::sort(toDelete.rbegin(), toDelete.rend()); // Descending
+
+	// Push undo action untuk setiap dot yang dihapus (reverse order)
+	for (int index : toDelete) {
+		if (index >= 0 && index < userDots.size()) {
+			UndoAction undoAction;
+			undoAction.type = DELETE_DOT;
+			undoAction.deletedDotPos = userDots[index]->getPosition();
+			undoAction.deletedDotLowerBound = userDots[index]->getLowerBound();
+			undoAction.deletedDotRadius = userDots[index]->getRadius();
+			undoAction.deletedDotIndex = index;
+			pushUndoAction(undoAction);
+		}
+	}
+
+	// Hapus dots
+	for (int index : toDelete) {
+		if (index >= 0 && index < userDots.size()) {
+			userDots.erase(userDots.begin() + index);
+		}
+	}
+	selectedUserDotIndices.clear();
+	lastSelectedUserDotIndex = -1;
+}
+
+//--------------------------------------------------------------
+void ofApp::deleteSelectedPolygons() {
+	// Cek apakah ada polygon yang terseleksi
+	if (selectedPolygonIndices.empty()) {
+		return;
+	}
+
+	// Hapus SEMUA polygons yang terselect (support multi-delete)
+	// Sort descending agar aman untuk erase
+	vector<int> toDelete(selectedPolygonIndices.begin(),
+						 selectedPolygonIndices.end());
+	std::sort(toDelete.rbegin(), toDelete.rend()); // Descending
+
+	// Push undo action untuk setiap polygon yang dihapus (reverse order)
+	for (int index : toDelete) {
+		if (index >= 0 && index < polygonShapes.size()) {
+			UndoAction undoAction;
+			undoAction.type = DELETE_POLYGON;
+			undoAction.deletedPolygon = polygonShapes[index];
+			undoAction.deletedPolygonIndex = index;
+			pushUndoAction(undoAction);
+		}
+	}
+
+	// Hapus polygons
+	for (int index : toDelete) {
+		if (index >= 0 && index < polygonShapes.size()) {
+			polygonShapes.erase(polygonShapes.begin() + index);
+		}
+	}
+	selectedPolygonIndices.clear();
+	lastSelectedPolygonIndex = -1;
 }
 
 //--------------------------------------------------------------
@@ -1760,6 +2118,177 @@ void ofApp::togglePlaygroundWindow() {
 }
 
 //--------------------------------------------------------------
+void ofApp::duplicateDotAbove() {
+    // Cek apakah ada dot yang di-hover
+    if (!hasValidHoveredDot) {
+        return;
+    }
+
+    // Ambil ukuran dot dari template (lineWidth * 2)
+    float dotRadius = currentTemplate->lineWidth * 2.0f;
+
+    // Gunakan offset distance dari member variable
+    vec2 newDotPos = hoveredDotPos + vec2(0, -duplicateDotOffsetDistance);  // Ke atas (Y negatif)
+
+    // Buat DotShape baru dengan radius dari template
+    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", dotRadius);
+    dotShape->showing = true;
+    dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
+
+    // Set lower bound ke hoveredDotPos (dot parent)
+    dotShape->setLowerBound(hoveredDotPos);
+
+    // Tambahkan ke vector userDots
+    userDots.push_back(std::move(dotShape));
+
+    // Undo action untuk dot creation
+    UndoAction undoAction;
+    undoAction.type = CREATE_DOT;
+    undoAction.isCreate = true;
+    pushUndoAction(undoAction);
+
+    // Reset hovered state
+    hoveredDotPos = vec2(0, 0);
+    hasValidHoveredDot = false;
+}
+
+//--------------------------------------------------------------
+void ofApp::duplicateDotBelow() {
+    // Cek apakah ada dot yang di-hover
+    if (!hasValidHoveredDot) {
+        return;
+    }
+
+    // Ambil ukuran dot dari template (lineWidth * 2)
+    float dotRadius = currentTemplate->lineWidth * 2.0f;
+
+    // Gunakan offset distance dari member variable - arah ke bawah (Y positif)
+    vec2 newDotPos = hoveredDotPos + vec2(0, duplicateDotOffsetDistance);  // Ke bawah (Y positif)
+
+    // Buat DotShape baru dengan radius dari template
+    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", dotRadius);
+    dotShape->showing = true;
+    dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
+
+    // Set lower bound ke hoveredDotPos (dot parent)
+    dotShape->setLowerBound(hoveredDotPos);
+
+    // Tambahkan ke vector userDots
+    userDots.push_back(std::move(dotShape));
+
+    // Undo action untuk dot creation
+    UndoAction undoAction;
+    undoAction.type = CREATE_DOT;
+    undoAction.isCreate = true;
+    pushUndoAction(undoAction);
+
+    // Reset hovered state
+    hoveredDotPos = vec2(0, 0);
+    hasValidHoveredDot = false;
+}
+
+//--------------------------------------------------------------
+void ofApp::duplicateDotLeft() {
+    // Cek apakah ada dot yang di-hover
+    if (!hasValidHoveredDot) {
+        return;
+    }
+
+    // Ambil ukuran dot dari template (lineWidth * 2)
+    float dotRadius = currentTemplate->lineWidth * 2.0f;
+
+    // Offset ke kiri (X negatif)
+    vec2 newDotPos = hoveredDotPos + vec2(-duplicateDotOffsetDistance, 0);
+
+    // Buat DotShape baru dengan radius dari template
+    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", dotRadius);
+    dotShape->showing = true;
+    dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
+
+    // Set lower bound ke hoveredDotPos (dot parent)
+    dotShape->setLowerBound(hoveredDotPos);
+
+    // Tambahkan ke vector userDots
+    userDots.push_back(std::move(dotShape));
+
+    // Undo action untuk dot creation
+    UndoAction undoAction;
+    undoAction.type = CREATE_DOT;
+    undoAction.isCreate = true;
+    pushUndoAction(undoAction);
+
+    // Reset hovered state
+    hoveredDotPos = vec2(0, 0);
+    hasValidHoveredDot = false;
+}
+
+//--------------------------------------------------------------
+void ofApp::duplicateDotRight() {
+    // Cek apakah ada dot yang di-hover
+    if (!hasValidHoveredDot) {
+        return;
+    }
+
+    // Ambil ukuran dot dari template (lineWidth * 2)
+    float dotRadius = currentTemplate->lineWidth * 2.0f;
+
+    // Offset ke kanan (X positif)
+    vec2 newDotPos = hoveredDotPos + vec2(duplicateDotOffsetDistance, 0);
+
+    // Buat DotShape baru dengan radius dari template
+    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", dotRadius);
+    dotShape->showing = true;
+    dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
+
+    // Set lower bound ke hoveredDotPos (dot parent)
+    dotShape->setLowerBound(hoveredDotPos);
+
+    // Tambahkan ke vector userDots
+    userDots.push_back(std::move(dotShape));
+
+    // Undo action untuk dot creation
+    UndoAction undoAction;
+    undoAction.type = CREATE_DOT;
+    undoAction.isCreate = true;
+    pushUndoAction(undoAction);
+
+    // Reset hovered state
+    hoveredDotPos = vec2(0, 0);
+    hasValidHoveredDot = false;
+}
+
+//--------------------------------------------------------------
+void ofApp::drawUserDots() {
+    
+    for (auto& dot : userDots) {
+        if (dot) {
+            dot->draw();
+        }
+    }
+
+    // Draw label untuk SEMUA selected userDots
+    for (int index : selectedUserDotIndices) {
+        if (index >= 0 && index < userDots.size()) {
+            vec2 dotPos = userDots[index]->getPosition();
+            vec2 lowerBound = userDots[index]->getLowerBound();
+
+            ofSetColor(0);  // Warna hitam
+
+            // Cek apakah dot ini horizontal (sumbu X) atau vertical (sumbu Y)
+            if (dotPos.x != lowerBound.x) {
+                // Horizontal dot (Dot Left/Right): label offset X saja
+                float offsetX = dotPos.x - lowerBound.x;
+                fontNormal.drawString("offset = " + ofToString(offsetX, 1), dotPos.x + 10, dotPos.y);
+            } else {
+                // Vertical dot (Dot Above/Below): label offset Y saja
+                float offsetY = dotPos.y - lowerBound.y;
+                fontNormal.drawString("offset = " + ofToString(offsetY, 1), dotPos.x + 10, dotPos.y);
+            }
+        }
+    }
+}
+
+//--------------------------------------------------------------
 void ofApp::scaleCustomLinesAndPolygons(float oldRadius, float newRadius) {
 	// Hitung rasio scaling
 	float scaleRatio = newRadius / oldRadius;
@@ -1785,6 +2314,21 @@ void ofApp::scaleCustomLinesAndPolygons(float oldRadius, float newRadius) {
 			vertex = vertex * scaleRatio;  // Scale setiap vertex
 		}
 		polygon.setVertices(vertices);
+	}
+
+	// Scale semua userDots (duplikat dots)
+	for (auto& dot : userDots) {
+		if (dot) {
+			// Scale posisi userDot
+			vec2 currentPos = dot->getPosition();
+			vec2 newPos = currentPos * scaleRatio;
+			dot->setPosition(newPos);
+
+			// Scale juga lowerBound (posisi parent dot)
+			vec2 currentLowerBound = dot->getLowerBound();
+			vec2 newLowerBound = currentLowerBound * scaleRatio;
+			dot->setLowerBound(newLowerBound);
+		}
 	}
 }
 
@@ -2070,7 +2614,8 @@ void ofApp::loadWorkspaceSeq() {
     selectedLineIndices.clear();
     lastSelectedLineIndex = -1;
     polygonShapes.clear();
-    selectedPolygonIndex = -1;
+    selectedPolygonIndices.clear();
+    lastSelectedPolygonIndex = -1;
 
     // Sequential load dengan animasi
     string loadedTemplateName;
@@ -2260,6 +2805,44 @@ void ofApp::drawImGui() {
     // Draw popup dialogs
     successPopup->draw();
     errorPopup->draw();
+
+    // Draw context menu (right-click menu) - SELALU render terlepas dari imguiVisible
+    if (showContextMenu) {
+        ImGui::SetNextWindowPos(ImVec2(contextMenuPos.x, contextMenuPos.y));
+        if (ImGui::Begin("ContextMenu", &showContextMenu, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize)) {
+            // Menu "Duplicate Dot Above" hanya enabled jika klik kanan pada dot original
+            // (gunakan hasValidHoveredDot flag, bukan cek posisi (0,0) karena (0,0) adalah posisi valid)
+            if (ImGui::MenuItem("Duplicate Dot Above", nullptr, false, hasValidHoveredDot)) {
+                // Duplicate dot yang di-hover
+                duplicateDotAbove();
+
+                imguiVisible = true;  // Pastikan ImGui tetap aktif setelah context menu close
+                showContextMenu = false;
+            }
+            if (ImGui::MenuItem("Duplicate Dot Below", nullptr, false, hasValidHoveredDot)) {
+                // Duplicate dot yang di-hover ke arah bawah
+                duplicateDotBelow();
+
+                imguiVisible = true;  // Pastikan ImGui tetap aktif setelah context menu close
+                showContextMenu = false;
+            }
+            if (ImGui::MenuItem("Duplicate Dot Left", nullptr, false, hasValidHoveredDot)) {
+                // Duplicate dot yang di-hover ke arah kiri
+                duplicateDotLeft();
+
+                imguiVisible = true;  // Pastikan ImGui tetap aktif setelah context menu close
+                showContextMenu = false;
+            }
+            if (ImGui::MenuItem("Duplicate Dot Right", nullptr, false, hasValidHoveredDot)) {
+                // Duplicate dot yang di-hover ke arah kanan
+                duplicateDotRight();
+
+                imguiVisible = true;  // Pastikan ImGui tetap aktif setelah context menu close
+                showContextMenu = false;
+            }
+        }
+        ImGui::End();
+    }
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

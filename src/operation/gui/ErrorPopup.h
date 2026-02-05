@@ -13,6 +13,7 @@ public:
     void show(const std::string& title = "Error",
               const std::string& message = "An error occurred!",
               const std::string& buttonLabel = "OK");
+    bool isVisible() const { return showPopup; }
 
 private:
     ofApp* app;
