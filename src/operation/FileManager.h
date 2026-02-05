@@ -11,7 +11,8 @@ using glm::vec2;
 enum class PolygonAnimationMode {
     NO_ANIMATION,  // 0
     FADE_IN,       // 1
-    WOBBLE         // 2
+    WOBBLE,        // 2
+    FILL           // 3
 };
 
 class FileManager {

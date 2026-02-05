@@ -1,6 +1,7 @@
 #include "FileManager.h"
 #include "../anim/FadeInAnimation.h"
 #include "../anim/WobbleAnimation.h"
+#include "../anim/FillAnimation.h"
 
 // Konstanta filename
 const std::string FileManager::FILENAME = "workspace.nay";
@@ -756,6 +757,11 @@ PolygonShape FileManager::createPolygonWithAnimation(const std::vector<vec2>& ve
       {
         auto wobble = std::make_unique<WobbleAnimation>(30.0f, 5.0f, 0.03f);
         return PolygonShape(vertices, color, index, std::move(wobble));
+      }
+    case PolygonAnimationMode::FILL:
+      {
+        auto fill = std::make_unique<FillAnimation>(20.0f, 4.0f, 0.002f);
+        return PolygonShape(vertices, color, index, std::move(fill));
       }
     case PolygonAnimationMode::NO_ANIMATION:
     default:

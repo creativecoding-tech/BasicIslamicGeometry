@@ -1,22 +1,27 @@
 #include "PolygonShape.h"
 #include "../anim/FadeInAnimation.h"
 #include "../anim/WobbleAnimation.h"
+#include "../anim/FillAnimation.h"
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape()
-	: vertices(), fillColor(ofColor(255, 0, 0, 150)), selected(false), index(-1), animation(nullptr) {}
+	: vertices(), fillColor(ofColor(255, 0, 0, 150)), selected(false), index(-1), animation(nullptr),
+	  minY(0.0f), maxY(0.0f), currentWaterY(0.0f) {}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color)
-	: vertices(verts), fillColor(color), selected(false), index(-1), animation(nullptr) {}
+	: vertices(verts), fillColor(color), selected(false), index(-1), animation(nullptr),
+	  minY(0.0f), maxY(0.0f), currentWaterY(0.0f) {}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int idx)
-	: vertices(verts), fillColor(color), selected(false), index(idx), animation(nullptr) {}
+	: vertices(verts), fillColor(color), selected(false), index(idx), animation(nullptr),
+	  minY(0.0f), maxY(0.0f), currentWaterY(0.0f) {}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index, std::unique_ptr<AbstractAnimation> anim)
-	: vertices(verts), fillColor(color), selected(false), index(index), animation(std::move(anim)) {}
+	: vertices(verts), fillColor(color), selected(false), index(index), animation(std::move(anim)),
+	  minY(0.0f), maxY(0.0f), currentWaterY(0.0f) {}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(const PolygonShape& other)
@@ -24,7 +29,8 @@ PolygonShape::PolygonShape(const PolygonShape& other)
 	, fillColor(other.fillColor)
 	, selected(other.selected)
 	, index(other.index)
-	, animation(nullptr) {}
+	, animation(nullptr)
+	, minY(0.0f), maxY(0.0f), currentWaterY(0.0f) {}
 
 //--------------------------------------------------------------
 PolygonShape& PolygonShape::operator=(const PolygonShape& other) {
@@ -45,7 +51,8 @@ PolygonShape::PolygonShape(PolygonShape&& other) noexcept
 	, fillColor(other.fillColor)
 	, selected(other.selected)
 	, index(other.index)
-	, animation(std::move(other.animation)) {}
+	, animation(std::move(other.animation))
+	, minY(0.0f), maxY(0.0f), currentWaterY(0.0f) {}
 
 //--------------------------------------------------------------
 // Move assignment operator - transfer animation ownership
@@ -105,6 +112,63 @@ void PolygonShape::draw() const {
 			}
 			ofEndShape(true);
 		}
+		// Cek FillAnimation
+		else if (auto* fillAnim = dynamic_cast<FillAnimation*>(animation.get())) {
+			// Pixel-by-pixel fill dengan wave boundary
+			// Area di bawah wave = terwarnai solid
+			// Area di atas wave = tidak terwarnai
+
+			// Hitung bounding box
+			float minX = vertices[0].x, maxX = vertices[0].x;
+			for (const auto& v : vertices) {
+				if (v.x < minX) minX = v.x;
+				if (v.x > maxX) maxX = v.x;
+			}
+
+			// Buat ofPolyline untuk cek inside
+			ofPolyline poly;
+			for (const auto& v : vertices) {
+				poly.addVertex(v.x, v.y);
+			}
+			poly.close();
+
+			// Gambar pixel by pixel dengan anti-aliasing
+			// Step size untuk performance
+			float step = 2.0f;
+			// Anti-aliasing margin (lebar gradient boundary)
+			float aaMargin = 4.0f;
+
+			for (float x = minX; x <= maxX; x += step) {
+				for (float y = minY; y <= maxY; y += step) {
+					// Cek apakah point di dalam polygon
+					if (poly.inside(x, y)) {
+						// Cek apakah point DI BAWAH wave
+						float waveOffset = fillAnim->getWaveOffset(x);
+						float effectiveWaterY = currentWaterY + waveOffset;
+
+						// Hitung distance dari point ke wave surface
+						float distFromWater = y - effectiveWaterY;
+
+						if (distFromWater >= 0) {
+							// Di bawah wave
+							if (distFromWater >= aaMargin) {
+								// Jauh dari boundary, solid color
+								ofSetColor(fillColor);
+								ofDrawRectangle(x, y, step, step);
+							} else {
+								// Dekat boundary, anti-aliasing dengan alpha gradient
+								float aaRatio = distFromWater / aaMargin;  // 0.0 = di boundary, 1.0 = jauh
+								aaRatio = ofClamp(aaRatio, 0.0f, 1.0f);
+								int aaAlpha = static_cast<int>(fillColor.a * aaRatio);
+								ofSetColor(fillColor.r, fillColor.g, fillColor.b, aaAlpha);
+								ofDrawRectangle(x, y, step, step);
+							}
+						}
+						// Di atas wave: tidak gambar apa-apa
+					}
+				}
+			}
+		}
 		// Unknown animation type - fallback ke no animation
 		else {
 			ofSetColor(fillColor);
@@ -148,6 +212,21 @@ void PolygonShape::update() {
 	// Update animation jika ada
 	if (animation) {
 		animation->update();
+
+		// Jika FillAnimation, hitung fill state (minY, maxY, currentWaterY)
+		if (auto* fillAnim = dynamic_cast<FillAnimation*>(animation.get())) {
+			// Hitung bounding box Y (minY = atas, maxY = bawah)
+			minY = vertices[0].y;
+			maxY = vertices[0].y;
+			for (const auto& v : vertices) {
+				if (v.y < minY) minY = v.y;
+				if (v.y > maxY) maxY = v.y;
+			}
+
+			// Hitung current water Y (naik dari bawah ke atas)
+			float waterLevel = fillAnim->getWaterLevel();
+			currentWaterY = maxY - (maxY - minY) * waterLevel;
+		}
 	}
 }
 

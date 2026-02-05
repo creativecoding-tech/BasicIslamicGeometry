@@ -57,4 +57,9 @@ private:
 	bool selected;
 	int index;  // Index polygon untuk label
 	std::unique_ptr<AbstractAnimation> animation;  // Animation system (optional)
+
+	// Fill state (dihitung di update(), dipakai di draw())
+	mutable float minY;                      // Y minimum (atas)
+	mutable float maxY;                      // Y maksimum (bawah)
+	mutable float currentWaterY;             // Posisi Y air saat ini
 };

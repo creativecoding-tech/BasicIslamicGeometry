@@ -334,8 +334,15 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 		// Radio button changed
 	}
 
+	if (ImGui::RadioButton("Fill", &polygonAnimationMode, 3)) {
+		// Radio button changed
+	}
+	ImGui::Separator();
+	float buttonWidth = ImGui::CalcTextSize("Draw").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+	float windowWidth = ImGui::GetContentRegionAvail().x;
+	ImGui::SetCursorPosX((windowWidth - buttonWidth) / 2.0f);
 	// Play arrow button
-	if (ImGui::ArrowButton("Play", ImGuiDir_Left)) {
+	if (ImGui::ArrowButton("Draw", ImGuiDir_Left)) {
 		// Cek apakah sudah ada file yang di-open
 		if (app->lastSavedPath.empty()) {
 			// Belum ada file, munculkan error popup
@@ -356,7 +363,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 			app->currentTemplate->showCartesianInSacredGeometry = showCartesianOnPlay;
 
 			// Simpan polygon animation mode - convert int ke PolygonAnimationMode
-			// polygonAnimationMode: 0 = No Animation, 1 = FadeIn, 2 = Wobble
+			// polygonAnimationMode: 0 = No Animation, 1 = FadeIn, 2 = Wobble, 3 = Fill
 			PolygonAnimationMode polyMode;
 			switch (polygonAnimationMode) {
 				case 1:
@@ -364,6 +371,9 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 					break;
 				case 2:
 					polyMode = PolygonAnimationMode::WOBBLE;
+					break;
+				case 3:
+					polyMode = PolygonAnimationMode::FILL;
 					break;
 				case 0:
 				default:
@@ -382,5 +392,5 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 		}
 	}
 	ImGui::SameLine();
-	ImGui::Text("Play");
+	ImGui::Text("Draw");
 }
