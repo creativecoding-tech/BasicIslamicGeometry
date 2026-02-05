@@ -121,7 +121,7 @@ class ofApp : public ofBaseApp{
 			float newCurve;
 		};
 
-		static const int MAX_UNDO_STEPS = 7;
+		static const int MAX_UNDO_STEPS = 100;
 		std::vector<UndoAction> undoStack;
 		std::vector<UndoAction> redoStack;  // Redo stack
 

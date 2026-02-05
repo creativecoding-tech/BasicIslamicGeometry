@@ -30,6 +30,10 @@ void MenuBar::draw() {
             if (ImGui::MenuItem("Redo", "CTRL+SHIFT+Z")) {
                 app->redo();
             }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Clean Canvas", "CTRL+SHIFT+DEL")) {
+                app->cleanCanvas();
+            }
             ImGui::EndMenu();
         }
 
