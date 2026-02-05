@@ -34,10 +34,27 @@ void SacredGeometry::updatePolygonColorFromApp() {
 }
 
 //--------------------------------------------------------------
+void SacredGeometry::focusWindow() {
+    focusRequested = true;
+}
+
+//--------------------------------------------------------------
+void SacredGeometry::showWindow() {
+    windowOpen = true;
+}
+
+//--------------------------------------------------------------
 void SacredGeometry::draw() {
     ImGui::SetNextWindowSize(ImVec2(250, 600), ImGuiCond_FirstUseEver);
 
-    if (ImGui::Begin("Sacred Geometry", nullptr, ImGuiWindowFlags_None)) {
+    // Focus window jika di-request
+    if (focusRequested) {
+        ImGui::SetNextWindowFocus();
+        focusRequested = false;
+    }
+
+    // Begin window dengan close button (windowOpen flag)
+    if (ImGui::Begin("Sacred Geometry", &windowOpen, ImGuiWindowFlags_None)) {
         string templateName = app->currentTemplate ? app->currentTemplate->getName() : string("None");
         if (ImGui::CollapsingHeader(templateName.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Text("Show/Hide Template");
@@ -127,4 +144,7 @@ void SacredGeometry::draw() {
         }
     }
     ImGui::End();
+
+    // Sync window open state ke app
+    app->showSacredGeometry = windowOpen;
 }

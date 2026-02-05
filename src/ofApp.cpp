@@ -644,7 +644,21 @@ void ofApp::keyPressed(int key) {
 
   // G/g - Toggle ImGui visibility (HANYA tanpa CTRL)
   if ((key == 'g' || key == 'G') && !isCtrlPressed) {
-    imguiVisible = !imguiVisible;
+    if (!imguiVisible) {
+      // Show MenuBar only
+      imguiVisible = true;
+      showSacredGeometry = false;
+      showPlayground = false;
+    } else if (!showSacredGeometry && !showPlayground) {
+      // Show all windows
+      showSacredGeometry = true;
+      showPlayground = true;
+    } else {
+      // Hide all
+      imguiVisible = false;
+      showSacredGeometry = false;
+      showPlayground = false;
+    }
   }
 
   // Keys 1-9 - Assign color to selected polygon
@@ -1690,6 +1704,34 @@ void ofApp::cleanCanvas() {
 }
 
 //--------------------------------------------------------------
+void ofApp::toggleSacredGeometryWindow() {
+    if (!imguiVisible || !showSacredGeometry) {
+        // Show SacredGeometry window (dengan MenuBar, tanpa Playground)
+        imguiVisible = true;
+        showSacredGeometry = true;
+        showPlayground = false;  // Pastikan Playground tetap hidden
+
+        // Set windowOpen flag di SacredGeometry
+        for (auto& gui : guiComponents) {
+            SacredGeometry* sacredGeo = dynamic_cast<SacredGeometry*>(gui.get());
+            if (sacredGeo) {
+                sacredGeo->showWindow();
+                break;
+            }
+        }
+    } else {
+        // SacredGeometry already visible, focus it
+        for (auto& gui : guiComponents) {
+            SacredGeometry* sacredGeo = dynamic_cast<SacredGeometry*>(gui.get());
+            if (sacredGeo) {
+                sacredGeo->focusWindow();
+                break;
+            }
+        }
+    }
+}
+
+//--------------------------------------------------------------
 void ofApp::scaleCustomLinesAndPolygons(float oldRadius, float newRadius) {
 	// Hitung rasio scaling
 	float scaleRatio = newRadius / oldRadius;
@@ -1763,6 +1805,10 @@ void ofApp::saveWorkspace() {
   // Copy ke lastSavedPath
   ofFile::copyFromTo("workspace.nay", lastSavedPath, true, true);
 
+  // Show MenuBar agar popup terlihat
+  imguiVisible = true;
+  showSacredGeometry = false;
+  showPlayground = false;
   successPopup->show();
 }
 
@@ -1799,6 +1845,10 @@ void ofApp::saveWorkspaceAs() {
   // Simpan path ini sebagai lastSavedPath (CTRL+S selanjutnya akan kesini)
   lastSavedPath = filepath;
 
+  // Show MenuBar agar popup terlihat
+  imguiVisible = true;
+  showSacredGeometry = false;
+  showPlayground = false;
   successPopup->show();
 }
 
@@ -1818,6 +1868,10 @@ void ofApp::openWorkspace() {
   // Cek apakah file extension .nay
   if (filepath.find(".nay") == string::npos) {
     // File bukan format .nay, tampilkan error popup
+    // Show MenuBar agar popup terlihat
+    imguiVisible = true;
+    showSacredGeometry = false;
+    showPlayground = false;
     errorPopup->show("Invalid File Format",
                      "Please select a .nay file format!",
                      "OK");
@@ -2149,9 +2203,20 @@ void ofApp::drawImGui() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
 
-    // Draw semua GUI components
-    for (auto& gui : guiComponents) {
-        gui->draw();
+    // Draw GUI components
+    // MenuBar (component 0) selalu draw jika imguiVisible
+    if (imguiVisible && !guiComponents.empty()) {
+        guiComponents[0]->draw();  // MenuBar
+    }
+
+    // SacredGeometry (component 1)
+    if (imguiVisible && showSacredGeometry && guiComponents.size() > 1) {
+        guiComponents[1]->draw();  // SacredGeometry
+    }
+
+    // Playground (component 2)
+    if (imguiVisible && showPlayground && guiComponents.size() > 2) {
+        guiComponents[2]->draw();  // Playground
     }
 
     // Draw popup dialogs

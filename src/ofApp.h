@@ -39,6 +39,8 @@ class ofApp : public ofBaseApp{
 
 		bool cursorVisible = false;
 		bool imguiVisible = false;  // ImGui menu visibility
+		bool showSacredGeometry = false;  // SacredGeometry window visibility
+		bool showPlayground = false;  // Playground window visibility
 
 		ofTrueTypeFont fontNormal;  // Font untuk custom line labels
 
@@ -205,6 +207,7 @@ class ofApp : public ofBaseApp{
 		void cleanCanvas();             // Clear all polygons, custom lines, and hide template shapes
 		void scaleCustomLinesAndPolygons(float oldRadius, float newRadius);  // Scale customLines & polygons saat radius berubah
 		bool isCanvasEmpty();  // Cek apakah canvas benar-bener kosong (tidak ada template showing, customLines, atau polygons)
+		void toggleSacredGeometryWindow();  // Show or focus Sacred Geometry window
 
 		// File operations
 		void saveWorkspace();          // Save workspace to file
