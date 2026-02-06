@@ -1319,7 +1319,16 @@ void ofApp::mousePressed(int x, int y, int button) {
       }
     }
 
-    // Tidak klik di dot atau polygon yang terseleksi → tidak munculkan context menu
+    // CEK 3: Klik kanan pada CUSTOMLINE yang terseleksi
+    int clickedLineIndex = getLineIndexAtPosition(adjustedMousePos);
+    if (clickedLineIndex >= 0 && selectedLineIndices.count(clickedLineIndex) > 0) {
+      // Hanya tampilkan context menu jika line terseleksi
+      contextMenu->showWindow(ContextMenu::CUSTOMLINE_CONTEXT, vec2(x, y));
+      imguiVisible = true;
+      return;
+    }
+
+    // Tidak klik di dot, polygon, atau customLine yang terseleksi → tidak munculkan context menu
     return;
   }
 
@@ -1795,6 +1804,67 @@ void ofApp::updateCustomLineColor(ofColor color) {
 			customLines[i].setColor(color);
 		}
 		// Push undo action hanya jika ada yang diubah
+		if (!undoAction.colorIndices.empty()) {
+			pushUndoAction(undoAction);
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::resetAllCustomLineColor() {
+	// Reset SEMUA customLine ke warna default biru (0, 0, 255)
+	ofColor defaultColor = ofColor(0, 0, 255);
+
+	// Update variabel global untuk customLine baru
+	customLineColor = defaultColor;
+
+	// Siapkan undo action
+	UndoAction undoAction;
+	undoAction.type = CHANGE_COLOR_LINE;
+	undoAction.newColor = defaultColor;
+
+	// FORCE update SEMUA customLines (tidak peduli ada yang selected atau tidak)
+	for (size_t i = 0; i < customLines.size(); i++) {
+		// Simpan old color SEBELUM mengubah
+		undoAction.colorIndices.push_back(i);
+		undoAction.oldColors.push_back(customLines[i].getColor());
+
+		// Ubah warna ke default
+		customLines[i].setColor(defaultColor);
+	}
+
+	// Push undo action
+	if (!undoAction.colorIndices.empty()) {
+		pushUndoAction(undoAction);
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::resetSelectedCustomLineColor() {
+	// Reset hanya customLine yang terseleksi ke warna default biru (0, 0, 255)
+	ofColor defaultColor = ofColor(0, 0, 255);
+
+	// Update variabel global untuk customLine baru
+	customLineColor = defaultColor;
+
+	// Siapkan undo action
+	UndoAction undoAction;
+	undoAction.type = CHANGE_COLOR_LINE;
+	undoAction.newColor = defaultColor;
+
+	// Hanya update yang selected
+	if (!selectedLineIndices.empty()) {
+		for (int lineIndex : selectedLineIndices) {
+			if (lineIndex >= 0 && lineIndex < customLines.size()) {
+				// Simpan old color SEBELUM mengubah
+				undoAction.colorIndices.push_back(lineIndex);
+				undoAction.oldColors.push_back(customLines[lineIndex].getColor());
+
+				// Ubah warna ke default
+				customLines[lineIndex].setColor(defaultColor);
+			}
+		}
+		// Push undo action
 		if (!undoAction.colorIndices.empty()) {
 			pushUndoAction(undoAction);
 		}

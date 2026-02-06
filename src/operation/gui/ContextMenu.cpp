@@ -72,6 +72,25 @@ void ContextMenu::draw() {
 				showContextMenu = false;
 			}
 		}
+		// Context menu untuk CUSTOMLINE (Duplicate Line)
+		else if (currentType == CUSTOMLINE_CONTEXT) {
+			if (ImGui::MenuItem("Duplicate Line Above")) {
+				// TODO: Implement event untuk duplicate line above
+				showContextMenu = false;
+			}
+			if (ImGui::MenuItem("Duplicate Line Below")) {
+				// TODO: Implement event untuk duplicate line below
+				showContextMenu = false;
+			}
+			if (ImGui::MenuItem("Duplicate Line Left")) {
+				// TODO: Implement event untuk duplicate line left
+				showContextMenu = false;
+			}
+			if (ImGui::MenuItem("Duplicate Line Right")) {
+				// TODO: Implement event untuk duplicate line right
+				showContextMenu = false;
+			}
+		}
 	}
 
 	ImGui::End();

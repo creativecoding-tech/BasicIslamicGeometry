@@ -11,6 +11,7 @@ using glm::vec2;
  * Menampilkan menu yang berbeda berdasarkan konteks:
  * - DOT_CONTEXT: Menu untuk duplicate dot (Above/Below/Left/Right)
  * - POLYGON_CONTEXT: Menu untuk duplicate polygon (Above/Below/Left/Right)
+ * - CUSTOMLINE_CONTEXT: Menu untuk customLine yang terseleksi
  */
 class ContextMenu : public AbstractGuiComponent {
 public:
@@ -19,9 +20,10 @@ public:
 
 	// Type context menu
 	enum ContextMenuType {
-		NONE,           // Tidak ada context menu
-		DOT_CONTEXT,    // Context menu untuk dot (Duplicate Dot)
-		POLYGON_CONTEXT // Context menu untuk polygon (Duplicate Polygon)
+		NONE,              // Tidak ada context menu
+		DOT_CONTEXT,       // Context menu untuk dot (Duplicate Dot)
+		POLYGON_CONTEXT,   // Context menu untuk polygon (Duplicate Polygon)
+		CUSTOMLINE_CONTEXT // Context menu untuk customLine yang terseleksi
 	};
 
 	// Interface dari AbstractGuiComponent

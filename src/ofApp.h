@@ -225,6 +225,8 @@ class ofApp : public ofBaseApp{
 		void setCartesianAxesVisibility(bool show);  // Show/hide CartesianAxes
 		void updateLineWidth();
 		void updateCustomLineColor(ofColor color);  // Update warna semua customLines
+		void resetAllCustomLineColor();  // Reset semua warna customLine ke default biru
+		void resetSelectedCustomLineColor();  // Reset warna customLine yang terseleksi ke default biru
 		void updatePolygonColor(ofColor color);  // Update warna semua polygons
 		void updateUserDotColor(ofColor color);  // Update warna semua userDots
 		void updateUserDotRadius(float radius);  // Update radius semua userDots
