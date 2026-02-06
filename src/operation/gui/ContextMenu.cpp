@@ -65,25 +65,6 @@ void ContextMenu::draw() {
 		}
 		// Context menu untuk POLYGON (Duplicate Polygon, Copy/Paste Color)
 		else if (currentType == POLYGON_CONTEXT) {
-			if (ImGui::MenuItem("Duplicate Polygon Above")) {
-				// TODO: Implement event untuk duplicate polygon above
-				showContextMenu = false;
-			}
-			if (ImGui::MenuItem("Duplicate Polygon Below")) {
-				// TODO: Implement event untuk duplicate polygon below
-				showContextMenu = false;
-			}
-			if (ImGui::MenuItem("Duplicate Polygon Left")) {
-				// TODO: Implement event untuk duplicate polygon left
-				showContextMenu = false;
-			}
-			if (ImGui::MenuItem("Duplicate Polygon Right")) {
-				// TODO: Implement event untuk duplicate polygon right
-				showContextMenu = false;
-			}
-
-			ImGui::Separator();
-
 			// Copy/Paste Color untuk POLYGON
 			int selectedPolygonCount = app->selectedPolygonIndices.size();
 			showCopyPasteColorMenus(selectedPolygonCount, POLYGON_CONTEXT);

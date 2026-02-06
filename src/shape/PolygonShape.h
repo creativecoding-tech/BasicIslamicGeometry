@@ -47,6 +47,7 @@ public:
 	ofColor getColor() const;
 	bool isSelected() const;
 	const vector<vec2>& getVertices() const;
+	int getIndex() const { return index; }  // Get index polygon
 
 	// Utils
 	bool containsPoint(vec2 point) const;  // Cek apakah point ada di dalam polygon

@@ -1723,8 +1723,6 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
         }
       }
     }
-
-    return;  // Jangan lanjut ke logic curve jika ada DcustomLine di-scroll
   }
 
   // Update curve untuk SEMUA garis yang selected
@@ -1982,6 +1980,67 @@ void ofApp::updatePolygonColor(ofColor color) {
 			polygonShapes[i].setColor(color);
 		}
 		// Push undo action hanya jika ada yang diubah
+		if (!undoAction.colorIndices.empty()) {
+			pushUndoAction(undoAction);
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::resetAllPolygonColor() {
+	// Reset SEMUA polygon ke warna default biru (0, 0, 255)
+	ofColor defaultColor = ofColor(0, 0, 255);
+
+	// Update variabel global untuk polygon baru
+	polygonColor = defaultColor;
+
+	// Siapkan undo action
+	UndoAction undoAction;
+	undoAction.type = CHANGE_COLOR_POLYGON;
+	undoAction.newColor = defaultColor;
+
+	// FORCE update SEMUA polygons (tidak peduli ada yang selected atau tidak)
+	for (size_t i = 0; i < polygonShapes.size(); i++) {
+		// Simpan old color SEBELUM mengubah
+		undoAction.colorIndices.push_back(i);
+		undoAction.oldColors.push_back(polygonShapes[i].getColor());
+
+		// Ubah warna ke default
+		polygonShapes[i].setColor(defaultColor);
+	}
+
+	// Push undo action
+	if (!undoAction.colorIndices.empty()) {
+		pushUndoAction(undoAction);
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::resetSelectedPolygonColor() {
+	// Reset hanya polygon yang terseleksi ke warna default biru (0, 0, 255)
+	ofColor defaultColor = ofColor(0, 0, 255);
+
+	// Update variabel global untuk polygon baru
+	polygonColor = defaultColor;
+
+	// Siapkan undo action
+	UndoAction undoAction;
+	undoAction.type = CHANGE_COLOR_POLYGON;
+	undoAction.newColor = defaultColor;
+
+	// Hanya update yang selected
+	if (!selectedPolygonIndices.empty()) {
+		for (int polygonIndex : selectedPolygonIndices) {
+			if (polygonIndex >= 0 && polygonIndex < polygonShapes.size()) {
+				// Simpan old color SEBELUM mengubah
+				undoAction.colorIndices.push_back(polygonIndex);
+				undoAction.oldColors.push_back(polygonShapes[polygonIndex].getColor());
+
+				// Ubah warna ke default
+				polygonShapes[polygonIndex].setColor(defaultColor);
+			}
+		}
+		// Push undo action
 		if (!undoAction.colorIndices.empty()) {
 			pushUndoAction(undoAction);
 		}
@@ -2729,6 +2788,11 @@ void ofApp::scaleCustomLinesAndPolygons(float oldRadius, float newRadius) {
 			point = point * scaleRatio;  // Scale setiap titik
 		}
 		line.setPoints(points);
+
+		// Scale juga curve parameter agar kelengkungan proporsional
+		float oldCurve = line.getCurve();
+		float newCurve = oldCurve * scaleRatio;
+		line.setCurve(newCurve);
 	}
 
 	// Scale semua polygons

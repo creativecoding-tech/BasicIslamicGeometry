@@ -232,6 +232,8 @@ class ofApp : public ofBaseApp{
 		void resetAllCustomLineColor();  // Reset semua warna customLine ke default biru
 		void resetSelectedCustomLineColor();  // Reset warna customLine yang terseleksi ke default biru
 		void updatePolygonColor(ofColor color);  // Update warna semua polygons
+		void resetAllPolygonColor();  // Reset semua warna polygon ke default biru
+		void resetSelectedPolygonColor();  // Reset warna polygon yang terseleksi ke default biru
 		void updateUserDotColor(ofColor color);  // Update warna semua userDots
 		void updateUserDotRadius(float radius);  // Update radius semua userDots
 		void copyDotColor();  // Copy color dari selected userDot ke clipboard

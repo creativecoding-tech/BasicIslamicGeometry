@@ -200,23 +200,23 @@ void UserCustom::draw() {
             app->updateCustomLineColor(newColor);
         }
 
-        // Button: Reset All Colors & Reset Selected Colors (sama lebar)
-        float buttonWidth = ImGui::CalcTextSize("Reset Selected Colors").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        // Button: Reset All Line Colors & Reset Selected Line Colors (sama lebar)
+        float buttonWidth = ImGui::CalcTextSize("Reset Selected Line Colors").x + ImGui::GetStyle().FramePadding.x * 2.0f;
 
-        if (ImGui::Button("Reset All Colors", ImVec2(buttonWidth, 0))) {
+        if (ImGui::Button("Reset All Line Colors", ImVec2(buttonWidth, 0))) {
             app->resetAllCustomLineColor();
             updateColorFromApp();  // Sync colorpicker dengan default color
         }
 
-        // Button: Reset Selected Colors (hanya enabled jika ada selection)
+        // Button: Reset Selected Line Colors (hanya enabled jika ada selection)
         if (!app->selectedLineIndices.empty()) {
-            if (ImGui::Button("Reset Selected Colors", ImVec2(buttonWidth, 0))) {
+            if (ImGui::Button("Reset Selected Line Colors", ImVec2(buttonWidth, 0))) {
                 app->resetSelectedCustomLineColor();
             }
         } else {
             // Disabled button kalau tidak ada selection
             ImGui::BeginDisabled();
-            ImGui::Button("Reset Selected Colors", ImVec2(buttonWidth, 0));
+            ImGui::Button("Reset Selected Line Colors", ImVec2(buttonWidth, 0));
             ImGui::EndDisabled();
         }
 
@@ -251,6 +251,36 @@ void UserCustom::draw() {
         }
         ImGui::Separator();
         ImGui::Text("Polygon");
+
+        // Info polygon yang terseleksi
+        if (!app->selectedPolygonIndices.empty()) {
+            int selectedCount = app->selectedPolygonIndices.size();
+
+            // Tampilkan label polygon yang terseleksi (dengan auto wrap)
+            std::string labels = "Selected: ";
+            for (auto it = app->selectedPolygonIndices.begin(); it != app->selectedPolygonIndices.end(); ++it) {
+                // Ambil label dari PolygonShape (index + "polygon" prefix)
+                if (*it >= 0 && *it < app->polygonShapes.size()) {
+                    labels += "polygon" + std::to_string(app->polygonShapes[*it].getIndex());
+                } else {
+                    labels += "polygon" + std::to_string(*it);  // Fallback kalau index invalid
+                }
+                // Tambah koma kecuali ini elemen terakhir
+                if (std::next(it) != app->selectedPolygonIndices.end()) {
+                    labels += ", ";
+                }
+            }
+            // Gunakan TextWrapped untuk auto wrap ke bawah (hanya untuk label)
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.6f, 1.0f, 1.0f));
+            ImGui::TextWrapped("%s", labels.c_str());
+            ImGui::PopStyleColor();
+
+            // Tampilkan total count di baris terpisah
+            ImGui::TextColored(ImVec4(0.3f, 0.6f, 1.0f, 1.0f), "%d polygons selected", selectedCount);
+        } else {
+            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "No polygon selected");
+        }
+
         // Sync color dengan selected polygon (setiap frame)
         syncPolygonColorFromSelection();
         // Color picker untuk polygon (bentuk melingkar)
@@ -264,6 +294,26 @@ void UserCustom::draw() {
                 polygonColor[3] * 255
             );
             app->updatePolygonColor(newColor);
+        }
+
+        // Button: Reset All Polygon Colors & Reset Selected Polygon Colors (sama lebar)
+        float polygonButtonWidth = ImGui::CalcTextSize("Reset Selected Polygon Colors").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+
+        if (ImGui::Button("Reset All Polygon Colors", ImVec2(polygonButtonWidth, 0))) {
+            app->resetAllPolygonColor();
+            updatePolygonColorFromApp();  // Sync colorpicker dengan default color
+        }
+
+        // Button: Reset Selected Polygon Colors (hanya enabled jika ada selection)
+        if (!app->selectedPolygonIndices.empty()) {
+            if (ImGui::Button("Reset Selected Polygon Colors", ImVec2(polygonButtonWidth, 0))) {
+                app->resetSelectedPolygonColor();
+            }
+        } else {
+            // Disabled button kalau tidak ada selection
+            ImGui::BeginDisabled();
+            ImGui::Button("Reset Selected Polygon Colors", ImVec2(polygonButtonWidth, 0));
+            ImGui::EndDisabled();
         }
     }
     ImGui::End();
