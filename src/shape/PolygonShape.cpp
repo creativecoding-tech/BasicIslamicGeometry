@@ -208,10 +208,10 @@ void PolygonShape::draw() const {
 }
 
 //--------------------------------------------------------------
-void PolygonShape::update() {
+void PolygonShape::update(float deltaTime) {
 	// Update animation jika ada
 	if (animation) {
-		animation->update();
+		animation->update(deltaTime);
 
 		// Jika FillAnimation, hitung fill state (minY, maxY, currentWaterY)
 		if (auto* fillAnim = dynamic_cast<FillAnimation*>(animation.get())) {

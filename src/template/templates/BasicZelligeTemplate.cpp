@@ -338,6 +338,12 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 		// Radio button changed
 	}
 	ImGui::Separator();
+	ImGui::Text("Speed Control");
+	ImGui::SetNextItemWidth(150.0f);
+	ImGui::SliderFloat("Speed", &app->currentTemplate->speedMultiplier, 0.1f, 1.5f, "%.2f");
+	// Slider hanya menyimpan nilai, efek diterapkan saat tombol Draw diklik
+	ImGui::Separator();
+
 	float buttonWidth = ImGui::CalcTextSize("Draw").x + ImGui::GetStyle().FramePadding.x * 2.0f;
 	float windowWidth = ImGui::GetContentRegionAvail().x;
 	ImGui::SetCursorPosX((windowWidth - buttonWidth) / 2.0f);
@@ -362,6 +368,10 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 			// Sinkronisasi SacredGeometry state dengan Playground preference
 			app->currentTemplate->showCartesianInSacredGeometry = showCartesianOnPlay;
 
+			// Apply speed multiplier ke SEMUA (template shapes, polygons, customLines)
+			app->currentTemplate->applySpeedMultiplier();
+			app->fileManager.setAnimationSpeedMultiplier(app->currentTemplate->speedMultiplier);
+
 			// Simpan polygon animation mode - convert int ke PolygonAnimationMode
 			// polygonAnimationMode: 0 = No Animation, 1 = FadeIn, 2 = Wobble, 3 = Fill
 			PolygonAnimationMode polyMode;
@@ -384,7 +394,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 
 			// Set flag untuk delay load dan update state
 			app->isWaitingForLoad = true;
-			app->loadDelayTimer = ofGetElapsedTimef();
+			app->loadDelayAccumulator = 0.0f;  // Reset accumulator untuk mulai delay
 			app->pendingLoadMode = playMode;
 			app->currentState = ofApp::UpdateState::DELAYED_LOAD;  // STRATEGY PATTERN: Set state ke DELAYED_LOAD
 

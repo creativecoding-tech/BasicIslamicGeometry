@@ -16,10 +16,10 @@ public:
     // Constructor
     // amplitude: besar wobble dalam pixel
     // frequency: berapa banyak wobble per animation
-    WobbleAnimation(float amplitude = 20.0f, float frequency = 5.0f, float speed = 0.02f);
+    WobbleAnimation(float amplitude = 20.0f, float frequency = 5.0f, float speed = 1.2f);  // Delta time calibrated (0.02f * 60 FPS)
 
     // Update animation progress
-    void update() override;
+    void update(float deltaTime = 0.016f) override;
 
     // Ambil wobble factor (-1.0 sampai 1.0) berdasarkan progress
     // Bisa dipakai untuk scaling, rotation, dll

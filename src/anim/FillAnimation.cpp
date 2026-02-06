@@ -7,9 +7,9 @@ FillAnimation::FillAnimation(float waveAmplitude, float waveFrequency, float spe
 }
 
 //--------------------------------------------------------------
-void FillAnimation::update() {
+void FillAnimation::update(float deltaTime) {
     if (progress < 1.0f) {
-        progress += speed;
+        progress += speed * deltaTime;
         if (progress > 1.0f) {
             progress = 1.0f;
         }

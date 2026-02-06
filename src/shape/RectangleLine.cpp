@@ -50,12 +50,12 @@ void RectangleLine::setRadius(float r) {
 	originalRadius = r;  // Update originalRadius untuk scaling berikutnya
 }
 
-void RectangleLine::update() {
+void RectangleLine::update(float deltaTime) {
 	if (showing) {
-		if (progress < totalSegments) progress += speed;
+		if (progress < totalSegments) progress += speed * deltaTime;
 	}
 	else {
-		if (progress > 0) progress -= speed;
+		if (progress > 0) progress -= speed * deltaTime;
 	}
 }
 

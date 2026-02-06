@@ -7,9 +7,9 @@ WobbleAnimation::WobbleAnimation(float amplitude, float frequency, float speed)
 }
 
 //--------------------------------------------------------------
-void WobbleAnimation::update() {
+void WobbleAnimation::update(float deltaTime) {
     if (progress < 1.0f) {
-        progress += speed;
+        progress += speed * deltaTime;
         if (progress > 1.0f) {
             progress = 1.0f;
         }

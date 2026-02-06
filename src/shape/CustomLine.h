@@ -41,7 +41,7 @@ public:
 	bool isSelected() const { return selected; }
 
 	// Animation update
-	void updateProgress();
+	void updateProgress(float deltaTime = 0.016f);
 
 private:
 	vector<vec2> points;   // 2 titik: start dan end

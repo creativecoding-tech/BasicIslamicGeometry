@@ -41,14 +41,14 @@ void CircleShape::hideDot() {
 	dotVisible = false;
 }
 
-void CircleShape::update() {
+void CircleShape::update(float deltaTime) {
 	if (showing) {
 		//Animasi muncul
-		if (progress < totalSegments) progress += speed;
+		if (progress < totalSegments) progress += speed * deltaTime;
 	}
 	else {
 		//Animasi hilang (reverse)
-		if (progress > 0) progress -= speed;
+		if (progress > 0) progress -= speed * deltaTime;
 	}
 }
 

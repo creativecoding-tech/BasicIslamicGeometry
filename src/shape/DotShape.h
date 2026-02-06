@@ -13,7 +13,7 @@ public:
     virtual ~DotShape() = default;
 
     // Override pure virtual methods dari AbstractShape
-    void update() override;
+    void update(float deltaTime = 0.016f) override;
     void draw() override;
     void addDotsToCache(std::vector<DotInfo>& dots) override;
 

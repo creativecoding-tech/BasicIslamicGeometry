@@ -7,7 +7,7 @@ public:
 	CartesianAxes(float r);
 
 	// Override pure virtual methods dari AbstractShape
-	void update() override;
+	void update(float deltaTime = 0.016f) override;
 	void draw() override;
 	void setRadius(float r) override;  // Override setRadius
 

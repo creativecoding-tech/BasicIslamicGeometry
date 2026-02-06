@@ -72,12 +72,12 @@ void CrossLine::hideDot() {
 	dotVisible = false;
 }
 
-void CrossLine::update() {
+void CrossLine::update(float deltaTime) {
 	if (showing) {
-		if (progress < totalSegments) progress += speed;
+		if (progress < totalSegments) progress += speed * deltaTime;
 	}
 	else {
-		if (progress > 0) progress -= speed;
+		if (progress > 0) progress -= speed * deltaTime;
 	}
 }
 

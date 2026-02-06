@@ -1,4 +1,11 @@
 #include "SacredGeometryTemplate.h"
+#include "../shape/CircleShape.h"
+#include "../shape/CrossLine.h"
+#include "../shape/ParallelogramLine.h"
+#include "../shape/RectangleLine.h"
+#include "../shape/OctagramLine.h"
+#include "../shape/CartesianAxes.h"
+#include "../shape/DotShape.h"
 
 //--------------------------------------------------------------
 void SacredGeometryTemplate::startSequentialDrawing() {
@@ -167,5 +174,37 @@ void SacredGeometryTemplate::updateLineWidth(float width) {
 	// Update line width untuk semua shapes (realtime, tanpa rebuild)
 	for (auto& shape : shapes) {
 		shape->setLineWidth(lineWidth);
+	}
+}
+
+//--------------------------------------------------------------
+void SacredGeometryTemplate::applySpeedMultiplier() {
+	// Base speed untuk setiap tipe shape (sesuai kalibrasi delta time)
+	// CircleShape, CrossLine, ParallelogramLine, RectangleLine, OctagramLine, DotShape: 50.0f
+	// CartesianAxes: 1.2f
+
+	for (auto& shape : shapes) {
+		// Cek tipe shape dan apply base speed yang sesuai
+		if (dynamic_cast<CircleShape*>(shape.get())) {
+			shape->speed = 50.0f * speedMultiplier;
+		}
+		else if (dynamic_cast<CrossLine*>(shape.get())) {
+			shape->speed = 50.0f * speedMultiplier;
+		}
+		else if (dynamic_cast<ParallelogramLine*>(shape.get())) {
+			shape->speed = 50.0f * speedMultiplier;
+		}
+		else if (dynamic_cast<RectangleLine*>(shape.get())) {
+			shape->speed = 50.0f * speedMultiplier;
+		}
+		else if (dynamic_cast<OctagramLine*>(shape.get())) {
+			shape->speed = 50.0f * speedMultiplier;
+		}
+		else if (dynamic_cast<CartesianAxes*>(shape.get())) {
+			shape->speed = 1.2f * speedMultiplier;
+		}
+		else if (dynamic_cast<DotShape*>(shape.get())) {
+			shape->speed = 50.0f * speedMultiplier;
+		}
 	}
 }

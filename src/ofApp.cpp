@@ -147,8 +147,11 @@ void ofApp::updateDelayedLoad() {
     return;
   }
 
-  float elapsed = ofGetElapsedTimef() - loadDelayTimer;
-  if (elapsed >= 0.5f) {
+  // Accumulate deltaTime untuk smooth delay
+  float deltaTime = ofGetLastFrameTime();
+  loadDelayAccumulator += deltaTime;
+
+  if (loadDelayAccumulator >= loadDelayDuration) {
     // Timer selesai, panggil load method
     if (pendingLoadMode == 0) {
       loadWorkspace();
@@ -156,9 +159,10 @@ void ofApp::updateDelayedLoad() {
       loadWorkspaceSeq();
     }
 
-    // Reset flag
+    // Reset flag dan accumulator
     isWaitingForLoad = false;
     pendingLoadMode = -1;
+    loadDelayAccumulator = 0.0f;
     currentState = UpdateState::STAGGERED_LOAD;  // Lanjut ke staggered load
   }
 }
@@ -240,8 +244,9 @@ void ofApp::updateStaggeredCustomLines() {
   }
 
   // Update progress semua customLines yang sudah ada
+  float deltaTime = ofGetLastFrameTime();
   for (auto& line : customLines) {
-    line.updateProgress();
+    line.updateProgress(deltaTime);
   }
 
   // Cek apakah semua customLines sudah complete DAN semua sudah di-load
@@ -273,8 +278,9 @@ void ofApp::updateStaggeredPolygons() {
   }
 
   // Update animation semua polygons yang sudah ada
+  float deltaTime = ofGetLastFrameTime();
   for (auto& polygon : polygonShapes) {
-    polygon.update();
+    polygon.update(deltaTime);
   }
 
   // Cek apakah semua polygons sudah complete DAN sequential load sudah selesai
@@ -301,7 +307,8 @@ void ofApp::updateStaggeredPolygons() {
 
 void ofApp::updateTemplateShapes() {
   if (currentTemplate) {
-    currentTemplate->update();
+    float deltaTime = ofGetLastFrameTime();
+    currentTemplate->update(deltaTime);
   }
 }
 
@@ -325,16 +332,18 @@ void ofApp::updateScaling() {
 //--------------------------------------------------------------
 void ofApp::updateCustomLines() {
   fileManager.updateSequentialLoad(customLines, polygonShapes);
+  float deltaTime = ofGetLastFrameTime();
   for (auto& line : customLines) {
-    line.updateProgress();
+    line.updateProgress(deltaTime);
   }
 }
 
 //--------------------------------------------------------------
 void ofApp::updatePolygons() {
+  float deltaTime = ofGetLastFrameTime();
   if (fileManager.isLoadParallelMode()) {
     for (auto& polygon : polygonShapes) {
-      polygon.update();
+      polygon.update(deltaTime);
     }
   }
 }

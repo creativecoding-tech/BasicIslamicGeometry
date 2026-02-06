@@ -33,7 +33,7 @@ public:
 	void setRadius(float r) override;
 
 	// Override pure virtual methods dari AbstractShape
-	void update() override;
+	void update(float deltaTime = 0.016f) override;
 	void draw() override;
 
 	// Override isComplete untuk ngecek kedua progress (main + extension)

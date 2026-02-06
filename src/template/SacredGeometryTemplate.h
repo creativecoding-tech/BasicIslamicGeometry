@@ -56,10 +56,10 @@ public:
 
 	// Update logic - default implementation update semua shapes
 	// Bisa di-override untuk custom update behavior
-	virtual void update() {
+	virtual void update(float deltaTime = 0.016f) {  // Default 60 FPS = 0.016f
 		for (auto &shape : shapes) {
 			if (shape) {
-				shape->update();
+				shape->update(deltaTime);
 			}
 		}
 	}
@@ -70,6 +70,7 @@ public:
 		// Clear dan rebuild shapes dengan radius baru
 		shapes.clear();
 		setupShapes();
+		applySpeedMultiplier();  // Re-apply speed multiplier setelah rebuild!
 	}
 
 	// Get read-only access ke shapes (untuk file operations, dll)
@@ -114,6 +115,10 @@ public:
 
 	// Polygon animation mode (public agar bisa diakses dari UI)
 	int polygonAnimationMode = 0;  // 0 = No Animation, 1 = FadeIn
+
+	// Speed control (public agar bisa diakses dari UI)
+	float speedMultiplier = 1.0f;  // 1.0 = normal speed, 0.5 = half speed, 2.0 = double speed
+	void applySpeedMultiplier();  // Apply speed multiplier ke semua shapes
 
 	// Template control methods - fully autonomous!
 	virtual void startSequentialDrawing();

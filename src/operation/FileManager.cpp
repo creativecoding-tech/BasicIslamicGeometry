@@ -310,7 +310,7 @@ bool FileManager::loadCustomLinesNA(ofBuffer &buffer, size_t &offset,
 
     // Set progress ke 0.0 untuk parallel animation (semua barengan)
     line.setProgress(0.0f);
-    line.setSpeed(0.003f);
+    line.setSpeed(0.18f * animationSpeedMultiplier);  // Delta time calibrated (0.003f * 60 FPS)
 
     // Add ke vector
     customLines.push_back(line);
@@ -494,7 +494,7 @@ bool FileManager::loadUserDotsNA(ofBuffer &buffer, size_t &offset,
 FileManager::FileManager()
     : loadSequentialMode(false), loadParallelMode(false), currentLineIndex(0),
       loadSpeed(0.05f), loadAccumulator(0.0f), currentPolygonIndex(0),
-      polygonAnimationMode(PolygonAnimationMode::NO_ANIMATION) {}
+      polygonAnimationMode(PolygonAnimationMode::NO_ANIMATION), animationSpeedMultiplier(1.0f) {}
 
 //--------------------------------------------------------------
 void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlobalRadius,
@@ -658,7 +658,7 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
 
       // Set initial animation state
       line.setProgress(0.0f);
-      line.setSpeed(0.03f);
+      line.setSpeed(1.8f * animationSpeedMultiplier);  // Delta time calibrated (0.03f * 60 FPS)
 
       // Add ke buffer
       loadedLinesBuffer.push_back(line);
@@ -892,17 +892,17 @@ PolygonShape FileManager::createPolygonWithAnimation(const std::vector<vec2>& ve
   switch (polygonAnimationMode) {
     case PolygonAnimationMode::FADE_IN:
       {
-        auto fadeIn = std::make_unique<FadeInAnimation>(color.a, 0.003f);
+        auto fadeIn = std::make_unique<FadeInAnimation>(color.a, 0.18f * animationSpeedMultiplier);  // Delta time calibrated (0.003f * 60 FPS)
         return PolygonShape(vertices, color, index, std::move(fadeIn));
       }
     case PolygonAnimationMode::WOBBLE:
       {
-        auto wobble = std::make_unique<WobbleAnimation>(30.0f, 5.0f, 0.03f);
+        auto wobble = std::make_unique<WobbleAnimation>(30.0f, 5.0f, 1.8f * animationSpeedMultiplier);  // Delta time calibrated (0.03f * 60 FPS)
         return PolygonShape(vertices, color, index, std::move(wobble));
       }
     case PolygonAnimationMode::FILL:
       {
-        auto fill = std::make_unique<FillAnimation>(20.0f, 4.0f, 0.002f);
+        auto fill = std::make_unique<FillAnimation>(20.0f, 4.0f, 0.12f * animationSpeedMultiplier);  // Delta time calibrated (0.002f * 60 FPS)
         return PolygonShape(vertices, color, index, std::move(fill));
       }
     case PolygonAnimationMode::NO_ANIMATION:
@@ -918,6 +918,16 @@ void FileManager::setLoadSpeed(float speed) { loadSpeed = speed; }
 
 //--------------------------------------------------------------
 float FileManager::getLoadSpeed() const { return loadSpeed; }
+
+//--------------------------------------------------------------
+void FileManager::setAnimationSpeedMultiplier(float multiplier) {
+    animationSpeedMultiplier = multiplier;
+}
+
+//--------------------------------------------------------------
+float FileManager::getAnimationSpeedMultiplier() const {
+    return animationSpeedMultiplier;
+}
 
 //--------------------------------------------------------------
 void FileManager::setPolygonAnimationMode(PolygonAnimationMode mode) { polygonAnimationMode = mode; }

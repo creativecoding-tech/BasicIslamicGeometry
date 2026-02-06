@@ -5,7 +5,7 @@ CustomLine::CustomLine()
 	: lineWidth(3.0f)
 	, curve(0.0f)
 	, progress(1.0f)
-	, speed(0.02f)
+	, speed(1.2f)  // Delta time calibrated (0.02f * 60 FPS)
 	, selected(false)
 	, color(ofColor(0, 0, 255)) {  // Default biru
 }
@@ -17,7 +17,7 @@ CustomLine::CustomLine(vector<vec2> points, ofColor color, float lineWidth)
 	, lineWidth(lineWidth)
 	, curve(0.0f)
 	, progress(1.0f)
-	, speed(0.02f)
+	, speed(1.2f)  // Delta time calibrated (0.02f * 60 FPS)
 	, selected(false) {
 }
 
@@ -146,9 +146,9 @@ void CustomLine::setSelected(bool selected) {
 }
 
 //--------------------------------------------------------------
-void CustomLine::updateProgress() {
+void CustomLine::updateProgress(float deltaTime) {
 	if (progress < 1.0f) {
-		progress += speed;
+		progress += speed * deltaTime;
 		if (progress > 1.0f) {
 			progress = 1.0f;
 		}

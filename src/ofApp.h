@@ -181,6 +181,8 @@ class ofApp : public ofBaseApp{
 		// Play button delay state
 		bool isWaitingForLoad = false;
 		float loadDelayTimer = 0.0f;
+		float loadDelayAccumulator = 0.0f;  // Delta time accumulator untuk smooth delay
+		float loadDelayDuration = 0.0f;  // Durasi delay dalam detik (0.0f = no delay)
 		int pendingLoadMode = -1;  // 0 = Parallel, 1 = Sequential
 
 		// GUI Components

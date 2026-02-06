@@ -10,7 +10,7 @@ public:
 	CircleShape(float r, std::string label, float angle, float distance);
 
 	// Override pure virtual methods dari AbstractShape
-	void update() override;
+	void update(float deltaTime = 0.016f) override;
 	void draw() override;
 	void setLabel(std::string label);
 	void setRadius(float r) override;  // Override setRadius untuk runtime update

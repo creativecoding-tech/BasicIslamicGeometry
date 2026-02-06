@@ -11,7 +11,7 @@ class AbstractShape {
 public:
 	// Common attributes untuk animasi
 	float progress = 0;
-	float speed = 0.5f;
+	float speed = 50.0f;  // Delta time calibrated (60 FPS * 0.5f lama)
 	bool showing = false;
 	float lineWidth = 4;
 
@@ -24,7 +24,7 @@ public:
 	virtual void hide();
 
 	// Pure virtual methods - WAJIB di-override oleh derived class
-	virtual void update() = 0;
+	virtual void update(float deltaTime = 0.016f) = 0;  // Default 60 FPS
 	virtual void draw() = 0;
 
 	// Polymorphic method untuk menambahkan dots ke cache (default: no-op)

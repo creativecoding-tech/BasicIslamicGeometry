@@ -3,20 +3,20 @@
 
 CartesianAxes::CartesianAxes(float r) {
 	radius = r;
-	speed = 0.02f;
+	speed = 1.2f;  // Delta time calibrated (0.02f * 60 FPS)
 	maxProgress = maxScale;  // Set max progress untuk isComplete()
 	loadFonts();  // Load font untuk label sudut
 }
 
-void CartesianAxes::update() {
+void CartesianAxes::update(float deltaTime) {
 	if (showing) {
 		if (progress < maxScale) {
-			progress += speed;
+			progress += speed * deltaTime;
 		}
 	}
 	else {
 		if (progress > 0) {
-			progress -= speed;
+			progress -= speed * deltaTime;
 		}
 	}
 }

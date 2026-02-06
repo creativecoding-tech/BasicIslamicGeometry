@@ -55,12 +55,12 @@ void ParallelogramLine::hideLabel() {
 	labelVisible = false;
 }
 
-void ParallelogramLine::update() {
+void ParallelogramLine::update(float deltaTime) {
 	if (showing) {
-		if (progress < totalSegments) progress += speed;
+		if (progress < totalSegments) progress += speed * deltaTime;
 	}
 	else {
-		if (progress > 0) progress -= speed;
+		if (progress > 0) progress -= speed * deltaTime;
 	}
 }
 

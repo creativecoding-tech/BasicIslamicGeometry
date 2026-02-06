@@ -9,11 +9,11 @@
 class AbstractAnimation {
 public:
     // Constructor
-    AbstractAnimation(float speed = 0.02f);
+    AbstractAnimation(float speed = 1.2f);  // Delta time calibrated (0.02f * 60 FPS)
     virtual ~AbstractAnimation() = default;
 
     // Update animation progress (dipanggil setiap frame)
-    virtual void update() = 0;
+    virtual void update(float deltaTime = 0.016f) = 0;
 
     // Cek apakah animation sudah selesai
     bool isComplete() const;

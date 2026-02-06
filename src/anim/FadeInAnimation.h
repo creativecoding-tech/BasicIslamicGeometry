@@ -9,10 +9,10 @@
 class FadeInAnimation : public AbstractAnimation {
 public:
     // Constructor
-    FadeInAnimation(float targetAlpha = 255.0f, float speed = 0.02f);
+    FadeInAnimation(float targetAlpha = 255.0f, float speed = 1.2f);  // Delta time calibrated (0.02f * 60 FPS)
 
     // Update animation progress
-    void update() override;
+    void update(float deltaTime = 0.016f) override;
 
     // Ambil current alpha berdasarkan progress (0 - targetAlpha)
     float getCurrentAlpha() const;

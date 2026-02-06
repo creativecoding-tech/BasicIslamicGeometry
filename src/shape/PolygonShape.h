@@ -34,7 +34,7 @@ public:
 	void draw() const;
 
 	// Animation
-	void update();  // Update animation progress
+	void update(float deltaTime = 0.016f);  // Update animation progress
 	bool hasAnimation() const;  // Cek apakah punya animation
 	bool isAnimationComplete() const;  // Cek apakah animation sudah selesai
 

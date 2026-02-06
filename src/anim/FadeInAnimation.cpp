@@ -7,9 +7,9 @@ FadeInAnimation::FadeInAnimation(float targetAlpha, float speed)
 }
 
 //--------------------------------------------------------------
-void FadeInAnimation::update() {
+void FadeInAnimation::update(float deltaTime) {
     if (progress < 1.0f) {
-        progress += speed;
+        progress += speed * deltaTime;
         if (progress > 1.0f) {
             progress = 1.0f;
         }

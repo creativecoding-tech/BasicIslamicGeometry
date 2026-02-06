@@ -44,24 +44,24 @@ void OctagramLine::setRadius(float r) {
 	originalRadius = r;  // Update originalRadius untuk scaling berikutnya
 }
 
-void OctagramLine::update() {
+void OctagramLine::update(float deltaTime) {
 	if (showing) {
 		if (isSequentialMode) {
 			// SEQUENTIAL MODE: Phase 1 dulu, baru Phase 2
 			if (progress < totalSegments) {
-				progress += speed;
+				progress += speed * deltaTime;
 			}
 			else if (nextPoint.has_value() && extensionProgress < totalSegments) {
-				extensionProgress += speed;
+				extensionProgress += speed * deltaTime;
 			}
 		}
 		else {
 			// PARALEL MODE: Kedua line berjalan barengan
 			if (progress < totalSegments) {
-				progress += speed;
+				progress += speed * deltaTime;
 			}
 			if (nextPoint.has_value() && extensionProgress < totalSegments) {
-				extensionProgress += speed;
+				extensionProgress += speed * deltaTime;
 			}
 		}
 	}
@@ -69,19 +69,19 @@ void OctagramLine::update() {
 		if (isSequentialMode) {
 			// SEQUENTIAL MODE: Hide extension dulu, baru main line
 			if (extensionProgress > 0) {
-				extensionProgress -= speed;
+				extensionProgress -= speed * deltaTime;
 			}
 			else if (progress > 0) {
-				progress -= speed;
+				progress -= speed * deltaTime;
 			}
 		}
 		else {
 			// PARALEL MODE: Kedua line hide barengan
 			if (extensionProgress > 0) {
-				extensionProgress -= speed;
+				extensionProgress -= speed * deltaTime;
 			}
 			if (progress > 0) {
-				progress -= speed;
+				progress -= speed * deltaTime;
 			}
 		}
 	}

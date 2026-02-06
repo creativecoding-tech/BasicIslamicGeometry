@@ -18,10 +18,10 @@ public:
     // Constructor
     // waveAmplitude: besar gelombang di permukaan air (pixel)
     // waveFrequency: frekuensi gelombang
-    FillAnimation(float waveAmplitude = 10.0f, float waveFrequency = 3.0f, float speed = 0.02f);
+    FillAnimation(float waveAmplitude = 10.0f, float waveFrequency = 3.0f, float speed = 1.2f);  // Delta time calibrated (0.02f * 60 FPS)
 
     // Update animation progress
-    void update() override;
+    void update(float deltaTime = 0.016f) override;
 
     // Ambil water level saat ini (0.0 = kosong/bawah, 1.0 = penuh/atas)
     float getWaterLevel() const;

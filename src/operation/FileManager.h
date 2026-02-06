@@ -66,6 +66,10 @@ public:
     void setLoadSpeed(float speed);
     float getLoadSpeed() const;
 
+    // Animation speed multiplier control (untuk polygons & customLines)
+    void setAnimationSpeedMultiplier(float multiplier);
+    float getAnimationSpeedMultiplier() const;
+
     // Polygon animation mode control
     void setPolygonAnimationMode(PolygonAnimationMode mode);
     PolygonAnimationMode getPolygonAnimationMode() const;
@@ -100,6 +104,9 @@ private:
 
     // Polygon animation mode
     PolygonAnimationMode polygonAnimationMode;
+
+    // Animation speed multiplier (untuk polygons & customLines)
+    float animationSpeedMultiplier;
 
     // Format constants
     static constexpr char MAGIC_NUMBER[4] = {'N', 'A', '0', '1'};
