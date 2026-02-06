@@ -17,8 +17,10 @@ void ContextMenu::hideWindow() {
 	showContextMenu = false;
 	currentType = NONE;
 	hoveredDotPos = vec2(0, 0);
+	hasHoveredDot = false;  // Reset flag
 	hoveredPolygonIndex = -1;
 	hoveredLineIndex = -1;
+	isUserDotContext = false;  // Reset flag
 }
 
 //--------------------------------------------------------------
@@ -35,26 +37,33 @@ void ContextMenu::draw() {
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_AlwaysAutoResize)) {
 
-		// Context menu untuk DOT (Duplicate Dot)
+		// Context menu untuk DOT (Duplicate Dot, Copy/Paste Color)
 		if (currentType == DOT_CONTEXT) {
-			if (ImGui::MenuItem("Duplicate Dot Above")) {
-				app->duplicateDotAbove();
-				showContextMenu = false;
-			}
-			if (ImGui::MenuItem("Duplicate Dot Below")) {
-				app->duplicateDotBelow();
-				showContextMenu = false;
-			}
-			if (ImGui::MenuItem("Duplicate Dot Left")) {
-				app->duplicateDotLeft();
-				showContextMenu = false;
-			}
-			if (ImGui::MenuItem("Duplicate Dot Right")) {
-				app->duplicateDotRight();
-				showContextMenu = false;
+			if (isUserDotContext) {
+				// Klik kanan pada userDot (duplicate dot) → hanya Copy/Paste Color
+				int selectedDotCount = app->selectedUserDotIndices.size();
+				showCopyPasteColorMenus(selectedDotCount, DOT_CONTEXT);
+			} else {
+				// Klik kanan pada original dot → hanya Duplicate Dot
+				if (ImGui::MenuItem("Duplicate Dot Above")) {
+					app->duplicateDotAbove();
+					showContextMenu = false;
+				}
+				if (ImGui::MenuItem("Duplicate Dot Below")) {
+					app->duplicateDotBelow();
+					showContextMenu = false;
+				}
+				if (ImGui::MenuItem("Duplicate Dot Left")) {
+					app->duplicateDotLeft();
+					showContextMenu = false;
+				}
+				if (ImGui::MenuItem("Duplicate Dot Right")) {
+					app->duplicateDotRight();
+					showContextMenu = false;
+				}
 			}
 		}
-		// Context menu untuk POLYGON (Duplicate Polygon)
+		// Context menu untuk POLYGON (Duplicate Polygon, Copy/Paste Color)
 		else if (currentType == POLYGON_CONTEXT) {
 			if (ImGui::MenuItem("Duplicate Polygon Above")) {
 				// TODO: Implement event untuk duplicate polygon above
@@ -72,15 +81,48 @@ void ContextMenu::draw() {
 				// TODO: Implement event untuk duplicate polygon right
 				showContextMenu = false;
 			}
+
+			ImGui::Separator();
+
+			// Copy/Paste Color untuk POLYGON
+			int selectedPolygonCount = app->selectedPolygonIndices.size();
+			showCopyPasteColorMenus(selectedPolygonCount, POLYGON_CONTEXT);
 		}
-		// Context menu untuk CUSTOMLINE (Lock Axis untuk DcustomLine)
+		// Context menu untuk CUSTOMLINE (Create Polygon, Copy/Paste Color, Lock Axis untuk DcustomLine)
 		else if (currentType == CUSTOMLINE_CONTEXT) {
+			// ===== MENU 1: Create Polygon =====
+			int selectedCount = app->selectedLineIndices.size();
+
+			if (selectedCount > 1) {
+				// Enable hanya jika > 1 selected line
+				if (ImGui::MenuItem("Create Polygon")) {
+					app->createInvisiblePolygonFromSelected();
+					showContextMenu = false;
+				}
+			} else {
+				// Disabled jika ≤1 selected line
+				ImGui::BeginDisabled();
+				ImGui::MenuItem("Create Polygon");
+				ImGui::EndDisabled();
+			}
+
+			ImGui::Separator();
+
+			// Copy/Paste Color untuk CUSTOMLINE
+			showCopyPasteColorMenus(selectedCount, CUSTOMLINE_CONTEXT);
+
+			ImGui::Separator();
+
+			// ===== MENU 4: Lock/Unlock Axis (KHUSUS untuk DcustomLine) =====
 			// Cek apakah line yang di-klik adalah duplicate line
 			if (hoveredLineIndex >= 0 && hoveredLineIndex < app->customLines.size()) {
 				const CustomLine& line = app->customLines[hoveredLineIndex];
 
 				// Cek apakah ini duplicate line (hasil dari duplicateLineR180)
 				if (line.getIsDuplicate()) {
+					ImGui::Separator();
+					ImGui::SeparatorText("DcustomLine Axis Lock");
+
 					// Hitung jumlah DcustomLine yang terseleksi
 					int selectedDLineCount = 0;
 					for (int index : app->selectedLineIndices) {
@@ -234,7 +276,77 @@ void ContextMenu::draw() {
 	if (!showContextMenu) {
 		currentType = NONE;
 		hoveredDotPos = vec2(0, 0);
+		hasHoveredDot = false;  // Reset flag
 		hoveredPolygonIndex = -1;
 		hoveredLineIndex = -1;
+		isUserDotContext = false;  // Reset flag
+	}
+}
+
+//--------------------------------------------------------------
+void ContextMenu::showCopyPasteColorMenus(int selectedCount, ContextMenuType type) {
+	// ===== MENU 1: Copy Color =====
+	// Validasi: Hanya 1 selected DAN tidak ada mixed type selection
+	bool canCopyColor = false;
+
+	if (selectedCount == 1) {
+		// Cek apakah ada mixed type selection
+		if (type == DOT_CONTEXT) {
+			// Copy dari DOT: pastikan tidak ada line atau polygon yang terseleksi
+			canCopyColor = app->selectedLineIndices.empty() && app->selectedPolygonIndices.empty();
+		}
+		else if (type == POLYGON_CONTEXT) {
+			// Copy dari POLYGON: pastikan tidak ada dot atau line yang terseleksi
+			canCopyColor = app->selectedUserDotIndices.empty() && app->selectedLineIndices.empty();
+		}
+		else if (type == CUSTOMLINE_CONTEXT) {
+			// Copy dari CUSTOMLINE: pastikan tidak ada dot atau polygon yang terseleksi
+			canCopyColor = app->selectedUserDotIndices.empty() && app->selectedPolygonIndices.empty();
+		}
+	}
+
+	if (canCopyColor) {
+		// Enable hanya jika tepat 1 selected DAN tidak ada mixed type
+		if (ImGui::MenuItem("Copy Color")) {
+			// Copy color berdasarkan type
+			if (type == DOT_CONTEXT) {
+				app->copyDotColor();
+			} else if (type == POLYGON_CONTEXT) {
+				app->copyPolygonColor();
+			} else if (type == CUSTOMLINE_CONTEXT) {
+				app->copyLineColor();
+			}
+			showContextMenu = false;
+		}
+	} else {
+		// Disabled jika bukan tepat 1 selected atau ada mixed type
+		ImGui::BeginDisabled();
+		ImGui::MenuItem("Copy Color");
+		ImGui::EndDisabled();
+	}
+
+	// ===== MENU 2: Paste Color =====
+	// Paste color boleh multi-type (tidak perlu validasi mixed type)
+	// Validasi: Harus ada object yang terseleksi DAN ada color di clipboard
+	bool canPaste = (selectedCount >= 1) && app->hasClipboardColor;
+
+	if (canPaste) {
+		// Enable jika ada minimal 1 selected DAN ada color di clipboard
+		if (ImGui::MenuItem("Paste Color")) {
+			// Paste color berdasarkan type
+			if (type == DOT_CONTEXT) {
+				app->pasteColorToDot();
+			} else if (type == POLYGON_CONTEXT) {
+				app->pasteColorToPolygon();
+			} else if (type == CUSTOMLINE_CONTEXT) {
+				app->pasteColorToLine();
+			}
+			showContextMenu = false;
+		}
+	} else {
+		// Disabled jika tidak ada selected atau tidak ada color di clipboard
+		ImGui::BeginDisabled();
+		ImGui::MenuItem("Paste Color");
+		ImGui::EndDisabled();
 	}
 }

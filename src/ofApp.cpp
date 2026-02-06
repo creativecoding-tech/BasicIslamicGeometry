@@ -1300,9 +1300,28 @@ void ofApp::mousePressed(int x, int y, int button) {
     for (const auto& dot : templateDots) {
       if (isMouseOverDot(adjustedMousePos, dot.position)) {
         contextMenu->setHoveredDotPos(dot.position);
+        contextMenu->setIsUserDotContext(false);  // Flag bahwa ini dari original dot
         contextMenu->showWindow(ContextMenu::DOT_CONTEXT, vec2(x, y));
         imguiVisible = true;
         return;
+      }
+    }
+
+    // CEK 1.5: Klik kanan pada USERDOT (duplicate dot) yang terseleksi
+    for (int i = 0; i < userDots.size(); i++) {
+      if (userDots[i] && userDots[i]->showing) {
+        vec2 dotPos = userDots[i]->getPosition();
+        float dist = glm::length(adjustedMousePos - dotPos);
+        if (dist < 15.0f) {
+          // Hanya tampilkan context menu jika userDot terseleksi
+          if (selectedUserDotIndices.count(i) > 0) {
+            contextMenu->setHoveredDotPos(dotPos);
+            contextMenu->setIsUserDotContext(true);  // Flag bahwa ini dari userDot
+            contextMenu->showWindow(ContextMenu::DOT_CONTEXT, vec2(x, y));
+            imguiVisible = true;
+            return;
+          }
+        }
       }
     }
 
@@ -1322,13 +1341,11 @@ void ofApp::mousePressed(int x, int y, int button) {
     // CEK 3: Klik kanan pada CUSTOMLINE yang terseleksi
     int clickedLineIndex = getLineIndexAtPosition(adjustedMousePos);
     if (clickedLineIndex >= 0 && selectedLineIndices.count(clickedLineIndex) > 0) {
-      // Hanya tampilkan context menu jika line terseleksi DAN ini DcustomLine (duplicate line)
-      if (customLines[clickedLineIndex].getIsDuplicate()) {
-        contextMenu->setHoveredLineIndex(clickedLineIndex);
-        contextMenu->showWindow(ContextMenu::CUSTOMLINE_CONTEXT, vec2(x, y));
-        imguiVisible = true;
-        return;
-      }
+      // Tampilkan context menu untuk semua customLine (original dan DcustomLine)
+      contextMenu->setHoveredLineIndex(clickedLineIndex);
+      contextMenu->showWindow(ContextMenu::CUSTOMLINE_CONTEXT, vec2(x, y));
+      imguiVisible = true;
+      return;
     }
 
     // Tidak klik di dot, polygon, atau customLine yang terseleksi → tidak munculkan context menu
@@ -2020,6 +2037,115 @@ void ofApp::updateUserDotColor(ofColor color) {
 }
 
 //--------------------------------------------------------------
+void ofApp::copyDotColor() {
+	// Validasi: Harus tepat 1 userDot yang terseleksi
+	if (selectedUserDotIndices.size() != 1) {
+		return;  // Tidak valid
+	}
+
+	int dotIndex = *selectedUserDotIndices.begin();
+	if (dotIndex >= 0 && dotIndex < userDots.size()) {
+		if (userDots[dotIndex]) {
+			// Copy color dari userDot ke clipboard
+			clipboardColor = userDots[dotIndex]->getColor();
+			hasClipboardColor = true;
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::copyPolygonColor() {
+	// Validasi: Harus tepat 1 polygon yang terseleksi
+	if (selectedPolygonIndices.size() != 1) {
+		return;  // Tidak valid
+	}
+
+	int polygonIndex = *selectedPolygonIndices.begin();
+	if (polygonIndex >= 0 && polygonIndex < polygonShapes.size()) {
+		// Copy color dari polygon ke clipboard
+		clipboardColor = polygonShapes[polygonIndex].getColor();
+		hasClipboardColor = true;
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::copyLineColor() {
+	// Validasi: Harus tepat 1 customLine yang terseleksi
+	if (selectedLineIndices.size() != 1) {
+		return;  // Tidak valid
+	}
+
+	int lineIndex = *selectedLineIndices.begin();
+	if (lineIndex >= 0 && lineIndex < customLines.size()) {
+		// Copy color dari customLine ke clipboard
+		clipboardColor = customLines[lineIndex].getColor();
+		hasClipboardColor = true;
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::pasteColorToDot() {
+	// Validasi: Harus ada color di clipboard
+	if (!hasClipboardColor) {
+		return;  // Tidak ada color yang di-copy
+	}
+
+	// Validasi: Harus ada userDot yang terseleksi
+	if (selectedUserDotIndices.empty()) {
+		return;  // Tidak ada userDot terseleksi
+	}
+
+	// Paste color ke semua userDot yang terseleksi
+	for (int index : selectedUserDotIndices) {
+		if (index >= 0 && index < userDots.size()) {
+			if (userDots[index]) {
+				userDots[index]->setColor(clipboardColor);
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::pasteColorToPolygon() {
+	// Validasi: Harus ada color di clipboard
+	if (!hasClipboardColor) {
+		return;  // Tidak ada color yang di-copy
+	}
+
+	// Validasi: Harus ada polygon yang terseleksi
+	if (selectedPolygonIndices.empty()) {
+		return;  // Tidak ada polygon terseleksi
+	}
+
+	// Paste color ke semua polygon yang terseleksi
+	for (int index : selectedPolygonIndices) {
+		if (index >= 0 && index < polygonShapes.size()) {
+			polygonShapes[index].setColor(clipboardColor);
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::pasteColorToLine() {
+	// Validasi: Harus ada color di clipboard
+	if (!hasClipboardColor) {
+		return;  // Tidak ada color yang di-copy
+	}
+
+	// Validasi: Harus ada customLine yang terseleksi
+	if (selectedLineIndices.empty()) {
+		return;  // Tidak ada customLine terseleksi
+	}
+
+	// Paste color ke semua customLine yang terseleksi
+	for (int index : selectedLineIndices) {
+		if (index >= 0 && index < customLines.size()) {
+			customLines[index].setColor(clipboardColor);
+		}
+	}
+}
+
+//--------------------------------------------------------------
 void ofApp::syncColorPickerFromLoadedLines() {
 	// Ambil warna dari customLine pertama yang diload (jika ada)
 	if (!customLines.empty()) {
@@ -2326,10 +2452,11 @@ void ofApp::toggleUserCustomWindow() {
 //--------------------------------------------------------------
 void ofApp::duplicateDotAbove() {
     // Cek apakah ada dot yang di-hover
-    vec2 dotPos = contextMenu->getHoveredDotPos();
-    if (dotPos.x == 0 && dotPos.y == 0) {
+    if (!contextMenu->getHasHoveredDot()) {
         return;  // Tidak ada dot valid
     }
+
+    vec2 dotPos = contextMenu->getHoveredDotPos();
 
     // Ambil radius dari dot original (lineWidth * 2)
     float dotRadius = currentTemplate->lineWidth * 2.0f;
@@ -2357,16 +2484,17 @@ void ofApp::duplicateDotAbove() {
     pushUndoAction(undoAction);
 
     // Reset hovered state
-    contextMenu->setHoveredDotPos(vec2(0, 0));
+    contextMenu->resetHoveredDotState();
 }
 
 //--------------------------------------------------------------
 void ofApp::duplicateDotBelow() {
     // Cek apakah ada dot yang di-hover
-    vec2 dotPos = contextMenu->getHoveredDotPos();
-    if (dotPos.x == 0 && dotPos.y == 0) {
+    if (!contextMenu->getHasHoveredDot()) {
         return;  // Tidak ada dot valid
     }
+
+    vec2 dotPos = contextMenu->getHoveredDotPos();
 
     // Ambil radius dari dot original (lineWidth * 2)
     float dotRadius = currentTemplate->lineWidth * 2.0f;
@@ -2394,16 +2522,17 @@ void ofApp::duplicateDotBelow() {
     pushUndoAction(undoAction);
 
     // Reset hovered state
-    contextMenu->setHoveredDotPos(vec2(0, 0));
+    contextMenu->resetHoveredDotState();
 }
 
 //--------------------------------------------------------------
 void ofApp::duplicateDotLeft() {
     // Cek apakah ada dot yang di-hover
-    vec2 dotPos = contextMenu->getHoveredDotPos();
-    if (dotPos.x == 0 && dotPos.y == 0) {
+    if (!contextMenu->getHasHoveredDot()) {
         return;  // Tidak ada dot valid
     }
+
+    vec2 dotPos = contextMenu->getHoveredDotPos();
 
     // Ambil radius dari dot original (lineWidth * 2)
     float dotRadius = currentTemplate->lineWidth * 2.0f;
@@ -2431,16 +2560,17 @@ void ofApp::duplicateDotLeft() {
     pushUndoAction(undoAction);
 
     // Reset hovered state
-    contextMenu->setHoveredDotPos(vec2(0, 0));
+    contextMenu->resetHoveredDotState();
 }
 
 //--------------------------------------------------------------
 void ofApp::duplicateDotRight() {
     // Cek apakah ada dot yang di-hover
-    vec2 dotPos = contextMenu->getHoveredDotPos();
-    if (dotPos.x == 0 && dotPos.y == 0) {
+    if (!contextMenu->getHasHoveredDot()) {
         return;  // Tidak ada dot valid
     }
+
+    vec2 dotPos = contextMenu->getHoveredDotPos();
 
     // Ambil radius dari dot original (lineWidth * 2)
     float dotRadius = currentTemplate->lineWidth * 2.0f;
@@ -2468,7 +2598,7 @@ void ofApp::duplicateDotRight() {
     pushUndoAction(undoAction);
 
     // Reset hovered state
-    contextMenu->setHoveredDotPos(vec2(0, 0));
+    contextMenu->resetHoveredDotState();
 }
 
 //--------------------------------------------------------------
@@ -2540,6 +2670,10 @@ void ofApp::duplicateLineR180() {
         undoAction.isCreate = true;
         pushUndoAction(undoAction);
     }
+
+    // 4. Clear selection
+    selectedLineIndices.clear();
+    lastSelectedLineIndex = -1;
 }
 
 //--------------------------------------------------------------

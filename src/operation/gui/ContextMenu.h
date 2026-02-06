@@ -44,8 +44,20 @@ public:
 	int getHoveredPolygonIndex() const { return hoveredPolygonIndex; }
 
 	// Set/get dot position yang di-hover (untuk dot context)
-	void setHoveredDotPos(vec2 pos) { hoveredDotPos = pos; }
+	void setHoveredDotPos(vec2 pos) {
+		hoveredDotPos = pos;
+		hasHoveredDot = true;  // Set flag ketika ada dot yang di-hover
+	}
 	vec2 getHoveredDotPos() const { return hoveredDotPos; }
+	bool getHasHoveredDot() const { return hasHoveredDot; }
+	void resetHoveredDotState() {
+		hoveredDotPos = vec2(0, 0);
+		hasHoveredDot = false;
+	}
+
+	// Set/get apakah DOT_CONTEXT berasal dari userDot (duplicate dot) atau original dot
+	void setIsUserDotContext(bool isUserDot) { isUserDotContext = isUserDot; }
+	bool getIsUserDotContext() const { return isUserDotContext; }
 
 	// Set/get line index yang di-klik (untuk customLine context)
 	void setHoveredLineIndex(int index) { hoveredLineIndex = index; }
@@ -63,10 +75,15 @@ private:
 
 	// Dot context state
 	vec2 hoveredDotPos = vec2(0, 0);
+	bool isUserDotContext = false;  // True jika DOT_CONTEXT berasal dari userDot (duplicate dot)
+	bool hasHoveredDot = false;  // True jika ada valid dot yang di-hover (untuk cek (0,0) bug)
 
 	// Polygon context state
 	int hoveredPolygonIndex = -1;
 
 	// CustomLine context state
 	int hoveredLineIndex = -1;
+
+	// Helper function untuk Copy/Paste Color menu
+	void showCopyPasteColorMenus(int selectedCount, ContextMenuType type);
 };

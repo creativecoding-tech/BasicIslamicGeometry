@@ -102,7 +102,11 @@ class ofApp : public ofBaseApp{
 		// UserDot color control
 		ofColor userDotColor = ofColor(0, 0, 255);  // Default biru
 
-		float threshold = 5.0f; //dalam radius saat mouse hover pada dot
+		// Global clipboard untuk Copy/Paste Color
+		ofColor clipboardColor = ofColor(0, 0, 255);  // Default biru
+		bool hasClipboardColor = false;  // Flag untuk mengecek apakah ada color yang di-copy
+
+		float threshold = 9.0f; //dalam radius saat mouse hover pada dot
 		float duplicateDotOffsetDistance = 7.0f;  // Jarak offset duplikat dot ke atas (dalam pixels)
 		float userDotRadius = 8.0f;  // Radius untuk userDot/duplicate dot
 		bool isCtrlPressed = false;
@@ -230,6 +234,12 @@ class ofApp : public ofBaseApp{
 		void updatePolygonColor(ofColor color);  // Update warna semua polygons
 		void updateUserDotColor(ofColor color);  // Update warna semua userDots
 		void updateUserDotRadius(float radius);  // Update radius semua userDots
+		void copyDotColor();  // Copy color dari selected userDot ke clipboard
+		void copyPolygonColor();  // Copy color dari selected polygon ke clipboard
+		void copyLineColor();  // Copy color dari selected customLine ke clipboard
+		void pasteColorToDot();  // Paste color dari clipboard ke selected userDots
+		void pasteColorToPolygon();  // Paste color dari clipboard ke selected polygons
+		void pasteColorToLine();  // Paste color dari clipboard ke selected customLines
 		void syncColorPickerFromLoadedLines();  // Sync ColorPicker dari customLines yang diload
 		void syncColorPickerFromLoadedPolygons();  // Sync ColorPicker dari polygons yang diload
 		void syncUserDotFromLoaded();  // Sync userDotRadius dan userDotColor dari userDots yang diload
