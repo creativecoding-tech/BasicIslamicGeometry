@@ -414,8 +414,8 @@ void ofApp::drawCustomLinesAndUI() {
 
           ofPushStyle();
           ofSetColor(0, 0, 0); // Hitam untuk label
-          // Label "CustomLine" + index (di atas)
-          fontNormal.drawString("CustomLine" + ofToString(lineIndex),
+          // Label dari getLabel() (di atas)
+          fontNormal.drawString(line.getLabel(),
                                 midPoint.x + 10, midPoint.y - 25);
           // Label "Curve: ..." (di bawah)
           fontNormal.drawString("Curve: " + ofToString(line.getCurve(), 1),
@@ -1322,10 +1322,13 @@ void ofApp::mousePressed(int x, int y, int button) {
     // CEK 3: Klik kanan pada CUSTOMLINE yang terseleksi
     int clickedLineIndex = getLineIndexAtPosition(adjustedMousePos);
     if (clickedLineIndex >= 0 && selectedLineIndices.count(clickedLineIndex) > 0) {
-      // Hanya tampilkan context menu jika line terseleksi
-      contextMenu->showWindow(ContextMenu::CUSTOMLINE_CONTEXT, vec2(x, y));
-      imguiVisible = true;
-      return;
+      // Hanya tampilkan context menu jika line terseleksi DAN ini DcustomLine (duplicate line)
+      if (customLines[clickedLineIndex].getIsDuplicate()) {
+        contextMenu->setHoveredLineIndex(clickedLineIndex);
+        contextMenu->showWindow(ContextMenu::CUSTOMLINE_CONTEXT, vec2(x, y));
+        imguiVisible = true;
+        return;
+      }
     }
 
     // Tidak klik di dot, polygon, atau customLine yang terseleksi → tidak munculkan context menu
@@ -1531,8 +1534,9 @@ void ofApp::mouseReleased(int x, int y, int button) {
           }
 
           // Simpan polyline dengan 2 points (start dan end)
+          std::string newLabel = "customLine" + std::to_string(customLines.size());
           CustomLine newLine(currentPolylinePoints, customLineColor,
-                             mouseLineWidth);
+                             mouseLineWidth, newLabel);
           customLines.push_back(newLine);
 
           // Push undo action
@@ -1649,7 +1653,61 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
       }
     }
 
-    return;  // Jangan lanjut ke logic curve
+    return;  // Jangan lanjut ke logic lain jika ada userDot terseleksi
+  }
+
+  // Handle scroll untuk DcustomLine (duplicate lines)
+  if (!selectedLineIndices.empty()) {
+    float scrollSpeed = 2.0f;  // Kecepatan scroll
+
+    // Filter hanya DcustomLine yang terseleksi
+    for (int lineIndex : selectedLineIndices) {
+      if (lineIndex >= 0 && lineIndex < customLines.size()) {
+        CustomLine& line = customLines[lineIndex];
+
+        // Hanya proses jika ini duplicate line
+        if (line.getIsDuplicate()) {
+          AxisLock lockState = line.getAxisLock();
+
+          // Skip jika LOCK_BOTH (fully locked)
+          if (lockState == AxisLock::LOCK_BOTH) {
+            continue;
+          }
+
+          // Ambil semua points
+          vector<vec2> points = line.getPoints();
+
+          // Geser semua points berdasarkan lock state
+          for (vec2& point : points) {
+            if (lockState == AxisLock::LOCK_X) {
+              // LOCK X: Hanya bisa gerak di Y (scroll atas/bawah)
+              // Scroll up (scrollY positif) = Y minus (ke atas)
+              // Scroll down (scrollY negatif) = Y positif (ke bawah)
+              point.y -= scrollY * scrollSpeed;
+            }
+            else if (lockState == AxisLock::LOCK_Y) {
+              // LOCK Y: Hanya bisa gerak di X (scroll kanan/kiri)
+              // Scroll up (scrollY positif) = X minus (ke kiri)
+              // Scroll down (scrollY negatif) = X positif (ke kanan)
+              point.x -= scrollY * scrollSpeed;
+            }
+            else if (lockState == AxisLock::NONE) {
+              // NONE: Bisa gerak bebas di X dan Y (scroll gerakkan serong)
+              // Scroll up (scrollY positif) = X minus, Y minus (kiri atas)
+              // Scroll down (scrollY negatif) = X positif, Y positif (kanan bawah)
+              point.x -= scrollY * scrollSpeed;
+              point.y -= scrollY * scrollSpeed;
+            }
+            // LOCK_BOTH: Tidak bisa scroll (skip)
+          }
+
+          // Update points ke line
+          line.setPoints(points);
+        }
+      }
+    }
+
+    return;  // Jangan lanjut ke logic curve jika ada DcustomLine di-scroll
   }
 
   // Update curve untuk SEMUA garis yang selected
@@ -2411,6 +2469,77 @@ void ofApp::duplicateDotRight() {
 
     // Reset hovered state
     contextMenu->setHoveredDotPos(vec2(0, 0));
+}
+
+//--------------------------------------------------------------
+void ofApp::duplicateLineR180() {
+    // Cek apakah ada selected lines
+    if (selectedLineIndices.empty()) {
+        return;  // Tidak ada line yang terseleksi
+    }
+
+    // 1. Hitung global center point dari semua selected lines
+    vec2 globalCenter = vec2(0, 0);
+    int totalPoints = 0;
+
+    for (int index : selectedLineIndices) {
+        if (index >= 0 && index < customLines.size()) {
+            const vector<vec2>& points = customLines[index].getPoints();
+            for (const vec2& point : points) {
+                globalCenter += point;
+                totalPoints++;
+            }
+        }
+    }
+
+    if (totalPoints == 0) {
+        return;  // Tidak ada points valid
+    }
+
+    globalCenter /= totalPoints;  // Average dari semua points
+
+    // 2. Untuk setiap selected line, buat duplicate dengan rotate 180°
+    for (int index : selectedLineIndices) {
+        if (index >= 0 && index < customLines.size()) {
+            const CustomLine& originalLine = customLines[index];
+
+            // Copy semua properties
+            vector<vec2> originalPoints = originalLine.getPoints();
+            ofColor lineColor = originalLine.getColor();
+            float lineWidth = originalLine.getLineWidth();
+            float curve = originalLine.getCurve();
+            std::string originalLabel = originalLine.getLabel();
+
+            // Rotate semua points 180° di sekitar global center
+            vector<vec2> rotatedPoints;
+            for (const vec2& point : originalPoints) {
+                vec2 offset = point - globalCenter;
+                vec2 rotatedPoint = globalCenter - offset;  // 180° rotation
+                rotatedPoints.push_back(rotatedPoint);
+            }
+
+            // Buat label dengan prefix "D"
+            std::string newLabel = "D" + originalLabel;
+
+            // Buat CustomLine baru
+            CustomLine newLine(rotatedPoints, lineColor, lineWidth, newLabel);
+            newLine.setCurve(curve);
+            newLine.setProgress(1.0f);  // Langsung muncul penuh (no animation)
+            newLine.setIsDuplicate(true);  // Tandai sebagai duplicate line
+            newLine.setAxisLock(AxisLock::LOCK_BOTH);  // Auto-lock kedua axis (tidak bisa gerak)
+
+            // Add ke customLines
+            customLines.push_back(newLine);
+        }
+    }
+
+    // 3. Push undo action untuk setiap line yang diduplicate
+    for (int index : selectedLineIndices) {
+        UndoAction undoAction;
+        undoAction.type = CREATE_LINE;
+        undoAction.isCreate = true;
+        pushUndoAction(undoAction);
+    }
 }
 
 //--------------------------------------------------------------

@@ -7,18 +7,24 @@ CustomLine::CustomLine()
 	, progress(1.0f)
 	, speed(1.2f)  // Delta time calibrated (0.02f * 60 FPS)
 	, selected(false)
-	, color(ofColor(0, 0, 255)) {  // Default biru
+	, color(ofColor(0, 0, 255))  // Default biru
+	, label("")
+	, isDuplicate(false)
+	, axisLock(AxisLock::NONE) {
 }
 
 //--------------------------------------------------------------
-CustomLine::CustomLine(vector<vec2> points, ofColor color, float lineWidth)
+CustomLine::CustomLine(vector<vec2> points, ofColor color, float lineWidth, std::string label)
 	: points(points)
 	, color(color)
 	, lineWidth(lineWidth)
 	, curve(0.0f)
 	, progress(1.0f)
 	, speed(1.2f)  // Delta time calibrated (0.02f * 60 FPS)
-	, selected(false) {
+	, selected(false)
+	, label(label)
+	, isDuplicate(false)
+	, axisLock(AxisLock::NONE) {
 }
 
 //--------------------------------------------------------------
@@ -138,6 +144,11 @@ void CustomLine::setProgress(float progress) {
 //--------------------------------------------------------------
 void CustomLine::setSpeed(float speed) {
 	this->speed = speed;
+}
+
+//--------------------------------------------------------------
+void CustomLine::setLabel(const std::string& label) {
+	this->label = label;
 }
 
 //--------------------------------------------------------------

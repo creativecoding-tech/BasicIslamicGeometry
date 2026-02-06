@@ -163,7 +163,12 @@ void UserCustom::draw() {
             // Tampilkan label customLine yang terseleksi (dengan auto wrap)
             std::string labels = "Selected: ";
             for (auto it = app->selectedLineIndices.begin(); it != app->selectedLineIndices.end(); ++it) {
-                labels += "customLine" + std::to_string(*it);
+                // Ambil label dari CustomLine (bukan hardcoded "customLine" + index)
+                if (*it >= 0 && *it < app->customLines.size()) {
+                    labels += app->customLines[*it].getLabel();
+                } else {
+                    labels += "customLine" + std::to_string(*it);  // Fallback kalau index invalid
+                }
                 // Tambah koma kecuali ini elemen terakhir
                 if (std::next(it) != app->selectedLineIndices.end()) {
                     labels += ", ";
@@ -212,6 +217,36 @@ void UserCustom::draw() {
             // Disabled button kalau tidak ada selection
             ImGui::BeginDisabled();
             ImGui::Button("Reset Selected Colors", ImVec2(buttonWidth, 0));
+            ImGui::EndDisabled();
+        }
+
+        // Button: Duplicate Line R 180° (hanya enabled jika ada >= 2 selected lines DAN semua original customLine)
+        bool canDuplicate = true;
+        if (app->selectedLineIndices.size() >= 2) {
+            // Cek apakah semua selected line adalah original (bukan DcustomLine)
+            for (int index : app->selectedLineIndices) {
+                if (index >= 0 && index < app->customLines.size()) {
+                    if (app->customLines[index].getIsDuplicate()) {
+                        canDuplicate = false;  // Ada DcustomLine dalam selection
+                        break;
+                    }
+                }
+            }
+
+            if (canDuplicate) {
+                if (ImGui::Button("Duplicate Line R 180°", ImVec2(buttonWidth, 0))) {
+                    app->duplicateLineR180();
+                }
+            } else {
+                // Disabled button kalau ada DcustomLine dalam selection
+                ImGui::BeginDisabled();
+                ImGui::Button("Duplicate Line R 180°", ImVec2(buttonWidth, 0));
+                ImGui::EndDisabled();
+            }
+        } else {
+            // Disabled button kalau selected lines < 2
+            ImGui::BeginDisabled();
+            ImGui::Button("Duplicate Line R 180°", ImVec2(buttonWidth, 0));
             ImGui::EndDisabled();
         }
         ImGui::Separator();

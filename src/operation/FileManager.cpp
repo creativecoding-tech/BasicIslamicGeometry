@@ -236,13 +236,28 @@ void FileManager::saveCustomLinesNA(ofBuffer &buffer,
                     sizeof(vec2));
     }
 
-    // Write color, lineWidth, dan curve (tidak perlu normalize)
+    // Write color, lineWidth, curve, dan label (tidak perlu normalize)
     ofColor color = line.getColor();
     float lineWidth = line.getLineWidth();
     float curve = line.getCurve();
+    std::string label = line.getLabel();
+
     buffer.append(reinterpret_cast<const char *>(&color), sizeof(ofColor));
     buffer.append(reinterpret_cast<const char *>(&lineWidth), sizeof(float));
     buffer.append(reinterpret_cast<const char *>(&curve), sizeof(float));
+
+    // Write label string (length + data)
+    int labelLength = static_cast<int>(label.size());
+    buffer.append(reinterpret_cast<const char *>(&labelLength), sizeof(int));
+    if (labelLength > 0) {
+      buffer.append(label.c_str(), labelLength);
+    }
+
+    // Write isDuplicate dan axisLock
+    bool isDuplicate = line.getIsDuplicate();
+    AxisLock axisLock = line.getAxisLock();
+    buffer.append(reinterpret_cast<const char *>(&isDuplicate), sizeof(bool));
+    buffer.append(reinterpret_cast<const char *>(&axisLock), sizeof(AxisLock));
   }
 }
 
@@ -307,6 +322,39 @@ bool FileManager::loadCustomLinesNA(ofBuffer &buffer, size_t &offset,
     float curve = *reinterpret_cast<float *>(data + offset);
     offset += sizeof(float);
     line.setCurve(curve);
+
+    // Read label string
+    if (offset + sizeof(int) > bufferSize) {
+      return false;
+    }
+    int labelLength = *reinterpret_cast<int *>(data + offset);
+    offset += sizeof(int);
+
+    std::string label = "";
+    if (labelLength > 0) {
+      if (offset + labelLength > bufferSize) {
+        return false;
+      }
+      label.assign(data + offset, labelLength);
+      offset += labelLength;
+    }
+    line.setLabel(label);
+
+    // Read isDuplicate
+    if (offset + sizeof(bool) > bufferSize) {
+      return false;
+    }
+    bool isDuplicate = *reinterpret_cast<bool *>(data + offset);
+    offset += sizeof(bool);
+    line.setIsDuplicate(isDuplicate);
+
+    // Read axisLock
+    if (offset + sizeof(AxisLock) > bufferSize) {
+      return false;
+    }
+    AxisLock axisLock = *reinterpret_cast<AxisLock *>(data + offset);
+    offset += sizeof(AxisLock);
+    line.setAxisLock(axisLock);
 
     // Set progress ke 0.0 untuk parallel animation (semua barengan)
     line.setProgress(0.0f);
@@ -655,6 +703,43 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
       float curve = *reinterpret_cast<float *>(data + offset);
       offset += sizeof(float);
       line.setCurve(curve);
+
+      // Read label string
+      if (offset + sizeof(int) > bufferSize) {
+        ofLog() << "Error: Unexpected end of file reading label length";
+        return;
+      }
+      int labelLength = *reinterpret_cast<int *>(data + offset);
+      offset += sizeof(int);
+
+      std::string label = "";
+      if (labelLength > 0) {
+        if (offset + labelLength > bufferSize) {
+          ofLog() << "Error: Unexpected end of file reading label";
+          return;
+        }
+        label.assign(data + offset, labelLength);
+        offset += labelLength;
+      }
+      line.setLabel(label);
+
+      // Read isDuplicate
+      if (offset + sizeof(bool) > bufferSize) {
+        ofLog() << "Error: Unexpected end of file reading isDuplicate";
+        return;
+      }
+      bool isDuplicate = *reinterpret_cast<bool *>(data + offset);
+      offset += sizeof(bool);
+      line.setIsDuplicate(isDuplicate);
+
+      // Read axisLock
+      if (offset + sizeof(AxisLock) > bufferSize) {
+        ofLog() << "Error: Unexpected end of file reading axisLock";
+        return;
+      }
+      AxisLock axisLock = *reinterpret_cast<AxisLock *>(data + offset);
+      offset += sizeof(AxisLock);
+      line.setAxisLock(axisLock);
 
       // Set initial animation state
       line.setProgress(0.0f);

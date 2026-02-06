@@ -103,7 +103,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **MenuBar** - Top menu bar dengan File, Edit, dan View menus
   - **File Menu**: Save Workspace (CTRL+S), Save As (CTRL+SHIFT+S), Open (CTRL+O), Exit (ALT+F4)
   - **Edit Menu**: Undo (CTRL+Z), Redo (CTRL+SHIFT+Z), Delete All Custom Lines, Delete All Polygons, Delete Lines & Polygons (CTRL+DEL), Clean Canvas (CTRL+SHIFT+DEL)
-  - **View Menu**: Sacred Geometry, Playground (show/focus windows independently)
+  - **View Menu**: Sacred Geometry, Playground, User Custom (show/focus windows independently) ⭐ NEW
 - **SacredGeometry Panel** - Template controls panel dengan:
   - Template Name Display (Basic Zellige)
   - **Draw Template** section: Parallel / Sequential radio buttons ⭐ NEW
@@ -120,8 +120,23 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Mode Draw: Parallel Per Group / Sequential Per Group radio buttons
   - Hide/Show: Cartesian, Circles, CrossLines, Parallelograms, RectangleLines, OctagramLines checkboxes
   - Polygon Animate: No Animation / FadeIn / Wobble / Fill radio buttons
-  - **Play Arrow Button** - Load dan animate workspace ⭐ IMPROVED
-- **Independent Window Management** - SacredGeometry dan Playground windows bisa di-close (X button) dan di-show secara independen melalui View menu
+  - **Play Arrow Button** - Load dan animate workspace
+- **UserCustom Panel** ⭐ NEW - User control panel dengan:
+  - **Dot Section**:
+    - Show/Hide Checkbox
+    - Radius Slider (0 - 8) untuk selected userDots
+    - Dot Color Picker (circular wheel)
+  - **Line Section**:
+    - Selected Lines Info - Menampilkan label dan count selected lines
+    - Line Color Picker (circular wheel with hue wheel & alpha bar)
+    - Reset All Colors Button - Reset semua customLines ke default blue
+    - Reset Selected Colors Button - Reset selected customLines ke default blue
+    - **Duplicate Line R 180° Button** - Duplicate selected lines dengan rotate 180°
+      - Hanya enabled jika ≥2 selected original lines
+      - Validasi otomatis untuk mencegah duplicate dari duplicate
+  - **Polygon Section**:
+    - Polygon Color Picker (circular wheel with hue wheel & alpha bar)
+- **Independent Window Management** - SacredGeometry, Playground, dan UserCustom windows bisa di-close (X button) dan di-show secara independen melalui View menu ⭐ UPDATED
 - **SuccessPopup** - Modal popup untuk save/load success confirmations
 - **ErrorPopup** - Modal popup untuk error handling
 - **Realtime Controls** - Semua settings apply secara realtime tanpa restart
@@ -145,12 +160,12 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **CustomLine System** - Garis custom yang bisa dibuat user dengan mouse drag (start dot → end dot)
 - **Bezier Curve Support** - Garis bisa dibuat melengkung dengan scroll mouse (curve parameter)
 - **Multi-Select System** - CTRL+Klik untuk toggle selection multiple garis
-- **CustomLine Labels** - Saat selected, muncul label "CustomLine0", "CustomLine1", dst (bukan ganti warna)
+- **CustomLine Labels** - Saat selected, muncul label dari getLabel() (customLine0, DcustomLine0, dst)
 - **Curve Label** - Display nilai curve saat garis di-select
 - **PolygonShape System** - Class untuk polygon fill-only tanpa outline (hanya warna)
 - **Create Polygon (CTRL+G)** - Buat polygon dari selected customLines (otomatis deteksi closed loop)
 - **Polygon Color Preset** - 9 warna preset untuk polygon (merah, hijau, biru, kuning, magenta, cyan, orange, ungu, abu-abu)
-- **Color Picker Integration** - Ubah warna custom line dan polygon secara real-time via color picker di SacredGeometry panel
+- **Color Picker Integration** - Ubah warna custom line dan polygon secara real-time via color picker di UserCustom panel
 - **100-Step Undo/Redo System** - Complete undo/redo dengan full state tracking:
   - CREATE_LINE / CREATE_POLYGON
   - CHANGE_COLOR_LINE / CHANGE_COLOR_POLYGON (multi-select support)
@@ -158,6 +173,30 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - CHANGE_CURVE (multi-select support)
 - **Delete All Custom Lines** - Hapus semua customLines saja (Edit menu)
 - **Delete All Polygons** - Hapus semua polygons saja (Edit menu)
+
+### Duplicate Line System ⭐ NEW
+- **Duplicate Line R 180°** - Duplicate selected customLines dengan rotasi 180° di global center
+  - Hanya bisa duplicate original customLines (isDuplicate = false)
+  - Minimal 2 selected lines untuk duplicate
+  - Hasil duplicate langsung LOCK_BOTH (fully locked) untuk mencegah pergeseran tidak sengaja
+  - Label otomatis dengan prefix "D" (customLine0 → DcustomLine0)
+- **DcustomLine System** - Duplicate lines dengan isDuplicate flag dan axis lock system
+  - **isDuplicate Field** - Flag untuk membedakan original vs duplicate line
+  - **Persistent State** - isDuplicate dan axisLock tersimpan di .nay file
+  - **Scroll Control** - Mouse scroll untuk menggerakkan DcustomLine sesuai axis lock
+- **Axis Lock System** - Control pergerakan DcustomLine dengan 4 state:
+  - **NONE** - Bisa gerak bebas di X dan Y (scroll serong/diagonal)
+  - **LOCK_X** - Hanya bisa gerak di Y (atas bawah) via scroll
+  - **LOCK_Y** - Hanya bisa gerak di X (kanan kiri) via scroll
+  - **LOCK_BOTH** - Fully locked (tidak bisa gerak sama sekali)
+- **Context Menu System** - Right-click context menu untuk DcustomLine:
+  - **1 DcustomLine** → Per-line operation (Lock X/Y, Unlock X/Y)
+  - **>1 DcustomLine** → Bulk operation (Lock All, Unlock All, Lock X/Y All, Unlock X/Y All)
+  - **Dynamic Labels** - Menu label berubah sesuai state (Lock ↔ Unlock)
+- **Scroll-Based Movement** - Mouse wheel untuk menggerakkan DcustomLine:
+  - Scroll speed: 2.0f (sama dengan userDot)
+  - Otomatis skip original customLines (hanya DcustomLine yang bisa di-scroll)
+  - Priority: userDot > DcustomLine > curve adjustment
 
 ### Workspace Save/Load
 - **Centralized Save/Load** - Satu method `saveWorkspace()`, `saveWorkspaceAs()`, dan `loadWorkspace()` untuk semua state
@@ -253,6 +292,22 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Set polygon animation mode
   - Load workspace (langsung, tanpa delay) |
 
+**UserCustom Panel:** ⭐ NEW
+| Control | Action |
+| --- | --- |
+| **Dot Section** | - |
+| **Show/Hide Checkbox** | Toggle userDot visibility |
+| **Radius Slider** | Adjust radius selected userDots (0 - 8) |
+| **D Color Picker** | Pilih warna untuk selected userDots (circular wheel) |
+| **Line Section** | - |
+| **Selected Lines Info** | Menampilkan label dan jumlah selected lines (auto wrap) |
+| **L Color Picker** | Pilih warna untuk selected lines (circular wheel with hue wheel & alpha bar) |
+| **Reset All Colors** | Reset semua customLines ke default blue |
+| **Reset Selected Colors** | Reset selected customLines ke default blue |
+| **Duplicate Line R 180°** | Duplicate selected lines dengan rotate 180° di global center |
+| **Polygon Section** | - |
+| **P Color Picker** | Pilih warna untuk polygons (circular wheel with hue wheel & alpha bar) |
+
 **MenuBar (File Menu):**
 | Menu Item | Action | Keyboard Shortcut |
 | --- | --- | --- |
@@ -271,11 +326,12 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Delete Lines & Polygons** | Hapus semua custom lines dan polygons | **CTRL+DEL** |
 | **Clean Canvas** | Clear semua dan **hapus** template shapes | **CTRL+SHIFT+DEL** ⭐ UPDATED |
 
-**MenuBar (View Menu):**
+**MenuBar (View Menu):** ⭐ NEW
 | Menu Item | Action |
 | --- | --- |
 | **Sacred Geometry** | Show SacredGeometry window (hidden) atau focus ke window (already visible) |
 | **Playground** | Show Playground window (hidden) atau focus ke window (already visible) |
+| **User Custom** | Show UserCustom window (hidden) atau focus ke window (already visible) |
 
 **Window Management:**
 - **Close Button (X)** - Setiap window (SacredGeometry, Playground) punya tombol close di pojok kanan atas
@@ -317,11 +373,32 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | Input | Action |
 | --- | --- |
 | **Mouse Drag** | Buat garis custom dari dot ke dot (hanya bisa mulai dan akhir di dot) |
-| **Mouse Click** | Select garis custom (muncul label "CustomLine0", dst) |
+| **Mouse Click** | Select garis custom (muncul label dari getLabel()) |
 | **CTRL + Click** | Toggle selection multiple garis (multi-select) |
 | **SHIFT + B** | Select semua customLines sekaligus |
-| **Mouse Scroll** | Adjust curvature garis yang selected (scroll up/down, 0 = lurus) |
+| **Mouse Scroll (Original)** | Adjust curvature garis yang selected (scroll up/down, 0 = lurus) |
+| **Mouse Scroll (DcustomLine)** | Gerakkan DcustomLine sesuai axis lock state ⭐ NEW |
+| **Right-Click (DcustomLine)** | Context menu untuk lock/unlock axis ⭐ NEW |
+| **Duplicate Line R 180°** | Duplicate selected original lines (min 2 lines) ⭐ NEW |
 | **1 - 9** | Assign color ke selected polygon (1=Merah, ..., 9=Abu-abu) |
+
+**DcustomLine Context Menu Controls:** ⭐ NEW
+| Menu (1 Selected) | Action |
+| --- | --- |
+| **Lock X Axis** | Lock X axis (hanya bisa gerak di Y via scroll) |
+| **Unlock X Axis** | Unlock X axis (bisa gerak di X dan Y) |
+| **Lock Y Axis** | Lock Y axis (hanya bisa gerak di X via scroll) |
+| **Unlock Y Axis** | Unlock Y axis (bisa gerak di X dan Y) |
+
+**DcustomLine Bulk Menu Controls (>1 Selected):** ⭐ NEW
+| Menu (>1 Selected) | Action |
+| --- | --- |
+| **Unlock All** | Set semua ke NONE (bisa gerak bebas di X dan Y) |
+| **Lock All** | Set semua ke LOCK_BOTH (fully locked) |
+| **Lock X All** | Set semua ke LOCK_X (hanya Y) |
+| **Lock Y All** | Set semua ke LOCK_Y (hanya X) |
+| **Unlock X All** | Unlock X axis untuk semua (LOCK_BOTH → LOCK_Y, LOCK_X → NONE) |
+| **Unlock Y All** | Unlock Y axis untuk semua (LOCK_BOTH → LOCK_X, LOCK_Y → NONE) |
 
 **Undo/Redo Controls:**
 | Input | Action |
@@ -686,8 +763,13 @@ for (int i = 0; i < numCustomLines; i++) {
     float curve;       // 4 bytes
     ofColor color;     // 4 bytes (RGBA)
     float lineWidth;   // 4 bytes
-    float speed;       // 4 bytes ⭐ NEW - animation speed
+    float speed;       // 4 bytes - animation speed
     bool selected;     // 1 byte
+    // Label & Duplicate fields ⭐ NEW
+    int labelLength;   // 4 bytes
+    char* label;       // variable length - "customLine0", "DcustomLine0", dst
+    bool isDuplicate;  // 1 byte - True jika ini duplicate line (DcustomLine)
+    AxisLock axisLock; // 4 bytes - NONE, LOCK_X, LOCK_Y, or LOCK_BOTH
 }
 
 // Polygons
@@ -836,6 +918,12 @@ Branch ini adalah **Islamic Geometry Studio with Delta Time Animation & Speed Co
 ✅ **No Double Draw** - Shapes dibuat sekali di switchTemplate(), tidak redundant
 ✅ **Auto Speed Sync** - Saat load file, speed mengikuti slider setting
 ✅ **No More Hide/Show** - hideAllShapes() dan showAllShapes() dihapus, diganti drawParallel()
+✅ **UserCustom Panel** - Window baru untuk kontrol user (Dot, Line, Polygon) ⭐ NEW
+✅ **Duplicate Line R 180°** - Duplicate selected lines dengan rotate 180° di global center ⭐ NEW
+✅ **DcustomLine System** - Duplicate lines dengan isDuplicate flag dan axis lock system ⭐ NEW
+✅ **Axis Lock System** - Control pergerakan DcustomLine (NONE, LOCK_X, LOCK_Y, LOCK_BOTH) ⭐ NEW
+✅ **Context Menu System** - Per-line dan bulk operation untuk DcustomLine lock/unlock ⭐ NEW
+✅ **Scroll Control** - Mouse scroll untuk menggerakkan DcustomLine sesuai axis lock ⭐ NEW
 
 ---
 

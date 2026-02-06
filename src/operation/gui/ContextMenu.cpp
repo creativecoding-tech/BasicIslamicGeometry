@@ -18,6 +18,7 @@ void ContextMenu::hideWindow() {
 	currentType = NONE;
 	hoveredDotPos = vec2(0, 0);
 	hoveredPolygonIndex = -1;
+	hoveredLineIndex = -1;
 }
 
 //--------------------------------------------------------------
@@ -72,23 +73,157 @@ void ContextMenu::draw() {
 				showContextMenu = false;
 			}
 		}
-		// Context menu untuk CUSTOMLINE (Duplicate Line)
+		// Context menu untuk CUSTOMLINE (Lock Axis untuk DcustomLine)
 		else if (currentType == CUSTOMLINE_CONTEXT) {
-			if (ImGui::MenuItem("Duplicate Line Above")) {
-				// TODO: Implement event untuk duplicate line above
-				showContextMenu = false;
-			}
-			if (ImGui::MenuItem("Duplicate Line Below")) {
-				// TODO: Implement event untuk duplicate line below
-				showContextMenu = false;
-			}
-			if (ImGui::MenuItem("Duplicate Line Left")) {
-				// TODO: Implement event untuk duplicate line left
-				showContextMenu = false;
-			}
-			if (ImGui::MenuItem("Duplicate Line Right")) {
-				// TODO: Implement event untuk duplicate line right
-				showContextMenu = false;
+			// Cek apakah line yang di-klik adalah duplicate line
+			if (hoveredLineIndex >= 0 && hoveredLineIndex < app->customLines.size()) {
+				const CustomLine& line = app->customLines[hoveredLineIndex];
+
+				// Cek apakah ini duplicate line (hasil dari duplicateLineR180)
+				if (line.getIsDuplicate()) {
+					// Hitung jumlah DcustomLine yang terseleksi
+					int selectedDLineCount = 0;
+					for (int index : app->selectedLineIndices) {
+						if (index >= 0 && index < app->customLines.size()) {
+							if (app->customLines[index].getIsDuplicate()) {
+								selectedDLineCount++;
+							}
+						}
+					}
+
+					// Jika hanya 1 DcustomLine terseleksi → Show per-line menu
+					if (selectedDLineCount == 1) {
+						AxisLock currentLock = line.getAxisLock();
+
+						// Menu 1: Lock/Unlock X Axis
+						bool lockX = (currentLock == AxisLock::LOCK_X || currentLock == AxisLock::LOCK_BOTH);
+						const char* labelX = lockX ? "Unlock X Axis" : "Lock X Axis";
+						if (ImGui::MenuItem(labelX)) {
+							// Toggle lock X
+							if (lockX) {
+								// Unlock X
+								if (currentLock == AxisLock::LOCK_BOTH) {
+									app->customLines[hoveredLineIndex].setAxisLock(AxisLock::LOCK_Y);
+								} else {
+									app->customLines[hoveredLineIndex].setAxisLock(AxisLock::NONE);
+								}
+							} else {
+								// Lock X axis
+								if (currentLock == AxisLock::LOCK_Y) {
+									app->customLines[hoveredLineIndex].setAxisLock(AxisLock::LOCK_BOTH);
+								} else {
+									app->customLines[hoveredLineIndex].setAxisLock(AxisLock::LOCK_X);
+								}
+							}
+							showContextMenu = false;
+						}
+
+						// Menu 2: Lock/Unlock Y Axis
+						bool lockY = (currentLock == AxisLock::LOCK_Y || currentLock == AxisLock::LOCK_BOTH);
+						const char* labelY = lockY ? "Unlock Y Axis" : "Lock Y Axis";
+						if (ImGui::MenuItem(labelY)) {
+							// Toggle lock Y
+							if (lockY) {
+								// Unlock Y
+								if (currentLock == AxisLock::LOCK_BOTH) {
+									app->customLines[hoveredLineIndex].setAxisLock(AxisLock::LOCK_X);
+								} else {
+									app->customLines[hoveredLineIndex].setAxisLock(AxisLock::NONE);
+								}
+							} else {
+								// Lock Y axis
+								if (currentLock == AxisLock::LOCK_X) {
+									app->customLines[hoveredLineIndex].setAxisLock(AxisLock::LOCK_BOTH);
+								} else {
+									app->customLines[hoveredLineIndex].setAxisLock(AxisLock::LOCK_Y);
+								}
+							}
+							showContextMenu = false;
+						}
+					}
+					// Jika >1 DcustomLine terseleksi → Show bulk menu
+					else {
+						ImGui::SeparatorText("Bulk Operation");
+
+						if (ImGui::MenuItem("Unlock All")) {
+							for (int index : app->selectedLineIndices) {
+								if (index >= 0 && index < app->customLines.size()) {
+									if (app->customLines[index].getIsDuplicate()) {
+										app->customLines[index].setAxisLock(AxisLock::NONE);
+									}
+								}
+							}
+							showContextMenu = false;
+						}
+
+						if (ImGui::MenuItem("Lock All")) {
+							for (int index : app->selectedLineIndices) {
+								if (index >= 0 && index < app->customLines.size()) {
+									if (app->customLines[index].getIsDuplicate()) {
+										app->customLines[index].setAxisLock(AxisLock::LOCK_BOTH);
+									}
+								}
+							}
+							showContextMenu = false;
+						}
+
+						if (ImGui::MenuItem("Lock X All")) {
+							for (int index : app->selectedLineIndices) {
+								if (index >= 0 && index < app->customLines.size()) {
+									if (app->customLines[index].getIsDuplicate()) {
+										app->customLines[index].setAxisLock(AxisLock::LOCK_X);
+									}
+								}
+							}
+							showContextMenu = false;
+						}
+
+						if (ImGui::MenuItem("Lock Y All")) {
+							for (int index : app->selectedLineIndices) {
+								if (index >= 0 && index < app->customLines.size()) {
+									if (app->customLines[index].getIsDuplicate()) {
+										app->customLines[index].setAxisLock(AxisLock::LOCK_Y);
+									}
+								}
+							}
+							showContextMenu = false;
+						}
+
+						if (ImGui::MenuItem("Unlock X All")) {
+							for (int index : app->selectedLineIndices) {
+								if (index >= 0 && index < app->customLines.size()) {
+									if (app->customLines[index].getIsDuplicate()) {
+										AxisLock currentLock = app->customLines[index].getAxisLock();
+										// Unlock X: LOCK_BOTH → LOCK_Y, LOCK_X → NONE
+										if (currentLock == AxisLock::LOCK_BOTH) {
+											app->customLines[index].setAxisLock(AxisLock::LOCK_Y);
+										} else if (currentLock == AxisLock::LOCK_X) {
+											app->customLines[index].setAxisLock(AxisLock::NONE);
+										}
+									}
+								}
+							}
+							showContextMenu = false;
+						}
+
+						if (ImGui::MenuItem("Unlock Y All")) {
+							for (int index : app->selectedLineIndices) {
+								if (index >= 0 && index < app->customLines.size()) {
+									if (app->customLines[index].getIsDuplicate()) {
+										AxisLock currentLock = app->customLines[index].getAxisLock();
+										// Unlock Y: LOCK_BOTH → LOCK_X, LOCK_Y → NONE
+										if (currentLock == AxisLock::LOCK_BOTH) {
+											app->customLines[index].setAxisLock(AxisLock::LOCK_X);
+										} else if (currentLock == AxisLock::LOCK_Y) {
+											app->customLines[index].setAxisLock(AxisLock::NONE);
+										}
+									}
+								}
+							}
+							showContextMenu = false;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -100,5 +235,6 @@ void ContextMenu::draw() {
 		currentType = NONE;
 		hoveredDotPos = vec2(0, 0);
 		hoveredPolygonIndex = -1;
+		hoveredLineIndex = -1;
 	}
 }

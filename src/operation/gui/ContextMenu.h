@@ -47,6 +47,10 @@ public:
 	void setHoveredDotPos(vec2 pos) { hoveredDotPos = pos; }
 	vec2 getHoveredDotPos() const { return hoveredDotPos; }
 
+	// Set/get line index yang di-klik (untuk customLine context)
+	void setHoveredLineIndex(int index) { hoveredLineIndex = index; }
+	int getHoveredLineIndex() const { return hoveredLineIndex; }
+
 private:
 	class ofApp* app;
 
@@ -62,4 +66,7 @@ private:
 
 	// Polygon context state
 	int hoveredPolygonIndex = -1;
+
+	// CustomLine context state
+	int hoveredLineIndex = -1;
 };
