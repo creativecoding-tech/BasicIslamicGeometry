@@ -375,7 +375,7 @@ void ofApp::draw() {
   ofPopMatrix();
 
   //ImGUI (always render if context menu, popups, or visible)
-  if (imguiVisible || showContextMenu || successPopup->isVisible() || errorPopup->isVisible()) {
+  if (imguiVisible || contextMenu->isVisible() || successPopup->isVisible() || errorPopup->isVisible()) {
     drawImGui();
   }
 }
@@ -1284,13 +1284,12 @@ void ofApp::mousePressed(int x, int y, int button) {
     return; // ImGui handle, jangan process di OF
   }
 
-  // Klik kanan untuk context menu pada DOT
+  // Klik kanan untuk context menu (DOT atau POLYGON)
   if (button == 2) {
-    // Cek apakah klik kanan pada dot ORIGINAL (hanya dari template)
     vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
-    vector<DotInfo> allDots = getAllDots();
 
-    // Filter HANYA dots dari template (exclude userDots yang shapeType = "Dot")
+    // CEK 1: Klik kanan pada DOT ORIGINAL (dari template)
+    vector<DotInfo> allDots = getAllDots();
     vector<DotInfo> templateDots;
     for (const auto& dot : allDots) {
       if (dot.shapeType != "Dot") {  // "Dot" = userDot, exclude
@@ -1298,33 +1297,35 @@ void ofApp::mousePressed(int x, int y, int button) {
       }
     }
 
-    // Reset hovered state
-    hoveredDotPos = vec2(0, 0);
-    hasValidHoveredDot = false;
-
-    // Cek apakah klik pada dot original (template dots only)
     for (const auto& dot : templateDots) {
       if (isMouseOverDot(adjustedMousePos, dot.position)) {
-        hoveredDotPos = dot.position;
-        hasValidHoveredDot = true;  // Tandai bahwa kita menemukan dot valid
-        break;
+        contextMenu->setHoveredDotPos(dot.position);
+        contextMenu->showWindow(ContextMenu::DOT_CONTEXT, vec2(x, y));
+        imguiVisible = true;
+        return;
       }
     }
 
-    // HANYA tampilkan context menu jika klik kanan pada dot original
-    if (hasValidHoveredDot) {
-      showContextMenu = true;
-      contextMenuPos = vec2(x, y);
-      imguiVisible = true;  // Pastikan ImGui aktif agar context menu bisa interaktif
+    // CEK 2: Klik kanan pada POLYGON yang terseleksi
+    for (int i = 0; i < polygonShapes.size(); i++) {
+      if (polygonShapes[i].containsPoint(adjustedMousePos)) {
+        // Hanya tampilkan context menu jika polygon terseleksi
+        if (selectedPolygonIndices.count(i) > 0) {
+          contextMenu->setHoveredPolygonIndex(i);
+          contextMenu->showWindow(ContextMenu::POLYGON_CONTEXT, vec2(x, y));
+          imguiVisible = true;
+        }
+        return;
+      }
     }
+
+    // Tidak klik di dot atau polygon yang terseleksi → tidak munculkan context menu
     return;
   }
 
   // Klik kiri tutup context menu
-  if (button == 0 && showContextMenu) {
-    showContextMenu = false;
-    hoveredDotPos = vec2(0, 0);  // Reset hovered dot
-    hasValidHoveredDot = false;  // Reset valid flag
+  if (button == 0 && contextMenu->isVisible()) {
+    contextMenu->hideWindow();
     return;
   }
 
@@ -2197,8 +2198,9 @@ void ofApp::toggleUserCustomWindow() {
 //--------------------------------------------------------------
 void ofApp::duplicateDotAbove() {
     // Cek apakah ada dot yang di-hover
-    if (!hasValidHoveredDot) {
-        return;
+    vec2 dotPos = contextMenu->getHoveredDotPos();
+    if (dotPos.x == 0 && dotPos.y == 0) {
+        return;  // Tidak ada dot valid
     }
 
     // Ambil radius dari dot original (lineWidth * 2)
@@ -2206,7 +2208,7 @@ void ofApp::duplicateDotAbove() {
     userDotRadius = dotRadius;  // Simpan ke userDotRadius
 
     // Gunakan offset distance dari member variable
-    vec2 newDotPos = hoveredDotPos + vec2(0, -duplicateDotOffsetDistance);  // Ke atas (Y negatif)
+    vec2 newDotPos = dotPos + vec2(0, -duplicateDotOffsetDistance);  // Ke atas (Y negatif)
 
     // Buat DotShape baru dengan userDotRadius
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
@@ -2214,8 +2216,8 @@ void ofApp::duplicateDotAbove() {
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
     dotShape->setColor(userDotColor);  // Set warna dari userDotColor
 
-    // Set lower bound ke hoveredDotPos (dot parent)
-    dotShape->setLowerBound(hoveredDotPos);
+    // Set lower bound ke dotPos (dot parent)
+    dotShape->setLowerBound(dotPos);
 
     // Tambahkan ke vector userDots
     userDots.push_back(std::move(dotShape));
@@ -2227,15 +2229,15 @@ void ofApp::duplicateDotAbove() {
     pushUndoAction(undoAction);
 
     // Reset hovered state
-    hoveredDotPos = vec2(0, 0);
-    hasValidHoveredDot = false;
+    contextMenu->setHoveredDotPos(vec2(0, 0));
 }
 
 //--------------------------------------------------------------
 void ofApp::duplicateDotBelow() {
     // Cek apakah ada dot yang di-hover
-    if (!hasValidHoveredDot) {
-        return;
+    vec2 dotPos = contextMenu->getHoveredDotPos();
+    if (dotPos.x == 0 && dotPos.y == 0) {
+        return;  // Tidak ada dot valid
     }
 
     // Ambil radius dari dot original (lineWidth * 2)
@@ -2243,7 +2245,7 @@ void ofApp::duplicateDotBelow() {
     userDotRadius = dotRadius;  // Simpan ke userDotRadius
 
     // Gunakan offset distance dari member variable - arah ke bawah (Y positif)
-    vec2 newDotPos = hoveredDotPos + vec2(0, duplicateDotOffsetDistance);  // Ke bawah (Y positif)
+    vec2 newDotPos = dotPos + vec2(0, duplicateDotOffsetDistance);  // Ke bawah (Y positif)
 
     // Buat DotShape baru dengan userDotRadius
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
@@ -2251,8 +2253,8 @@ void ofApp::duplicateDotBelow() {
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
     dotShape->setColor(userDotColor);  // Set warna dari userDotColor
 
-    // Set lower bound ke hoveredDotPos (dot parent)
-    dotShape->setLowerBound(hoveredDotPos);
+    // Set lower bound ke dotPos (dot parent)
+    dotShape->setLowerBound(dotPos);
 
     // Tambahkan ke vector userDots
     userDots.push_back(std::move(dotShape));
@@ -2264,15 +2266,15 @@ void ofApp::duplicateDotBelow() {
     pushUndoAction(undoAction);
 
     // Reset hovered state
-    hoveredDotPos = vec2(0, 0);
-    hasValidHoveredDot = false;
+    contextMenu->setHoveredDotPos(vec2(0, 0));
 }
 
 //--------------------------------------------------------------
 void ofApp::duplicateDotLeft() {
     // Cek apakah ada dot yang di-hover
-    if (!hasValidHoveredDot) {
-        return;
+    vec2 dotPos = contextMenu->getHoveredDotPos();
+    if (dotPos.x == 0 && dotPos.y == 0) {
+        return;  // Tidak ada dot valid
     }
 
     // Ambil radius dari dot original (lineWidth * 2)
@@ -2280,7 +2282,7 @@ void ofApp::duplicateDotLeft() {
     userDotRadius = dotRadius;  // Simpan ke userDotRadius
 
     // Offset ke kiri (X negatif)
-    vec2 newDotPos = hoveredDotPos + vec2(-duplicateDotOffsetDistance, 0);
+    vec2 newDotPos = dotPos + vec2(-duplicateDotOffsetDistance, 0);
 
     // Buat DotShape baru dengan userDotRadius
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
@@ -2288,8 +2290,8 @@ void ofApp::duplicateDotLeft() {
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
     dotShape->setColor(userDotColor);  // Set warna dari userDotColor
 
-    // Set lower bound ke hoveredDotPos (dot parent)
-    dotShape->setLowerBound(hoveredDotPos);
+    // Set lower bound ke dotPos (dot parent)
+    dotShape->setLowerBound(dotPos);
 
     // Tambahkan ke vector userDots
     userDots.push_back(std::move(dotShape));
@@ -2301,15 +2303,15 @@ void ofApp::duplicateDotLeft() {
     pushUndoAction(undoAction);
 
     // Reset hovered state
-    hoveredDotPos = vec2(0, 0);
-    hasValidHoveredDot = false;
+    contextMenu->setHoveredDotPos(vec2(0, 0));
 }
 
 //--------------------------------------------------------------
 void ofApp::duplicateDotRight() {
     // Cek apakah ada dot yang di-hover
-    if (!hasValidHoveredDot) {
-        return;
+    vec2 dotPos = contextMenu->getHoveredDotPos();
+    if (dotPos.x == 0 && dotPos.y == 0) {
+        return;  // Tidak ada dot valid
     }
 
     // Ambil radius dari dot original (lineWidth * 2)
@@ -2317,7 +2319,7 @@ void ofApp::duplicateDotRight() {
     userDotRadius = dotRadius;  // Simpan ke userDotRadius
 
     // Offset ke kanan (X positif)
-    vec2 newDotPos = hoveredDotPos + vec2(duplicateDotOffsetDistance, 0);
+    vec2 newDotPos = dotPos + vec2(duplicateDotOffsetDistance, 0);
 
     // Buat DotShape baru dengan userDotRadius
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
@@ -2325,8 +2327,8 @@ void ofApp::duplicateDotRight() {
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
     dotShape->setColor(userDotColor);  // Set warna dari userDotColor
 
-    // Set lower bound ke hoveredDotPos (dot parent)
-    dotShape->setLowerBound(hoveredDotPos);
+    // Set lower bound ke dotPos (dot parent)
+    dotShape->setLowerBound(dotPos);
 
     // Tambahkan ke vector userDots
     userDots.push_back(std::move(dotShape));
@@ -2338,8 +2340,7 @@ void ofApp::duplicateDotRight() {
     pushUndoAction(undoAction);
 
     // Reset hovered state
-    hoveredDotPos = vec2(0, 0);
-    hasValidHoveredDot = false;
+    contextMenu->setHoveredDotPos(vec2(0, 0));
 }
 
 //--------------------------------------------------------------
@@ -2867,6 +2868,9 @@ void ofApp::setupImGui() {
     guiComponents.push_back(std::make_unique<Playground>(this));
     guiComponents.push_back(std::make_unique<UserCustom>(this));
 
+    // Initialize Context Menu (bukan bagian dari guiComponents karena draw-nya khusus)
+    contextMenu = std::make_unique<ContextMenu>(this);
+
     // Initialize popup (not in guiComponents, drawn separately)
     successPopup = std::make_unique<SuccessPopup>(this);
     errorPopup = std::make_unique<ErrorPopup>(this);
@@ -2915,43 +2919,8 @@ void ofApp::drawImGui() {
     successPopup->draw();
     errorPopup->draw();
 
-    // Draw context menu (right-click menu) - SELALU render terlepas dari imguiVisible
-    if (showContextMenu) {
-        ImGui::SetNextWindowPos(ImVec2(contextMenuPos.x, contextMenuPos.y));
-        if (ImGui::Begin("ContextMenu", &showContextMenu, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize)) {
-            // Menu "Duplicate Dot Above" hanya enabled jika klik kanan pada dot original
-            // (gunakan hasValidHoveredDot flag, bukan cek posisi (0,0) karena (0,0) adalah posisi valid)
-            if (ImGui::MenuItem("Duplicate Dot Above", nullptr, false, hasValidHoveredDot)) {
-                // Duplicate dot yang di-hover
-                duplicateDotAbove();
-
-                imguiVisible = true;  // Pastikan ImGui tetap aktif setelah context menu close
-                showContextMenu = false;
-            }
-            if (ImGui::MenuItem("Duplicate Dot Below", nullptr, false, hasValidHoveredDot)) {
-                // Duplicate dot yang di-hover ke arah bawah
-                duplicateDotBelow();
-
-                imguiVisible = true;  // Pastikan ImGui tetap aktif setelah context menu close
-                showContextMenu = false;
-            }
-            if (ImGui::MenuItem("Duplicate Dot Left", nullptr, false, hasValidHoveredDot)) {
-                // Duplicate dot yang di-hover ke arah kiri
-                duplicateDotLeft();
-
-                imguiVisible = true;  // Pastikan ImGui tetap aktif setelah context menu close
-                showContextMenu = false;
-            }
-            if (ImGui::MenuItem("Duplicate Dot Right", nullptr, false, hasValidHoveredDot)) {
-                // Duplicate dot yang di-hover ke arah kanan
-                duplicateDotRight();
-
-                imguiVisible = true;  // Pastikan ImGui tetap aktif setelah context menu close
-                showContextMenu = false;
-            }
-        }
-        ImGui::End();
-    }
+    // Draw context menu (SELALU render terlepas dari imguiVisible)
+    contextMenu->draw();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -21,6 +21,7 @@
     <ClCompile Include="src\operation\gui\SacredGeometry.cpp" />
     <ClCompile Include="src\operation\gui\Playground.cpp" />
     <ClCompile Include="src\operation\gui\UserCustom.cpp" />
+    <ClCompile Include="src\operation\gui\ContextMenu.cpp" />
     <ClCompile Include="src\operation\gui\SuccessPopup.cpp" />
     <ClCompile Include="src\operation\gui\ErrorPopup.cpp" />
     <ClCompile Include="src\template\TemplateRegistry.cpp" />
@@ -62,6 +63,7 @@
     <ClInclude Include="src\operation\gui\SacredGeometry.h" />
     <ClInclude Include="src\operation\gui\Playground.h" />
     <ClInclude Include="src\operation\gui\UserCustom.h" />
+    <ClInclude Include="src\operation\gui\ContextMenu.h" />
     <ClInclude Include="src\operation\gui\SuccessPopup.h" />
     <ClInclude Include="src\operation\gui\ErrorPopup.h" />
     <ClInclude Include="src\template\SacredGeometryTemplate.h" />

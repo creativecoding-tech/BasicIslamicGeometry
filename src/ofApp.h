@@ -11,6 +11,7 @@
 #include "operation/gui/MenuBar.h"
 #include "operation/gui/SacredGeometry.h"
 #include "operation/gui/Playground.h"
+#include "operation/gui/ContextMenu.h"
 #include "operation/gui/SuccessPopup.h"
 #include "operation/gui/ErrorPopup.h"
 #include "template/SacredGeometryTemplate.h"
@@ -47,12 +48,8 @@ class ofApp : public ofBaseApp{
 
 		ofTrueTypeFont fontNormal;  // Font untuk custom line labels
 
-		// Context menu state
-		bool showContextMenu = false;  // Show context menu (right-click menu)
-		vec2 contextMenuPos;  // Position untuk context menu
-		vec2 hoveredDotPos;  // Position dari dot yang sedang di-hover (untuk context menu)
-		bool hasValidHoveredDot = false;  // Flag untuk track apakah hoveredDotPos valid (bukan (0,0) default)
-
+		// Context menu system (refactored ke ContextMenu class)
+		std::unique_ptr<ContextMenu> contextMenu;
 
 		// DotInfo sekarang didefinisikan di src/shape/DotInfo.h (common struct)
 
