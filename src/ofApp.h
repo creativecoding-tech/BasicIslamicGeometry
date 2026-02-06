@@ -226,8 +226,6 @@ class ofApp : public ofBaseApp{
 		void toggleLabels();           // Toggle label visibility
 		void toggleDots();             // Toggle dot visibility
 		void setCartesianAxesVisibility(bool show);  // Show/hide CartesianAxes
-		void hideAllShapes();           // Hide all shapes
-		void showAllShapes();           // Show all shapes
 		void updateLineWidth();
 		void updateCustomLineColor(ofColor color);  // Update warna semua customLines
 		void updatePolygonColor(ofColor color);  // Update warna semua polygons

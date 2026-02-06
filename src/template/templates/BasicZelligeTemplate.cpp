@@ -362,8 +362,9 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 								 "OK");
 		} else {
 			// Semua validasi OK! Lanjut load
-			// NOTE: loadWorkspace() akan otomatis menimpa semua data dengan yang baru
-			// Jadi tidak perlu cek canvas kosong atau clean canvas dulu
+
+			// CLEAN CANVAS DULU - hapus semua shapes, polygons, customLines
+			app->cleanCanvas();
 
 			// Sinkronisasi SacredGeometry state dengan Playground preference
 			app->currentTemplate->showCartesianInSacredGeometry = showCartesianOnPlay;

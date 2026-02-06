@@ -45,6 +45,49 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Rectangle Lines** - 4 garis pembentuk rectangle (F→G, G→I, I→H, H→F) dengan 2 dot di intersection
 - **Octagram Lines** - 8 garis pembentuk pola octagram (8-point star) dengan 2 segment per line (main + extension)
 
+### Delta Time Animation System ⭐ NEW
+- **Time-Based Animation** - Semua animasi sekarang menggunakan deltaTime untuk consistency
+  - Template shapes (Circle, CrossLine, dll) menggunakan `progress += speed * deltaTime`
+  - Polygons menggunakan `animation->update(deltaTime)`
+  - CustomLines menggunakan `updateProgress(deltaTime)`
+- **Frame Rate Independent** - Animasi konsisten di berbagai frame rates (60 FPS, 120 FPS, dll)
+- **Smooth Animation** - Tidak ada lagi "patah-patah" atau inconsistent speed
+- **ofGetLastFrameTime()** - OpenFrameworks function untuk mendapatkan deltaTime
+
+### Speed Control System ⭐ NEW
+- **Global Speed Multiplier** - Slider speed 0.1 - 1.5 di SacredGeometry panel
+  - 0.1 = Sangat lambat (10% dari normal speed)
+  - 1.0 = Normal speed
+  - 1.5 = 1.5x lebih cepat
+- **Apply to ALL** - Speed multiplier berlaku untuk:
+  - Template shapes (Circle, CrossLine, Parallelogram, dll)
+  - Polygons (FadeIn, Wobble, Fill animations)
+  - CustomLines (drawing animation)
+- **Consistent Speed** - Saat load file .nay, speed mengikuti slider setting
+- **No Speed Variation** - Tidak ada lagi animasi "cepat kedua, lambat ketiga" - selalu konsisten!
+
+### Draw Template System ⭐ NEW
+- **SacredGeometry Panel Controls**:
+  - **Draw Template** section dengan 2 opsi:
+    - **Parallel** - Draw semua shapes secara parallel (barengan)
+    - **Sequential** - Draw shapes satu per satu dengan animasi
+  - **Clean Canvas** - Benar-benar hapus semua shapes (bukan hide)
+- **No Hide/Show Concept** - hideAllShapes() dan showAllShapes() sudah dihapus
+  - Shapes hanya ada 2 state: ada (setelah draw) atau tidak ada (setelah clear)
+  - Tidak ada lagi hide/show manual
+- **Load File Auto-Draw** - Saat load/open file .nay, template shapes OTOMATIS ter-draw
+  - Tidak perlu klik tombol Draw Template manual
+  - Shapes langsung muncul dengan speed sesuai slider
+
+### Play Button Behavior ⭐ NEW
+- **Clean First, Then Draw** - Saat tombol Play diklik:
+  1. **Clean Canvas** - Hapus semua shapes, polygons, customLines, userDots
+  2. **Apply Speed** - Sync speed multiplier ke FileManager untuk polygons & customLines
+  3. **Set Animation Mode** - FadeIn/Wobble/Fill/None sesuai radio button
+  4. **Load Workspace** - Load dari file .nay dengan animation
+- **No ImGui Delay** - loadDelayDuration = 0.0f (langsung load, tanpa delay)
+- **Smooth Transition** - Transisi dari hide ImGui ke load animation lebih smooth
+
 ### Runtime Updates & Scalability
 - **Runtime Radius Updates** - Semua shapes update posisinya secara realtime saat radius diubah via slider
 - **Proportional Scaling System** - Posisi di-calculate ulang secara proporsional menggunakan `scaleFactor = newRadius / originalRadius`
@@ -63,20 +106,21 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - **View Menu**: Sacred Geometry, Playground (show/focus windows independently)
 - **SacredGeometry Panel** - Template controls panel dengan:
   - Template Name Display (Basic Zellige)
-  - Draw Mode: Parallel, Sequential, Hide radio buttons
+  - **Draw Template** section: Parallel / Sequential radio buttons ⭐ NEW
+  - **Clean Canvas** button
   - Radius Slider (50-240) - real-time scaling
+  - **Speed Control Slider (0.1 - 1.5)** ⭐ NEW
   - Line Width Slider (0-4px)
   - Labels, Dots, Cartesian checkboxes
   - **Custom Line Color Picker** - Circular color wheel untuk custom line color (default: blue)
   - **Polygon Color Picker** - Circular color wheel untuk polygon color (default: blue)
-  - Clean Canvas Button
   - Template-Specific Settings (collapsible)
 - **Playground Panel** - Playback panel dengan:
   - Opened File Display
-  - Parallel/Sequential Per Group radio buttons
-  - Auto Clean Canvas checkbox
-  - Play Arrow Button
-  - Template-specific playback UI (BasicZellige has playback controls)
+  - Mode Draw: Parallel Per Group / Sequential Per Group radio buttons
+  - Hide/Show: Cartesian, Circles, CrossLines, Parallelograms, RectangleLines, OctagramLines checkboxes
+  - Polygon Animate: No Animation / FadeIn / Wobble / Fill radio buttons
+  - **Play Arrow Button** - Load dan animate workspace ⭐ IMPROVED
 - **Independent Window Management** - SacredGeometry dan Playground windows bisa di-close (X button) dan di-show secara independen melalui View menu
 - **SuccessPopup** - Modal popup untuk save/load success confirmations
 - **ErrorPopup** - Modal popup untuk error handling
@@ -89,11 +133,12 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Animated Drawing** - Semua shape digambar dengan animasi smooth (100 segments, configurable speed)
 - **Bidirectional Animation** - Animasi muncul (show) dan hilang (hide) dengan smoothing
 - **Two-Phase Animation** - OctagramLine memiliki 2 mode: sequential (Phase 1 → Phase 2) dan paralel (barengan)
+- **Delta Time Based** - Semua animasi menggunakan deltaTime untuk consistency ⭐ NEW
 - **Polygon Animation System** - Base class `AbstractAnimation` untuk reusable animations:
-  - **FadeInAnimation** - Alpha blending fade-in (0 → targetAlpha)
-  - **WobbleAnimation** - Oscillation effect dengan amplitude dan frequency
-  - **FillAnimation** - Directional fill (bottom to top) dengan wave effect
-- **Configurable Speed** - Animation speed dapat di-adjust via Playground panel
+  - **FadeInAnimation** - Alpha blending fade-in (0 → targetAlpha) dengan deltaTime
+  - **WobbleAnimation** - Oscillation effect dengan amplitude dan frequency dengan deltaTime
+  - **FillAnimation** - Directional fill (bottom to top) dengan wave effect dan deltaTime
+  - **Configurable Speed** - Animation speed dapat di-adjust via speed slider
 
 ### Custom Lines & Polygons
 - **Mouse Interaction** - Mouse drag untuk menggambar line secara interaktif antar dots
@@ -123,12 +168,13 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Two Load Modes**:
   - **Parallel (CTRL+O)**: Template → CustomLines → Polygons animate simultaneously per group
   - **Sequential (CTRL+SHIFT+O)**: Groups animate satu per satu dengan delay
-- **Auto Clean Canvas** - Otomatis bersihkan canvas sebelum load jika checkbox dicentang
-- **Delay Load System** - Smooth transition dengan delay sebelum animation starts
+- **Auto Clean Canvas** - Otomatis bersihkan canvas sebelum load (selalu dicenterangkan)
+- **Delay Load System** - Smooth transition dengan delay sebelum animation starts (0.0f = tanpa delay) ⭐ UPDATED
 - **Animation State Preservation** - State animasi di-save dan di-restore dengan benar
 - **Playground Auto-Focus** - Saat file berhasil dibuka, Playground window otomatis muncul dan focus
 - **Error Handling** - Comprehensive error handling untuk no file selected, invalid format, canvas not empty, no mode selected
 - **Color Picker Sync** - Color picker otomatis sync dengan warna customLines/polygons yang diload
+- **Speed Sync** - Speed multiplier otomatis sync ke FileManager saat load ⭐ NEW
 
 ### Performance & Rendering
 - **Performance Optimization - Cached Dots** - Sistem lazy cache untuk getAllDots() dengan dirty flag, hanya rebuild saat visibility berubah (reduce dari 180 vector copies/detik menjadi 0)
@@ -169,27 +215,43 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | Control | Action |
 | --- | --- |
 | **Template Name Display** | Menampilkan nama template yang sedang aktif (Basic Zellige) |
-| **Parallel Radio Button** | Show semua shapes secara parallel (barengan) |
-| **Sequential Radio Button** | Start sequential drawing animation (shapes muncul berurutan) |
-| **Hide Radio Button** | Hide semua shapes |
+| **Draw Template - Parallel** | Setup & show semua shapes secara parallel (barengan) ⭐ NEW |
+| **Draw Template - Sequential** | Setup & start sequential drawing animation (shapes muncul berurutan) ⭐ NEW |
+| **Clean Canvas Button** | Clear semua polygons, custom lines, dan **hapus** template shapes ⭐ UPDATED |
 | **Radius Slider** | Adjust template radius (50 - 240) secara realtime - semua shapes update posisinya secara proporsional |
+| **Speed Slider** | Adjust global speed multiplier (0.1 - 1.5x) untuk semua animations ⭐ NEW |
 | **Line Width Slider** | Adjust ketebalan garis (0 - 4px) untuk semua shapes |
 | **Labels Checkbox** | Toggle visibility untuk semua label shapes |
 | **Dots Checkbox** | Toggle visibility untuk semua dots di intersection points |
 | **Cartesian Checkbox** | Toggle visibility untuk CartesianAxes secara terpisah |
 | **Line Color Picker** | Pilih warna untuk custom lines (circular color wheel with alpha bar) |
 | **Polygon Color Picker** | Pilih warna untuk selected polygon (circular color wheel with alpha bar) |
-| **Clean Canvas Button** | Clear semua polygons, custom lines, dan hide template shapes |
 | **Template-Specific** | Collapsible section untuk template-specific settings (BasicZellige has additional controls) |
 
 **Playground Panel:**
 | Control | Action |
 | --- | --- |
 | **Opened File Display** | Menampilkan nama file .nay yang terakhir dibuka |
-| **Parallel Per Group Radio Button** | Set draw mode ke parallel (semua groups animate barengan) |
-| **Sequential Per Group Radio Button** | Set draw mode ke sequential (groups animate satu per satu) |
-| **Auto Clean Canvas Checkbox** | Otomatis bersihkan canvas sebelum load workspace |
-| **Play Arrow Button** | Load dan animate workspace sesuai mode yang dipilih (dengan delay untuk smooth transition) |
+| **Mode Draw** | Pilihan mode animasi: ⭐ UPDATED |
+|  - **Parallel Per Group** | Template, CustomLines, dan Polygons animate secara parallel per group |
+|  - **Sequential Per Group** | Groups animate satu per satu dengan delay |
+| **Hide/Show** | Visibility preferences untuk saat Play diklik: |
+|  - **Cartesian** Checkbox | Toggle Cartesian axes visibility |
+|  - **Circles** Checkbox | Toggle Circle shapes visibility |
+|  - **CrossLines** Checkbox | Toggle CrossLine shapes visibility |
+|  - **Parallelograms** Checkbox | Toggle ParallelogramLine shapes visibility |
+|  - **RectangleLines** Checkbox | Toggle RectangleLine shapes visibility |
+|  - **OctagramLines** Checkbox | Toggle OctagramLine shapes visibility |
+| **Polygon Animate** | Pilihan animation mode untuk polygons: |
+|  - **No Animation** | Polygons langsung muncul tanpa animasi |
+|  - **FadeIn** | Alpha blending fade-in effect |
+|  - **Wobble** | Oscillation/goyang effect |
+|  - **Fill** | Water fill effect dari bawah ke atas |
+| **Play Arrow Button** | Load dan animate workspace ⭐ IMPROVED |
+   - Clean canvas dulu
+  - Apply speed multiplier
+  - Set polygon animation mode
+  - Load workspace (langsung, tanpa delay) |
 
 **MenuBar (File Menu):**
 | Menu Item | Action | Keyboard Shortcut |
@@ -207,7 +269,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Delete All Custom Lines** | Hapus semua custom lines saja | - |
 | **Delete All Polygons** | Hapus semua polygons saja | - |
 | **Delete Lines & Polygons** | Hapus semua custom lines dan polygons | **CTRL+DEL** |
-| **Clean Canvas** | Clear semua dan hide template shapes | **CTRL+SHIFT+DEL** |
+| **Clean Canvas** | Clear semua dan **hapus** template shapes | **CTRL+SHIFT+DEL** ⭐ UPDATED |
 
 **MenuBar (View Menu):**
 | Menu Item | Action |
@@ -226,7 +288,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - Auto-close setelah klik OK atau anywhere
 
 **Error Popup:**
-- Muncul saat ada error (invalid file format, no file selected)
+- Muncul saat ada error (invalid file format, no file selected, no mode selected)
 - Menampilkan pesan error dengan tombol OK
 - Muncul dengan MenuBar (tanpa show windows lain)
 
@@ -243,8 +305,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | Input | Action |
 | --- | --- |
 | **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan |
-| **SHIFT + )** | Show semua shapes |
-| **DEL** | Hide semua shapes (termasuk CartesianAxes) |
+| **DEL** | Tidak melakukan apa-apa (hide sudah tidak dipakai lagi) ⭐ UPDATED |
 | **BACKSPACE** | Toggle CartesianAxes saja ATAU hapus selected line/polygon |
 | **\`** atau **~** | Toggle label visibility (semua label) |
 | **.** atau **>** | Toggle dot visibility (semua dot di intersection points) |
@@ -335,6 +396,34 @@ git checkout sketch-islamic-gs-modular-imgui
 
 ## 🧬 Mathematics Behind
 
+### Delta Time Animation System ⭐ NEW
+
+Semua animasi sekarang menggunakan **delta time** untuk consistency:
+
+```cpp
+// Di ofApp.cpp - update loop
+float deltaTime = ofGetLastFrameTime();
+currentTemplate->update(deltaTime);
+
+// Di Shape classes (CircleShape, CrossLine, dll)
+void update(float deltaTime) {
+    if (showing) {
+        if (progress < totalSegments) {
+            progress += speed * deltaTime;  // ← Delta time!
+        }
+    }
+}
+
+// Speed calibration untuk delta time:
+// Lama (frame-based): speed = 0.5f
+// Baru (time-based): speed = 50.0f (0.5f × 60 FPS)
+```
+
+**Keuntungan:**
+- Animasi konsisten di berbagai frame rates
+- Tidak ada lagi "cepat kedua, lambat ketiga"
+- Smooth animation di semua kondisi
+
 ### Circle Drawing Animation
 
 Setiap lingkaran digambar dengan animasi **segment-based drawing**:
@@ -355,7 +444,7 @@ float py = sin(drawAngle) * radius;
 
 **Parameter Animation:**
 - **totalSegments**: 100 segments untuk full circle
-- **speed**: Variable speed per shape (drawing speed)
+- **speed**: Variable speed per shape (drawing speed) - sekarang menggunakan deltaTime ⭐ UPDATED
 - **lineWidth**: 0px (tipis) sampai 4px (tebal)
 
 ### Cartesian Axes Scaling
@@ -373,7 +462,7 @@ ofDrawLine(0, -currentLength, 0, currentLength);
 
 **Parameter Scaling:**
 - **maxScale**: 2.5 (sumbu memanjang 2.5x radius)
-- **speed**: Variable per frame (scaling speed)
+- **speed**: Variable per frame (scaling speed) - sekarang menggunakan deltaTime ⭐ UPDATED
 
 ### Five Circle Pattern Configuration
 
@@ -421,6 +510,7 @@ vec2 point = start * (1-t) * (1-t) +           // (1-t)²·P0 (weight ke start)
 - **curve < 0**: Melengkung arah sebaliknya
 - **Sampling**: 100 segments untuk smooth curve
 - **Progress t**: 0.0 (start) → 1.0 (end)
+- **Animation speed**: Menggunakan deltaTime ⭐ UPDATED
 
 ### Runtime Radius Updates & Proportional Scaling
 
@@ -471,6 +561,57 @@ void CircleShape::setRadius(float r) {
     originalRadius = r;
 }
 ```
+
+### Speed Control System Architecture ⭐ NEW
+
+```cpp
+// SacredGeometryTemplate.h
+class SacredGeometryTemplate {
+    float speedMultiplier = 1.0f;  // Global speed multiplier
+
+    void applySpeedMultiplier() {
+        // Loop semua shapes dan update speed
+        for (auto& shape : shapes) {
+            // Base speed untuk setiap tipe shape
+            if (dynamic_cast<CircleShape*>(shape.get())) {
+                shape->speed = 50.0f * speedMultiplier;
+            }
+            // ... dll untuk shape lainnya
+        }
+    }
+};
+
+// FileManager - untuk polygons & customLines
+class FileManager {
+    float animationSpeedMultiplier;  // Dari SacredGeometry panel slider
+
+    void createPolygonWithAnimation(...) {
+        // Gunakan speed multiplier untuk animation
+        float polySpeed;
+        switch (polygonAnimationMode) {
+            case FADE_IN:
+                polySpeed = 0.18f * animationSpeedMultiplier;
+                break;
+            case WOBBLE:
+                polySpeed = 1.8f * animationSpeedMultiplier;
+                break;
+            // ... dll
+        }
+        auto fadeIn = std::make_unique<FadeInAnimation>(..., polySpeed);
+        // ...
+    }
+};
+```
+
+**Speed Calibration Table:**
+| Component | Old Speed (Frame-based) | New Speed (Delta Time) | Calibration |
+|-----------|---------------------|----------------------|-------------|
+| Template Shapes (Circle, CrossLine, dll) | 0.5f | 50.0f | × 100 |
+| CartesianAxes | 0.02f | 1.2f | × 60 |
+| CustomLines (load) | 0.003f / 0.03f | 0.18f / 1.8f | × 60 |
+| Polygons (FadeIn) | 0.003f | 0.18f | × 60 |
+| Polygons (Wobble) | 0.03f | 1.8f | × 60 |
+| Polygons (Fill) | 0.002f | 0.12f | × 60 |
 
 ### Undo/Redo System Architecture
 
@@ -545,6 +686,7 @@ for (int i = 0; i < numCustomLines; i++) {
     float curve;       // 4 bytes
     ofColor color;     // 4 bytes (RGBA)
     float lineWidth;   // 4 bytes
+    float speed;       // 4 bytes ⭐ NEW - animation speed
     bool selected;     // 1 byte
 }
 
@@ -558,6 +700,7 @@ for (int i = 0; i < numPolygons; i++) {
     ofColor color;     // 4 bytes (RGBA)
     float targetAlpha; // 4 bytes
     int animationMode; // 4 bytes (0=None, 1=FadeIn, 2=Wobble, 3=Fill)
+    float speed;       // 4 bytes ⭐ NEW - animation speed
     bool selected;     // 1 byte
 }
 ```
@@ -566,20 +709,27 @@ for (int i = 0; i < numPolygons; i++) {
 - **NORMALIZED Positions**: Semua posisi dibagi radius saat save, dikali radius saat load
 - **Versioning**: Support untuk backward compatibility
 - **Reserved Space**: 56 bytes untuk future expansion
-- **Complete State**: Template, settings, lines, polygons semuanya tersimpan
+- **Complete State**: Template, settings, lines, polygons, animation speeds semuanya tersimpan ⭐ UPDATED
+- **Speed Sync**: Speed multiplier disimpan di SacredGeometry panel, sync ke FileManager saat load ⭐ NEW
 
 **Load Process:**
 
 1. **Parallel Load (CTRL+O)**:
    - Baca file .nay
-   - Setup template shapes dengan animasi parallel
+   - switchTemplate(loadedTemplateName) → setupShapes() → Buat template shapes
+   - setRadius(loadedRadius) → Simpan radius value
+   - Loop update shapes → Set radius loadedRadius untuk semua shapes
+   - applySpeedMultiplier() → Apply speed sesuai slider ⭐ NEW
    - Load custom lines dengan fade-in animation
    - Load polygons dengan animation (FadeIn/Wobble/Fill)
    - Semua animate sekaligus per group
 
 2. **Sequential Load (CTRL+SHIFT+O)**:
    - Baca file .nay
-   - Setup template shapes SEKARANG (tanpa animasi)
+   - switchTemplate(loadedTemplateName) → setupShapes() → Buat template shapes
+   - setRadius(loadedRadius) → Simpan radius value
+   - Loop update shapes → Set radius loadedRadius untuk semua shapes
+   - applySpeedMultiplier() → Apply speed sesuai slider ⭐ NEW
    - Load custom lines satu per satu dengan animasi
    - Load polygons satu per satu dengan animasi
    - Buffer system untuk smooth sequential loading
@@ -592,7 +742,7 @@ for (int i = 0; i < numPolygons; i++) {
 BasicIslamicGeometry/
 ├── src/
 │   ├── main.cpp              # Entry point aplikasi (1920x1080, OpenGL 4.6)
-│   ├── ofApp.cpp/h           # Main application class (~2278 lines)
+│   ├── ofApp.cpp/h           # Main application class (~2300+ lines)
 │   ├── shape/                # Shape implementations
 │   │   ├── AbstractShape.cpp/h         # Base class untuk semua shapes
 │   │   ├── CircleShape.cpp/h           # Circle dengan angle/distance positioning
@@ -603,24 +753,25 @@ BasicIslamicGeometry/
 │   │   ├── OctagramLine.cpp/h          # 2-phase animation lines
 │   │   ├── CustomLine.cpp/h            # User-created bezier lines
 │   │   ├── PolygonShape.cpp/h          # Fill-only polygons dengan animations
+│   │   ├── DotShape.cpp/h               # Single dot shapes
 │   │   └── DotInfo.h                   # Common struct untuk dot information
 │   ├── anim/                 # Animation system
 │   │   ├── AbstractAnimation.cpp/h    # Base class untuk animations
-│   │   ├── FadeInAnimation.cpp/h      # Alpha fade effect
-│   │   ├── WobbleAnimation.cpp/h      # Oscillation effect
-│   │   └── FillAnimation.cpp/h        # Water fill effect
+│   │   ├── FadeInAnimation.cpp/h      # Alpha fade effect dengan deltaTime
+│   │   ├── WobbleAnimation.cpp/h      # Oscillation effect dengan deltaTime
+│   │   └── FillAnimation.cpp/h        # Water fill effect dengan deltaTime
 │   ├── template/             # Template system
 │   │   ├── SacredGeometryTemplate.cpp/h  # Abstract template base
 │   │   ├── TemplateRegistry.cpp/h        # Singleton registry
 │   │   └── templates/
 │   │       └── BasicZelligeTemplate.cpp/h # Moroccan pattern (26 shapes)
 │   └── operation/            # Operations layer
-│       ├── FileManager.cpp/h       # .nay save/load
+│       ├── FileManager.cpp/h       # .nay save/load dengan speed sync ⭐ UPDATED
 │       └── gui/                    # ImGui components
 │           ├── AbstractGuiComponent.cpp/h # GUI base
 │           ├── MenuBar.cpp/h            # File/Edit/View menus
-│           ├── SacredGeometry.cpp/h     # Template control panel
-│           ├── Playground.cpp/h         # Playback panel
+│           ├── SacredGeometry.cpp/h     # Template control panel (Draw Template UI) ⭐ UPDATED
+│           ├── Playground.cpp/h         # Playback panel (Mode Draw UI) ⭐ UPDATED
 │           ├── SuccessPopup.cpp/h       # Success dialog
 │           └── ErrorPopup.cpp/h         # Error dialog
 ├── bin/                      # Compiled executable
@@ -629,16 +780,17 @@ BasicIslamicGeometry/
 └── BasicIslamicGeometry.sln  # Visual Studio solution
 ```
 
-**Total Files**: 64 source files (.cpp + .h)
+**Total Files**: 64+ source files (.cpp + .h)
 
 **Architecture Highlights:**
 - **Template System**: SacredGeometryTemplate base class untuk extensibility
 - **Template Registry**: Singleton pattern untuk managing patterns
 - **GUI System**: Modular ImGui components dengan AbstractGuiComponent
 - **Shape Hierarchy**: Semua shapes inherit dari AbstractShape
-- **Animation System**: AbstractAnimation base untuk reusable animations
+- **Animation System**: AbstractAnimation base untuk reusable animations dengan deltaTime
+- **Speed Control**: Centralized speed multiplier system untuk semua animations ⭐ NEW
 - **Undo/Redo**: 100-step history dengan comprehensive state tracking
-- **File Operations**: Centralized FileManager dengan direct file save
+- **File Operations**: Centralized FileManager dengan direct file save dan speed sync ⭐ UPDATED
 - **Window Management**: Independent window visibility controls
 
 ---
@@ -649,7 +801,7 @@ Project ini adalah bagian dari eksplorasi **Creative Coding** dan pembelajaran:
 
 - 🔬 Eksperimen geometric patterns dan Islamic art
 - 🎨 Belajar animasi drawing dengan segment-based approach
-- ⚡ Implementasi smooth animations dengan progress-based rendering
+- ⚡ Implementasi smooth animations dengan progress-based rendering dan deltaTime
 - 📚 Memahami arsitektur modular untuk geometric visualizations
 - 🌿 Fondasi untuk project Islamic geometric patterns yang lebih kompleks
 - 💾 Workspace persistence untuk save/load creative work
@@ -662,32 +814,28 @@ Project ini adalah bagian dari eksplorasi **Creative Coding** dan pembelajaran:
 Dengan optimasi C++ modern dan openFrameworks:
 
 - **Solid 60 FPS** pada resolusi bervariasi (1920x1080 default)
-- **Smooth drawing animation** tanpa lag
+- **Smooth drawing animation** tanpa lag dengan deltaTime system
 - **Anti-aliased rendering** untuk kualitas visual tinggi
 - **CPU-based rendering** (ideal untuk basic geometric shapes)
 - **Lazy caching** untuk dot position queries
 - **Smart pointer optimization** untuk memory management
+- **Consistent Animation Speed** - Delta time system memastikan speed konsisten ⭐ NEW
 
 ---
 
 ## 📝 Current Status: **sketch-islamic-gs-modular-imgui**
 
-Branch ini adalah **Islamic Geometry Studio with Modular Template System & GUI Playground** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, dan playground panel untuk playback workspace.
+Branch ini adalah **Islamic Geometry Studio with Delta Time Animation & Speed Control System** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, dan speed control global.
 
-### ✨ Key Features
+### ✨ Key Features (Latest Updates)
 
-✅ **Complete ImGui Integration** - Full GUI dengan MenuBar, panels, popups
-✅ **Modular Template System** - Easy pattern extensibility dengan SacredGeometryTemplate
-✅ **100-Step Undo/Redo** - Complete history dengan multi-select support
-✅ **Color Picker System** - Real-time color change untuk lines dan polygons
-✅ **Independent Window Management** - Show/focus/close windows secara independen
-✅ **Advanced Animation System** - FadeIn, Wobble, Fill animations untuk polygons
-✅ **Direct File Operations** - Save langsung ke target tanpa intermediate files
-✅ **Polygon Animation Modes** - Multiple animation types untuk visual variety
-✅ **Custom Line Labels** - "CustomLine0", "CustomLine1", dst saat selected
-✅ **Playground Auto-Focus** - Otomatis muncul saat file berhasil dibuka
-✅ **Multi-Select Support** - CTRL+Click untuk multiple selection
-✅ **Comprehensive Shortcuts** - 30+ keyboard shortcuts untuk power users
+✅ **Delta Time Animation System** - Semua animasi menggunakan deltaTime untuk consistency
+✅ **Global Speed Control** - Slider speed 0.1x - 1.5x berlaku untuk SEMUA animations
+✅ **Draw Template UI** - Parallel/Sequential draw di SacredGeometry panel
+✅ **Clean & Draw Workflow** - Clean canvas dulu, baru draw dengan Play button
+✅ **No Double Draw** - Shapes dibuat sekali di switchTemplate(), tidak redundant
+✅ **Auto Speed Sync** - Saat load file, speed mengikuti slider setting
+✅ **No More Hide/Show** - hideAllShapes() dan showAllShapes() dihapus, diganti drawParallel()
 
 ---
 

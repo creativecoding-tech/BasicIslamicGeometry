@@ -62,9 +62,8 @@ void ofApp::switchTemplate(const std::string &templateName) {
       currentTemplate->radius = oldTemplate->radius;  // Copy radius dari template lama
   }
 
-  // PENTING: Selalu setup shapes saat switch template!
-  // Ini diperlukan untuk pertama kali atau saat template benar-benar berubah
-  currentTemplate->setupShapes();  // Setup/populate shapes vector
+  // Setup shapes SAH radius di-set (REQUIRED!)
+  currentTemplate->setupShapes();
 
   // Reset dots cache agar di-rebuild
   dotsCacheDirty = true;
@@ -495,12 +494,10 @@ void ofApp::keyPressed(int key) {
     } else if (isCtrlPressed) {
       // CTRL+DEL: Hapus semua polygon dan semua custom lines
       clearCustomLinesAndPolygons();
-      return; // Jangan lanjut ke hideAllShapes()
+      return; // Jangan lanjut ke logic hide shapes
     } else {
-      // DEL saja: Hide semua shapes (hanya jika TIDAK staggered load)
-      if (!isStaggeredLoad) {
-        hideAllShapes();
-      }
+      // DEL saja: Tidak melakukan apa-apa (hide sudah tidak dipakai lagi)
+      // User harus menggunakan Clean Canvas atau Draw Template di SacredGeometry panel
     }
   }
 
@@ -567,21 +564,8 @@ void ofApp::keyPressed(int key) {
     }
   }
 
-  if (key == ')' && ofGetKeyPressed(OF_KEY_SHIFT)) {
-    // Hanya boleh show semua jika TIDAK sedang sequential drawing
-    if (!currentTemplate || !currentTemplate->sequentialMode) {
-      showAllShapes();
-    }
-  }
-
-  // FIX: Juga handle SHIFT+) yang terbaca sebagai '+' atau '='
-  if ((key == '+' || key == '=') && ofGetKeyPressed(OF_KEY_SHIFT)) {
-    // Hanya boleh show semua jika TIDAK sedang sequential drawing
-    if (!currentTemplate || !currentTemplate->sequentialMode) {
-      showAllShapes();
-      return; // Return agar tidak trigger increaseLineWidth
-    }
-  }
+  // SHIFT+) untuk show semua shapes sudah tidak dipakai lagi
+  // User harus menggunakan Draw Template di SacredGeometry panel
 
   if (key == '-' || key == '_') {
        // Kurangi line width secara bertahap
@@ -1741,27 +1725,7 @@ void ofApp::toggleDots() {
 }
 
 //--------------------------------------------------------------
-void ofApp::hideAllShapes() {
-  if (!currentTemplate) return;
-
-  // Delegate ke template
-  currentTemplate->hideAllShapes();
-
-  // Mark dots cache dirty karena visibility berubah
-  dotsCacheDirty = true;
-}
-
-//--------------------------------------------------------------
-void ofApp::showAllShapes() {
-  if (!currentTemplate) return;
-
-  // Delegate ke template
-  currentTemplate->showAllShapes();
-
-  // Mark dots cache dirty karena visibility berubah
-  dotsCacheDirty = true;
-}
-
+// (hideAllShapes dan showAllShapes sudah dihapus - tidak diperlukan lagi)
 //--------------------------------------------------------------
 void ofApp::setCartesianAxesVisibility(bool show) {
   if (!currentTemplate) return;
@@ -2136,9 +2100,9 @@ void ofApp::cleanCanvas() {
     selectedUserDotIndices.clear();
     lastSelectedUserDotIndex = -1;
 
-    // Hide semua template shapes - delegate ke template
+    // Benar-benar HAPUS semua template shapes - delegate ke template
     if (currentTemplate) {
-        currentTemplate->hideAllShapes();
+        currentTemplate->clearAllShapes();
     }
 }
 
@@ -2618,6 +2582,7 @@ void ofApp::loadWorkspace() {
         // Apply settings ke semua shapes yang baru di-load
         const auto& shapes = currentTemplate->getShapes();
         for (auto& shape : shapes) {
+            shape->setRadius(currentTemplate->radius);  // Update radius dengan loadedRadius!
             shape->setLineWidth(currentTemplate->lineWidth);
 
             if (currentTemplate->labelsVisible)
@@ -2633,8 +2598,13 @@ void ofApp::loadWorkspace() {
             shape->setSequentialMode(false);  // PARALLEL mode (CTRL+O)
         }
 
-        // Mulai staggered parallel load
-        showAllShapes();  // Ini akan memulai animasi dari awal
+        // Apply speed multiplier ke semua shapes (SESUAI SLIDER!)
+        currentTemplate->applySpeedMultiplier();
+
+        // Mulai staggered parallel load - show all shapes secara parallel
+        if (currentTemplate) {
+            currentTemplate->drawParallel();
+        }
 
         // Apply Cartesian, Circle, & CrossLine preferensi dari Playground SETELAH shapes dibuat
         if (currentTemplate) {
@@ -2767,6 +2737,7 @@ void ofApp::loadWorkspaceSeq() {
     // Apply settings ke semua template shapes
     const auto& shapes = currentTemplate->getShapes();
     for (auto& shape : shapes) {
+        shape->setRadius(currentTemplate->radius);  // ← Update radius dengan loadedRadius!
         shape->setLineWidth(currentTemplate->lineWidth);
         if (currentTemplate->labelsVisible)
             shape->showLabel();
@@ -2778,7 +2749,13 @@ void ofApp::loadWorkspaceSeq() {
             shape->hideDot();
     }
 
-    showAllShapes();  // Reset animasi template
+    // Apply speed multiplier ke semua shapes (SESUAI SLIDER!)
+    currentTemplate->applySpeedMultiplier();
+
+    // Reset animasi template - show all shapes secara parallel
+    if (currentTemplate) {
+        currentTemplate->drawParallel();
+    }
 
     // Apply Cartesian, Circle, & CrossLine preferensi dari Playground SETELAH showAllShapes
     if (currentTemplate) {

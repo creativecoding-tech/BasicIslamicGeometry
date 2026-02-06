@@ -64,13 +64,10 @@ public:
 		}
 	}
 
-	// Radius management - update radius dan rebuild shapes
+	// Radius management - HANYA update radius value (TANPA rebuild shapes)
 	virtual void setRadius(float r) {
 		radius = r;
-		// Clear dan rebuild shapes dengan radius baru
-		shapes.clear();
-		setupShapes();
-		applySpeedMultiplier();  // Re-apply speed multiplier setelah rebuild!
+		// Hanya simpan radius - JANGAN rebuild shapes!
 	}
 
 	// Get read-only access ke shapes (untuk file operations, dll)
@@ -123,8 +120,8 @@ public:
 	// Template control methods - fully autonomous!
 	virtual void startSequentialDrawing();
 	virtual bool updateSequentialDrawing();  // Return true jika complete
-	virtual void showAllShapes();
-	virtual void hideAllShapes();
+	virtual void clearAllShapes();  // Benar-benar hapus semua shapes (shapes.clear())
+	virtual void drawParallel();  // Draw all shapes secara parallel (setup + show)
 	virtual void toggleLabels();
 	virtual void toggleDots();
 	virtual void setLineWidth(float width);

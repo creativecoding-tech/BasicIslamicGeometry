@@ -28,20 +28,25 @@ void SacredGeometry::draw() {
     if (ImGui::Begin("Sacred Geometry", &windowOpen, ImGuiWindowFlags_None)) {
         string templateName = app->currentTemplate ? app->currentTemplate->getName() : string("None");
         if (ImGui::CollapsingHeader(templateName.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Text("Show/Hide Template");
+            ImGui::Text("Draw Template");
             // Radio button untuk Parallel/Sequential
             static int drawMode = -1;  // 0 = Parallel, 1 = Sequential
             if(ImGui::RadioButton("Parallel", &drawMode, 0)) {
-                if (app->currentTemplate && !app->currentTemplate->sequentialMode) {
-                    app->showAllShapes();
+                // Draw secara parallel
+                if (app->currentTemplate && app->currentTemplate->getShapes().empty()) {
+                    app->currentTemplate->setupShapes();
+                    app->currentTemplate->applySpeedMultiplier();
+                    app->currentTemplate->drawParallel();
                 }
             }
             ImGui::SameLine();
             if (ImGui::RadioButton("Sequential", &drawMode, 1)) {
-                app->startSequentialDrawing();
-            }
-            if (ImGui::RadioButton("Hide", &drawMode, 2)) {
-                if (!app->isStaggeredLoad) app->hideAllShapes();
+                // Draw secara sequential
+                if (app->currentTemplate && app->currentTemplate->getShapes().empty()) {
+                    app->currentTemplate->setupShapes();
+                    app->currentTemplate->applySpeedMultiplier();
+                    app->startSequentialDrawing();
+                }
             }
             ImGui::Separator();
             if (app->currentTemplate) {
@@ -68,10 +73,11 @@ void SacredGeometry::draw() {
                 app->setCartesianAxesVisibility(showCartesian);
             }
             ImGui::Separator();
-            // Center the Clean Canvas button
+            // Clean Canvas button
             float buttonWidth = ImGui::CalcTextSize("Clean Canvas").x + ImGui::GetStyle().FramePadding.x * 2.0f;
             float windowWidth = ImGui::GetContentRegionAvail().x;
             ImGui::SetCursorPosX((windowWidth - buttonWidth) / 2.0f);
+
             if (ImGui::Button("Clean Canvas")) {
                 app->cleanCanvas();
             }

@@ -96,7 +96,19 @@ bool SacredGeometryTemplate::updateSequentialDrawing() {
 }
 
 //--------------------------------------------------------------
-void SacredGeometryTemplate::showAllShapes() {
+void SacredGeometryTemplate::clearAllShapes() {
+	// Matikan sequential mode
+	sequentialMode = false;
+
+	// Benar-benar HAPUS semua shapes dari memory
+	shapes.clear();
+
+	// Reset sequential completed flag
+	sequentialCompleted = false;
+}
+
+//--------------------------------------------------------------
+void SacredGeometryTemplate::drawParallel() {
 	// Matikan sequential mode (paralel mode)
 	sequentialMode = false;
 
@@ -108,25 +120,6 @@ void SacredGeometryTemplate::showAllShapes() {
 	// Show semua shapes (akan animasi barengan/paralel)
 	for (auto &shape : shapes) {
 		shape->show();
-	}
-
-	// Reset sequential completed flag agar bisa jalankan lagi
-	sequentialCompleted = false;
-}
-
-//--------------------------------------------------------------
-void SacredGeometryTemplate::hideAllShapes() {
-	// Matikan sequential mode
-	sequentialMode = false;
-
-	// Set paralel mode untuk semua shapes (pakai sequentialMode yang sudah false)
-	for (auto &shape : shapes) {
-		shape->setSequentialMode(sequentialMode);
-	}
-
-	// Hide semua shapes
-	for (auto &shape : shapes) {
-		shape->hide();
 	}
 
 	// Reset sequential completed flag agar bisa jalankan lagi
