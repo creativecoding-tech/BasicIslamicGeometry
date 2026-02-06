@@ -51,7 +51,7 @@ void SacredGeometry::draw() {
             ImGui::Separator();
             if (app->currentTemplate) {
                 ImGui::SetNextItemWidth(150.0f);
-                ImGui::SliderFloat("Radius", &app->currentTemplate->radius, 50, 240);
+                ImGui::SliderFloat("Radius", &app->currentTemplate->radius, 50, 600);
             }
             ImGui::SetNextItemWidth(150.0f);
             if (app->currentTemplate && ImGui::SliderFloat("Line Width", &app->currentTemplate->lineWidth, 0, 4)) {

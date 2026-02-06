@@ -21,8 +21,10 @@ void ofApp::setup() {
   // Setup template system (REGISTER SEMUA TEMPLATES)
   setupTemplateSystem();
 
-  // Load default template (Basic Zellige)
-  switchTemplate("Basic Zellige");
+  // Set default template (Basic Zellige) TANPA otomatis setupShapes()
+  // User harus klik radio button "Parallel" atau "Sequential" untuk draw
+  TemplateRegistry &registry = TemplateRegistry::getInstance();
+  currentTemplate = registry.getTemplate("Basic Zellige");
 
   // Initial dots cache build
   dotsCacheDirty = true;
@@ -1309,10 +1311,12 @@ void ofApp::mousePressed(int x, int y, int button) {
       }
     }
 
-    // SELALU tampilkan context menu (di mana saja klik kanan)
-    showContextMenu = true;
-    contextMenuPos = vec2(x, y);
-    imguiVisible = true;  // Pastikan ImGui aktif agar context menu bisa interaktif
+    // HANYA tampilkan context menu jika klik kanan pada dot original
+    if (hasValidHoveredDot) {
+      showContextMenu = true;
+      contextMenuPos = vec2(x, y);
+      imguiVisible = true;  // Pastikan ImGui aktif agar context menu bisa interaktif
+    }
     return;
   }
 
