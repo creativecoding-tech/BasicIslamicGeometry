@@ -28,36 +28,18 @@ void SacredGeometry::draw() {
     if (ImGui::Begin("Sacred Geometry", &windowOpen, ImGuiWindowFlags_None)) {
         string templateName = app->currentTemplate ? app->currentTemplate->getName() : string("None");
         if (ImGui::CollapsingHeader(templateName.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Text("Draw Template");
-            // Radio button untuk Parallel/Sequential
-            static int drawMode = -1;  // 0 = Parallel, 1 = Sequential
-            if(ImGui::RadioButton("Parallel", &drawMode, 0)) {
-                // Draw secara parallel
-                if (app->currentTemplate && app->currentTemplate->getShapes().empty()) {
-                    app->currentTemplate->setupShapes();
-                    app->currentTemplate->applySpeedMultiplier();
-                    app->currentTemplate->drawParallel();
-                }
-            }
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Sequential", &drawMode, 1)) {
-                // Draw secara sequential
-                if (app->currentTemplate && app->currentTemplate->getShapes().empty()) {
-                    app->currentTemplate->setupShapes();
-                    app->currentTemplate->applySpeedMultiplier();
-                    app->startSequentialDrawing();
-                }
-            }
-            ImGui::Separator();
+            // Radius slider
             if (app->currentTemplate) {
                 ImGui::SetNextItemWidth(150.0f);
                 ImGui::SliderFloat("Radius", &app->currentTemplate->radius, 50, 600);
             }
+            // Line Width slider
             ImGui::SetNextItemWidth(150.0f);
             if (app->currentTemplate && ImGui::SliderFloat("Line Width", &app->currentTemplate->lineWidth, 0, 4)) {
                 app->updateLineWidth();
             }
             ImGui::Separator();
+            // Labels & Dots checkbox
             if (app->currentTemplate) {
                 if (ImGui::Checkbox("Labels", &app->currentTemplate->labelsVisible)) {
                     app->toggleLabels();
@@ -67,10 +49,50 @@ void SacredGeometry::draw() {
                     app->toggleDots();
                 }
             }
+            // Cartesian checkbox
             bool showCartesian = app->currentTemplate ? app->currentTemplate->showCartesianInSacredGeometry : true;
             if (ImGui::Checkbox("Cartesian", &showCartesian)) {
                 app->currentTemplate->showCartesianInSacredGeometry = showCartesian;
                 app->setCartesianAxesVisibility(showCartesian);
+            }
+            ImGui::Separator();
+            // Draw Template
+            ImGui::Text("Draw Template");
+
+            // Cek apakah shapes sudah terdraw
+            bool isTemplateDrawn = (app->currentTemplate && !app->currentTemplate->getShapes().empty());
+
+            // Button untuk Parallel/Sequential
+            if (isTemplateDrawn) {
+                // Disabled jika sudah terdraw
+                ImGui::BeginDisabled();
+                ImGui::Button("Parallel");
+                ImGui::EndDisabled();
+
+                ImGui::SameLine();
+
+                ImGui::BeginDisabled();
+                ImGui::Button("Sequential");
+                ImGui::EndDisabled();
+            } else {
+                // Enabled jika belum terdraw
+                if (ImGui::Button("Parallel")) {
+                    // Draw secara parallel
+                    if (app->currentTemplate && app->currentTemplate->getShapes().empty()) {
+                        app->currentTemplate->setupShapes();
+                        app->currentTemplate->applySpeedMultiplier();
+                        app->currentTemplate->drawParallel();
+                    }
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Sequential")) {
+                    // Draw secara sequential
+                    if (app->currentTemplate && app->currentTemplate->getShapes().empty()) {
+                        app->currentTemplate->setupShapes();
+                        app->currentTemplate->applySpeedMultiplier();
+                        app->startSequentialDrawing();
+                    }
+                }
             }
             ImGui::Separator();
             // Clean Canvas button
@@ -80,14 +102,6 @@ void SacredGeometry::draw() {
 
             if (ImGui::Button("Clean Canvas")) {
                 app->cleanCanvas();
-            }
-            ImGui::Separator();
-            // Template-Specific Settings
-            if (app->currentTemplate && app->currentTemplate->hasCustomSettings()) {
-                ImGui::Separator();
-                if (ImGui::CollapsingHeader("Template-Specific", ImGuiTreeNodeFlags_DefaultOpen)) {
-                    app->currentTemplate->showSettingsUI();
-                }
             }
         }
     }

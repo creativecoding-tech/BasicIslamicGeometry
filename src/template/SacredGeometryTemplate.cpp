@@ -62,6 +62,23 @@ void SacredGeometryTemplate::startSequentialDrawing() {
 	if (!shapes.empty()) {
 		shapes[0]->show();
 	}
+
+	// Apply labels dan dots visibility setting (setelah shapes di-show)
+	toggleLabels();  // Apply labelsVisible setting
+	toggleDots();    // Apply dotsVisible setting
+
+	// Apply line width setting
+	updateLineWidth(lineWidth);
+
+	// Apply cartesian axes visibility
+	if (!shapes.empty()) {
+		AbstractShape* cartesianAxes = shapes[0].get(); // CartesianAxes selalu index 0
+		if (showCartesianInSacredGeometry) {
+			cartesianAxes->show();
+		} else {
+			cartesianAxes->hide();
+		}
+	}
 }
 
 //--------------------------------------------------------------
@@ -120,6 +137,23 @@ void SacredGeometryTemplate::drawParallel() {
 	// Show semua shapes (akan animasi barengan/paralel)
 	for (auto &shape : shapes) {
 		shape->show();
+	}
+
+	// Apply labels dan dots visibility setting (setelah shapes di-show)
+	toggleLabels();  // Apply labelsVisible setting
+	toggleDots();    // Apply dotsVisible setting
+
+	// Apply line width setting
+	updateLineWidth(lineWidth);
+
+	// Apply cartesian axes visibility
+	if (!shapes.empty()) {
+		AbstractShape* cartesianAxes = shapes[0].get(); // CartesianAxes selalu index 0
+		if (showCartesianInSacredGeometry) {
+			cartesianAxes->show();
+		} else {
+			cartesianAxes->hide();
+		}
 	}
 
 	// Reset sequential completed flag agar bisa jalankan lagi
