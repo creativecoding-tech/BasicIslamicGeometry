@@ -640,11 +640,24 @@ void ofApp::keyPressed(int key) {
       showUserCustom = false;
     } else if (!showSacredGeometry && !showPlayground && !showUserCustom) {
       // Show all windows
+      imguiVisible = true;
       showSacredGeometry = true;
       showPlayground = true;
       showUserCustom = true;
+
+      // Reset windowOpen flags untuk masing-masing window
+      for (auto& gui : guiComponents) {
+        // Cast ke tipe spesifik untuk panggil showWindow()
+        if (auto* sacredGeom = dynamic_cast<SacredGeometry*>(gui.get())) {
+          sacredGeom->showWindow();
+        } else if (auto* playground = dynamic_cast<Playground*>(gui.get())) {
+          playground->showWindow();
+        } else if (auto* userCustom = dynamic_cast<UserCustom*>(gui.get())) {
+          userCustom->showWindow();
+        }
+      }
     } else {
-      // Hide all
+      // Hide all windows
       imguiVisible = false;
       showSacredGeometry = false;
       showPlayground = false;
