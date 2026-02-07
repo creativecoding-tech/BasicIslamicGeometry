@@ -941,8 +941,9 @@ void ofApp::undo() {
 		{
 			// Undo create dot = hapus dot terakhir
 			if (!userDots.empty()) {
-				// SIMPAN position dot yang akan dihapus ke redoAction SEBELUM pop_back
+				// SIMPAN position dan radius dot yang akan dihapus ke redoAction SEBELUM pop_back
 				redoAction.deletedDotPos = userDots.back()->getPosition();
+				redoAction.deletedDotRadius = userDots.back()->getRadius();
 
 				// Hapus dot terakhir
 				userDots.pop_back();
@@ -1093,9 +1094,9 @@ void ofApp::redo() {
 			break;
 
 		case CREATE_DOT:
-			// Redo create dot = buat dot baru dari position yang tersimpan
+			// Redo create dot = buat dot baru dari position dan radius yang tersimpan
 			{
-				auto dotShape = std::make_unique<DotShape>(action.deletedDotPos, "Dot");
+				auto dotShape = std::make_unique<DotShape>(action.deletedDotPos, "Dot", action.deletedDotRadius);
 				dotShape->progress = 1.0f;
 				userDots.push_back(std::move(dotShape));
 			}
@@ -2660,14 +2661,10 @@ void ofApp::duplicateDotAbove() {
 
     vec2 dotPos = contextMenu->getHoveredDotPos();
 
-    // Ambil radius dari dot original (lineWidth * 2)
-    float dotRadius = currentTemplate->lineWidth * 2.0f;
-    userDotRadius = dotRadius;  // Simpan ke userDotRadius
-
     // Gunakan offset distance dari member variable
     vec2 newDotPos = dotPos + vec2(0, -duplicateDotOffsetDistance);  // Ke atas (Y negatif)
 
-    // Buat DotShape baru dengan userDotRadius
+    // Buat DotShape baru dengan userDotRadius (langsung dari slider User Custom)
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
     dotShape->setColor(userDotColor);  // Set warna dari userDotColor
@@ -2697,14 +2694,10 @@ void ofApp::duplicateDotBelow() {
 
     vec2 dotPos = contextMenu->getHoveredDotPos();
 
-    // Ambil radius dari dot original (lineWidth * 2)
-    float dotRadius = currentTemplate->lineWidth * 2.0f;
-    userDotRadius = dotRadius;  // Simpan ke userDotRadius
-
     // Gunakan offset distance dari member variable - arah ke bawah (Y positif)
     vec2 newDotPos = dotPos + vec2(0, duplicateDotOffsetDistance);  // Ke bawah (Y positif)
 
-    // Buat DotShape baru dengan userDotRadius
+    // Buat DotShape baru dengan userDotRadius (langsung dari slider User Custom)
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
     dotShape->setColor(userDotColor);  // Set warna dari userDotColor
@@ -2734,14 +2727,10 @@ void ofApp::duplicateDotLeft() {
 
     vec2 dotPos = contextMenu->getHoveredDotPos();
 
-    // Ambil radius dari dot original (lineWidth * 2)
-    float dotRadius = currentTemplate->lineWidth * 2.0f;
-    userDotRadius = dotRadius;  // Simpan ke userDotRadius
-
     // Offset ke kiri (X negatif)
     vec2 newDotPos = dotPos + vec2(-duplicateDotOffsetDistance, 0);
 
-    // Buat DotShape baru dengan userDotRadius
+    // Buat DotShape baru dengan userDotRadius (langsung dari slider User Custom)
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
     dotShape->setColor(userDotColor);  // Set warna dari userDotColor
@@ -2771,14 +2760,10 @@ void ofApp::duplicateDotRight() {
 
     vec2 dotPos = contextMenu->getHoveredDotPos();
 
-    // Ambil radius dari dot original (lineWidth * 2)
-    float dotRadius = currentTemplate->lineWidth * 2.0f;
-    userDotRadius = dotRadius;  // Simpan ke userDotRadius
-
     // Offset ke kanan (X positif)
     vec2 newDotPos = dotPos + vec2(duplicateDotOffsetDistance, 0);
 
-    // Buat DotShape baru dengan userDotRadius
+    // Buat DotShape baru dengan userDotRadius (langsung dari slider User Custom)
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
     dotShape->setColor(userDotColor);  // Set warna dari userDotColor
