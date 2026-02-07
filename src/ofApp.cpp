@@ -1673,8 +1673,8 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
     return;  // Jangan lanjut ke logic lain jika ada userDot terseleksi
   }
 
-  // Handle scroll untuk DcustomLine (duplicate lines)
-  if (!selectedLineIndices.empty()) {
+  // Handle scroll untuk DcustomLine (duplicate lines) - HANYA jika CTRL ditekan
+  if (isCtrlPressed && !selectedLineIndices.empty()) {
     float scrollSpeed = 2.0f;  // Kecepatan scroll
 
     // Filter hanya DcustomLine yang terseleksi
@@ -1725,8 +1725,8 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
     }
   }
 
-  // Update curve untuk SEMUA garis yang selected
-  if (!selectedLineIndices.empty()) {
+  // Update curve untuk SEMUA garis yang selected - HANYA jika TANPA CTRL
+  if (!isCtrlPressed && !selectedLineIndices.empty()) {
     // Siapkan undo action
     UndoAction undoAction;
     undoAction.type = CHANGE_CURVE;
@@ -2687,6 +2687,9 @@ void ofApp::duplicateLineR180() {
 
     globalCenter /= totalPoints;  // Average dari semua points
 
+    // Simpan size awal customLines (sebelum duplicate)
+    size_t oldSize = customLines.size();
+
     // 2. Untuk setiap selected line, buat duplicate dengan rotate 180°
     for (int index : selectedLineIndices) {
         if (index >= 0 && index < customLines.size()) {
@@ -2715,7 +2718,7 @@ void ofApp::duplicateLineR180() {
             newLine.setCurve(curve);
             newLine.setProgress(1.0f);  // Langsung muncul penuh (no animation)
             newLine.setIsDuplicate(true);  // Tandai sebagai duplicate line
-            newLine.setAxisLock(AxisLock::LOCK_BOTH);  // Auto-lock kedua axis (tidak bisa gerak)
+            newLine.setAxisLock(AxisLock::NONE);  // Bisa langsung digeser dengan CTRL+Scroll
 
             // Add ke customLines
             customLines.push_back(newLine);
@@ -2730,9 +2733,18 @@ void ofApp::duplicateLineR180() {
         pushUndoAction(undoAction);
     }
 
-    // 4. Clear selection
+    // 4. Clear selection original lines, lalu select semua DcustomLine baru
     selectedLineIndices.clear();
-    lastSelectedLineIndex = -1;
+
+    // Select semua DcustomLine yang baru saja dibuat
+    for (size_t i = oldSize; i < customLines.size(); i++) {
+        selectedLineIndices.insert(i);
+    }
+
+    // Set lastSelectedLineIndex ke DcustomLine terakhir yang dibuat
+    if (customLines.size() > oldSize) {
+        lastSelectedLineIndex = customLines.size() - 1;
+    }
 }
 
 //--------------------------------------------------------------

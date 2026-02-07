@@ -321,21 +321,26 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 	}
 
 	ImGui::Separator();
-	ImGui::Text("Polygon Animate");
-	if (ImGui::RadioButton("No Animation", &polygonAnimationMode, 0)) {
-		// Radio button changed
-	}
-	ImGui::SameLine();
-	if (ImGui::RadioButton("FadeIn", &polygonAnimationMode, 1)) {
-		// Radio button changed
-	}
-	ImGui::SameLine();
-	if (ImGui::RadioButton("Wobble", &polygonAnimationMode, 2)) {
-		// Radio button changed
-	}
 
-	if (ImGui::RadioButton("Fill", &polygonAnimationMode, 3)) {
-		// Radio button changed
+	// Polygon CollapsingHeader
+	if (ImGui::CollapsingHeader("Polygon", ImGuiTreeNodeFlags_DefaultOpen)) {
+		// Polygon Appearance section
+		ImGui::Text("Polygon Appearance");
+		if (ImGui::RadioButton("No Animation", &polygonAnimationMode, 0)) {
+			// Radio button changed
+		}
+		ImGui::SameLine();
+		if (ImGui::RadioButton("FadeIn", &polygonAnimationMode, 1)) {
+			// Radio button changed
+		}
+		ImGui::SameLine();
+		if (ImGui::RadioButton("Wobble", &polygonAnimationMode, 2)) {
+			// Radio button changed
+		}
+
+		if (ImGui::RadioButton("Fill", &polygonAnimationMode, 3)) {
+			// Radio button changed
+		}
 	}
 	ImGui::Separator();
 	ImGui::Text("Speed Control");

@@ -220,28 +220,10 @@ void UserCustom::draw() {
             ImGui::EndDisabled();
         }
 
-        // Button: Duplicate Line R 180° (hanya enabled jika ada >= 2 selected lines DAN semua original customLine)
-        bool canDuplicate = true;
+        // Button: Duplicate Line R 180° (hanya enabled jika ada >= 2 selected lines)
         if (app->selectedLineIndices.size() >= 2) {
-            // Cek apakah semua selected line adalah original (bukan DcustomLine)
-            for (int index : app->selectedLineIndices) {
-                if (index >= 0 && index < app->customLines.size()) {
-                    if (app->customLines[index].getIsDuplicate()) {
-                        canDuplicate = false;  // Ada DcustomLine dalam selection
-                        break;
-                    }
-                }
-            }
-
-            if (canDuplicate) {
-                if (ImGui::Button("Duplicate Line R 180°", ImVec2(buttonWidth, 0))) {
-                    app->duplicateLineR180();
-                }
-            } else {
-                // Disabled button kalau ada DcustomLine dalam selection
-                ImGui::BeginDisabled();
-                ImGui::Button("Duplicate Line R 180°", ImVec2(buttonWidth, 0));
-                ImGui::EndDisabled();
+            if (ImGui::Button("Duplicate Line R 180°", ImVec2(buttonWidth, 0))) {
+                app->duplicateLineR180();
             }
         } else {
             // Disabled button kalau selected lines < 2
