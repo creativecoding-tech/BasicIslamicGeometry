@@ -2788,28 +2788,7 @@ void ofApp::drawUserDots() {
         }
     }
 
-    // Draw label untuk SEMUA selected userDots HANYA jika showUserDot == true
-    if (showUserDot) {
-        for (int index : selectedUserDotIndices) {
-            if (index >= 0 && index < userDots.size()) {
-                vec2 dotPos = userDots[index]->getPosition();
-                vec2 lowerBound = userDots[index]->getLowerBound();
-
-                ofSetColor(0);  // Warna hitam
-
-                // Cek apakah dot ini horizontal (sumbu X) atau vertical (sumbu Y)
-                if (dotPos.x != lowerBound.x) {
-                    // Horizontal dot (Dot Left/Right): label offset X saja
-                    float offsetX = dotPos.x - lowerBound.x;
-                    fontNormal.drawString("offset = " + ofToString(offsetX, 1), dotPos.x + 10, dotPos.y);
-                } else {
-                    // Vertical dot (Dot Above/Below): label offset Y saja
-                    float offsetY = dotPos.y - lowerBound.y;
-                    fontNormal.drawString("offset = " + ofToString(offsetY, 1), dotPos.x + 10, dotPos.y);
-                }
-            }
-        }
-    }
+    // Label sudah dihapus, diganti dengan ImGui tooltip di ObjectTooltip
 }
 
 //--------------------------------------------------------------
@@ -3219,6 +3198,9 @@ void ofApp::setupImGui() {
 
     // Initialize Selection Info window
     selectionInfo = std::make_unique<SelectionInfo>(this);
+
+    // Initialize Object Tooltip manager
+    objectTooltip = std::make_unique<ObjectTooltip>(this);
 }
 
 
@@ -3268,6 +3250,9 @@ void ofApp::drawImGui() {
     if (imguiVisible && showSelectionInfo) {
         selectionInfo->draw();
     }
+
+    // Draw tooltips (SELALU render, tidak tergantung imguiVisible)
+    objectTooltip->draw();
 
     // Draw context menu (SELALU render terlepas dari imguiVisible)
     contextMenu->draw();

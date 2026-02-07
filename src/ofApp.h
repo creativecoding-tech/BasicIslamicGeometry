@@ -15,6 +15,7 @@
 #include "operation/gui/SuccessPopup.h"
 #include "operation/gui/ErrorPopup.h"
 #include "operation/gui/SelectionInfo.h"
+#include "operation/gui/ObjectTooltip.h"
 #include "template/SacredGeometryTemplate.h"
 #include "template/TemplateRegistry.h"
 #include "imgui/imgui.h"
@@ -198,6 +199,7 @@ class ofApp : public ofBaseApp{
 		std::unique_ptr<SuccessPopup> successPopup;  // Success popup dialog
 		std::unique_ptr<ErrorPopup> errorPopup;  // Error popup dialog
 		std::unique_ptr<class SelectionInfo> selectionInfo;  // Selection Info window
+		std::unique_ptr<ObjectTooltip> objectTooltip;  // Object tooltip manager
 
 		void setup();
 		void setupTemplateSystem();  // Register semua templates ke registry
