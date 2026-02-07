@@ -68,6 +68,13 @@ void UserCustom::syncUserDotFromSelection() {
             }
         }
     }
+    else {
+        // Jika tidak ada yang terseleksi, sync dari global color variable
+        userDotColor[0] = app->userDotColor.r / 255.0f;
+        userDotColor[1] = app->userDotColor.g / 255.0f;
+        userDotColor[2] = app->userDotColor.b / 255.0f;
+        userDotColor[3] = app->userDotColor.a / 255.0f;
+    }
 }
 
 //--------------------------------------------------------------
@@ -83,6 +90,13 @@ void UserCustom::syncLineColorFromSelection() {
             customLineColor[3] = lineColor.a / 255.0f;
         }
     }
+    else {
+        // Jika tidak ada yang terseleksi, sync dari global color variable
+        customLineColor[0] = app->customLineColor.r / 255.0f;
+        customLineColor[1] = app->customLineColor.g / 255.0f;
+        customLineColor[2] = app->customLineColor.b / 255.0f;
+        customLineColor[3] = app->customLineColor.a / 255.0f;
+    }
 }
 
 //--------------------------------------------------------------
@@ -97,6 +111,13 @@ void UserCustom::syncPolygonColorFromSelection() {
             polygonColor[2] = polyColor.b / 255.0f;
             polygonColor[3] = polyColor.a / 255.0f;
         }
+    }
+    else {
+        // Jika tidak ada yang terseleksi, sync dari global color variable
+        polygonColor[0] = app->polygonColor.r / 255.0f;
+        polygonColor[1] = app->polygonColor.g / 255.0f;
+        polygonColor[2] = app->polygonColor.b / 255.0f;
+        polygonColor[3] = app->polygonColor.a / 255.0f;
     }
 }
 

@@ -587,6 +587,7 @@ void ofApp::keyPressed(int key) {
     for (int i = 0; i < customLines.size(); i++) {
       selectedLineIndices.insert(i);
     }
+    syncColorFromSelectedObjects();  // Sync global color dari first selected line
     return;
   }
 
@@ -1437,6 +1438,7 @@ void ofApp::mousePressed(int x, int y, int button) {
             selectedUserDotIndices.insert(i); // Select
           }
           lastSelectedUserDotIndex = i;
+          syncColorFromSelectedObjects();  // Sync global color dari selected object
           return; // Jangan lanjut ke logic lain
         }
       }
@@ -1452,6 +1454,7 @@ void ofApp::mousePressed(int x, int y, int button) {
           selectedPolygonIndices.insert(i); // Select
         }
         lastSelectedPolygonIndex = i;
+        syncColorFromSelectedObjects();  // Sync global color dari selected object
         return; // Jangan lanjut ke logic lain
       }
     }
@@ -1466,6 +1469,7 @@ void ofApp::mousePressed(int x, int y, int button) {
         selectedLineIndices.insert(clickedLineIndex); // Select
       }
       lastSelectedLineIndex = clickedLineIndex;
+      syncColorFromSelectedObjects();  // Sync global color dari selected object
     }
     return; // Jangan lanjut ke logic drag
   }
@@ -1488,6 +1492,7 @@ void ofApp::mousePressed(int x, int y, int button) {
           selectedUserDotIndices.insert(i);
           lastSelectedUserDotIndex = i;
           clickedOnUserDot = true;
+          syncColorFromSelectedObjects();  // Sync global color dari selected userDot
           // JANGAN return, biarkan lanjut ke line creation
         }
       }
@@ -1531,6 +1536,7 @@ void ofApp::mousePressed(int x, int y, int button) {
           selectedLineIndices.clear(); // Deselect semua lines
           lastSelectedPolygonIndex = i;
           clickedOnPolygon = true;
+          syncColorFromSelectedObjects();  // Sync global color dari selected object
           break;
         }
       }
@@ -1545,12 +1551,14 @@ void ofApp::mousePressed(int x, int y, int button) {
           lastSelectedLineIndex = lineIndex;
           selectedPolygonIndices.clear(); // Deselect polygon
           lastSelectedPolygonIndex = -1;
+          syncColorFromSelectedObjects();  // Sync global color dari selected object
         } else {
           // Klik di tempat kosong → deselect semua
           selectedLineIndices.clear();
           lastSelectedLineIndex = -1;
           selectedPolygonIndices.clear(); // Deselect polygon
           lastSelectedPolygonIndex = -1;
+          // Tidak perlu syncColorFromSelectedObjects() karena tidak ada yang selected
         }
       }
     }
@@ -1885,7 +1893,7 @@ void ofApp::updateLineWidth() {
 
 //--------------------------------------------------------------
 void ofApp::updateCustomLineColor(ofColor color) {
-	// Update variabel global untuk customLine baru
+	// Update variabel global untuk new customLines
 	customLineColor = color;
 
 	// Siapkan undo action
@@ -1910,21 +1918,8 @@ void ofApp::updateCustomLineColor(ofColor color) {
 			pushUndoAction(undoAction);
 		}
 	}
-	// Jika tidak ada yang selected, update semua customLines
-	else {
-		for (size_t i = 0; i < customLines.size(); i++) {
-			// Simpan old color SEBELUM mengubah
-			undoAction.colorIndices.push_back(i);
-			undoAction.oldColors.push_back(customLines[i].getColor());
-
-			// Ubah warna
-			customLines[i].setColor(color);
-		}
-		// Push undo action hanya jika ada yang diubah
-		if (!undoAction.colorIndices.empty()) {
-			pushUndoAction(undoAction);
-		}
-	}
+	// Jika tidak ada yang selected, TIDAK update existing customLines
+	// Hanya update global color variable untuk new customLines
 }
 
 //--------------------------------------------------------------
@@ -1990,7 +1985,7 @@ void ofApp::resetSelectedCustomLineColor() {
 
 //--------------------------------------------------------------
 void ofApp::updatePolygonColor(ofColor color) {
-	// Update variabel global untuk polygon baru
+	// Update variabel global untuk new polygons
 	polygonColor = color;
 
 	// Siapkan undo action
@@ -2013,21 +2008,8 @@ void ofApp::updatePolygonColor(ofColor color) {
 		// Push undo action
 		pushUndoAction(undoAction);
 	}
-	// Jika tidak ada yang selected, update semua polygons
-	else {
-		for (size_t i = 0; i < polygonShapes.size(); i++) {
-			// Simpan old color SEBELUM mengubah
-			undoAction.colorIndices.push_back(i);
-			undoAction.oldColors.push_back(polygonShapes[i].getColor());
-
-			// Ubah warna
-			polygonShapes[i].setColor(color);
-		}
-		// Push undo action hanya jika ada yang diubah
-		if (!undoAction.colorIndices.empty()) {
-			pushUndoAction(undoAction);
-		}
-	}
+	// Jika tidak ada yang selected, TIDAK update existing polygons
+	// Hanya update global color variable untuk new polygons
 }
 
 //--------------------------------------------------------------
@@ -2146,7 +2128,7 @@ void ofApp::updateUserDotRadius(float radius) {
 
 //--------------------------------------------------------------
 void ofApp::updateUserDotColor(ofColor color) {
-	// Update variabel global
+	// Update variabel global untuk new userDots
 	userDotColor = color;
 
 	// Jika ada userDot yang terseleksi, update hanya yang terseleksi
@@ -2158,14 +2140,9 @@ void ofApp::updateUserDotColor(ofColor color) {
 				}
 			}
 		}
-	} else {
-		// Jika tidak ada yang terseleksi, update semua userDots
-		for (auto& dot : userDots) {
-			if (dot) {
-				dot->setColor(color);
-			}
-		}
 	}
+	// Jika tidak ada yang terseleksi, TIDAK update existing userDots
+	// Hanya update global color variable untuk new userDots
 }
 
 //--------------------------------------------------------------
@@ -2227,6 +2204,9 @@ void ofApp::pasteColorToDot() {
 		return;  // Tidak ada userDot terseleksi
 	}
 
+	// Update global userDotColor supaya new userDot mengikuti warna ini
+	userDotColor = clipboardColor;
+
 	// Paste color ke semua userDot yang terseleksi
 	for (int index : selectedUserDotIndices) {
 		if (index >= 0 && index < userDots.size()) {
@@ -2249,6 +2229,9 @@ void ofApp::pasteColorToPolygon() {
 		return;  // Tidak ada polygon terseleksi
 	}
 
+	// Update global polygonColor supaya new polygon mengikuti warna ini
+	polygonColor = clipboardColor;
+
 	// Paste color ke semua polygon yang terseleksi
 	for (int index : selectedPolygonIndices) {
 		if (index >= 0 && index < polygonShapes.size()) {
@@ -2268,6 +2251,9 @@ void ofApp::pasteColorToLine() {
 	if (selectedLineIndices.empty()) {
 		return;  // Tidak ada customLine terseleksi
 	}
+
+	// Update global customLineColor supaya new line mengikuti warna ini
+	customLineColor = clipboardColor;
 
 	// Paste color ke semua customLine yang terseleksi
 	for (int index : selectedLineIndices) {
@@ -2338,6 +2324,56 @@ void ofApp::syncUserDotFromLoaded() {
 				userCustom->updateUserDotColorFromApp();
 				break; // Found, no need to continue
 			}
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::syncColorFromSelectedObjects() {
+	// Sync SEMUA global color variables ke warna selected object
+	// Lalu update SEMUA color picker UI
+	// Priority: userDot > polygon > customLine
+
+	ofColor targetColor;
+
+	// 1. Cek userDot dulu (priority tertinggi)
+	if (!selectedUserDotIndices.empty()) {
+		int firstIndex = *selectedUserDotIndices.begin();
+		if (firstIndex >= 0 && firstIndex < userDots.size() && userDots[firstIndex]) {
+			targetColor = userDots[firstIndex]->getColor();
+		}
+	}
+	// 2. Cek polygon
+	else if (!selectedPolygonIndices.empty()) {
+		int firstIndex = *selectedPolygonIndices.begin();
+		if (firstIndex >= 0 && firstIndex < polygonShapes.size()) {
+			targetColor = polygonShapes[firstIndex].getColor();
+		}
+	}
+	// 3. Cek customLine
+	else if (!selectedLineIndices.empty()) {
+		int firstIndex = *selectedLineIndices.begin();
+		if (firstIndex >= 0 && firstIndex < customLines.size()) {
+			targetColor = customLines[firstIndex].getColor();
+		}
+	}
+	else {
+		return;  // Tidak ada yang selected, jangan update apa-apa
+	}
+
+	// Sync SEMUA global color variables ke targetColor yang SAMA
+	userDotColor = targetColor;
+	polygonColor = targetColor;
+	customLineColor = targetColor;
+
+	// Update SEMUA color picker UI
+	for (auto& gui : guiComponents) {
+		UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
+		if (userCustom) {
+			userCustom->updateUserDotColorFromApp();  // Update userDot color picker
+			userCustom->updateColorFromApp();         // Update customLine color picker
+			userCustom->updatePolygonColorFromApp();  // Update polygon color picker
+			break;
 		}
 	}
 }
@@ -2835,6 +2871,9 @@ void ofApp::duplicateLineR180() {
     if (customLines.size() > oldSize) {
         lastSelectedLineIndex = customLines.size() - 1;
     }
+
+    // Sync global color dari first selected DcustomLine
+    syncColorFromSelectedObjects();
 }
 
 //--------------------------------------------------------------
