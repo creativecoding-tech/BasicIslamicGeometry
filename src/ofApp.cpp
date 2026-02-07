@@ -93,22 +93,18 @@ void ofApp::update() {
   }
 }
 
-
-//--------------------------------------------------------------
-// UPDATE STRATEGIES - Strategy Pattern Implementation
-//--------------------------------------------------------------
-
 void ofApp::updateNormal() {
   // Template sequential drawing
   if (currentTemplate && currentTemplate->sequentialMode) {
-    bool complete = currentTemplate->updateSequentialDrawing();
+    float deltaTime = ofGetLastFrameTime();
+    bool complete = currentTemplate->updateSequentialDrawing(deltaTime);
     if (complete) {
       dotsCacheDirty = true;
     }
+  } else {
+    // Hanya update semua template shapes jika TIDAK sequential mode
+    updateTemplateShapes();
   }
-
-  // Update template shapes
-  updateTemplateShapes();
 
   // Rebuild dots cache
   dotsCacheDirty = true;
@@ -132,7 +128,8 @@ void ofApp::updateNormal() {
 void ofApp::updateSequentialDrawing() {
   // Template fully autonomous - template handles sequential drawing
   if (currentTemplate && currentTemplate->sequentialMode) {
-    bool complete = currentTemplate->updateSequentialDrawing();
+    float deltaTime = ofGetLastFrameTime();
+    bool complete = currentTemplate->updateSequentialDrawing(deltaTime);
     if (complete) {
       dotsCacheDirty = true;
       currentState = UpdateState::NORMAL;  // Kembali ke normal setelah selesai
@@ -387,7 +384,7 @@ void ofApp::draw() {
   ofPopMatrix();
 
   //ImGUI (always render if context menu, popups, or visible)
-  if (imguiVisible || contextMenu->isVisible() || successPopup->isVisible() || errorPopup->isVisible()) {
+  if (imguiVisible || contextMenu->isVisible() || successPopup->isVisible() || errorPopup->isVisible() || confirmationPopup->isVisible()) {
     drawImGui();
   }
 }
@@ -452,11 +449,6 @@ void ofApp::drawCustomLinesAndUI() {
 void ofApp::keyPressed(int key) {
   if (key == OF_KEY_END)
     ofExit();
-
-  // Sequential drawing dengan SHIFT+1
-  if (key == '!' && ofGetKeyPressed(OF_KEY_SHIFT)) {
-    startSequentialDrawing();
-  }
 
   // Toggle label visibility dengan ` atau ~
   if (key == '`' || key == '~') {
@@ -3293,6 +3285,7 @@ void ofApp::setupImGui() {
     // Initialize popup (not in guiComponents, drawn separately)
     successPopup = std::make_unique<SuccessPopup>(this);
     errorPopup = std::make_unique<ErrorPopup>(this);
+    confirmationPopup = std::make_unique<ConfirmationPopup>(this);
 
     // Initialize Selection Info window
     selectionInfo = std::make_unique<SelectionInfo>(this);
@@ -3343,6 +3336,7 @@ void ofApp::drawImGui() {
     // Draw popup dialogs
     successPopup->draw();
     errorPopup->draw();
+    confirmationPopup->draw();
 
     // Draw Selection Info window
     if (imguiVisible && showSelectionInfo) {

@@ -98,9 +98,14 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
     - **Parallel** - Draw semua shapes secara parallel (barengan)
     - **Sequential** - Draw shapes satu per satu dengan animasi
   - **Clean Canvas** - Benar-benar hapus semua shapes (bukan hide)
-- **Load File Auto-Draw** - Saat load/open file .nay, template shapes OTOMATIS ter-draw
-  - Tidak perlu klik tombol Draw Template manual
-  - Shapes langsung muncul dengan speed sesuai slider
+- **Playground Draw Button** - Tombol Arrow (←) di Playground window:
+  - Clean canvas dulu (hapus semua shapes, polygons, customLines)
+  - Apply speed multiplier ke semua animations
+  - Load workspace dengan animasi sesuai mode (Parallel/Sequential)
+- **Load File** - Saat load/open file .nay (CTRL+O):
+  - Template shapes dibuat (setupShapes) TAPI progress=0 (belum visible)
+  - User perlu klik tombol Draw di Playground untuk meng-animate
+  - Tombol Parallel/Sequential di SacredGeometry disabled jika shapes sudah dibuat
 - **Shapes Always Visible** - Shapes yang sudah dibuat SELALU ditampilkan (tidak bisa di-hide)
 
 ### Selection Info Panel ⭐ NEW
@@ -118,14 +123,23 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Center on First Open** - Window muncul di tengah screen saat pertama dibuka
 - **View Menu Integration** - Bisa diakses via View → Selection Info
 
-### Play Button Behavior
-- **Clean First, Then Draw** - Saat tombol Play diklik:
+### Object Tooltip System ⭐ NEW
+- **Hover Tooltips** - OpenFrameworks-based custom rendering untuk selected objects:
+  - **Dots** - Offset dari dot parent + index dot
+  - **Lines** - Label (customLine0/DcustomLine0) + curve value
+  - **Polygons** - Index polygon + vertex count
+- **Performance Optimized** - Direct OF rendering tanpa ImGui overhead
+- **Positioned Near Object** - Tooltips muncul dekat object (dot/line midpoint/polygon centroid)
+- **Only for Selected Objects** - Tooltips hanya muncul untuk objects yang terseleksi
+
+### Draw Button Behavior (Playground)
+- **Clean First, Then Draw** - Saat tombol Draw (Arrow ←) di Playground diklik:
   1. **Clean Canvas** - Hapus semua shapes, polygons, customLines, userDots
   2. **Apply Speed** - Sync speed multiplier ke FileManager untuk polygons & customLines
   3. **Set Animation Mode** - FadeIn/Wobble/Fill/None sesuai radio button
-  4. **Load Workspace** - Load dari file .nay dengan animation
-- **No ImGui Delay** - loadDelayDuration = 0.0f (langsung load, tanpa delay)
-- **Smooth Transition** - Transisi dari hide ImGui ke load animation lebih smooth
+  4. **Load Workspace** - Load dari file .nay dengan animation (Parallel/Sequential mode)
+- **Validation** - Button cek apakah file sudah dibuka dan mode sudah dipilih
+- **Error Popup** - Muncul jika belum ada file atau belum pilih mode
 
 ### Runtime Updates & Scalability
 - **Runtime Radius Updates** - Semua shapes update posisinya secara realtime saat radius diubah via slider
@@ -140,12 +154,12 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **ImGui Integration** - Complete ImGui dengan OpenGL3 dan Win32 backends
 - **AbstractGuiComponent** - Base class untuk reusable GUI components
 - **MenuBar** - Top menu bar dengan File, Edit, dan View menus
-  - **File Menu**: Save Workspace (CTRL+S), Save As (CTRL+SHIFT+S), Open (CTRL+O), Exit (ALT+F4)
+  - **File Menu**: Save Workspace (CTRL+S), Save As (CTRL+SHIFT+S), Open (CTRL+O), Exit (END)
   - **Edit Menu**: Undo (CTRL+Z), Redo (CTRL+SHIFT+Z), Delete All Custom Lines, Delete All Polygons, Delete Lines & Polygons (CTRL+DEL), Clean Canvas (CTRL+SHIFT+DEL)
   - **View Menu**: Sacred Geometry, Playground, User Custom, Selection Info (show/focus windows independently) ⭐ UPDATED
 - **SacredGeometry Panel** - Template controls panel dengan:
   - Template Name Display (Basic Zellige)
-  - **Draw Template** section: Parallel / Sequential radio buttons
+  - **Draw Template** section: Parallel / Sequential buttons
   - **Clean Canvas** button
   - Radius Slider (50-600) - real-time scaling
   - **Speed Control Slider (0.1 - 1.5)**
@@ -161,12 +175,13 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - **Draw Settings**: Cartesian, Circles, CrossLines, Parallelograms, RectangleLines, OctagramLines checkboxes ⭐ UPDATED
   - Polygon Animate: No Animation / FadeIn / Wobble / Fill radio buttons
   - Speed Control Slider (0.1 - 1.5) ⭐ NEW
-  - **Play Arrow Button** - Load dan animate workspace
+  - **Draw Arrow Button (←)** - Load dan animate workspace
 - **UserCustom Panel** - User control panel dengan:
   - **Dot Section**:
     - Show/Hide Checkbox
-    - Radius Slider (0 - 8) untuk selected userDots
+    - Radius Slider (0 - 8) untuk userDots (ambil langsung dari slider saat create) ⭐ UPDATED
     - Dot Color Picker (circular wheel)
+    - **Color Sync** - Color picker sync dengan selected userDot atau global color
   - **Line Section**:
     - Selected Lines Info - Menampilkan label dan count selected lines
     - Line Color Picker (circular wheel with hue wheel & alpha bar)
@@ -177,6 +192,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
       - Validasi otomatis untuk mencegah duplicate dari duplicate
   - **Polygon Section**:
     - Polygon Color Picker (circular wheel with hue wheel & alpha bar)
+    - Reset All/Selected Polygon Colors Buttons
+    - Alpha Slider (0-255) untuk selected polygons (≥2 polygons)
 - **SelectionInfo Panel** ⭐ NEW - Selected objects info window:
   - Multi-line indented format untuk readability
   - Shows dot/line/polygon properties
@@ -211,13 +228,39 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Create Polygon (CTRL+G)** - Buat polygon dari selected customLines (otomatis deteksi closed loop)
 - **Polygon Color Preset** - 9 warna preset untuk polygon (merah, hijau, biru, kuning, magenta, cyan, orange, ungu, abu-abu)
 - **Color Picker Integration** - Ubah warna custom line dan polygon secara real-time via color picker di UserCustom panel
+- **Color Sync System** - Color picker otomatis sync dengan warna object yang terseleksi:
+  - Saat select object → color picker update ke warna object tersebut
+  - Saat tidak ada selection → color picker tetap di warna terakhir
+- **Paste Color Update** - Paste color sekarang mengupdate global color variables untuk consistency
 - **100-Step Undo/Redo System** - Complete undo/redo dengan full state tracking:
-  - CREATE_LINE / CREATE_POLYGON
+  - CREATE_LINE / CREATE_POLYGON / CREATE_DOT
   - CHANGE_COLOR_LINE / CHANGE_COLOR_POLYGON (multi-select support)
-  - DELETE_LINE / DELETE_POLYGON
+  - DELETE_LINE / DELETE_POLYGON / DELETE_DOT
   - CHANGE_CURVE (multi-select support)
 - **Delete All Custom Lines** - Hapus semua customLines saja (Edit menu)
 - **Delete All Polygons** - Hapus semua polygons saja (Edit menu)
+
+### UserDot System ⭐ NEW
+- **Duplicate Dot Feature** - Buat duplicate dot dari original template dots:
+  - **Duplicate Dot Above** - Duplicate dengan offset ke atas (Y negatif)
+  - **Duplicate Dot Below** - Duplicate dengan offset ke bawah (Y positif)
+  - **Duplicate Dot Left** - Duplicate dengan offset ke kiri (X negatif)
+  - **Duplicate Dot Right** - Duplicate dengan offset ke kanan (X positif)
+- **Context Menu Access** - Right-click pada original dot untuk show duplicate options
+- **Radius from Slider** - New userDot radius diambil langsung dari slider User Custom (0-8) ⭐ UPDATED
+  - Tidak lagi dipengaruhi lineWidth template
+  - Consistent dengan user expectations
+- **Color from Picker** - New userDot color diambil dari color picker User Custom
+- **Lower Bound System** - Setiap userDot punya lower bound (dot parent position) untuk reference
+- **Scroll Control** - Mouse scroll untuk menggerakkan selected userDots:
+  - Horizontal dots (left/right) → Scroll gerakkan di sumbu X
+  - Vertical dots (above/below) → Scroll gerakkan di sumbu Y
+  - Dengan boundary validation (tidak bisa melewati dot parent)
+- **Color Copy/Paste** - Copy color dari selected userDot, paste ke userDots lain
+- **Undo/Redo Support** - CREATE_DOT action dengan radius preservation ⭐ UPDATED
+  - Saat undo CREATE_DOT → Simpan radius dot yang dihapus
+  - Saat redo CREATE_DOT → Buat ulang dengan radius yang tersimpan
+  - Consistent radius saat undo/redo
 
 ### Duplicate Line System
 - **Duplicate Line R 180°** - Duplicate selected customLines dengan rotasi 180° di global center
@@ -249,9 +292,9 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Complete State Persistence** - Save template name, radius, custom lines, polygons, semua settings (labels, dots, line width, draw settings)
 - **Direct File Save** - Save langsung ke filepath target tanpa intermediate "workspace.nay" file
 - **File Dialog Integration** - Native Windows file dialog untuk Save As/Open operations dengan .nay filter validation
-- **Two Load Modes**:
-  - **Parallel (CTRL+O)**: Template → CustomLines → Polygons animate simultaneously per group
-  - **Sequential (CTRL+SHIFT+O)**: Groups animate satu per satu dengan delay
+- **Draw Mode Selection** - Mode animate dipilih lewat radio button di Playground:
+  - **Parallel Per Group**: Template → CustomLines → Polygons animate simultaneously per group
+  - **Sequential Per Group**: Groups animate satu per satu dengan delay
 - **Auto Clean Canvas** - Otomatis bersihkan canvas sebelum load (selalu dicenterangkan)
 - **Delay Load System** - Smooth transition dengan delay sebelum animation starts (0.0f = tanpa delay)
 - **Animation State Preservation** - State animasi di-save dan di-restore dengan benar
@@ -340,7 +383,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 |  - **Wobble** | Oscillation/goyang effect |
 |  - **Fill** | Water fill effect dari bawah ke atas |
 | **Speed Control** ⭐ NEW | Slider speed 0.1 - 1.5x untuk semua animations |
-| **Play Arrow Button** | Load dan animate workspace |
+| **Draw Arrow Button (←)** | Load dan animate workspace |
    - Clean canvas dulu
   - Apply speed multiplier
   - Set polygon animation mode
@@ -351,8 +394,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | --- | --- |
 | **Dot Section** | - |
 | **Show/Hide Checkbox** | Toggle userDot visibility |
-| **Radius Slider** | Adjust radius selected userDots (0 - 8) |
-| **D Color Picker** | Pilih warna untuk selected userDots (circular wheel) |
+| **Radius Slider** | Adjust radius userDots (0 - 8) ⭐ UPDATED - Applied ke selected userDots, new userDots ambil dari slider ini |
+| **D Color Picker** | Pilih warna untuk userDots (circular wheel) - Sync dengan selected userDot ⭐ UPDATED |
 | **Line Section** | - |
 | **Selected Lines Info** | Menampilkan label dan jumlah selected lines (auto wrap) |
 | **L Color Picker** | Pilih warna untuk selected lines (circular wheel with hue wheel & alpha bar) |
@@ -360,7 +403,11 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Reset Selected Colors** | Reset selected customLines ke default blue |
 | **Duplicate Line R 180°** | Duplicate selected lines dengan rotate 180° di global center |
 | **Polygon Section** | - |
+| **Polygon Info** | Menampilkan label dan jumlah selected polygons (auto wrap) |
 | **P Color Picker** | Pilih warna untuk polygons (circular wheel with hue wheel & alpha bar) |
+| **Reset All Polygon Colors** | Reset semua polygons ke default blue |
+| **Reset Selected Polygon Colors** | Reset selected polygons ke default blue |
+| **Alpha Slider** | Adjust transparansi selected polygons (0-255, min 2 polygons) |
 
 **SelectionInfo Panel:** ⭐ NEW
 | Control | Action |
@@ -376,7 +423,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Save Workspace** | Simpan semua state ke lastSavedPath | **CTRL+S** |
 | **Save As...** | Simpan workspace ke lokasi custom (file dialog) | **CTRL+SHIFT+S** |
 | **Open...** | Buka file dialog untuk load workspace .nay | **CTRL+O** |
-| **Exit** | Keluar dari aplikasi | **ALT+F4** |
+| **Exit** | Keluar dari aplikasi | **END** |
 
 **MenuBar (Edit Menu):**
 | Menu Item | Action | Keyboard Shortcut |
@@ -424,7 +471,6 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 **Main Canvas Controls:**
 | Input | Action |
 | --- | --- |
-| **SHIFT + 1** atau **SHIFT + !** | Sequential drawing - shapes muncul berurutan |
 | **DEL** | Tidak melakukan apa-apa (hide sudah tidak dipakai lagi) |
 | **BACKSPACE** | Hapus selected line/polygon/userDot ⭐ UPDATED |
 | **\`** atau **~** | Toggle label visibility (semua label) |
@@ -453,6 +499,15 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Unlock X Axis** | Unlock X axis (bisa gerak di X dan Y) |
 | **Lock Y Axis** | Lock Y axis (hanya bisa gerak di X via scroll) |
 | **Unlock Y Axis** | Unlock Y axis (bisa gerak di X dan Y) |
+
+**UserDot Controls:** ⭐ NEW
+| Input | Action |
+| --- | --- |
+| **Right-Click (Original Dot)** | Context menu untuk Duplicate Dot (Above/Below/Left/Right) |
+| **Right-Click (UserDot)** | Context menu untuk Copy/Paste Color |
+| **Mouse Scroll (Selected)** | Gerakkan selected userDot sesuai arah offset (without CTRL) |
+| **Radius Slider** | Atur radius userDot (0-8) - applied ke selected userDots atau new userDots |
+| **Color Picker** | Atur warna userDot - applied ke selected userDots atau new userDots |
 
 **DcustomLine Bulk Menu Controls (>1 Selected):**
 | Menu (>1 Selected) | Action |
@@ -485,7 +540,6 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **CTRL + S** | Save workspace ke lastSavedPath |
 | **CTRL + SHIFT + S** | Save workspace ke custom location |
 | **CTRL + O** | Buka file dialog untuk load workspace .nay |
-| **CTRL + SHIFT + O** | Load workspace dengan sequential animation |
 
 ---
 
@@ -915,27 +969,13 @@ for (int i = 0; i < numPolygons; i++) {
 - **Complete State**: Template, settings, lines, polygons, animation speeds semuanya tersimpan
 - **Speed Sync**: Speed multiplier disimpan di SacredGeometry panel, sync ke FileManager saat load
 
-**Load Process:**
+**Load Process (via Tombol Draw di Playground):**
 
-1. **Parallel Load (CTRL+O)**:
-   - Baca file .nay
-   - switchTemplate(loadedTemplateName) → setupShapes() → Hanya buat shapes yang dicentang ⭐ UPDATED
-   - setRadius(loadedRadius) → Simpan radius value
-   - Loop update shapes → Set radius loadedRadius untuk semua shapes
-   - applySpeedMultiplier() → Apply speed sesuai slider
-   - Load custom lines dengan fade-in animation
-   - Load polygons dengan animation (FadeIn/Wobble/Fill)
-   - Semua animate sekaligus per group
-
-2. **Sequential Load (CTRL+SHIFT+O)**:
-   - Baca file .nay
-   - switchTemplate(loadedTemplateName) → setupShapes() → Hanya buat shapes yang dicentang ⭐ UPDATED
-   - setRadius(loadedRadius) → Simpan radius value
-   - Loop update shapes → Set radius loadedRadius untuk semua shapes
-   - applySpeedMultiplier() → Apply speed sesuai slider
-   - Load custom lines satu per satu dengan animasi
-   - Load polygons satu per satu dengan animasi
-   - Buffer system untuk smooth sequential loading
+1. **Clean Canvas** - Hapus semua shapes, polygons, customLines, userDots
+2. **Apply Settings** - Speed multiplier, polygon animation mode
+3. **Load & Animate** - Baca file .nay dan animate sesuai mode yang dipilih:
+   - **Parallel Per Group**: Template → CustomLines → Polygons animate simultaneously per group
+   - **Sequential Per Group**: Groups animate satu per satu dengan delay
 
 ---
 
@@ -979,7 +1019,8 @@ BasicIslamicGeometry/
 │           ├── ContextMenu.cpp/h        # Right-click context menu
 │           ├── SuccessPopup.cpp/h       # Success dialog
 │           ├── ErrorPopup.cpp/h         # Error dialog
-│           └── SelectionInfo.cpp/h      # Selected objects info window ⭐ NEW
+│           ├── SelectionInfo.cpp/h      # Selected objects info window ⭐ NEW
+│           └── ObjectTooltip.cpp/h      # Object tooltips manager ⭐ NEW
 ├── bin/                      # Compiled executable
 │   └── data/                 # Saved workspaces (.nay files)
 ├── README.md                 # Comprehensive documentation (this file)
@@ -995,7 +1036,10 @@ BasicIslamicGeometry/
 - **Shape Hierarchy**: Semua shapes inherit dari AbstractShape (no show/hide) ⭐ UPDATED
 - **Animation System**: AbstractAnimation base untuk reusable animations dengan deltaTime
 - **Speed Control**: Centralized speed multiplier system untuk semua animations
-- **Undo/Redo**: 100-step history dengan comprehensive state tracking
+- **Object Tooltip System**: Custom OF rendering untuk selected objects info ⭐ NEW
+- **UserDot System**: Flexible dot placement dengan radius dari slider ⭐ NEW
+- **Color Management**: Smart sync antara objects dan color pickers ⭐ NEW
+- **Undo/Redo**: 100-step history dengan comprehensive state tracking (termasuk CREATE_DOT radius) ⭐ UPDATED
 - **File Operations**: Centralized FileManager dengan direct file save dan speed sync
 - **Window Management**: Independent window visibility controls
 - **Transform System**: Canvas transform dengan inverse transform untuk mouse input ⭐ NEW
@@ -1015,6 +1059,8 @@ Project ini adalah bagian dari eksplorasi **Creative Coding** dan pembelajaran:
 - 🎛️ Professional GUI development dengan ImGui
 - 🖼️ Canvas transform system untuk viewport control ⭐ NEW
 - 📋 Selection info display untuk better UX ⭐ NEW
+- 💡 Object tooltips untuk enhanced user experience ⭐ NEW
+- ✨ UserDot system untuk flexible dot placement ⭐ NEW
 
 ---
 
@@ -1035,7 +1081,7 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ## 📝 Current Status: **sketch-islamic-gs-cleancanvas**
 
-Branch ini adalah **Islamic Geometry Studio with Draw Only Concept & Transform System** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, speed control global, transform canvas, dan draw only concept.
+Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, speed control global, transform canvas, draw only concept, object tooltips, dan userDot system.
 
 ### ✨ Key Features (Latest Updates)
 
@@ -1046,8 +1092,11 @@ Branch ini adalah **Islamic Geometry Studio with Draw Only Concept & Transform S
 ✅ **Global Speed Control** - Slider speed 0.1x - 1.5x berlaku untuk SEMUA animations
 ✅ **Transform Canvas System** - Pan X/Y, Rotate, Zoom controls dengan inverse transform ⭐ NEW
 ✅ **Selection Info Panel** - Floating window untuk selected objects info ⭐ NEW
+✅ **Object Tooltip System** - Custom tooltips untuk selected objects (dots, lines, polygons) ⭐ NEW
+✅ **UserDot System** - Duplicate dots dengan radius dari slider User Custom ⭐ NEW
+✅ **Color Sync Improvements** - Better sync antara objects dan color pickers ⭐ NEW
 ✅ **Draw Template UI** - Parallel/Sequential draw di SacredGeometry panel
-✅ **Clean & Draw Workflow** - Clean canvas dulu, baru draw dengan Play button
+✅ **Clean & Draw Workflow** - Clean canvas dulu, baru draw dengan Draw button (Playground)
 ✅ **Auto Speed Sync** - Saat load file, speed mengikuti slider setting
 ✅ **UserCustom Panel** - Window untuk kontrol user (Dot, Line, Polygon)
 ✅ **Duplicate Line R 180°** - Duplicate selected lines dengan rotate 180° di global center

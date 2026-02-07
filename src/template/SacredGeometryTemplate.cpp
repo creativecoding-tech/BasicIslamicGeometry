@@ -9,24 +9,15 @@
 
 //--------------------------------------------------------------
 void SacredGeometryTemplate::startSequentialDrawing() {
-	// Cek apakah ada shape yang sedang drawing (belum complete)
-	bool stillDrawing = false;
-	for (auto &shape : shapes) {
-		if (!shape->isComplete()) {
-			stillDrawing = true;
-			break;
-		}
-	}
-
-	if (stillDrawing) {
-		// Ada shape yang masih drawing, jangan jalankan sequential
-		return;
-	}
-
 	// Cek apakah sequential sudah pernah selesai
 	if (sequentialCompleted) {
 		// Sequential sudah selesai sebelumnya, jangan jalankan lagi
 		return;
+	}
+
+	// Reset semua shapes ke progress 0 untuk memastikan mulai dari awal
+	for (auto &shape : shapes) {
+		shape->progress = 0;
 	}
 
 	// Mulai sequential mode
@@ -48,7 +39,7 @@ void SacredGeometryTemplate::startSequentialDrawing() {
 }
 
 //--------------------------------------------------------------
-bool SacredGeometryTemplate::updateSequentialDrawing() {
+bool SacredGeometryTemplate::updateSequentialDrawing(float deltaTime) {
 	if (!sequentialMode) return true;
 
 	AbstractShape* currentShape = nullptr;
@@ -56,6 +47,11 @@ bool SacredGeometryTemplate::updateSequentialDrawing() {
 	// Tentukan shape berdasarkan index
 	if (currentShapeIndex >= 0 && currentShapeIndex < shapes.size()) {
 		currentShape = shapes[currentShapeIndex].get();
+	}
+
+	// UPDATE current shape DULU sebelum cek complete!
+	if (currentShape) {
+		currentShape->update(deltaTime);
 	}
 
 	// Cek jika current shape sudah complete

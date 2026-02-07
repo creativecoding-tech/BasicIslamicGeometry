@@ -43,8 +43,23 @@ void MenuBar::draw() {
             if (ImGui::MenuItem("Delete Lines & Polygons", "CTRL+DEL")) {
                 app->clearCustomLinesAndPolygons();
             }
-            if (ImGui::MenuItem("Clean Canvas", "CTRL+SHIFT+DEL")) {
-                app->cleanCanvas();
+            // Clean Canvas - Disable jika canvas kosong
+            bool isCanvasEmpty = (app->currentTemplate && app->currentTemplate->getShapes().empty()) &&
+                                app->customLines.empty() &&
+                                app->polygonShapes.empty();
+
+            if (ImGui::MenuItem("Clean Canvas", "CTRL+SHIFT+DEL", false, !isCanvasEmpty)) {
+                // Tampilkan confirmation popup sebelum clean canvas
+                app->confirmationPopup->show(
+                    "Clean Canvas",
+                    "Are you sure you want to clean the canvas?\n\nEverything on the canvas will be deleted.",
+                    "Yes, Clean",
+                    "Cancel",
+                    [this]() {
+                        // Callback: User klik Yes, jalankan cleanCanvas
+                        app->cleanCanvas();
+                    }
+                );
             }
             ImGui::EndMenu();
         }

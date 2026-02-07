@@ -130,13 +130,34 @@ void SacredGeometry::draw() {
         }
 
         ImGui::Separator();
-        // Clean Canvas button
+        // Clean Canvas button - Disable jika canvas kosong
+        bool isCanvasEmpty = (app->currentTemplate && app->currentTemplate->getShapes().empty()) &&
+                            app->customLines.empty() &&
+                            app->polygonShapes.empty();
+
         float buttonWidth = ImGui::CalcTextSize("Clean Canvas").x + ImGui::GetStyle().FramePadding.x * 2.0f;
         float windowWidth = ImGui::GetContentRegionAvail().x;
         ImGui::SetCursorPosX((windowWidth - buttonWidth) / 2.0f);
 
-        if (ImGui::Button("Clean Canvas")) {
-            app->cleanCanvas();
+        if (isCanvasEmpty) {
+            // Disable tombol jika canvas kosong
+            ImGui::BeginDisabled();
+            ImGui::Button("Clean Canvas");
+            ImGui::EndDisabled();
+        } else {
+            if (ImGui::Button("Clean Canvas")) {
+                // Tampilkan confirmation popup sebelum clean canvas
+                app->confirmationPopup->show(
+                    "Clean Canvas",
+                    "Are you sure you want to clean the canvas?\n\nEverything on the canvas will be deleted.",
+                    "Yes, Clean",
+                    "Cancel",
+                    [this]() {
+                        // Callback: User klik Yes, jalankan cleanCanvas
+                        app->cleanCanvas();
+                    }
+                );
+            }
         }
     }
     ImGui::End();

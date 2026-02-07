@@ -14,6 +14,7 @@
 #include "operation/gui/ContextMenu.h"
 #include "operation/gui/SuccessPopup.h"
 #include "operation/gui/ErrorPopup.h"
+#include "operation/gui/ConfirmationPopup.h"
 #include "operation/gui/SelectionInfo.h"
 #include "operation/gui/ObjectTooltip.h"
 #include "template/SacredGeometryTemplate.h"
@@ -198,6 +199,7 @@ class ofApp : public ofBaseApp{
 		std::vector<std::unique_ptr<AbstractGuiComponent>> guiComponents;
 		std::unique_ptr<SuccessPopup> successPopup;  // Success popup dialog
 		std::unique_ptr<ErrorPopup> errorPopup;  // Error popup dialog
+		std::unique_ptr<ConfirmationPopup> confirmationPopup;  // Confirmation popup dialog
 		std::unique_ptr<class SelectionInfo> selectionInfo;  // Selection Info window
 		std::unique_ptr<ObjectTooltip> objectTooltip;  // Object tooltip manager
 

@@ -118,7 +118,7 @@ public:
 
 	// Template control methods - fully autonomous!
 	virtual void startSequentialDrawing();
-	virtual bool updateSequentialDrawing();  // Return true jika complete
+	virtual bool updateSequentialDrawing(float deltaTime = 0.016f);  // Return true jika complete
 	virtual void clearAllShapes();  // Benar-benar hapus semua shapes (shapes.clear())
 	virtual void drawParallel();  // Draw all shapes secara parallel (setup + show)
 	virtual void toggleLabels();
