@@ -189,21 +189,6 @@ void PolygonShape::draw() const {
 		ofEndShape(true);
 	}
 
-	// Jika selected, gambar label di tengah polygon
-	if (selected && index >= 0) {
-		// Hitung centroid (titik tengah)
-		vec2 centroid(0, 0);
-		for (auto& v : vertices) {
-			centroid += v;
-		}
-		centroid /= vertices.size();
-
-		// Gambar label "Polygon[index]"
-		ofNoFill();
-		ofSetColor(0, 0, 0);
-		ofDrawBitmapString("Polygon" + ofToString(index), centroid.x - 10,centroid.y);
-	}
-
 	ofPopStyle();
 }
 
