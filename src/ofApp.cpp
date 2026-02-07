@@ -566,16 +566,7 @@ void ofApp::keyPressed(int key) {
       }
       selectedLineIndices.clear();
     }
-    // Kalau tidak ada polygon dan customLine terselect, toggle CartesianAxes
-    else {
-      if (currentTemplate) {
-        const auto& shapes = currentTemplate->getShapes();
-        if (!shapes.empty()) {
-          AbstractShape* cartesianAxes = shapes[0].get();
-          setCartesianAxesVisibility(!cartesianAxes->showing);  // Toggle
-        }
-      }
-    }
+    // Note: CartesianAxes toggle dihapus karena tidak sesuai dengan Draw Only concept
   }
 
   // SHIFT+) untuk show semua shapes sudah tidak dipakai lagi
@@ -704,7 +695,7 @@ void ofApp::updateDotsCache() {
   if (currentTemplate) {
     const auto& shapes = currentTemplate->getShapes();
     for (auto &shape : shapes) {
-      if (shape && shape->showing) {
+      if (shape) {
         shape->addDotsToCache(cachedDots);
       }
     }
@@ -712,7 +703,7 @@ void ofApp::updateDotsCache() {
 
   // Tambahkan user-created dots ke cache untuk hover detection
   for (auto& dot : userDots) {
-    if (dot && dot->showing) {
+    if (dot) {
       dot->addDotsToCache(cachedDots);
     }
   }
@@ -1041,7 +1032,6 @@ void ofApp::undo() {
 			// Restore userDot yang dihapus
 			if (action.deletedDotIndex >= 0 && action.deletedDotIndex <= static_cast<int>(userDots.size())) {
 				auto dotShape = std::make_unique<DotShape>(action.deletedDotPos, "Dot", action.deletedDotRadius);
-				dotShape->showing = true;
 				dotShape->progress = 1.0f;
 				dotShape->setLowerBound(action.deletedDotLowerBound);
 				userDots.insert(userDots.begin() + action.deletedDotIndex, std::move(dotShape));
@@ -1114,7 +1104,6 @@ void ofApp::redo() {
 			// Redo create dot = buat dot baru dari position yang tersimpan
 			{
 				auto dotShape = std::make_unique<DotShape>(action.deletedDotPos, "Dot");
-				dotShape->showing = true;
 				dotShape->progress = 1.0f;
 				userDots.push_back(std::move(dotShape));
 			}
@@ -1321,7 +1310,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 
     // CEK 1.5: Klik kanan pada USERDOT (duplicate dot) yang terseleksi
     for (int i = 0; i < userDots.size(); i++) {
-      if (userDots[i] && userDots[i]->showing) {
+      if (userDots[i]) {
         vec2 dotPos = userDots[i]->getPosition();
         float dist = glm::length(adjustedMousePos - dotPos);
         if (dist < 15.0f) {
@@ -1376,7 +1365,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 
     // CEK USER DOTS DULU (priority tertinggi)
     for (int i = 0; i < userDots.size(); i++) {
-      if (userDots[i] && userDots[i]->showing) {
+      if (userDots[i]) {
         vec2 dotPos = userDots[i]->getPosition();
         float dist = glm::length(adjustedMousePos - dotPos);
         if (dist < 15.0f) {
@@ -1428,7 +1417,7 @@ void ofApp::mousePressed(int x, int y, int button) {
     // CEK USER DOTS (normal click tanpa CTRL)
     bool clickedOnUserDot = false;
     for (int i = 0; i < userDots.size(); i++) {
-      if (userDots[i] && userDots[i]->showing) {
+      if (userDots[i]) {
         vec2 dotPos = userDots[i]->getPosition();
         // Gunakan threshold yang lebih besar untuk userDot (15px) agar mudah diklik
         float dist = glm::length(adjustedMousePos - dotPos);
@@ -1829,15 +1818,9 @@ void ofApp::toggleDots() {
 void ofApp::setCartesianAxesVisibility(bool show) {
   if (!currentTemplate) return;
 
-  const auto& shapes = currentTemplate->getShapes();
-  if (!shapes.empty()) {
-    AbstractShape* cartesianAxes = shapes[0].get(); // CartesianAxes selalu index 0
-    if (show) {
-      cartesianAxes->show();
-    } else {
-      cartesianAxes->hide();
-    }
-  }
+  // Dengan Draw Only concept, CartesianAxes visibility dikontrol lewat Playground
+  // Checkbox di SacredGeometry tidak lagi menghapus CartesianAxes yang sudah dibuat
+  // Fungsi ini dibiarkan kosong untuk backward compatibility
 
   // Mark dots cache dirty karena visibility berubah
   dotsCacheDirty = true;
@@ -2588,7 +2571,6 @@ void ofApp::duplicateDotAbove() {
 
     // Buat DotShape baru dengan userDotRadius
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
-    dotShape->showing = true;
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
     dotShape->setColor(userDotColor);  // Set warna dari userDotColor
 
@@ -2626,7 +2608,6 @@ void ofApp::duplicateDotBelow() {
 
     // Buat DotShape baru dengan userDotRadius
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
-    dotShape->showing = true;
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
     dotShape->setColor(userDotColor);  // Set warna dari userDotColor
 
@@ -2664,7 +2645,6 @@ void ofApp::duplicateDotLeft() {
 
     // Buat DotShape baru dengan userDotRadius
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
-    dotShape->showing = true;
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
     dotShape->setColor(userDotColor);  // Set warna dari userDotColor
 
@@ -2702,7 +2682,6 @@ void ofApp::duplicateDotRight() {
 
     // Buat DotShape baru dengan userDotRadius
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
-    dotShape->showing = true;
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
     dotShape->setColor(userDotColor);  // Set warna dari userDotColor
 
@@ -2896,14 +2875,9 @@ void ofApp::scaleCustomLinesAndPolygons(float oldRadius, float newRadius) {
 
 //--------------------------------------------------------------
 bool ofApp::isCanvasEmpty() {
-	// Cek apakah ada template shapes yang showing
-	if (currentTemplate) {
-		const auto& shapes = currentTemplate->getShapes();
-		for (const auto& shape : shapes) {
-			if (shape && shape->showing) {
-				return false;  // Ada template yang showing, canvas tidak kosong
-			}
-		}
+	// Cek apakah ada template shapes
+	if (currentTemplate && !currentTemplate->getShapes().empty()) {
+		return false;  // Ada template shapes, canvas tidak kosong
 	}
 
 	// Cek customLines
@@ -3082,74 +3056,8 @@ void ofApp::loadWorkspace() {
             currentTemplate->drawParallel();
         }
 
-        // Apply Cartesian, Circle, & CrossLine preferensi dari Playground SETELAH shapes dibuat
-        if (currentTemplate) {
-            const auto& shapes = currentTemplate->getShapes();
-            if (!shapes.empty()) {
-                // Index 0: CartesianAxes
-                AbstractShape* cartesianAxes = shapes[0].get();
-                if (currentTemplate->showCartesianOnPlay) {
-                    cartesianAxes->show();
-                } else {
-                    cartesianAxes->hide();
-                }
-
-                // Circle A-E menggunakan circleIndices (fleksibel!)
-                for (int circleIndex : currentTemplate->circleIndices) {
-                    if (circleIndex < shapes.size()) {
-                        if (currentTemplate->showCirclesOnPlay) {
-                            shapes[circleIndex]->show();
-                        } else {
-                            shapes[circleIndex]->hide();
-                        }
-                    }
-                }
-
-                // CrossLine F-I menggunakan crossLineIndices (fleksibel!)
-                for (int crossLineIndex : currentTemplate->crossLineIndices) {
-                    if (crossLineIndex < shapes.size()) {
-                        if (currentTemplate->showCrossLinesOnPlay) {
-                            shapes[crossLineIndex]->show();
-                        } else {
-                            shapes[crossLineIndex]->hide();
-                        }
-                    }
-                }
-
-                // Parallelogram N-Q menggunakan parallelogramIndices (fleksibel!)
-                for (int parallelogramIndex : currentTemplate->parallelogramIndices) {
-                    if (parallelogramIndex < shapes.size()) {
-                        if (currentTemplate->showParallelogramsOnPlay) {
-                            shapes[parallelogramIndex]->show();
-                        } else {
-                            shapes[parallelogramIndex]->hide();
-                        }
-                    }
-                }
-
-                // RectangleLine RS, TU, VW, XY menggunakan rectangleLineIndices (fleksibel!)
-                for (int rectangleLineIndex : currentTemplate->rectangleLineIndices) {
-                    if (rectangleLineIndex < shapes.size()) {
-                        if (currentTemplate->showRectangleLinesOnPlay) {
-                            shapes[rectangleLineIndex]->show();
-                        } else {
-                            shapes[rectangleLineIndex]->hide();
-                        }
-                    }
-                }
-
-                // OctagramLine 0-7 menggunakan octagramLineIndices (fleksibel!)
-                for (int octagramLineIndex : currentTemplate->octagramLineIndices) {
-                    if (octagramLineIndex < shapes.size()) {
-                        if (currentTemplate->showOctagramLinesOnPlay) {
-                            shapes[octagramLineIndex]->show();
-                        } else {
-                            shapes[octagramLineIndex]->hide();
-                        }
-                    }
-                }
-            }
-        }
+        // Note: Shapes visibility sudah di-filter di setupShapes() (Draw Only concept)
+        // Tidak perlu show/hide logic di sini lagi
 
         // Matikan parallel dulu supaya customLines tidak langsung di-animate
         fileManager.setLoadParallelMode(false);
@@ -3233,74 +3141,8 @@ void ofApp::loadWorkspaceSeq() {
         currentTemplate->drawParallel();
     }
 
-    // Apply Cartesian, Circle, & CrossLine preferensi dari Playground SETELAH showAllShapes
-    if (currentTemplate) {
-        const auto& shapes = currentTemplate->getShapes();
-        if (!shapes.empty()) {
-            // Index 0: CartesianAxes
-            AbstractShape* cartesianAxes = shapes[0].get();
-            if (currentTemplate->showCartesianOnPlay) {
-                cartesianAxes->show();
-            } else {
-                cartesianAxes->hide();
-            }
-
-            // Circle A-E menggunakan circleIndices (fleksibel!)
-            for (int circleIndex : currentTemplate->circleIndices) {
-                if (circleIndex < shapes.size()) {
-                    if (currentTemplate->showCirclesOnPlay) {
-                        shapes[circleIndex]->show();
-                    } else {
-                        shapes[circleIndex]->hide();
-                    }
-                }
-            }
-
-            // CrossLine F-I menggunakan crossLineIndices (fleksibel!)
-            for (int crossLineIndex : currentTemplate->crossLineIndices) {
-                if (crossLineIndex < shapes.size()) {
-                    if (currentTemplate->showCrossLinesOnPlay) {
-                        shapes[crossLineIndex]->show();
-                    } else {
-                        shapes[crossLineIndex]->hide();
-                    }
-                }
-            }
-
-            // Parallelogram N-Q menggunakan parallelogramIndices (fleksibel!)
-            for (int parallelogramIndex : currentTemplate->parallelogramIndices) {
-                if (parallelogramIndex < shapes.size()) {
-                    if (currentTemplate->showParallelogramsOnPlay) {
-                        shapes[parallelogramIndex]->show();
-                    } else {
-                        shapes[parallelogramIndex]->hide();
-                    }
-                }
-            }
-
-            // RectangleLine RS, TU, VW, XY menggunakan rectangleLineIndices (fleksibel!)
-            for (int rectangleLineIndex : currentTemplate->rectangleLineIndices) {
-                if (rectangleLineIndex < shapes.size()) {
-                    if (currentTemplate->showRectangleLinesOnPlay) {
-                        shapes[rectangleLineIndex]->show();
-                    } else {
-                        shapes[rectangleLineIndex]->hide();
-                    }
-                }
-            }
-
-            // OctagramLine 0-7 menggunakan octagramLineIndices (fleksibel!)
-            for (int octagramLineIndex : currentTemplate->octagramLineIndices) {
-                if (octagramLineIndex < shapes.size()) {
-                    if (currentTemplate->showOctagramLinesOnPlay) {
-                        shapes[octagramLineIndex]->show();
-                    } else {
-                        shapes[octagramLineIndex]->hide();
-                    }
-                }
-            }
-        }
-    }
+    // Note: Shapes visibility sudah di-filter di setupShapes() (Draw Only concept)
+    // Tidak perlu show/hide logic di sini lagi
 
     // Set sequential mode SETELAH showAllShapes (karena showAllShapes akan reset ke false)
     for (auto& shape : shapes) {

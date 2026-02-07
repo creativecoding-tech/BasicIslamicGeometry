@@ -56,12 +56,8 @@ void ParallelogramLine::hideLabel() {
 }
 
 void ParallelogramLine::update(float deltaTime) {
-	if (showing) {
-		if (progress < totalSegments) progress += speed * deltaTime;
-	}
-	else {
-		if (progress > 0) progress -= speed * deltaTime;
-	}
+	// Animasi muncul dari 0 ke totalSegments
+	if (progress < totalSegments) progress += speed * deltaTime;
 }
 
 void ParallelogramLine::draw() {
@@ -89,7 +85,7 @@ void ParallelogramLine::draw() {
 	polyline.close();
 	polyline.draw();
 
-	if (showing && progress >= totalSegments) {
+	if (progress >= totalSegments) {
 		ofFill();
 		// Gambar dot hanya jika dotVisible = true
 		if (dotVisible) {

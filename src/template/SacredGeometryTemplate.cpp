@@ -9,20 +9,6 @@
 
 //--------------------------------------------------------------
 void SacredGeometryTemplate::startSequentialDrawing() {
-	// Cek apakah semua shapes sudah visible/showing
-	bool allVisible = true;
-	for (auto &shape : shapes) {
-		if (!shape->showing) {
-			allVisible = false;
-			break;
-		}
-	}
-
-	if (allVisible) {
-		// Semua shapes sudah visible, jangan jalankan sequential
-		return;
-	}
-
 	// Cek apakah ada shape yang sedang drawing (belum complete)
 	bool stillDrawing = false;
 	for (auto &shape : shapes) {
@@ -43,11 +29,6 @@ void SacredGeometryTemplate::startSequentialDrawing() {
 		return;
 	}
 
-	// Reset semua shapes ke hidden
-	for (auto &shape : shapes) {
-		shape->hide();
-	}
-
 	// Mulai sequential mode
 	sequentialMode = true;
 	sequentialCompleted = false;
@@ -58,27 +39,12 @@ void SacredGeometryTemplate::startSequentialDrawing() {
 		shape->setSequentialMode(sequentialMode);
 	}
 
-	// Show shape pertama
-	if (!shapes.empty()) {
-		shapes[0]->show();
-	}
-
-	// Apply labels dan dots visibility setting (setelah shapes di-show)
+	// Apply labels dan dots visibility setting
 	toggleLabels();  // Apply labelsVisible setting
 	toggleDots();    // Apply dotsVisible setting
 
 	// Apply line width setting
 	updateLineWidth(lineWidth);
-
-	// Apply cartesian axes visibility
-	if (!shapes.empty()) {
-		AbstractShape* cartesianAxes = shapes[0].get(); // CartesianAxes selalu index 0
-		if (showCartesianInSacredGeometry) {
-			cartesianAxes->show();
-		} else {
-			cartesianAxes->hide();
-		}
-	}
 }
 
 //--------------------------------------------------------------
@@ -97,10 +63,9 @@ bool SacredGeometryTemplate::updateSequentialDrawing() {
 		// Pindah ke shape berikutnya
 		currentShapeIndex++;
 
-		// Show shape berikutnya jika masih ada
+		// Cek apakah masih ada shape yang perlu di-draw
 		if (currentShapeIndex < shapes.size()) {
-			shapes[currentShapeIndex]->show();
-			return false;  // Belum selesai
+			return false;  // Belum selesai, lanjut ke shape berikutnya
 		} else {
 			// Semua shapes sudah complete, matikan sequential mode dan tandai selesai
 			sequentialMode = false;
@@ -134,27 +99,12 @@ void SacredGeometryTemplate::drawParallel() {
 		shape->setSequentialMode(sequentialMode);
 	}
 
-	// Show semua shapes (akan animasi barengan/paralel)
-	for (auto &shape : shapes) {
-		shape->show();
-	}
-
-	// Apply labels dan dots visibility setting (setelah shapes di-show)
+	// Apply labels dan dots visibility setting
 	toggleLabels();  // Apply labelsVisible setting
 	toggleDots();    // Apply dotsVisible setting
 
 	// Apply line width setting
 	updateLineWidth(lineWidth);
-
-	// Apply cartesian axes visibility
-	if (!shapes.empty()) {
-		AbstractShape* cartesianAxes = shapes[0].get(); // CartesianAxes selalu index 0
-		if (showCartesianInSacredGeometry) {
-			cartesianAxes->show();
-		} else {
-			cartesianAxes->hide();
-		}
-	}
 
 	// Reset sequential completed flag agar bisa jalankan lagi
 	sequentialCompleted = false;

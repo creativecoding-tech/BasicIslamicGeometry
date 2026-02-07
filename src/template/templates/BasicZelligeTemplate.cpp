@@ -23,15 +23,33 @@ std::string BasicZelligeTemplate::getDescription() {
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupShapes() {
-	// Panggil semua setup methods dengan urutan yang BENAR
-	// CartesianAxes DULU sebagai fondasi/sumbu koordinat
+	// Setup shapes berdasarkan checkbox preference dari Playground (Draw Only concept)
+	// Hanya shapes yang dicentang yang akan dibuat
 	// Note: 'shapes' adalah protected member dari SacredGeometryTemplate
-	setupCartesianAxes();
-	setupCircles();
-	setupCrossLines();
-	setupParallelograms();
-	setupRectangleLines();
-	setupOctagramLines();
+
+	if (drawCartesian) {
+		setupCartesianAxes();
+	}
+
+	if (drawCircles) {
+		setupCircles();
+	}
+
+	if (drawCrossLines) {
+		setupCrossLines();
+	}
+
+	if (drawParallelograms) {
+		setupParallelograms();
+	}
+
+	if (drawRectangleLines) {
+		setupRectangleLines();
+	}
+
+	if (drawOctagramLines) {
+		setupOctagramLines();
+	}
 }
 
 //--------------------------------------------------------------
@@ -297,27 +315,27 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 		// Radio button changed
 	}
 	ImGui::Separator();
-	ImGui::Text("Hide/Show");
-	if (ImGui::Checkbox("Cartesian", &showCartesianOnPlay)) {
-		// JANGAN langsung apply Cartesian visibility di sini!
+	ImGui::Text("Draw Settings");
+	if (ImGui::Checkbox("Cartesian", &drawCartesian)) {
+		// Checkbox simpan preferensi untuk saat Draw diklik
 	}
 	ImGui::SameLine();
-	if (ImGui::Checkbox("Circles", &showCirclesOnPlay)) {
-		// Checkbox simpan preferensi untuk saat Play diklik
+	if (ImGui::Checkbox("Circles", &drawCircles)) {
+		// Checkbox simpan preferensi untuk saat Draw diklik
 	}
 	ImGui::SameLine();
-	if (ImGui::Checkbox("CrossLines", &showCrossLinesOnPlay)) {
-		// Checkbox simpan preferensi untuk saat Play diklik
+	if (ImGui::Checkbox("CrossLines", &drawCrossLines)) {
+		// Checkbox simpan preferensi untuk saat Draw diklik
 	}
-	if (ImGui::Checkbox("Parallelograms", &showParallelogramsOnPlay)) {
-		// Checkbox simpan preferensi untuk saat Play diklik
+	if (ImGui::Checkbox("Parallelograms", &drawParallelograms)) {
+		// Checkbox simpan preferensi untuk saat Draw diklik
 	}
 	ImGui::SameLine();
-	if (ImGui::Checkbox("RectangleLines", &showRectangleLinesOnPlay)) {
-		// Checkbox simpan preferensi untuk saat Play diklik
+	if (ImGui::Checkbox("RectangleLines", &drawRectangleLines)) {
+		// Checkbox simpan preferensi untuk saat Draw diklik
 	}
-	if (ImGui::Checkbox("OctagramLines", &showOctagramLinesOnPlay)) {
-		// Checkbox simpan preferensi untuk saat Play diklik
+	if (ImGui::Checkbox("OctagramLines", &drawOctagramLines)) {
+		// Checkbox simpan preferensi untuk saat Draw diklik
 	}
 
 	ImGui::Separator();
@@ -372,7 +390,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 			app->cleanCanvas();
 
 			// Sinkronisasi SacredGeometry state dengan Playground preference
-			app->currentTemplate->showCartesianInSacredGeometry = showCartesianOnPlay;
+			app->currentTemplate->showCartesianInSacredGeometry = drawCartesian;
 
 			// Apply speed multiplier ke SEMUA (template shapes, polygons, customLines)
 			app->currentTemplate->applySpeedMultiplier();

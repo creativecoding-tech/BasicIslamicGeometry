@@ -10,21 +10,11 @@ DotShape::DotShape(glm::vec2 position, std::string label, float radius)
 
 //--------------------------------------------------------------
 void DotShape::update(float deltaTime) {
-    if (showing) {
-        // Animasi muncul
-        if (progress < maxProgress) {
-            progress += speed * deltaTime;
-            if (progress > maxProgress) {
-                progress = maxProgress;
-            }
-        }
-    } else {
-        // Animasi hilang (reverse)
-        if (progress > 0) {
-            progress -= speed * deltaTime;
-            if (progress < 0) {
-                progress = 0;
-            }
+    // Animasi muncul dari 0 ke maxProgress
+    if (progress < maxProgress) {
+        progress += speed * deltaTime;
+        if (progress > maxProgress) {
+            progress = maxProgress;
         }
     }
 }

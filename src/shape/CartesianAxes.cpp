@@ -9,15 +9,9 @@ CartesianAxes::CartesianAxes(float r) {
 }
 
 void CartesianAxes::update(float deltaTime) {
-	if (showing) {
-		if (progress < maxScale) {
-			progress += speed * deltaTime;
-		}
-	}
-	else {
-		if (progress > 0) {
-			progress -= speed * deltaTime;
-		}
+	// Animasi muncul dari 0 ke maxScale
+	if (progress < maxScale) {
+		progress += speed * deltaTime;
 	}
 }
 
@@ -48,12 +42,7 @@ void CartesianAxes::draw() {
 }
 
 bool CartesianAxes::isComplete() {
-	if (showing) {
-		return progress >= maxScale;
-	}
-	else {
-		return progress <= 0;
-	}
+	return progress >= maxScale;
 }
 
 void CartesianAxes::showLabel() {

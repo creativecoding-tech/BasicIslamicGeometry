@@ -530,7 +530,6 @@ bool FileManager::loadUserDotsNA(ofBuffer &buffer, size_t &offset,
     auto dotShape = std::make_unique<DotShape>(pos, "Dot", dotRadius);
     dotShape->setLowerBound(lowerBound);
     dotShape->setColor(color);
-    dotShape->showing = true;
     dotShape->progress = 1.0f;
     userDots.push_back(std::move(dotShape));
   }

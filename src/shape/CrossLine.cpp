@@ -73,12 +73,8 @@ void CrossLine::hideDot() {
 }
 
 void CrossLine::update(float deltaTime) {
-	if (showing) {
-		if (progress < totalSegments) progress += speed * deltaTime;
-	}
-	else {
-		if (progress > 0) progress -= speed * deltaTime;
-	}
+	// Animasi muncul dari 0 ke totalSegments
+	if (progress < totalSegments) progress += speed * deltaTime;
 }
 
 void CrossLine::draw() {
@@ -107,7 +103,7 @@ void CrossLine::draw() {
 	polyline.close();
 	polyline.draw();
 
-	if (showing && progress >= totalSegments) {
+	if (progress >= totalSegments) {
 		ofFill();
 		// Gambar dot hanya jika dotVisible = true
 		if (dotVisible) {

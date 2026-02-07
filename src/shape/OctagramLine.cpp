@@ -45,67 +45,35 @@ void OctagramLine::setRadius(float r) {
 }
 
 void OctagramLine::update(float deltaTime) {
-	if (showing) {
-		if (isSequentialMode) {
-			// SEQUENTIAL MODE: Phase 1 dulu, baru Phase 2
-			if (progress < totalSegments) {
-				progress += speed * deltaTime;
-			}
-			else if (nextPoint.has_value() && extensionProgress < totalSegments) {
-				extensionProgress += speed * deltaTime;
-			}
+	// Animasi muncul saja (tidak ada reverse/hide animation)
+	if (isSequentialMode) {
+		// SEQUENTIAL MODE: Phase 1 dulu, baru Phase 2
+		if (progress < totalSegments) {
+			progress += speed * deltaTime;
 		}
-		else {
-			// PARALEL MODE: Kedua line berjalan barengan
-			if (progress < totalSegments) {
-				progress += speed * deltaTime;
-			}
-			if (nextPoint.has_value() && extensionProgress < totalSegments) {
-				extensionProgress += speed * deltaTime;
-			}
+		else if (nextPoint.has_value() && extensionProgress < totalSegments) {
+			extensionProgress += speed * deltaTime;
 		}
 	}
 	else {
-		if (isSequentialMode) {
-			// SEQUENTIAL MODE: Hide extension dulu, baru main line
-			if (extensionProgress > 0) {
-				extensionProgress -= speed * deltaTime;
-			}
-			else if (progress > 0) {
-				progress -= speed * deltaTime;
-			}
+		// PARALEL MODE: Kedua line berjalan barengan
+		if (progress < totalSegments) {
+			progress += speed * deltaTime;
 		}
-		else {
-			// PARALEL MODE: Kedua line hide barengan
-			if (extensionProgress > 0) {
-				extensionProgress -= speed * deltaTime;
-			}
-			if (progress > 0) {
-				progress -= speed * deltaTime;
-			}
+		if (nextPoint.has_value() && extensionProgress < totalSegments) {
+			extensionProgress += speed * deltaTime;
 		}
 	}
 }
 
 bool OctagramLine::isComplete() {
-	if (showing) {
-		// Jika ada nextPoint, harus ngecek kedua progress (main + extension)
-		if (nextPoint.has_value()) {
-			return (progress >= totalSegments) && (extensionProgress >= totalSegments);
-		}
-		// Jika tidak ada nextPoint, cuma ngecek main progress
-		else {
-			return progress >= totalSegments;
-		}
+	// Jika ada nextPoint, harus ngecek kedua progress (main + extension)
+	if (nextPoint.has_value()) {
+		return (progress >= totalSegments) && (extensionProgress >= totalSegments);
 	}
+	// Jika tidak ada nextPoint, cuma ngecek main progress
 	else {
-		// Saat hiding, complete jika kedua progress sudah 0
-		if (nextPoint.has_value()) {
-			return (progress <= 0) && (extensionProgress <= 0);
-		}
-		else {
-			return progress <= 0;
-		}
+		return progress >= totalSegments;
 	}
 }
 
@@ -155,7 +123,7 @@ void OctagramLine::draw() {
 	}
 
 	// === DOT & LABEL ===
-	if (showing && progress >= totalSegments) {
+	if (progress >= totalSegments) {
 		ofFill();
 		// Gambar dot di end point
 		if (dotVisible) {

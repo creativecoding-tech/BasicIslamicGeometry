@@ -1,13 +1,5 @@
 #include "AbstractShape.h"
 
-void AbstractShape::show() {
-	showing = true;
-}
-
-void AbstractShape::hide() {
-	showing = false;
-}
-
 void AbstractShape::setLineWidth(float width) {
 	lineWidth = width;
 }

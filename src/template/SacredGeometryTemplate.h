@@ -87,27 +87,27 @@ public:
 	float lineWidth = 4.0f;
 
 	// Cartesian visibility preferences (public agar bisa diakses dari UI)
-	bool showCartesianOnPlay = true;  // Playground panel preference saat Play
+	bool drawCartesian = true;  // Playground panel preference saat Draw
 	bool showCartesianInSacredGeometry = true;  // SacredGeometry panel preference (realtime)
 
 	// Circle visibility preferences (public agar bisa diakses dari UI)
-	bool showCirclesOnPlay = true;  // Playground panel preference saat Play
+	bool drawCircles = true;  // Playground panel preference saat Draw
 	std::vector<int> circleIndices;  // Daftar index circles di template (fleksibel!)
 
 	// CrossLine visibility preferences (public agar bisa diakses dari UI)
-	bool showCrossLinesOnPlay = true;  // Playground panel preference saat Play
+	bool drawCrossLines = true;  // Playground panel preference saat Draw
 	std::vector<int> crossLineIndices;  // Daftar index crosslines di template (fleksibel!)
 
 	// Parallelogram visibility preferences (public agar bisa diakses dari UI)
-	bool showParallelogramsOnPlay = true;  // Playground panel preference saat Play
+	bool drawParallelograms = true;  // Playground panel preference saat Draw
 	std::vector<int> parallelogramIndices;  // Daftar index parallelograms di template (fleksibel!)
 
 	// RectangleLine visibility preferences (public agar bisa diakses dari UI)
-	bool showRectangleLinesOnPlay = true;  // Playground panel preference saat Play
+	bool drawRectangleLines = true;  // Playground panel preference saat Draw
 	std::vector<int> rectangleLineIndices;  // Daftar index rectangleLines di template (fleksibel!)
 
 	// OctagramLine visibility preferences (public agar bisa diakses dari UI)
-	bool showOctagramLinesOnPlay = true;  // Playground panel preference saat Play
+	bool drawOctagramLines = true;  // Playground panel preference saat Draw
 	std::vector<int> octagramLineIndices;  // Daftar index octagramLines di template (fleksibel!)
 
 	// Polygon animation mode (public agar bisa diakses dari UI)

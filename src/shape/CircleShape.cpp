@@ -42,14 +42,8 @@ void CircleShape::hideDot() {
 }
 
 void CircleShape::update(float deltaTime) {
-	if (showing) {
-		//Animasi muncul
-		if (progress < totalSegments) progress += speed * deltaTime;
-	}
-	else {
-		//Animasi hilang (reverse)
-		if (progress > 0) progress -= speed * deltaTime;
-	}
+	// Animasi muncul dari 0 ke totalSegments
+	if (progress < totalSegments) progress += speed * deltaTime;
 }
 
 void CircleShape::draw() {
@@ -86,7 +80,7 @@ void CircleShape::draw() {
 	polyline.close();
 	polyline.draw();
 
-	if (showing && progress >= totalSegments) {
+	if (progress >= totalSegments) {
 		ofFill();
 		// Gambar dot hanya jika dotVisible = true
 		if (dotVisible) {

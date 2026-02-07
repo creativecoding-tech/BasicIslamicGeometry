@@ -12,16 +12,11 @@ public:
 	// Common attributes untuk animasi
 	float progress = 0;
 	float speed = 50.0f;  // Delta time calibrated (60 FPS * 0.5f lama)
-	bool showing = false;
 	float lineWidth = 4;
 
 	// Constructor
 	AbstractShape() = default;
 	virtual ~AbstractShape() = default;
-
-	// Common methods untuk visibility control
-	virtual void show();
-	virtual void hide();
 
 	// Pure virtual methods - WAJIB di-override oleh derived class
 	virtual void update(float deltaTime = 0.016f) = 0;  // Default 60 FPS
@@ -51,12 +46,7 @@ public:
 
 	// Status check - dapat di-override jika logic berbeda
 	virtual bool isComplete() {
-		if (showing) {
-			return progress >= maxProgress;
-		}
-		else {
-			return progress <= 0;
-		}
+		return progress >= maxProgress;
 	}
 
 protected:
