@@ -1802,7 +1802,7 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
     undoAction.type = CHANGE_CURVE;
     undoAction.newCurve = 0.0f;  // Placeholder, tidak dipakai
 
-    float curveSpeed = 5.0f; // Kecepatan perubahan curve
+    float curveSpeed = 2.0f; // Kecepatan perubahan curve
     for (int lineIndex : selectedLineIndices) {
       if (lineIndex >= 0 && lineIndex < customLines.size()) {
         // Simpan old curve SEBELUM mengubah
