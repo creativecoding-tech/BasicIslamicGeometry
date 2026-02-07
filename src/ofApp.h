@@ -234,6 +234,7 @@ class ofApp : public ofBaseApp{
 		void updatePolygonColor(ofColor color);  // Update warna semua polygons
 		void resetAllPolygonColor();  // Reset semua warna polygon ke default biru
 		void resetSelectedPolygonColor();  // Reset warna polygon yang terseleksi ke default biru
+		void updatePolygonAlpha(uint8_t alpha);  // Update alpha transparansi polygon yang terseleksi
 		void updateUserDotColor(ofColor color);  // Update warna semua userDots
 		void updateUserDotRadius(float radius);  // Update radius semua userDots
 		void copyDotColor();  // Copy color dari selected userDot ke clipboard

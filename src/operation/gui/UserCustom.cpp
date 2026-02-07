@@ -297,6 +297,27 @@ void UserCustom::draw() {
             ImGui::Button("Reset Selected Polygon Colors", ImVec2(polygonButtonWidth, 0));
             ImGui::EndDisabled();
         }
+
+        // Slider transparansi (alpha) untuk polygon - hanya untuk selected polygon
+        if (app->selectedPolygonIndices.size() >= 2) {
+            // Ambil alpha dari polygon pertama yang terseleksi untuk inisialisasi slider
+            int firstIndex = *app->selectedPolygonIndices.begin();
+            if (firstIndex >= 0 && firstIndex < app->polygonShapes.size()) {
+                static int polygonAlpha = 255;  // Nilai slider 0-255 (disimpan antar frame)
+
+                // Ambil alpha dari polygon pertama untuk sinkronisasi slider hanya saat slider tidak aktif
+                ofColor firstPolyColor = app->polygonShapes[firstIndex].getColor();
+                if (!ImGui::IsItemActive()) {
+                    polygonAlpha = firstPolyColor.a;  // Sinkron saat tidak drag slider
+                }
+
+                ImGui::SetNextItemWidth(150.0f);
+                if (ImGui::SliderInt("Alpha", &polygonAlpha, 0, 255)) {
+                    // Update alpha semua selected polygon, RGB tetap
+                    app->updatePolygonAlpha((uint8_t)polygonAlpha);
+                }
+            }
+        }
     }
     ImGui::End();
 

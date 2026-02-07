@@ -2048,6 +2048,35 @@ void ofApp::resetSelectedPolygonColor() {
 }
 
 //--------------------------------------------------------------
+void ofApp::updatePolygonAlpha(uint8_t alpha) {
+	// Update alpha transparansi untuk semua polygon yang terseleksi
+	// RGB tetap, hanya alpha yang berubah
+
+	if (selectedPolygonIndices.empty()) {
+		return;  // Tidak ada polygon terseleksi
+	}
+
+	// Siapkan undo action
+	UndoAction undoAction;
+	undoAction.type = CHANGE_COLOR_POLYGON;
+	// undoAction tidak dipakai untuk alpha-only update (tidak perlu simpan oldColors)
+
+	// Update alpha semua selected polygon, RGB tetap
+	for (int polygonIndex : selectedPolygonIndices) {
+		if (polygonIndex >= 0 && polygonIndex < polygonShapes.size()) {
+			ofColor currentColor = polygonShapes[polygonIndex].getColor();
+			ofColor newColor = ofColor(
+				currentColor.r,  // R tetap
+				currentColor.g,  // G tetap
+				currentColor.b,  // B tetap
+				alpha           // Alpha baru
+			);
+			polygonShapes[polygonIndex].setColor(newColor);
+		}
+	}
+}
+
+//--------------------------------------------------------------
 void ofApp::updateUserDotRadius(float radius) {
 	// Update variabel global
 	userDotRadius = radius;
