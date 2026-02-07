@@ -384,42 +384,89 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 								 "Please select a Draw Mode first!",
 								 "OK");
 		} else {
-			// Semua validasi OK! Lanjut load
+			// Semua validasi OK! Cek apakah canvas kosong
+			bool isCanvasEmpty = (app->currentTemplate && app->currentTemplate->getShapes().empty()) &&
+								app->customLines.empty() &&
+								app->polygonShapes.empty();
 
-			// CLEAN CANVAS DULU - hapus semua shapes, polygons, customLines
-			app->cleanCanvas();
+			if (isCanvasEmpty) {
+				// Canvas kosong, langsung load saja TANPA clean & TANPA confirmation
+				// Apply speed multiplier ke SEMUA (template shapes, polygons, customLines)
+				app->currentTemplate->applySpeedMultiplier();
+				app->fileManager.setAnimationSpeedMultiplier(app->currentTemplate->speedMultiplier);
 
-			// Apply speed multiplier ke SEMUA (template shapes, polygons, customLines)
-			app->currentTemplate->applySpeedMultiplier();
-			app->fileManager.setAnimationSpeedMultiplier(app->currentTemplate->speedMultiplier);
+				// Simpan polygon animation mode - convert int ke PolygonAnimationMode
+				PolygonAnimationMode polyMode;
+				switch (polygonAnimationMode) {
+					case 1:
+						polyMode = PolygonAnimationMode::FADE_IN;
+						break;
+					case 2:
+						polyMode = PolygonAnimationMode::WOBBLE;
+						break;
+					case 3:
+						polyMode = PolygonAnimationMode::FILL;
+						break;
+					case 0:
+					default:
+						polyMode = PolygonAnimationMode::NO_ANIMATION;
+						break;
+				}
+				app->fileManager.setPolygonAnimationMode(polyMode);
 
-			// Simpan polygon animation mode - convert int ke PolygonAnimationMode
-			// polygonAnimationMode: 0 = No Animation, 1 = FadeIn, 2 = Wobble, 3 = Fill
-			PolygonAnimationMode polyMode;
-			switch (polygonAnimationMode) {
-				case 1:
-					polyMode = PolygonAnimationMode::FADE_IN;
-					break;
-				case 2:
-					polyMode = PolygonAnimationMode::WOBBLE;
-					break;
-				case 3:
-					polyMode = PolygonAnimationMode::FILL;
-					break;
-				case 0:
-				default:
-					polyMode = PolygonAnimationMode::NO_ANIMATION;
-					break;
+				// Set flag untuk delay load dan update state
+				app->isWaitingForLoad = true;
+				app->loadDelayAccumulator = 0.0f;
+				app->pendingLoadMode = playMode;
+				app->currentState = ofApp::UpdateState::DELAYED_LOAD;
+
+				app->imguiVisible = false;  // Hide ImGui
+			} else {
+				// Canvas ADA isinya, tampilkan confirmation clean + load
+				app->confirmationPopup->show(
+					"Load Workspace",
+					"The canvas will be cleaned before loading.\n\nDo you want to continue?",
+					"Yes, Load",
+					"Cancel",
+					[this, app]() {
+						// Callback: User klik Yes, lanjut clean + load workspace
+
+						// CLEAN CANVAS DULU - pakai internal method (tanpa popup lagi)
+						app->cleanCanvasInternal();
+
+						// Apply speed multiplier ke SEMUA (template shapes, polygons, customLines)
+						app->currentTemplate->applySpeedMultiplier();
+						app->fileManager.setAnimationSpeedMultiplier(app->currentTemplate->speedMultiplier);
+
+						// Simpan polygon animation mode - convert int ke PolygonAnimationMode
+						PolygonAnimationMode polyMode;
+						switch (polygonAnimationMode) {
+							case 1:
+								polyMode = PolygonAnimationMode::FADE_IN;
+								break;
+							case 2:
+								polyMode = PolygonAnimationMode::WOBBLE;
+								break;
+							case 3:
+								polyMode = PolygonAnimationMode::FILL;
+								break;
+							case 0:
+							default:
+								polyMode = PolygonAnimationMode::NO_ANIMATION;
+								break;
+						}
+						app->fileManager.setPolygonAnimationMode(polyMode);
+
+						// Set flag untuk delay load dan update state
+						app->isWaitingForLoad = true;
+						app->loadDelayAccumulator = 0.0f;  // Reset accumulator untuk mulai delay
+						app->pendingLoadMode = playMode;
+						app->currentState = ofApp::UpdateState::DELAYED_LOAD;
+
+						app->imguiVisible = false;  // Hide ImGui
+					}
+				);
 			}
-			app->fileManager.setPolygonAnimationMode(polyMode);
-
-			// Set flag untuk delay load dan update state
-			app->isWaitingForLoad = true;
-			app->loadDelayAccumulator = 0.0f;  // Reset accumulator untuk mulai delay
-			app->pendingLoadMode = playMode;
-			app->currentState = ofApp::UpdateState::DELAYED_LOAD;  // STRATEGY PATTERN: Set state ke DELAYED_LOAD
-
-			app->imguiVisible = false;  // Hide ImGui
 		}
 	}
 	ImGui::SameLine();

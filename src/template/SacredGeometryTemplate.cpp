@@ -151,6 +151,18 @@ void SacredGeometryTemplate::updateLineWidth(float width) {
 }
 
 //--------------------------------------------------------------
+void SacredGeometryTemplate::enableAllDrawSettings() {
+	// Enable semua draw settings untuk SacredGeometry window
+	// SacredGeometry harus INDEPENDENT dari Playground checkbox preferences
+	drawCartesian = true;
+	drawCircles = true;
+	drawCrossLines = true;
+	drawParallelograms = true;
+	drawRectangleLines = true;
+	drawOctagramLines = true;
+}
+
+//--------------------------------------------------------------
 void SacredGeometryTemplate::applySpeedMultiplier() {
 	// Base speed untuk setiap tipe shape (sesuai kalibrasi delta time)
 	// CircleShape, CrossLine, ParallelogramLine, RectangleLine, OctagramLine, DotShape: 50.0f

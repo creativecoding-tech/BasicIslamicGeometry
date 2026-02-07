@@ -49,17 +49,8 @@ void MenuBar::draw() {
                                 app->polygonShapes.empty();
 
             if (ImGui::MenuItem("Clean Canvas", "CTRL+SHIFT+DEL", false, !isCanvasEmpty)) {
-                // Tampilkan confirmation popup sebelum clean canvas
-                app->confirmationPopup->show(
-                    "Clean Canvas",
-                    "Are you sure you want to clean the canvas?\n\nEverything on the canvas will be deleted.",
-                    "Yes, Clean",
-                    "Cancel",
-                    [this]() {
-                        // Callback: User klik Yes, jalankan cleanCanvas
-                        app->cleanCanvas();
-                    }
-                );
+                // cleanCanvas() sudah otomatis show confirmation popup
+                app->cleanCanvas();
             }
             ImGui::EndMenu();
         }

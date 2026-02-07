@@ -258,7 +258,8 @@ class ofApp : public ofBaseApp{
 		void syncColorPickerFromLoadedPolygons();  // Sync ColorPicker dari polygons yang diload
 		void syncUserDotFromLoaded();  // Sync userDotRadius dan userDotColor dari userDots yang diload
 		void syncColorFromSelectedObjects();  // Sync global color variables dari selected objects
-		void cleanCanvas();             // Clear all polygons, custom lines, and hide template shapes
+		void cleanCanvas();             // Show confirmation popup, then clean
+		void cleanCanvasInternal();    // Execute clean canvas TANPA confirmation (internal use)
 		void resetTransform();          // Reset canvas transform ke default
 		void scaleCustomLinesAndPolygons(float oldRadius, float newRadius);  // Scale customLines & polygons saat radius berubah
 		bool isCanvasEmpty();  // Cek apakah canvas benar-bener kosong (tidak ada template showing, customLines, atau polygons)

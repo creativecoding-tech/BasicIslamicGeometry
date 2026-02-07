@@ -85,6 +85,8 @@ void SacredGeometry::draw() {
             if (ImGui::Button("Parallel")) {
                 // Draw secara parallel
                 if (app->currentTemplate && app->currentTemplate->getShapes().empty()) {
+                    // Enable semua draw settings (SacredGeometry INDEPENDENT dari Playground!)
+                    app->currentTemplate->enableAllDrawSettings();
                     app->currentTemplate->setupShapes();
                     app->currentTemplate->applySpeedMultiplier();
                     app->currentTemplate->drawParallel();
@@ -94,6 +96,8 @@ void SacredGeometry::draw() {
             if (ImGui::Button("Sequential")) {
                 // Draw secara sequential
                 if (app->currentTemplate && app->currentTemplate->getShapes().empty()) {
+                    // Enable semua draw settings (SacredGeometry INDEPENDENT dari Playground!)
+                    app->currentTemplate->enableAllDrawSettings();
                     app->currentTemplate->setupShapes();
                     app->currentTemplate->applySpeedMultiplier();
                     app->currentTemplate->startSequentialDrawing();
@@ -146,17 +150,8 @@ void SacredGeometry::draw() {
             ImGui::EndDisabled();
         } else {
             if (ImGui::Button("Clean Canvas")) {
-                // Tampilkan confirmation popup sebelum clean canvas
-                app->confirmationPopup->show(
-                    "Clean Canvas",
-                    "Are you sure you want to clean the canvas?\n\nEverything on the canvas will be deleted.",
-                    "Yes, Clean",
-                    "Cancel",
-                    [this]() {
-                        // Callback: User klik Yes, jalankan cleanCanvas
-                        app->cleanCanvas();
-                    }
-                );
+                // cleanCanvas() sudah otomatis show confirmation popup
+                app->cleanCanvas();
             }
         }
     }

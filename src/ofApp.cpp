@@ -2520,6 +2520,22 @@ void ofApp::deleteSelectedPolygons() {
 
 //--------------------------------------------------------------
 void ofApp::cleanCanvas() {
+	// Tampilkan confirmation popup dulu
+	// Callback akan memanggil cleanCanvasInternal() saat user klik Yes
+	confirmationPopup->show(
+		"Clean Canvas",
+		"Are you sure you want to clean the canvas?\n\nEverything on the canvas will be deleted.",
+		"Yes, Clean",
+		"Cancel",
+		[this]() {
+			// User klik Yes, execute clean
+			cleanCanvasInternal();
+		}
+	);
+}
+
+//--------------------------------------------------------------
+void ofApp::cleanCanvasInternal() {
     // Skip kalau sedang load sequential
     if (fileManager.isLoadSequentialMode()) {
         return;

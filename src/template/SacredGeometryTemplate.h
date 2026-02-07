@@ -125,6 +125,7 @@ public:
 	virtual void toggleDots();
 	virtual void setLineWidth(float width);
 	virtual void updateLineWidth(float width);  // Realtime update tanpa rebuild
+	virtual void enableAllDrawSettings();  // Enable semua draw settings (untuk SacredGeometry window)
 
 	// Optional: Template-specific settings
 	virtual bool hasCustomSettings() { return false; }
