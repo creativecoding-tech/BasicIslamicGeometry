@@ -389,9 +389,6 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 			// CLEAN CANVAS DULU - hapus semua shapes, polygons, customLines
 			app->cleanCanvas();
 
-			// Sinkronisasi SacredGeometry state dengan Playground preference
-			app->currentTemplate->showCartesianInSacredGeometry = drawCartesian;
-
 			// Apply speed multiplier ke SEMUA (template shapes, polygons, customLines)
 			app->currentTemplate->applySpeedMultiplier();
 			app->fileManager.setAnimationSpeedMultiplier(app->currentTemplate->speedMultiplier);

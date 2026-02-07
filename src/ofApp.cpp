@@ -1813,19 +1813,7 @@ void ofApp::toggleDots() {
 }
 
 //--------------------------------------------------------------
-// (hideAllShapes dan showAllShapes sudah dihapus - tidak diperlukan lagi)
-//--------------------------------------------------------------
-void ofApp::setCartesianAxesVisibility(bool show) {
-  if (!currentTemplate) return;
-
-  // Dengan Draw Only concept, CartesianAxes visibility dikontrol lewat Playground
-  // Checkbox di SacredGeometry tidak lagi menghapus CartesianAxes yang sudah dibuat
-  // Fungsi ini dibiarkan kosong untuk backward compatibility
-
-  // Mark dots cache dirty karena visibility berubah
-  dotsCacheDirty = true;
-}
-
+// (hideAllShapes, showAllShapes, dan setCartesianAxesVisibility sudah dihapus - tidak diperlukan lagi dengan Draw Only concept)
 //--------------------------------------------------------------
 void ofApp::updateLineWidth() {
     if (!currentTemplate) return;

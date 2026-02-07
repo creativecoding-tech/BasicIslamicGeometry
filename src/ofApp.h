@@ -234,7 +234,6 @@ class ofApp : public ofBaseApp{
 		// Shape control methods
 		void toggleLabels();           // Toggle label visibility
 		void toggleDots();             // Toggle dot visibility
-		void setCartesianAxesVisibility(bool show);  // Show/hide CartesianAxes
 		void updateLineWidth();
 		void updateCustomLineColor(ofColor color);  // Update warna semua customLines
 		void resetAllCustomLineColor();  // Reset semua warna customLine ke default biru

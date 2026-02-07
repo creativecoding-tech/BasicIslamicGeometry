@@ -49,12 +49,6 @@ void SacredGeometry::draw() {
                     app->toggleDots();
                 }
             }
-            // Cartesian checkbox
-            bool showCartesian = app->currentTemplate ? app->currentTemplate->showCartesianInSacredGeometry : true;
-            if (ImGui::Checkbox("Cartesian", &showCartesian)) {
-                app->currentTemplate->showCartesianInSacredGeometry = showCartesian;
-                app->setCartesianAxesVisibility(showCartesian);
-            }
             ImGui::Separator();
             // Draw Template
             ImGui::Text("Draw Template");

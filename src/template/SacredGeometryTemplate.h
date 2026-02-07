@@ -88,7 +88,6 @@ public:
 
 	// Cartesian visibility preferences (public agar bisa diakses dari UI)
 	bool drawCartesian = true;  // Playground panel preference saat Draw
-	bool showCartesianInSacredGeometry = true;  // SacredGeometry panel preference (realtime)
 
 	// Circle visibility preferences (public agar bisa diakses dari UI)
 	bool drawCircles = true;  // Playground panel preference saat Draw
