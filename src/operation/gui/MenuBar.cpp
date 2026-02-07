@@ -59,6 +59,9 @@ void MenuBar::draw() {
             if (ImGui::MenuItem("Playground")) {
                 app->togglePlaygroundWindow();
             }
+            if (ImGui::MenuItem("Selection Info")) {
+                app->toggleSelectionInfoWindow();
+            }
             ImGui::EndMenu();
         }
 

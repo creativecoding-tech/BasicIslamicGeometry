@@ -24,6 +24,7 @@
     <ClCompile Include="src\operation\gui\ContextMenu.cpp" />
     <ClCompile Include="src\operation\gui\SuccessPopup.cpp" />
     <ClCompile Include="src\operation\gui\ErrorPopup.cpp" />
+    <ClCompile Include="src\operation\gui\SelectionInfo.cpp" />
     <ClCompile Include="src\template\TemplateRegistry.cpp" />
     <ClCompile Include="src\template\SacredGeometryTemplate.cpp" />
     <ClCompile Include="src\template\templates\BasicZelligeTemplate.cpp" />
@@ -66,6 +67,7 @@
     <ClInclude Include="src\operation\gui\ContextMenu.h" />
     <ClInclude Include="src\operation\gui\SuccessPopup.h" />
     <ClInclude Include="src\operation\gui\ErrorPopup.h" />
+    <ClInclude Include="src\operation\gui\SelectionInfo.h" />
     <ClInclude Include="src\template\SacredGeometryTemplate.h" />
     <ClInclude Include="src\template\TemplateRegistry.h" />
     <ClInclude Include="src\template\templates\BasicZelligeTemplate.h" />

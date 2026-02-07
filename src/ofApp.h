@@ -14,6 +14,7 @@
 #include "operation/gui/ContextMenu.h"
 #include "operation/gui/SuccessPopup.h"
 #include "operation/gui/ErrorPopup.h"
+#include "operation/gui/SelectionInfo.h"
 #include "template/SacredGeometryTemplate.h"
 #include "template/TemplateRegistry.h"
 #include "imgui/imgui.h"
@@ -45,6 +46,7 @@ class ofApp : public ofBaseApp{
 		bool showPlayground = false;  // Playground window visibility
 		bool showUserCustom = false;  // UserCustom window visibility
 		bool showUserDot = true;  // UserDot visibility
+		bool showSelectionInfo = false;  // SelectionInfo window visibility
 
 		ofTrueTypeFont fontNormal;  // Font untuk custom line labels
 
@@ -190,6 +192,7 @@ class ofApp : public ofBaseApp{
 		std::vector<std::unique_ptr<AbstractGuiComponent>> guiComponents;
 		std::unique_ptr<SuccessPopup> successPopup;  // Success popup dialog
 		std::unique_ptr<ErrorPopup> errorPopup;  // Error popup dialog
+		std::unique_ptr<class SelectionInfo> selectionInfo;  // Selection Info window
 
 		void setup();
 		void setupTemplateSystem();  // Register semua templates ke registry
@@ -252,6 +255,7 @@ class ofApp : public ofBaseApp{
 		void toggleSacredGeometryWindow();  // Show or focus Sacred Geometry window
 		void togglePlaygroundWindow();  // Show or focus Playground window
 		void toggleUserCustomWindow();  // Show or focus User Custom window
+		void toggleSelectionInfoWindow();  // Show or focus Selection Info window
 		void duplicateDotAbove();  // Duplicate dot yang di-hover dengan offset ke atas
 		void duplicateDotBelow();  // Duplicate dot yang di-hover dengan offset ke bawah
 		void duplicateDotLeft();  // Duplicate dot yang di-hover dengan offset ke kiri

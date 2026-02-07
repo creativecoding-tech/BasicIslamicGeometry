@@ -2538,6 +2538,19 @@ void ofApp::toggleUserCustomWindow() {
 }
 
 //--------------------------------------------------------------
+void ofApp::toggleSelectionInfoWindow() {
+	if (!imguiVisible || !showSelectionInfo) {
+		// Show SelectionInfo window
+		imguiVisible = true;
+		showSelectionInfo = true;
+		selectionInfo->showWindow();
+	} else {
+		// SelectionInfo already visible, focus it
+		selectionInfo->focusWindow();
+	}
+}
+
+//--------------------------------------------------------------
 void ofApp::duplicateDotAbove() {
     // Cek apakah ada dot yang di-hover
     if (!contextMenu->getHasHoveredDot()) {
@@ -3312,6 +3325,9 @@ void ofApp::setupImGui() {
     // Initialize popup (not in guiComponents, drawn separately)
     successPopup = std::make_unique<SuccessPopup>(this);
     errorPopup = std::make_unique<ErrorPopup>(this);
+
+    // Initialize Selection Info window
+    selectionInfo = std::make_unique<SelectionInfo>(this);
 }
 
 
@@ -3356,6 +3372,11 @@ void ofApp::drawImGui() {
     // Draw popup dialogs
     successPopup->draw();
     errorPopup->draw();
+
+    // Draw Selection Info window
+    if (imguiVisible && showSelectionInfo) {
+        selectionInfo->draw();
+    }
 
     // Draw context menu (SELALU render terlepas dari imguiVisible)
     contextMenu->draw();
