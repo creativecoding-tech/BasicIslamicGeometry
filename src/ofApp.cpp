@@ -415,28 +415,6 @@ void ofApp::drawCustomLinesAndUI() {
     }
   }
 
-  // Draw curve value label untuk garis yang selected
-  if (!selectedLineIndices.empty()) {
-    // Tampilkan label untuk SEMUA garis yang selected
-    for (int lineIndex : selectedLineIndices) {
-      if (lineIndex >= 0 && lineIndex < customLines.size()) {
-        const CustomLine &line = customLines[lineIndex];
-        if (line.getPoints().size() >= 2) {
-          vec2 midPoint = (line.getPoints()[0] + line.getPoints()[1]) / 2.0f;
-
-          ofPushStyle();
-          ofSetColor(0, 0, 0); // Hitam untuk label
-          // Label dari getLabel() (di atas)
-          fontNormal.drawString(line.getLabel(),
-                                midPoint.x + 10, midPoint.y - 25);
-          // Label "Curve: ..." (di bawah)
-          fontNormal.drawString("Curve: " + ofToString(line.getCurve(), 1),
-                                midPoint.x + 10, midPoint.y - 10);
-          ofPopStyle();
-        }
-      }
-    }
-  }
 
   // Draw preview polyline (sedang drag)
   if (drawState == DRAGGING && currentPolylinePoints.size() > 1) {
