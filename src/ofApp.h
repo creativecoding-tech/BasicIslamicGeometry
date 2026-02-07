@@ -48,6 +48,11 @@ class ofApp : public ofBaseApp{
 		bool showUserDot = true;  // UserDot visibility
 		bool showSelectionInfo = false;  // SelectionInfo window visibility
 
+		// Canvas Transform state
+		vec2 canvasTranslation = vec2(0, 0);  // Pan X, Y dalam pixels
+		float canvasRotation = 0.0f;          // Rotation dalam derajat
+		float canvasZoom = 1.0f;              // Zoom scale
+
 		ofTrueTypeFont fontNormal;  // Font untuk custom line labels
 
 		// Context menu system (refactored ke ContextMenu class)
@@ -250,6 +255,7 @@ class ofApp : public ofBaseApp{
 		void syncColorPickerFromLoadedPolygons();  // Sync ColorPicker dari polygons yang diload
 		void syncUserDotFromLoaded();  // Sync userDotRadius dan userDotColor dari userDots yang diload
 		void cleanCanvas();             // Clear all polygons, custom lines, and hide template shapes
+		void resetTransform();          // Reset canvas transform ke default
 		void scaleCustomLinesAndPolygons(float oldRadius, float newRadius);  // Scale customLines & polygons saat radius berubah
 		bool isCanvasEmpty();  // Cek apakah canvas benar-bener kosong (tidak ada template showing, customLines, atau polygons)
 		void toggleSacredGeometryWindow();  // Show or focus Sacred Geometry window
@@ -301,5 +307,8 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 		void exit();
+
+		// Transform helpers
+		vec2 screenToWorld(vec2 screenPos);  // Convert screen coordinate to world coordinate (inverse transform)
 
 };

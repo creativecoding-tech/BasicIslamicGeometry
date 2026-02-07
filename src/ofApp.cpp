@@ -358,7 +358,19 @@ void ofApp::draw() {
 
   // Push matrix untuk geometry drawing (centered)
   ofPushMatrix();
+
+  // Apply canvas transform dalam urutan yang benar:
+  // 1. Translate ke center screen
   ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+
+  // 2. Apply rotation (dari center)
+  ofRotateDeg(canvasRotation);
+
+  // 3. Apply zoom/scale (dari center)
+  ofScale(canvasZoom, canvasZoom);
+
+  // 4. Apply pan/translation (geser posisi canvas)
+  ofTranslate(canvasTranslation.x, canvasTranslation.y);
 
   // Draw template - template handle drawing sendiri!
   if (currentTemplate) {
@@ -1286,7 +1298,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 
   // Klik kanan untuk context menu (DOT atau POLYGON)
   if (button == 2) {
-    vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+    vec2 adjustedMousePos = screenToWorld(vec2(x, y));
 
     // CEK 1: Klik kanan pada DOT ORIGINAL (dari template)
     vector<DotInfo> allDots = getAllDots();
@@ -1360,7 +1372,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 
   // CTRL+Click untuk multi-select (userDot PRIORITY lebih tinggi dari customLine)
   if (button == 0 && isCtrlPressed) {
-    vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+    vec2 adjustedMousePos = screenToWorld(vec2(x, y));
 
     // CEK USER DOTS DULU (priority tertinggi)
     for (int i = 0; i < userDots.size(); i++) {
@@ -1410,8 +1422,8 @@ void ofApp::mousePressed(int x, int y, int button) {
 
   // Logic untuk interactive line creation & line selection
   if (button == 0) {
-    // Adjust mouse position untuk center translation
-    vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+    // Adjust mouse position dengan inverse transform
+    vec2 adjustedMousePos = screenToWorld(vec2(x, y));
 
     // CEK USER DOTS (normal click tanpa CTRL)
     bool clickedOnUserDot = false;
@@ -1506,8 +1518,8 @@ void ofApp::mouseDragged(int x, int y, int button) {
   }
 
   if (drawState == DRAGGING) {
-    // Adjust mouse position untuk center translation
-    vec2 currentPos = vec2(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+    // Adjust mouse position dengan inverse transform
+    vec2 currentPos = screenToWorld(vec2(x, y));
     mousePos = currentPos;
 
     // Untuk garis lurus, kita hanya perlu 2 titik: start dan end
@@ -1532,8 +1544,8 @@ void ofApp::mouseReleased(int x, int y, int button) {
     return;
   }
 
-  // Adjust mouse position untuk center translation
-  vec2 releasePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+  // Adjust mouse position dengan inverse transform
+  vec2 releasePos = screenToWorld(vec2(x, y));
   vector<DotInfo> dots = getAllDots();
 
   // Check jika release di atas valid dot - HANYA bisa selesai di dot
@@ -1758,8 +1770,8 @@ void ofApp::mouseMoved(int x, int y) {
   ImGuiIO& io = ImGui::GetIO();
   io.AddMousePosEvent(x, y);
 
-  // Update mouse position untuk hover detection (adjust untuk center translation)
-  mousePos = vec2(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
+  // Update mouse position dengan inverse transform (screen to world)
+  mousePos = screenToWorld(vec2(x, y));
 }
 
 //--------------------------------------------------------------
@@ -2451,6 +2463,14 @@ void ofApp::cleanCanvas() {
     if (currentTemplate) {
         currentTemplate->clearAllShapes();
     }
+}
+
+//--------------------------------------------------------------
+void ofApp::resetTransform() {
+	// Reset canvas transform ke default values
+	canvasTranslation = vec2(0, 0);
+	canvasRotation = 0.0f;
+	canvasZoom = 1.0f;
 }
 
 //--------------------------------------------------------------
@@ -3293,6 +3313,47 @@ void ofApp::loadWorkspaceSeq() {
     isSequentialShapeLoad = true;  // Sequential per shape
     currentTemplateIndex = 0;  // Reset index template
     currentState = UpdateState::STAGGERED_LOAD;  // STRATEGY PATTERN: Set state ke STAGGERED_LOAD
+}
+
+//--------------------------------------------------------------
+vec2 ofApp::screenToWorld(vec2 screenPos) {
+	// Inverse transform untuk mengkonversi screen coordinate ke world coordinate
+	// Urutan transform di draw():
+	// 1. Translate center
+	// 2. Rotate
+	// 3. Scale/Zoom
+	// 4. Pan
+	//
+	// Inverse transform (screen to world):
+	// 1. Translate screen pos relative to center
+	// 2. Inverse rotate (-rotation)
+	// 3. Inverse scale (1/zoom)
+	// 4. Inverse pan (-pan)
+
+	vec2 pos = screenPos;
+
+	// 1. Translate relative to center
+	pos.x -= ofGetWidth() / 2.0f;
+	pos.y -= ofGetHeight() / 2.0f;
+
+	// 2. Inverse rotate
+	float rotRad = ofDegToRad(-canvasRotation);
+	float cosR = cos(rotRad);
+	float sinR = sin(rotRad);
+	float newX = pos.x * cosR - pos.y * sinR;
+	float newY = pos.x * sinR + pos.y * cosR;
+	pos.x = newX;
+	pos.y = newY;
+
+	// 3. Inverse scale
+	pos.x /= canvasZoom;
+	pos.y /= canvasZoom;
+
+	// 4. Inverse pan
+	pos.x -= canvasTranslation.x;
+	pos.y -= canvasTranslation.y;
+
+	return pos;
 }
 
 //--------------------------------------------------------------
