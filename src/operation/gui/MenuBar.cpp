@@ -17,7 +17,7 @@ void MenuBar::draw() {
                 app->saveWorkspaceAs();
             }
             ImGui::Separator();
-            if (ImGui::MenuItem("Exit", "ALT+F4")) {
+            if (ImGui::MenuItem("Exit", "END")) {
                 ofExit();
             }
             ImGui::EndMenu();
