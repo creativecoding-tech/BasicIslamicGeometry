@@ -1210,18 +1210,102 @@ void ofApp::createInvisiblePolygonFromSelected() {
   if (selectedLineIndices.empty())
     return; // Tidak ada yang selected
 
-  // 1. Extract semua titik dari selected lines (pakai sampled points untuk
-  // curve)
-  vector<vec2> allPoints;
+  // 1. Collect all selected lines dengan data endpoint-nya
+  struct LineData {
+    int index;
+    vec2 start;  // Start point (points[0])
+    vec2 end;    // End point (points[1])
+    vector<vec2> sampledPoints;  // Full sampled points untuk curve
+  };
+  vector<LineData> lines;
+
   for (int lineIndex : selectedLineIndices) {
     if (lineIndex >= 0 && lineIndex < customLines.size()) {
-      auto sampledPoints = customLines[lineIndex].getSampledPoints();
-      if (!sampledPoints.empty()) {
-        // Tambahkan semua sampled points ke allPoints
-        for (auto &p : sampledPoints) {
-          allPoints.push_back(p);
+      const CustomLine& line = customLines[lineIndex];
+      const vector<vec2>& points = line.getPoints();
+
+      if (points.size() >= 2) {
+        LineData lineData;
+        lineData.index = lineIndex;
+        lineData.start = points[0];
+        lineData.end = points[1];
+        lineData.sampledPoints = line.getSampledPoints();
+        lines.push_back(lineData);
+      }
+    }
+  }
+
+  if (lines.size() < 1) {
+    return;  // Tidak ada valid lines
+  }
+
+  // 2. Susun lines supaya connected secara berurutan
+  // Dimulai dari line pertama sebagai anchor
+  vector<LineData> orderedLines;
+  orderedLines.push_back(lines[0]);
+  lines.erase(lines.begin());
+
+  // Loop sampa semua lines ter-order
+  while (!lines.empty()) {
+    vec2 currentEnd = orderedLines.back().end;
+    bool found = false;
+
+    // Cari line yang start-nya cocok dengan currentEnd
+    for (size_t i = 0; i < lines.size(); i++) {
+      if (glm::length(lines[i].start - currentEnd) < 1.0f) {
+        // Found! Start point cocok dengan end point sebelumnya
+        orderedLines.push_back(lines[i]);
+        lines.erase(lines.begin() + i);
+        found = true;
+        break;
+      } else if (glm::length(lines[i].end - currentEnd) < 1.0f) {
+        // Found! End point cocok (butuh reverse)
+        LineData reversed = lines[i];
+        std::reverse(reversed.sampledPoints.begin(), reversed.sampledPoints.end());
+        std::swap(reversed.start, reversed.end);
+        orderedLines.push_back(reversed);
+        lines.erase(lines.begin() + i);
+        found = true;
+        break;
+      }
+    }
+
+    // Kalau tidak ketemu yang cocok, coba cari dari awal (untuk handle kasus khusus)
+    if (!found) {
+      // Coba connect dari start point line pertama
+      vec2 currentStart = orderedLines.front().start;
+      for (size_t i = 0; i < lines.size(); i++) {
+        if (glm::length(lines[i].end - currentStart) < 1.0f) {
+          // Found! End point cocok dengan start point pertama (insert di depan)
+          LineData reversed = lines[i];
+          std::reverse(reversed.sampledPoints.begin(), reversed.sampledPoints.end());
+          std::swap(reversed.start, reversed.end);
+          orderedLines.insert(orderedLines.begin(), reversed);
+          lines.erase(lines.begin() + i);
+          found = true;
+          break;
+        } else if (glm::length(lines[i].start - currentStart) < 1.0f) {
+          // Found! Start point cocok dengan start point pertama (insert di depan, no reverse)
+          orderedLines.insert(orderedLines.begin(), lines[i]);
+          lines.erase(lines.begin() + i);
+          found = true;
+          break;
         }
       }
+    }
+
+    // Kalau masih tidak ketemu, break untuk avoid infinite loop
+    if (!found) {
+      ofLog(OF_LOG_WARNING) << "createInvisiblePolygon - Cannot connect all lines, path is broken";
+      break;
+    }
+  }
+
+  // 3. Extract semua titik dari ordered lines
+  vector<vec2> allPoints;
+  for (const LineData& lineData : orderedLines) {
+    for (const vec2& p : lineData.sampledPoints) {
+      allPoints.push_back(p);
     }
   }
 
@@ -1230,7 +1314,6 @@ void ofApp::createInvisiblePolygonFromSelected() {
     return;
   }
 
-  
   int polygonIndex =
       static_cast<int>(polygonShapes.size());
   PolygonShape newPolygon(allPoints, polygonColor,
@@ -1243,7 +1326,7 @@ void ofApp::createInvisiblePolygonFromSelected() {
   undoAction.isCreate = true;
   pushUndoAction(undoAction);
 
-  // 3. Clear selection
+  // 4. Clear selection
   selectedLineIndices.clear();
   lastSelectedLineIndex = -1;
 }
