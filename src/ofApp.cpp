@@ -1471,7 +1471,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 
     // CEK 3: Klik kanan pada CUSTOMLINE yang terseleksi
     int clickedLineIndex = getLineIndexAtPosition(adjustedMousePos);
-    if (clickedLineIndex >= 0 && selectionManager.isLineSelected(clickedLineIndex) > 0) {
+    if (clickedLineIndex >= 0 && selectionManager.isLineSelected(clickedLineIndex)) {
       // Tampilkan context menu untuk semua customLine (original dan DcustomLine)
       contextMenu->setHoveredLineIndex(clickedLineIndex);
       contextMenu->showWindow(ContextMenu::CUSTOMLINE_CONTEXT, vec2(x, y));
@@ -2620,7 +2620,7 @@ void ofApp::duplicateLineR180() {
 
     // Select semua DcustomLine yang baru saja dibuat
     for (size_t i = oldSize; i < customLines.size(); i++) {
-        selectionManager.selectLine(i);
+        selectionManager.selectLine(static_cast<int>(i));
     }
 
     // Sync global color dari first selected DcustomLine

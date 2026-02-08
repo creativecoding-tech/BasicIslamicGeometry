@@ -163,7 +163,7 @@ void SelectionInfo::draw() {
 						ImGui::Indent();
 
 						// Info: vertices count
-						int vertexCount = poly.getVertices().size();
+						int vertexCount = static_cast<int>(poly.getVertices().size());
 						ImGui::Text("vertices: %d", vertexCount);
 
 						// Info: color

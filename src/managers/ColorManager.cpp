@@ -197,7 +197,7 @@ void ColorManager::resetAllCustomLineColor() {
 	// FORCE update SEMUA customLines (tidak peduli ada yang selected atau tidak)
 	for (size_t i = 0; i < app->customLines.size(); i++) {
 		// Simpan old color SEBELUM mengubah
-		undoAction.colorIndices.push_back(i);
+		undoAction.colorIndices.push_back(static_cast<int>(i));
 		undoAction.oldColors.push_back(app->customLines[i].getColor());
 
 		// Ubah warna ke default
@@ -261,7 +261,7 @@ void ColorManager::resetAllPolygonColor() {
 	// FORCE update SEMUA polygons (tidak peduli ada yang selected atau tidak)
 	for (size_t i = 0; i < app->polygonShapes.size(); i++) {
 		// Simpan old color SEBELUM mengubah
-		undoAction.colorIndices.push_back(i);
+		undoAction.colorIndices.push_back(static_cast<int>(i));
 		undoAction.oldColors.push_back(app->polygonShapes[i].getColor());
 
 		// Ubah warna ke default
