@@ -11,7 +11,8 @@ void ObjectTooltip::draw() {
 	// agar bisa multiple tooltips sekaligus
 
 	// Tooltip untuk selected userDots
-	for (int index : app->selectedUserDotIndices) {
+	const std::set<int>& userDotIndices = app->selectionManager.getSelectedUserDotIndices();
+	for (int index : userDotIndices) {
 		drawUserDotTooltip(index);
 	}
 
@@ -21,7 +22,8 @@ void ObjectTooltip::draw() {
 	}
 
 	// TODO: Tooltip untuk selected polygons
-	for (int index : app->selectedPolygonIndices) {
+	const std::set<int>& polygonIndices = app->selectionManager.getSelectedPolygonIndices();
+	for (int index : polygonIndices) {
 		drawPolygonTooltip(index);
 	}
 }

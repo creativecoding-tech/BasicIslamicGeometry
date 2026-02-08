@@ -102,8 +102,8 @@ void UserCustom::syncLineColorFromSelection() {
 //--------------------------------------------------------------
 void UserCustom::syncPolygonColorFromSelection() {
     // Jika ada polygon yang terseleksi, sync color dengan polygon pertama yang terseleksi
-    if (!app->selectedPolygonIndices.empty()) {
-        int firstIndex = *app->selectedPolygonIndices.begin();
+    if (app->selectionManager.hasSelectedPolygon()) {
+        int firstIndex = app->selectionManager.getLastSelectedPolygonIndex();
         if (firstIndex >= 0 && firstIndex < app->polygonShapes.size()) {
             ofColor polyColor = app->polygonShapes[firstIndex].getColor();
             polygonColor[0] = polyColor.r / 255.0f;
@@ -256,12 +256,13 @@ void UserCustom::draw() {
         ImGui::Text("Polygon");
 
         // Info polygon yang terseleksi
-        if (!app->selectedPolygonIndices.empty()) {
-            int selectedCount = app->selectedPolygonIndices.size();
+        if (app->selectionManager.hasSelectedPolygon()) {
+            int selectedCount = app->selectionManager.getSelectedPolygonCount();
 
             // Tampilkan label polygon yang terseleksi (dengan auto wrap)
             std::string labels = "Selected: ";
-            for (auto it = app->selectedPolygonIndices.begin(); it != app->selectedPolygonIndices.end(); ++it) {
+            const std::set<int>& indices = app->selectionManager.getSelectedPolygonIndices();
+            for (auto it = indices.begin(); it != indices.end(); ++it) {
                 // Ambil label dari PolygonShape (index + "polygon" prefix)
                 if (*it >= 0 && *it < app->polygonShapes.size()) {
                     labels += "polygon" + std::to_string(app->polygonShapes[*it].getIndex());
@@ -269,7 +270,7 @@ void UserCustom::draw() {
                     labels += "polygon" + std::to_string(*it);  // Fallback kalau index invalid
                 }
                 // Tambah koma kecuali ini elemen terakhir
-                if (std::next(it) != app->selectedPolygonIndices.end()) {
+                if (std::next(it) != indices.end()) {
                     labels += ", ";
                 }
             }
@@ -308,7 +309,7 @@ void UserCustom::draw() {
         }
 
         // Button: Reset Selected Polygon Colors (hanya enabled jika ada selection)
-        if (!app->selectedPolygonIndices.empty()) {
+        if (app->selectionManager.hasSelectedPolygon()) {
             if (ImGui::Button("Reset Selected Polygon Colors", ImVec2(polygonButtonWidth, 0))) {
                 app->resetSelectedPolygonColor();
             }
@@ -320,9 +321,9 @@ void UserCustom::draw() {
         }
 
         // Slider transparansi (alpha) untuk polygon - hanya untuk selected polygon
-        if (app->selectedPolygonIndices.size() >= 2) {
+        if (app->selectionManager.hasSelectedPolygon()) {
             // Ambil alpha dari polygon pertama yang terseleksi untuk inisialisasi slider
-            int firstIndex = *app->selectedPolygonIndices.begin();
+            int firstIndex = app->selectionManager.getLastSelectedPolygonIndex();
             if (firstIndex >= 0 && firstIndex < app->polygonShapes.size()) {
                 static int polygonAlpha = 255;  // Nilai slider 0-255 (disimpan antar frame)
 

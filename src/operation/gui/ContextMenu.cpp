@@ -66,7 +66,7 @@ void ContextMenu::draw() {
 		// Context menu untuk POLYGON (Duplicate Polygon, Copy/Paste Color)
 		else if (currentType == POLYGON_CONTEXT) {
 			// Copy/Paste Color untuk POLYGON
-			int selectedPolygonCount = app->selectedPolygonIndices.size();
+			int selectedPolygonCount = app->selectionManager.getSelectedPolygonCount();
 			showCopyPasteColorMenus(selectedPolygonCount, POLYGON_CONTEXT);
 		}
 		// Context menu untuk CUSTOMLINE (Create Polygon, Copy/Paste Color, Lock Axis untuk DcustomLine)
@@ -274,15 +274,15 @@ void ContextMenu::showCopyPasteColorMenus(int selectedCount, ContextMenuType typ
 		// Cek apakah ada mixed type selection
 		if (type == DOT_CONTEXT) {
 			// Copy dari DOT: pastikan tidak ada line atau polygon yang terseleksi
-			canCopyColor = app->selectedLineIndices.empty() && app->selectedPolygonIndices.empty();
+			canCopyColor = app->selectedLineIndices.empty() && !app->selectionManager.hasSelectedPolygon();
 		}
 		else if (type == POLYGON_CONTEXT) {
 			// Copy dari POLYGON: pastikan tidak ada dot atau line yang terseleksi
-			canCopyColor = app->selectedUserDotIndices.empty() && app->selectedLineIndices.empty();
+			canCopyColor = !app->selectionManager.hasSelectedUserDot() && app->selectedLineIndices.empty();
 		}
 		else if (type == CUSTOMLINE_CONTEXT) {
 			// Copy dari CUSTOMLINE: pastikan tidak ada dot atau polygon yang terseleksi
-			canCopyColor = app->selectedUserDotIndices.empty() && app->selectedPolygonIndices.empty();
+			canCopyColor = !app->selectionManager.hasSelectedUserDot() && !app->selectionManager.hasSelectedPolygon();
 		}
 	}
 

@@ -38,9 +38,9 @@ void SelectionInfo::draw() {
 	// Begin window dengan close button (windowOpen flag)
 	if (ImGui::Begin("Selection Info", &windowOpen, ImGuiWindowFlags_None)) {
 		// Cek apakah ada selection
-		bool hasSelection = (!app->selectedUserDotIndices.empty() ||
+		bool hasSelection = (app->selectionManager.hasSelectedUserDot() ||
 							!app->selectedLineIndices.empty() ||
-							!app->selectedPolygonIndices.empty());
+							app->selectionManager.hasSelectedPolygon());
 
 		if (!hasSelection) {
 			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "No objects selected");
@@ -142,10 +142,11 @@ void SelectionInfo::draw() {
 			}
 
 			// Tampilkan info untuk selected polygons
-			if (!app->selectedPolygonIndices.empty()) {
-				ImGui::Text("Selected Polygons: %d", app->selectedPolygonIndices.size());
+			if (app->selectionManager.hasSelectedPolygon()) {
+				ImGui::Text("Selected Polygons: %d", app->selectionManager.getSelectedPolygonCount());
 
-				for (auto it = app->selectedPolygonIndices.begin(); it != app->selectedPolygonIndices.end(); ++it) {
+				const std::set<int>& indices = app->selectionManager.getSelectedPolygonIndices();
+				for (auto it = indices.begin(); it != indices.end(); ++it) {
 					int polyIndex = *it;
 					if (polyIndex >= 0 && polyIndex < app->polygonShapes.size()) {
 						PolygonShape& poly = app->polygonShapes[polyIndex];

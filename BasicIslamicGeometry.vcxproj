@@ -235,6 +235,7 @@
     <ClCompile Include="src\shape\DotShape.cpp" />
     <ClCompile Include="src\shape\PolygonShape.cpp" />
     <ClCompile Include="src\operation\FileManager.cpp" />
+    <ClCompile Include="src\managers\SelectionManager.cpp" />
     <ClCompile Include="src\operation\gui\MenuBar.cpp" />
     <ClCompile Include="src\operation\gui\SacredGeometry.cpp" />
     <ClCompile Include="src\operation\gui\Playground.cpp" />
@@ -273,6 +274,7 @@
     <ClInclude Include="src\shape\CustomLine.h" />
     <ClInclude Include="src\shape\PolygonShape.h" />
     <ClInclude Include="src\operation\FileManager.h" />
+    <ClInclude Include="src\managers\SelectionManager.h" />
     <ClInclude Include="src\operation\gui\AbstractGuiComponent.h" />
     <ClInclude Include="src\operation\gui\MenuBar.h" />
     <ClInclude Include="src\operation\gui\SacredGeometry.h" />

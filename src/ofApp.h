@@ -19,6 +19,7 @@
 #include "operation/gui/ObjectTooltip.h"
 #include "template/SacredGeometryTemplate.h"
 #include "template/TemplateRegistry.h"
+#include "managers/SelectionManager.h"
 #include "imgui/imgui.h"
 #include "imgui/backends/imgui_impl_opengl3.h"
 #include "imgui/backends/imgui_impl_win32.h"
@@ -83,8 +84,6 @@ class ofApp : public ofBaseApp{
 
 		// Invisible polygon system
 		vector<PolygonShape> polygonShapes;
-		std::set<int> selectedPolygonIndices;  // Bisa select 1 atau banyak polygons
-		int lastSelectedPolygonIndex = -1;  // Untuk track polygon terakhir di-klik
 
 		// Preset warna untuk polygon
 		vector<ofColor> polygonPresetColors = {
@@ -187,6 +186,9 @@ class ofApp : public ofBaseApp{
 		// File Manager untuk save/load custom lines
 		FileManager fileManager;
 		std::string lastSavedPath;  // Path file terakhir yang di-save/open (untuk Save As dan Load)
+
+		// Selection Manager untuk handle semua selection logic
+		SelectionManager selectionManager;
 
 		// Play button delay state
 		bool isWaitingForLoad = false;

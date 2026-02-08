@@ -407,7 +407,7 @@ void ofApp::drawCustomLinesAndUI() {
 
   if (shouldDrawPolygons) {
     for (int i = 0; i < polygonShapes.size(); i++) {
-      polygonShapes[i].setSelected(selectedPolygonIndices.count(i) > 0);
+      polygonShapes[i].setSelected(selectionManager.isPolygonSelected(i));
       polygonShapes[i].draw();
     }
   }
@@ -502,13 +502,13 @@ void ofApp::keyPressed(int key) {
     }
 
     // Prioritas 1: Hapus userDot selected dulu (highest priority)
-    if (!selectedUserDotIndices.empty()) {
+    if (selectionManager.hasSelectedUserDot()) {
       deleteSelectedUserDot();
       return; // Return agar tidak trigger delete lainnya
     }
 
     // Prioritas 2: Hapus polygon selected
-    if (!selectedPolygonIndices.empty()) {
+    if (selectionManager.hasSelectedPolygon()) {
       deleteSelectedPolygons();
       return; // Return agar tidak trigger delete lainnya
     }
@@ -661,7 +661,8 @@ void ofApp::keyPressed(int key) {
   if (key >= 49 && key <= 57) { // '1' to '9'
     int colorIndex = key - 49;  // 0 to 8
     // Apply ke SEMUA selected polygons
-    for (int index : selectedPolygonIndices) {
+    const std::set<int>& indices = selectionManager.getSelectedPolygonIndices();
+    for (int index : indices) {
       if (index >= 0 && index < polygonShapes.size()) {
         polygonShapes[index].setColor(polygonPresetColors[colorIndex]);
       }
@@ -921,8 +922,7 @@ void ofApp::undo() {
 				redoAction.deletedPolygonIndex = static_cast<int>(polygonShapes.size()) - 1;
 
 				polygonShapes.pop_back();
-				selectedPolygonIndices.clear();
-				lastSelectedPolygonIndex = -1;
+				selectionManager.clearPolygonSelection();
 			}
 			// Push ke redo stack
 			redoStack.push_back(redoAction);
@@ -1163,8 +1163,7 @@ void ofApp::redo() {
 			if (action.deletedPolygonIndex >= 0 && action.deletedPolygonIndex < static_cast<int>(polygonShapes.size())) {
 				polygonShapes.erase(polygonShapes.begin() + action.deletedPolygonIndex);
 			}
-			selectedPolygonIndices.clear();
-			lastSelectedPolygonIndex = -1;
+			selectionManager.clearPolygonSelection();
 			// Push langsung ke undo stack
 			if (undoStack.size() >= MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
@@ -1398,7 +1397,7 @@ void ofApp::mousePressed(int x, int y, int button) {
     for (int i = 0; i < polygonShapes.size(); i++) {
       if (polygonShapes[i].containsPoint(adjustedMousePos)) {
         // Hanya tampilkan context menu jika polygon terseleksi
-        if (selectedPolygonIndices.count(i) > 0) {
+        if (selectionManager.isPolygonSelected(i)) {
           contextMenu->setHoveredPolygonIndex(i);
           contextMenu->showWindow(ContextMenu::POLYGON_CONTEXT, vec2(x, y));
           imguiVisible = true;
@@ -1454,12 +1453,11 @@ void ofApp::mousePressed(int x, int y, int button) {
     for (int i = 0; i < polygonShapes.size(); i++) {
       if (polygonShapes[i].containsPoint(adjustedMousePos)) {
         // Toggle selection polygon
-        if (selectedPolygonIndices.count(i)) {
-          selectedPolygonIndices.erase(i); // Deselect
+        if (selectionManager.isPolygonSelected(i)) {
+          selectionManager.deselectPolygon(i); // Deselect
         } else {
-          selectedPolygonIndices.insert(i); // Select
+          selectionManager.selectPolygon(i); // Select
         }
-        lastSelectedPolygonIndex = i;
         syncColorFromSelectedObjects();  // Sync global color dari selected object
         return; // Jangan lanjut ke logic lain
       }
@@ -1537,10 +1535,9 @@ void ofApp::mousePressed(int x, int y, int button) {
       for (int i = 0; i < polygonShapes.size(); i++) {
         if (polygonShapes[i].containsPoint(adjustedMousePos)) {
           // Select polygon ini (single select: hapus yang lama, select yang baru)
-          selectedPolygonIndices.clear();
-          selectedPolygonIndices.insert(i);
+          selectionManager.clearPolygonSelection();
+          selectionManager.selectPolygon(i);
           selectedLineIndices.clear(); // Deselect semua lines
-          lastSelectedPolygonIndex = i;
           clickedOnPolygon = true;
           syncColorFromSelectedObjects();  // Sync global color dari selected object
           break;
@@ -1555,15 +1552,13 @@ void ofApp::mousePressed(int x, int y, int button) {
           selectedLineIndices.clear();
           selectedLineIndices.insert(lineIndex);
           lastSelectedLineIndex = lineIndex;
-          selectedPolygonIndices.clear(); // Deselect polygon
-          lastSelectedPolygonIndex = -1;
+          selectionManager.clearPolygonSelection(); // Deselect polygon
           syncColorFromSelectedObjects();  // Sync global color dari selected object
         } else {
           // Klik di tempat kosong → deselect semua
           selectedLineIndices.clear();
           lastSelectedLineIndex = -1;
-          selectedPolygonIndices.clear(); // Deselect polygon
-          lastSelectedPolygonIndex = -1;
+          selectionManager.clearPolygonSelection(); // Deselect polygon
           // Tidak perlu syncColorFromSelectedObjects() karena tidak ada yang selected
         }
       }
@@ -2000,9 +1995,10 @@ void ofApp::updatePolygonColor(ofColor color) {
 	undoAction.newColor = color;
 
 	// Jika ada polygon yang selected, hanya update yang selected saja
-	if (!selectedPolygonIndices.empty()) {
+	if (selectionManager.hasSelectedPolygon()) {
 		// Simpan old color SEBELUM mengubah untuk SEMUA selected polygons
-		for (int index : selectedPolygonIndices) {
+		const std::set<int>& indices = selectionManager.getSelectedPolygonIndices();
+		for (int index : indices) {
 			if (index >= 0 && index < polygonShapes.size()) {
 				undoAction.colorIndices.push_back(index);
 				undoAction.oldColors.push_back(polygonShapes[index].getColor());
@@ -2061,8 +2057,9 @@ void ofApp::resetSelectedPolygonColor() {
 	undoAction.newColor = defaultColor;
 
 	// Hanya update yang selected
-	if (!selectedPolygonIndices.empty()) {
-		for (int polygonIndex : selectedPolygonIndices) {
+	if (selectionManager.hasSelectedPolygon()) {
+		const std::set<int>& indices = selectionManager.getSelectedPolygonIndices();
+		for (int polygonIndex : indices) {
 			if (polygonIndex >= 0 && polygonIndex < polygonShapes.size()) {
 				// Simpan old color SEBELUM mengubah
 				undoAction.colorIndices.push_back(polygonIndex);
@@ -2084,7 +2081,7 @@ void ofApp::updatePolygonAlpha(uint8_t alpha) {
 	// Update alpha transparansi untuk semua polygon yang terseleksi
 	// RGB tetap, hanya alpha yang berubah
 
-	if (selectedPolygonIndices.empty()) {
+	if (!selectionManager.hasSelectedPolygon()) {
 		return;  // Tidak ada polygon terseleksi
 	}
 
@@ -2094,7 +2091,8 @@ void ofApp::updatePolygonAlpha(uint8_t alpha) {
 	// undoAction tidak dipakai untuk alpha-only update (tidak perlu simpan oldColors)
 
 	// Update alpha semua selected polygon, RGB tetap
-	for (int polygonIndex : selectedPolygonIndices) {
+	const std::set<int>& indices = selectionManager.getSelectedPolygonIndices();
+	for (int polygonIndex : indices) {
 		if (polygonIndex >= 0 && polygonIndex < polygonShapes.size()) {
 			ofColor currentColor = polygonShapes[polygonIndex].getColor();
 			ofColor newColor = ofColor(
@@ -2171,11 +2169,11 @@ void ofApp::copyDotColor() {
 //--------------------------------------------------------------
 void ofApp::copyPolygonColor() {
 	// Validasi: Harus tepat 1 polygon yang terseleksi
-	if (selectedPolygonIndices.size() != 1) {
+	if (selectionManager.getSelectedPolygonCount() != 1) {
 		return;  // Tidak valid
 	}
 
-	int polygonIndex = *selectedPolygonIndices.begin();
+	int polygonIndex = selectionManager.getLastSelectedPolygonIndex();
 	if (polygonIndex >= 0 && polygonIndex < polygonShapes.size()) {
 		// Copy color dari polygon ke clipboard
 		clipboardColor = polygonShapes[polygonIndex].getColor();
@@ -2231,7 +2229,7 @@ void ofApp::pasteColorToPolygon() {
 	}
 
 	// Validasi: Harus ada polygon yang terseleksi
-	if (selectedPolygonIndices.empty()) {
+	if (!selectionManager.hasSelectedPolygon()) {
 		return;  // Tidak ada polygon terseleksi
 	}
 
@@ -2239,7 +2237,8 @@ void ofApp::pasteColorToPolygon() {
 	polygonColor = clipboardColor;
 
 	// Paste color ke semua polygon yang terseleksi
-	for (int index : selectedPolygonIndices) {
+	const std::set<int>& indices = selectionManager.getSelectedPolygonIndices();
+	for (int index : indices) {
 		if (index >= 0 && index < polygonShapes.size()) {
 			polygonShapes[index].setColor(clipboardColor);
 		}
@@ -2350,8 +2349,8 @@ void ofApp::syncColorFromSelectedObjects() {
 		}
 	}
 	// 2. Cek polygon
-	else if (!selectedPolygonIndices.empty()) {
-		int firstIndex = *selectedPolygonIndices.begin();
+	else if (selectionManager.hasSelectedPolygon()) {
+		int firstIndex = selectionManager.getLastSelectedPolygonIndex();
 		if (firstIndex >= 0 && firstIndex < polygonShapes.size()) {
 			targetColor = polygonShapes[firstIndex].getColor();
 		}
@@ -2433,8 +2432,7 @@ void ofApp::deleteAllPolygons() {
 	// Hapus semua polygons
 	if (!polygonShapes.empty()) {
 		polygonShapes.clear();
-		selectedPolygonIndices.clear();
-		lastSelectedPolygonIndex = -1;
+		selectionManager.clearPolygonSelection();
 	}
 }
 
@@ -2487,14 +2485,14 @@ void ofApp::deleteSelectedUserDot() {
 //--------------------------------------------------------------
 void ofApp::deleteSelectedPolygons() {
 	// Cek apakah ada polygon yang terseleksi
-	if (selectedPolygonIndices.empty()) {
+	if (!selectionManager.hasSelectedPolygon()) {
 		return;
 	}
 
 	// Hapus SEMUA polygons yang terselect (support multi-delete)
 	// Sort descending agar aman untuk erase
-	vector<int> toDelete(selectedPolygonIndices.begin(),
-						 selectedPolygonIndices.end());
+	vector<int> toDelete(selectionManager.getSelectedPolygonIndices().begin(),
+						 selectionManager.getSelectedPolygonIndices().end());
 	std::sort(toDelete.rbegin(), toDelete.rend()); // Descending
 
 	// Push undo action untuk setiap polygon yang dihapus (reverse order)
@@ -2514,8 +2512,7 @@ void ofApp::deleteSelectedPolygons() {
 			polygonShapes.erase(polygonShapes.begin() + index);
 		}
 	}
-	selectedPolygonIndices.clear();
-	lastSelectedPolygonIndex = -1;
+	selectionManager.clearPolygonSelection();
 }
 
 //--------------------------------------------------------------
@@ -3160,8 +3157,7 @@ void ofApp::loadWorkspaceSeq() {
     selectedLineIndices.clear();
     lastSelectedLineIndex = -1;
     polygonShapes.clear();
-    selectedPolygonIndices.clear();
-    lastSelectedPolygonIndex = -1;
+    selectionManager.clearPolygonSelection();
 
     // Sequential load dengan animasi
     string loadedTemplateName;
