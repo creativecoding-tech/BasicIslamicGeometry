@@ -22,6 +22,7 @@
 #include "managers/SelectionManager.h"
 #include "managers/ColorManager.h"
 #include "managers/DuplicateManager.h"
+#include "managers/InputManager.h"
 #include "undo/UndoAction.h"
 #include "imgui/imgui.h"
 #include "imgui/backends/imgui_impl_opengl3.h"
@@ -139,6 +140,9 @@ class ofApp : public ofBaseApp{
 
 		// Duplicate Manager untuk handle semua duplicate operations
 		std::unique_ptr<DuplicateManager> duplicateManager;
+
+		// Input Manager untuk handle semua input events (mouse + keyboard)
+		std::unique_ptr<InputManager> inputManager;
 
 		// Play button delay state
 		bool isWaitingForLoad = false;

@@ -20,6 +20,7 @@
     <ClCompile Include="src\managers\SelectionManager.cpp" />
     <ClCompile Include="src\managers\ColorManager.cpp" />
     <ClCompile Include="src\managers\DuplicateManager.cpp" />
+    <ClCompile Include="src\managers\InputManager.cpp" />
     <ClCompile Include="src\operation\gui\MenuBar.cpp" />
     <ClCompile Include="src\operation\gui\SacredGeometry.cpp" />
     <ClCompile Include="src\operation\gui\Playground.cpp" />
@@ -66,6 +67,7 @@
     <ClInclude Include="src\managers\SelectionManager.h" />
     <ClInclude Include="src\managers\ColorManager.h" />
     <ClInclude Include="src\managers\DuplicateManager.h" />
+    <ClInclude Include="src\managers\InputManager.h" />
     <ClInclude Include="src\undo\UndoAction.h" />
     <ClInclude Include="src\operation\gui\AbstractGuiComponent.h" />
     <ClInclude Include="src\operation\gui\MenuBar.h" />
