@@ -79,8 +79,6 @@ class ofApp : public ofBaseApp{
 
 		// User-created dots system (untuk fitur "Duplicate Dot Above")
 		vector<std::unique_ptr<DotShape>> userDots;
-		std::set<int> selectedUserDotIndices;  // Bisa select 1 atau banyak userDot
-		int lastSelectedUserDotIndex = -1;  // Untuk track userDot terakhir di-klik
 
 		// Invisible polygon system
 		vector<PolygonShape> polygonShapes;

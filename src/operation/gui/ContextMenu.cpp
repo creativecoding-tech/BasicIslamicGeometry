@@ -41,7 +41,7 @@ void ContextMenu::draw() {
 		if (currentType == DOT_CONTEXT) {
 			if (isUserDotContext) {
 				// Klik kanan pada userDot (duplicate dot) → hanya Copy/Paste Color
-				int selectedDotCount = app->selectedUserDotIndices.size();
+				int selectedDotCount = app->selectionManager.getSelectedUserDotCount();
 				showCopyPasteColorMenus(selectedDotCount, DOT_CONTEXT);
 			} else {
 				// Klik kanan pada original dot → hanya Duplicate Dot

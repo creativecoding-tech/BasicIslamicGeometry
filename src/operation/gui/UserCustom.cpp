@@ -51,8 +51,8 @@ void UserCustom::updateUserDotColorFromApp() {
 //--------------------------------------------------------------
 void UserCustom::syncUserDotFromSelection() {
     // Jika ada userDot yang terseleksi, sync radius dan color dengan dot pertama yang terseleksi
-    if (!app->selectedUserDotIndices.empty()) {
-        int firstIndex = *app->selectedUserDotIndices.begin();
+    if (app->selectionManager.hasSelectedUserDot()) {
+        int firstIndex = app->selectionManager.getLastSelectedUserDotIndex();
         if (firstIndex >= 0 && firstIndex < app->userDots.size()) {
             auto& dot = app->userDots[firstIndex];
             if (dot) {
@@ -153,8 +153,7 @@ void UserCustom::draw() {
             // Event handler: toggle userDot visibility
             if (!app->showUserDot) {
                 // Unselect semua userDot ketika di-hide
-                app->selectedUserDotIndices.clear();
-                app->lastSelectedUserDotIndex = -1;
+                app->selectionManager.clearUserDotSelection();
             }
         }
         ImGui::SetNextItemWidth(100.0f);

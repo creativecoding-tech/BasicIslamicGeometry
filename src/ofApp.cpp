@@ -1176,8 +1176,7 @@ void ofApp::redo() {
 			if (action.deletedDotIndex >= 0 && action.deletedDotIndex < static_cast<int>(userDots.size())) {
 				userDots.erase(userDots.begin() + action.deletedDotIndex);
 			}
-			selectedUserDotIndices.clear();
-			lastSelectedUserDotIndex = -1;
+			selectionManager.clearUserDotSelection();
 			// Push langsung ke undo stack
 			if (undoStack.size() >= MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
@@ -1382,7 +1381,7 @@ void ofApp::mousePressed(int x, int y, int button) {
         float dist = glm::length(adjustedMousePos - dotPos);
         if (dist < 15.0f) {
           // Hanya tampilkan context menu jika userDot terseleksi
-          if (selectedUserDotIndices.count(i) > 0) {
+          if (selectionManager.isUserDotSelected(i)) {
             contextMenu->setHoveredDotPos(dotPos);
             contextMenu->setIsUserDotContext(true);  // Flag bahwa ini dari userDot
             contextMenu->showWindow(ContextMenu::DOT_CONTEXT, vec2(x, y));
@@ -1437,12 +1436,7 @@ void ofApp::mousePressed(int x, int y, int button) {
         float dist = glm::length(adjustedMousePos - dotPos);
         if (dist < 15.0f) {
           // Toggle selection userDot
-          if (selectedUserDotIndices.count(i)) {
-            selectedUserDotIndices.erase(i); // Deselect
-          } else {
-            selectedUserDotIndices.insert(i); // Select
-          }
-          lastSelectedUserDotIndex = i;
+          selectionManager.toggleUserDotSelection(i);
           syncColorFromSelectedObjects();  // Sync global color dari selected object
           return; // Jangan lanjut ke logic lain
         }
@@ -1492,9 +1486,8 @@ void ofApp::mousePressed(int x, int y, int button) {
         float dist = glm::length(adjustedMousePos - dotPos);
         if (dist < 15.0f) {
           // Single select (hapus yang lama, select yang baru)
-          selectedUserDotIndices.clear();
-          selectedUserDotIndices.insert(i);
-          lastSelectedUserDotIndex = i;
+          selectionManager.clearUserDotSelection();
+          selectionManager.selectUserDot(i);
           clickedOnUserDot = true;
           syncColorFromSelectedObjects();  // Sync global color dari selected userDot
           // JANGAN return, biarkan lanjut ke line creation
@@ -1504,8 +1497,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 
     // Jika tidak klik userDot, deselect semua userDot
     if (!clickedOnUserDot) {
-      selectedUserDotIndices.clear();
-      lastSelectedUserDotIndex = -1;
+      selectionManager.clearUserDotSelection();
     }
 
     vector<DotInfo> dots = getAllDots();
@@ -1655,11 +1647,12 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
   }
 
   // Handle scroll userDot (vertical untuk above/below, horizontal untuk left)
-  if (!selectedUserDotIndices.empty()) {
+  if (selectionManager.hasSelectedUserDot()) {
     float scrollSpeed = 2.0f;  // Kecepatan scroll (lebih presise)
 
     // Scroll semua selected dots
-    for (int index : selectedUserDotIndices) {
+    const std::set<int>& indices = selectionManager.getSelectedUserDotIndices();
+    for (int index : indices) {
       if (index >= 0 && index < userDots.size()) {
         vec2 oldPos = userDots[index]->getPosition();  // Simpan posisi lama
         vec2 lowerBound = userDots[index]->getLowerBound();
@@ -2112,8 +2105,9 @@ void ofApp::updateUserDotRadius(float radius) {
 	userDotRadius = radius;
 
 	// Jika ada userDot yang terseleksi, update hanya yang terseleksi
-	if (!selectedUserDotIndices.empty()) {
-		for (int index : selectedUserDotIndices) {
+	if (selectionManager.hasSelectedUserDot()) {
+		const std::set<int>& indices = selectionManager.getSelectedUserDotIndices();
+		for (int index : indices) {
 			if (index >= 0 && index < userDots.size()) {
 				if (userDots[index]) {
 					userDots[index]->setRadius(radius);
@@ -2136,8 +2130,9 @@ void ofApp::updateUserDotColor(ofColor color) {
 	userDotColor = color;
 
 	// Jika ada userDot yang terseleksi, update hanya yang terseleksi
-	if (!selectedUserDotIndices.empty()) {
-		for (int index : selectedUserDotIndices) {
+	if (selectionManager.hasSelectedUserDot()) {
+		const std::set<int>& indices = selectionManager.getSelectedUserDotIndices();
+		for (int index : indices) {
 			if (index >= 0 && index < userDots.size()) {
 				if (userDots[index]) {
 					userDots[index]->setColor(color);
@@ -2152,11 +2147,11 @@ void ofApp::updateUserDotColor(ofColor color) {
 //--------------------------------------------------------------
 void ofApp::copyDotColor() {
 	// Validasi: Harus tepat 1 userDot yang terseleksi
-	if (selectedUserDotIndices.size() != 1) {
+	if (selectionManager.getSelectedUserDotCount() != 1) {
 		return;  // Tidak valid
 	}
 
-	int dotIndex = *selectedUserDotIndices.begin();
+	int dotIndex = selectionManager.getLastSelectedUserDotIndex();
 	if (dotIndex >= 0 && dotIndex < userDots.size()) {
 		if (userDots[dotIndex]) {
 			// Copy color dari userDot ke clipboard
@@ -2204,7 +2199,7 @@ void ofApp::pasteColorToDot() {
 	}
 
 	// Validasi: Harus ada userDot yang terseleksi
-	if (selectedUserDotIndices.empty()) {
+	if (!selectionManager.hasSelectedUserDot()) {
 		return;  // Tidak ada userDot terseleksi
 	}
 
@@ -2212,7 +2207,8 @@ void ofApp::pasteColorToDot() {
 	userDotColor = clipboardColor;
 
 	// Paste color ke semua userDot yang terseleksi
-	for (int index : selectedUserDotIndices) {
+	const std::set<int>& indices = selectionManager.getSelectedUserDotIndices();
+	for (int index : indices) {
 		if (index >= 0 && index < userDots.size()) {
 			if (userDots[index]) {
 				userDots[index]->setColor(clipboardColor);
@@ -2342,8 +2338,8 @@ void ofApp::syncColorFromSelectedObjects() {
 	ofColor targetColor;
 
 	// 1. Cek userDot dulu (priority tertinggi)
-	if (!selectedUserDotIndices.empty()) {
-		int firstIndex = *selectedUserDotIndices.begin();
+	if (selectionManager.hasSelectedUserDot()) {
+		int firstIndex = selectionManager.getLastSelectedUserDotIndex();
 		if (firstIndex >= 0 && firstIndex < userDots.size() && userDots[firstIndex]) {
 			targetColor = userDots[firstIndex]->getColor();
 		}
@@ -2441,22 +2437,21 @@ void ofApp::deleteAllUserDots() {
 	// Hapus semua userDots (duplicat dots)
 	if (!userDots.empty()) {
 		userDots.clear();
-		selectedUserDotIndices.clear();
-		lastSelectedUserDotIndex = -1;
+		selectionManager.clearUserDotSelection();
 	}
 }
 
 //--------------------------------------------------------------
 void ofApp::deleteSelectedUserDot() {
 	// Cek apakah ada userDot yang terseleksi
-	if (selectedUserDotIndices.empty()) {
+	if (!selectionManager.hasSelectedUserDot()) {
 		return;
 	}
 
 	// Hapus SEMUA userDots yang terselect (support multi-delete)
 	// Sort descending agar aman untuk erase
-	vector<int> toDelete(selectedUserDotIndices.begin(),
-						 selectedUserDotIndices.end());
+	const std::set<int>& indices = selectionManager.getSelectedUserDotIndices();
+	vector<int> toDelete(indices.begin(), indices.end());
 	std::sort(toDelete.rbegin(), toDelete.rend()); // Descending
 
 	// Push undo action untuk setiap dot yang dihapus (reverse order)
@@ -2478,8 +2473,7 @@ void ofApp::deleteSelectedUserDot() {
 			userDots.erase(userDots.begin() + index);
 		}
 	}
-	selectedUserDotIndices.clear();
-	lastSelectedUserDotIndex = -1;
+	selectionManager.clearUserDotSelection();
 }
 
 //--------------------------------------------------------------
@@ -2543,8 +2537,7 @@ void ofApp::cleanCanvasInternal() {
 
     // Hapus semua userDots
     userDots.clear();
-    selectedUserDotIndices.clear();
-    lastSelectedUserDotIndex = -1;
+    selectionManager.clearUserDotSelection();
 
     // Benar-benar HAPUS semua template shapes - delegate ke template
     if (currentTemplate) {

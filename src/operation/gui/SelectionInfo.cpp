@@ -46,10 +46,11 @@ void SelectionInfo::draw() {
 			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "No objects selected");
 		} else {
 			// Tampilkan info untuk selected dots
-			if (!app->selectedUserDotIndices.empty()) {
-				ImGui::Text("Selected Dots: %d", app->selectedUserDotIndices.size());
+			if (app->selectionManager.hasSelectedUserDot()) {
+				ImGui::Text("Selected Dots: %d", app->selectionManager.getSelectedUserDotCount());
 
-				for (auto it = app->selectedUserDotIndices.begin(); it != app->selectedUserDotIndices.end(); ++it) {
+				const std::set<int>& indices = app->selectionManager.getSelectedUserDotIndices();
+				for (auto it = indices.begin(); it != indices.end(); ++it) {
 					int dotIndex = *it;
 					if (dotIndex >= 0 && dotIndex < app->userDots.size()) {
 						auto& dot = app->userDots[dotIndex];
