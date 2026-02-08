@@ -20,6 +20,8 @@
 #include "template/SacredGeometryTemplate.h"
 #include "template/TemplateRegistry.h"
 #include "managers/SelectionManager.h"
+#include "managers/ColorManager.h"
+#include "undo/UndoAction.h"
 #include "imgui/imgui.h"
 #include "imgui/backends/imgui_impl_opengl3.h"
 #include "imgui/backends/imgui_impl_win32.h"
@@ -96,65 +98,12 @@ class ofApp : public ofBaseApp{
 		// Line width control
 		float mouseLineWidth = 3.f;    // Line width khusus untuk mouse drag lines
 
-		// CustomLine color control
-		ofColor customLineColor = ofColor(0, 0, 255);  // Default biru
-
-		// Polygon color control
-		ofColor polygonColor = ofColor(0, 0, 255);  // Default biru
-
-		// UserDot color control
-		ofColor userDotColor = ofColor(0, 0, 255);  // Default biru
-
-		// Global clipboard untuk Copy/Paste Color
-		ofColor clipboardColor = ofColor(0, 0, 255);  // Default biru
-		bool hasClipboardColor = false;  // Flag untuk mengecek apakah ada color yang di-copy
-
 		float threshold = 9.0f; //dalam radius saat mouse hover pada dot
 		float duplicateDotOffsetDistance = 7.0f;  // Jarak offset duplikat dot ke atas (dalam pixels)
 		float userDotRadius = 8.0f;  // Radius untuk userDot/duplicate dot
 		bool isCtrlPressed = false;
 
 		// Undo System (Max 100 steps)
-		enum UndoActionType {
-			CREATE_LINE,
-			CREATE_POLYGON,
-			CREATE_DOT,
-			CHANGE_COLOR_LINE,
-			CHANGE_COLOR_POLYGON,
-			DELETE_LINE,
-			DELETE_POLYGON,
-			DELETE_DOT,
-			CHANGE_CURVE
-		};
-
-		struct UndoAction {
-			UndoActionType type;
-
-			// For CREATE actions
-			bool isCreate;
-
-			// For CHANGE_COLOR actions (support multi-select)
-			std::vector<int> colorIndices;
-			std::vector<ofColor> oldColors;
-			ofColor newColor;
-
-			// For DELETE actions
-			CustomLine deletedLine;
-			int deletedLineIndex;
-			PolygonShape deletedPolygon;
-			int deletedPolygonIndex;
-			vec2 deletedDotPos;  // For CREATE_DOT undo/redo (position dot yang dihapus)
-			vec2 deletedDotLowerBound;  // For DELETE_DOT undo/redo (lowerBound dot yang dihapus)
-			float deletedDotRadius;  // For DELETE_DOT undo/redo (radius dot yang dihapus)
-			int deletedDotIndex;  // For DELETE_DOT undo/redo (index dot yang dihapus)
-
-			// For CHANGE_CURVE (support multi-select)
-			std::vector<int> curveLineIndices;
-			std::vector<float> oldCurves;
-			float newCurve;
-		};
-
-		static const int MAX_UNDO_STEPS = 100;
 		std::vector<UndoAction> undoStack;
 		std::vector<UndoAction> redoStack;  // Redo stack
 
@@ -184,6 +133,9 @@ class ofApp : public ofBaseApp{
 
 		// Selection Manager untuk handle semua selection logic
 		SelectionManager selectionManager;
+
+		// Color Manager untuk handle semua color operations
+		std::unique_ptr<ColorManager> colorManager;
 
 		// Play button delay state
 		bool isWaitingForLoad = false;

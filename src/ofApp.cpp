@@ -30,6 +30,9 @@ void ofApp::setup() {
   // Initial dots cache build
   dotsCacheDirty = true;
 
+  // Initialize ColorManager (after ofApp is fully constructed)
+  colorManager = std::make_unique<ColorManager>(this);
+
   //define ImGUI
   setupImGui();
 }
@@ -417,7 +420,7 @@ void ofApp::drawCustomLinesAndUI() {
   // Draw preview polyline (sedang drag)
   if (drawState == DRAGGING && currentPolylinePoints.size() > 1) {
     ofPushStyle();
-    ofSetColor(customLineColor);
+    ofSetColor(colorManager->getCustomLineColor());
     ofSetLineWidth(mouseLineWidth); // Pakai mouseLineWidth untuk preview
 
     // Gambar preview polyline
@@ -862,7 +865,7 @@ void ofApp::pushUndoAction(UndoAction action) {
 	clearRedoStack();
 
 	// Add ke stack, jika sudah full, hapus yang paling lama
-	if (undoStack.size() >= MAX_UNDO_STEPS) {
+	if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
 		undoStack.erase(undoStack.begin());  // Hapus yang paling lama (front)
 	}
 	undoStack.push_back(action);
@@ -1004,6 +1007,31 @@ void ofApp::undo() {
 			break;
 		}
 
+		case CHANGE_COLOR_DOT:
+		{
+			// Capture current colors dulu (sebelum restore) untuk redo
+			std::vector<ofColor> currentColors;
+			for (size_t i = 0; i < action.colorIndices.size(); i++) {
+				int idx = static_cast<int>(action.colorIndices[i]);
+				if (idx >= 0 && idx < static_cast<int>(userDots.size()) && userDots[idx]) {
+					currentColors.push_back(userDots[idx]->getColor());
+				}
+			}
+
+			// Restore old colors
+			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
+				int idx = static_cast<int>(action.colorIndices[i]);
+				if (idx >= 0 && idx < static_cast<int>(userDots.size()) && userDots[idx]) {
+					userDots[idx]->setColor(action.oldColors[i]);
+				}
+			}
+
+			// Setup redo action: redo akan apply new color (current colors)
+			redoAction.oldColors = currentColors;
+			redoStack.push_back(redoAction);
+			break;
+		}
+
 		case DELETE_LINE:
 			// Restore line yang dihapus
 			if (action.deletedLineIndex >= 0 && action.deletedLineIndex <= static_cast<int>(customLines.size())) {
@@ -1079,7 +1107,7 @@ void ofApp::redo() {
 			// Redo create line = create line lagi
 			customLines.push_back(action.deletedLine);
 			// Push langsung ke undo stack (TANPA clearRedoStack)
-			if (undoStack.size() >= MAX_UNDO_STEPS) {
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
 			}
 			undoStack.push_back(action);
@@ -1089,7 +1117,7 @@ void ofApp::redo() {
 			// Redo create polygon = create polygon lagi
 			polygonShapes.push_back(action.deletedPolygon);
 			// Push langsung ke undo stack
-			if (undoStack.size() >= MAX_UNDO_STEPS) {
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
 			}
 			undoStack.push_back(action);
@@ -1103,7 +1131,7 @@ void ofApp::redo() {
 				userDots.push_back(std::move(dotShape));
 			}
 			// Push langsung ke undo stack
-			if (undoStack.size() >= MAX_UNDO_STEPS) {
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
 			}
 			undoStack.push_back(action);
@@ -1117,16 +1145,16 @@ void ofApp::redo() {
 			newUndoAction.colorIndices = action.colorIndices;
 			newUndoAction.newColor = action.newColor;
 
-			// Apply redo colors dan simpan current colors
+			// Apply redo colors (apply newColor) dan simpan current colors
 			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
 				int idx = action.colorIndices[i];
 				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
 					newUndoAction.oldColors.push_back(customLines[idx].getColor());
-					customLines[idx].setColor(action.oldColors[i]);
+					customLines[idx].setColor(action.newColor);  // Apply NEW color (redo)
 				}
 			}
 			// Push langsung ke undo stack
-			if (undoStack.size() >= MAX_UNDO_STEPS) {
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
 			}
 			undoStack.push_back(newUndoAction);
@@ -1145,14 +1173,38 @@ void ofApp::redo() {
 				if (idx >= 0 && idx < static_cast<int>(polygonShapes.size())) {
 					newUndoActionPoly.colorIndices = action.colorIndices;
 					newUndoActionPoly.oldColors.push_back(polygonShapes[idx].getColor());
-					polygonShapes[idx].setColor(action.oldColors[0]);
+					polygonShapes[idx].setColor(action.newColor);  // Apply NEW color (redo)
 				}
 			}
 			// Push langsung ke undo stack
-			if (undoStack.size() >= MAX_UNDO_STEPS) {
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
 			}
 			undoStack.push_back(newUndoActionPoly);
+			break;
+		}
+
+		case CHANGE_COLOR_DOT:
+		{
+			// Capture current colors dulu untuk membuat undo action baru
+			UndoAction newUndoAction;
+			newUndoAction.type = CHANGE_COLOR_DOT;
+			newUndoAction.colorIndices = action.colorIndices;
+			newUndoAction.newColor = action.newColor;
+
+			// Apply redo colors (apply newColor) dan simpan current colors
+			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
+				int idx = action.colorIndices[i];
+				if (idx >= 0 && idx < static_cast<int>(userDots.size()) && userDots[idx]) {
+					newUndoAction.oldColors.push_back(userDots[idx]->getColor());
+					userDots[idx]->setColor(action.newColor);  // Apply NEW color (redo)
+				}
+			}
+			// Push langsung ke undo stack
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(newUndoAction);
 			break;
 		}
 
@@ -1162,7 +1214,7 @@ void ofApp::redo() {
 				customLines.erase(customLines.begin() + action.deletedLineIndex);
 			}
 			// Push langsung ke undo stack
-			if (undoStack.size() >= MAX_UNDO_STEPS) {
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
 			}
 			undoStack.push_back(action);
@@ -1175,7 +1227,7 @@ void ofApp::redo() {
 			}
 			selectionManager.clearPolygonSelection();
 			// Push langsung ke undo stack
-			if (undoStack.size() >= MAX_UNDO_STEPS) {
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
 			}
 			undoStack.push_back(action);
@@ -1188,7 +1240,7 @@ void ofApp::redo() {
 			}
 			selectionManager.clearUserDotSelection();
 			// Push langsung ke undo stack
-			if (undoStack.size() >= MAX_UNDO_STEPS) {
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
 			}
 			undoStack.push_back(action);
@@ -1210,7 +1262,7 @@ void ofApp::redo() {
 				}
 			}
 			// Push langsung ke undo stack
-			if (undoStack.size() >= MAX_UNDO_STEPS) {
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
 				undoStack.erase(undoStack.begin());
 			}
 			undoStack.push_back(newUndoActionCurve);
@@ -1334,7 +1386,7 @@ void ofApp::createInvisiblePolygonFromSelected() {
 
   int polygonIndex =
       static_cast<int>(polygonShapes.size());
-  PolygonShape newPolygon(allPoints, polygonColor,
+  PolygonShape newPolygon(allPoints, colorManager->getPolygonColor(),
                           polygonIndex);
   polygonShapes.push_back(newPolygon);
 
@@ -1620,7 +1672,7 @@ void ofApp::mouseReleased(int x, int y, int button) {
 
           // Simpan polyline dengan 2 points (start dan end)
           std::string newLabel = "customLine" + std::to_string(customLines.size());
-          CustomLine newLine(currentPolylinePoints, customLineColor,
+          CustomLine newLine(currentPolylinePoints, colorManager->getCustomLineColor(),
                              mouseLineWidth, newLabel);
           customLines.push_back(newLine);
 
@@ -1898,222 +1950,44 @@ void ofApp::updateLineWidth() {
 
 //--------------------------------------------------------------
 void ofApp::updateCustomLineColor(ofColor color) {
-	// Update variabel global untuk new customLines
-	customLineColor = color;
-
-	// Siapkan undo action
-	UndoAction undoAction;
-	undoAction.type = CHANGE_COLOR_LINE;
-	undoAction.newColor = color;
-
-	// Jika ada customLine yang selected, hanya update yang selected saja
-	if (selectionManager.hasSelectedLine()) {
-		// Copy indices ke local vector untuk menghindari iterator invalidation
-		std::vector<int> selectedLineIndices(selectionManager.getSelectedLineIndices().begin(),
-		                                     selectionManager.getSelectedLineIndices().end());
-		for (int lineIndex : selectedLineIndices) {
-			if (lineIndex >= 0 && lineIndex < customLines.size()) {
-				// Simpan old color SEBELUM mengubah
-				undoAction.colorIndices.push_back(lineIndex);
-				undoAction.oldColors.push_back(customLines[lineIndex].getColor());
-
-				// Ubah warna
-				customLines[lineIndex].setColor(color);
-			}
-		}
-		// Push undo action hanya jika ada yang diubah
-		if (!undoAction.colorIndices.empty()) {
-			pushUndoAction(undoAction);
-		}
-	}
-	// Jika tidak ada yang selected, TIDAK update existing customLines
-	// Hanya update global color variable untuk new customLines
+	// Delegate ke ColorManager
+	colorManager->updateCustomLineColor(color);
 }
 
 //--------------------------------------------------------------
 void ofApp::resetAllCustomLineColor() {
-	// Reset SEMUA customLine ke warna default biru (0, 0, 255)
-	ofColor defaultColor = ofColor(0, 0, 255);
-
-	// Update variabel global untuk customLine baru
-	customLineColor = defaultColor;
-
-	// Siapkan undo action
-	UndoAction undoAction;
-	undoAction.type = CHANGE_COLOR_LINE;
-	undoAction.newColor = defaultColor;
-
-	// FORCE update SEMUA customLines (tidak peduli ada yang selected atau tidak)
-	for (size_t i = 0; i < customLines.size(); i++) {
-		// Simpan old color SEBELUM mengubah
-		undoAction.colorIndices.push_back(i);
-		undoAction.oldColors.push_back(customLines[i].getColor());
-
-		// Ubah warna ke default
-		customLines[i].setColor(defaultColor);
-	}
-
-	// Push undo action
-	if (!undoAction.colorIndices.empty()) {
-		pushUndoAction(undoAction);
-	}
+	// Delegate ke ColorManager
+	colorManager->resetAllCustomLineColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::resetSelectedCustomLineColor() {
-	// Reset hanya customLine yang terseleksi ke warna default biru (0, 0, 255)
-	ofColor defaultColor = ofColor(0, 0, 255);
-
-	// Update variabel global untuk customLine baru
-	customLineColor = defaultColor;
-
-	// Siapkan undo action
-	UndoAction undoAction;
-	undoAction.type = CHANGE_COLOR_LINE;
-	undoAction.newColor = defaultColor;
-
-	// Hanya update yang selected
-	if (selectionManager.hasSelectedLine()) {
-		// Copy indices ke local vector untuk menghindari iterator invalidation
-		std::vector<int> selectedLineIndices(selectionManager.getSelectedLineIndices().begin(),
-		                                     selectionManager.getSelectedLineIndices().end());
-		for (int lineIndex : selectedLineIndices) {
-			if (lineIndex >= 0 && lineIndex < customLines.size()) {
-				// Simpan old color SEBELUM mengubah
-				undoAction.colorIndices.push_back(lineIndex);
-				undoAction.oldColors.push_back(customLines[lineIndex].getColor());
-
-				// Ubah warna ke default
-				customLines[lineIndex].setColor(defaultColor);
-			}
-		}
-		// Push undo action
-		if (!undoAction.colorIndices.empty()) {
-			pushUndoAction(undoAction);
-		}
-	}
+	// Delegate ke ColorManager
+	colorManager->resetSelectedCustomLineColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::updatePolygonColor(ofColor color) {
-	// Update variabel global untuk new polygons
-	polygonColor = color;
-
-	// Siapkan undo action
-	UndoAction undoAction;
-	undoAction.type = CHANGE_COLOR_POLYGON;
-	undoAction.newColor = color;
-
-	// Jika ada polygon yang selected, hanya update yang selected saja
-	if (selectionManager.hasSelectedPolygon()) {
-		// Simpan old color SEBELUM mengubah untuk SEMUA selected polygons
-		const std::set<int>& indices = selectionManager.getSelectedPolygonIndices();
-		for (int index : indices) {
-			if (index >= 0 && index < polygonShapes.size()) {
-				undoAction.colorIndices.push_back(index);
-				undoAction.oldColors.push_back(polygonShapes[index].getColor());
-
-				// Ubah warna
-				polygonShapes[index].setColor(color);
-			}
-		}
-		// Push undo action
-		pushUndoAction(undoAction);
-	}
-	// Jika tidak ada yang selected, TIDAK update existing polygons
-	// Hanya update global color variable untuk new polygons
+	// Delegate ke ColorManager
+	colorManager->updatePolygonColor(color);
 }
 
 //--------------------------------------------------------------
 void ofApp::resetAllPolygonColor() {
-	// Reset SEMUA polygon ke warna default biru (0, 0, 255)
-	ofColor defaultColor = ofColor(0, 0, 255);
-
-	// Update variabel global untuk polygon baru
-	polygonColor = defaultColor;
-
-	// Siapkan undo action
-	UndoAction undoAction;
-	undoAction.type = CHANGE_COLOR_POLYGON;
-	undoAction.newColor = defaultColor;
-
-	// FORCE update SEMUA polygons (tidak peduli ada yang selected atau tidak)
-	for (size_t i = 0; i < polygonShapes.size(); i++) {
-		// Simpan old color SEBELUM mengubah
-		undoAction.colorIndices.push_back(i);
-		undoAction.oldColors.push_back(polygonShapes[i].getColor());
-
-		// Ubah warna ke default
-		polygonShapes[i].setColor(defaultColor);
-	}
-
-	// Push undo action
-	if (!undoAction.colorIndices.empty()) {
-		pushUndoAction(undoAction);
-	}
+	// Delegate ke ColorManager
+	colorManager->resetAllPolygonColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::resetSelectedPolygonColor() {
-	// Reset hanya polygon yang terseleksi ke warna default biru (0, 0, 255)
-	ofColor defaultColor = ofColor(0, 0, 255);
-
-	// Update variabel global untuk polygon baru
-	polygonColor = defaultColor;
-
-	// Siapkan undo action
-	UndoAction undoAction;
-	undoAction.type = CHANGE_COLOR_POLYGON;
-	undoAction.newColor = defaultColor;
-
-	// Hanya update yang selected
-	if (selectionManager.hasSelectedPolygon()) {
-		const std::set<int>& indices = selectionManager.getSelectedPolygonIndices();
-		for (int polygonIndex : indices) {
-			if (polygonIndex >= 0 && polygonIndex < polygonShapes.size()) {
-				// Simpan old color SEBELUM mengubah
-				undoAction.colorIndices.push_back(polygonIndex);
-				undoAction.oldColors.push_back(polygonShapes[polygonIndex].getColor());
-
-				// Ubah warna ke default
-				polygonShapes[polygonIndex].setColor(defaultColor);
-			}
-		}
-		// Push undo action
-		if (!undoAction.colorIndices.empty()) {
-			pushUndoAction(undoAction);
-		}
-	}
+	// Delegate ke ColorManager
+	colorManager->resetSelectedPolygonColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::updatePolygonAlpha(uint8_t alpha) {
-	// Update alpha transparansi untuk semua polygon yang terseleksi
-	// RGB tetap, hanya alpha yang berubah
-
-	if (!selectionManager.hasSelectedPolygon()) {
-		return;  // Tidak ada polygon terseleksi
-	}
-
-	// Siapkan undo action
-	UndoAction undoAction;
-	undoAction.type = CHANGE_COLOR_POLYGON;
-	// undoAction tidak dipakai untuk alpha-only update (tidak perlu simpan oldColors)
-
-	// Update alpha semua selected polygon, RGB tetap
-	const std::set<int>& indices = selectionManager.getSelectedPolygonIndices();
-	for (int polygonIndex : indices) {
-		if (polygonIndex >= 0 && polygonIndex < polygonShapes.size()) {
-			ofColor currentColor = polygonShapes[polygonIndex].getColor();
-			ofColor newColor = ofColor(
-				currentColor.r,  // R tetap
-				currentColor.g,  // G tetap
-				currentColor.b,  // B tetap
-				alpha           // Alpha baru
-			);
-			polygonShapes[polygonIndex].setColor(newColor);
-		}
-	}
+	// Delegate ke ColorManager
+	colorManager->updatePolygonAlpha(alpha);
 }
 
 //--------------------------------------------------------------
@@ -2143,143 +2017,44 @@ void ofApp::updateUserDotRadius(float radius) {
 
 //--------------------------------------------------------------
 void ofApp::updateUserDotColor(ofColor color) {
-	// Update variabel global untuk new userDots
-	userDotColor = color;
-
-	// Jika ada userDot yang terseleksi, update hanya yang terseleksi
-	if (selectionManager.hasSelectedUserDot()) {
-		const std::set<int>& indices = selectionManager.getSelectedUserDotIndices();
-		for (int index : indices) {
-			if (index >= 0 && index < userDots.size()) {
-				if (userDots[index]) {
-					userDots[index]->setColor(color);
-				}
-			}
-		}
-	}
-	// Jika tidak ada yang terseleksi, TIDAK update existing userDots
-	// Hanya update global color variable untuk new userDots
+	// Delegate ke ColorManager
+	colorManager->updateUserDotColor(color);
 }
 
 //--------------------------------------------------------------
 void ofApp::copyDotColor() {
-	// Validasi: Harus tepat 1 userDot yang terseleksi
-	if (selectionManager.getSelectedUserDotCount() != 1) {
-		return;  // Tidak valid
-	}
-
-	int dotIndex = selectionManager.getLastSelectedUserDotIndex();
-	if (dotIndex >= 0 && dotIndex < userDots.size()) {
-		if (userDots[dotIndex]) {
-			// Copy color dari userDot ke clipboard
-			clipboardColor = userDots[dotIndex]->getColor();
-			hasClipboardColor = true;
-		}
-	}
+	// Delegate ke ColorManager
+	colorManager->copyDotColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::copyPolygonColor() {
-	// Validasi: Harus tepat 1 polygon yang terseleksi
-	if (selectionManager.getSelectedPolygonCount() != 1) {
-		return;  // Tidak valid
-	}
-
-	int polygonIndex = selectionManager.getLastSelectedPolygonIndex();
-	if (polygonIndex >= 0 && polygonIndex < polygonShapes.size()) {
-		// Copy color dari polygon ke clipboard
-		clipboardColor = polygonShapes[polygonIndex].getColor();
-		hasClipboardColor = true;
-	}
+	// Delegate ke ColorManager
+	colorManager->copyPolygonColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::copyLineColor() {
-	// Validasi: Harus tepat 1 customLine yang terseleksi
-	if (selectionManager.getSelectedLineCount() != 1) {
-		return;  // Tidak valid
-	}
-
-	int lineIndex = selectionManager.getLastSelectedLineIndex();
-	if (lineIndex >= 0 && lineIndex < customLines.size()) {
-		// Copy color dari customLine ke clipboard
-		clipboardColor = customLines[lineIndex].getColor();
-		hasClipboardColor = true;
-	}
+	// Delegate ke ColorManager
+	colorManager->copyLineColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::pasteColorToDot() {
-	// Validasi: Harus ada color di clipboard
-	if (!hasClipboardColor) {
-		return;  // Tidak ada color yang di-copy
-	}
-
-	// Validasi: Harus ada userDot yang terseleksi
-	if (!selectionManager.hasSelectedUserDot()) {
-		return;  // Tidak ada userDot terseleksi
-	}
-
-	// Update global userDotColor supaya new userDot mengikuti warna ini
-	userDotColor = clipboardColor;
-
-	// Paste color ke semua userDot yang terseleksi
-	const std::set<int>& indices = selectionManager.getSelectedUserDotIndices();
-	for (int index : indices) {
-		if (index >= 0 && index < userDots.size()) {
-			if (userDots[index]) {
-				userDots[index]->setColor(clipboardColor);
-			}
-		}
-	}
+	// Delegate ke ColorManager
+	colorManager->pasteColorToDot();
 }
 
 //--------------------------------------------------------------
 void ofApp::pasteColorToPolygon() {
-	// Validasi: Harus ada color di clipboard
-	if (!hasClipboardColor) {
-		return;  // Tidak ada color yang di-copy
-	}
-
-	// Validasi: Harus ada polygon yang terseleksi
-	if (!selectionManager.hasSelectedPolygon()) {
-		return;  // Tidak ada polygon terseleksi
-	}
-
-	// Update global polygonColor supaya new polygon mengikuti warna ini
-	polygonColor = clipboardColor;
-
-	// Paste color ke semua polygon yang terseleksi
-	const std::set<int>& indices = selectionManager.getSelectedPolygonIndices();
-	for (int index : indices) {
-		if (index >= 0 && index < polygonShapes.size()) {
-			polygonShapes[index].setColor(clipboardColor);
-		}
-	}
+	// Delegate ke ColorManager
+	colorManager->pasteColorToPolygon();
 }
 
 //--------------------------------------------------------------
 void ofApp::pasteColorToLine() {
-	// Validasi: Harus ada color di clipboard
-	if (!hasClipboardColor) {
-		return;  // Tidak ada color yang di-copy
-	}
-
-	// Validasi: Harus ada customLine yang terseleksi
-	if (!selectionManager.hasSelectedLine()) {
-		return;  // Tidak ada customLine terseleksi
-	}
-
-	// Update global customLineColor supaya new line mengikuti warna ini
-	customLineColor = clipboardColor;
-
-	// Paste color ke semua customLine yang terseleksi
-	const std::set<int>& indices = selectionManager.getSelectedLineIndices();
-	for (int index : indices) {
-		if (index >= 0 && index < customLines.size()) {
-			customLines[index].setColor(clipboardColor);
-		}
-	}
+	// Delegate ke ColorManager
+	colorManager->pasteColorToLine();
 }
 
 //--------------------------------------------------------------
@@ -2288,8 +2063,8 @@ void ofApp::syncColorPickerFromLoadedLines() {
 	if (!customLines.empty()) {
 		ofColor loadedColor = customLines[0].getColor();
 
-		// Update global color
-		customLineColor = loadedColor;
+		// Update global color (ColorManager will sync internally when needed)
+		// colorManager->customLineColor = loadedColor;
 
 		// Update UserCustom color picker UI
 		for (auto& gui : guiComponents) {
@@ -2309,8 +2084,8 @@ void ofApp::syncColorPickerFromLoadedPolygons() {
 	if (!polygonShapes.empty()) {
 		ofColor loadedColor = polygonShapes[0].getColor();
 
-		// Update global color
-		polygonColor = loadedColor;
+		// Update global color (ColorManager will sync internally when needed)
+		// colorManager->polygonColor = loadedColor;
 
 		// Update UserCustom color picker UI
 		for (auto& gui : guiComponents) {
@@ -2333,7 +2108,7 @@ void ofApp::syncUserDotFromLoaded() {
 
 		// Update global radius dan color
 		userDotRadius = loadedRadius;
-		userDotColor = loadedColor;
+		// colorManager->userDotColor = loadedColor;  // ColorManager will sync internally
 
 		// Update UserCustom color picker UI
 		for (auto& gui : guiComponents) {
@@ -2349,41 +2124,8 @@ void ofApp::syncUserDotFromLoaded() {
 
 //--------------------------------------------------------------
 void ofApp::syncColorFromSelectedObjects() {
-	// Sync SEMUA global color variables ke warna selected object
-	// Lalu update SEMUA color picker UI
-	// Priority: userDot > polygon > customLine
-
-	ofColor targetColor;
-
-	// 1. Cek userDot dulu (priority tertinggi)
-	if (selectionManager.hasSelectedUserDot()) {
-		int firstIndex = selectionManager.getLastSelectedUserDotIndex();
-		if (firstIndex >= 0 && firstIndex < userDots.size() && userDots[firstIndex]) {
-			targetColor = userDots[firstIndex]->getColor();
-		}
-	}
-	// 2. Cek polygon
-	else if (selectionManager.hasSelectedPolygon()) {
-		int firstIndex = selectionManager.getLastSelectedPolygonIndex();
-		if (firstIndex >= 0 && firstIndex < polygonShapes.size()) {
-			targetColor = polygonShapes[firstIndex].getColor();
-		}
-	}
-	// 3. Cek customLine
-	else if (selectionManager.hasSelectedLine()) {
-		int firstIndex = selectionManager.getLastSelectedLineIndex();
-		if (firstIndex >= 0 && firstIndex < customLines.size()) {
-			targetColor = customLines[firstIndex].getColor();
-		}
-	}
-	else {
-		return;  // Tidak ada yang selected, jangan update apa-apa
-	}
-
-	// Sync SEMUA global color variables ke targetColor yang SAMA
-	userDotColor = targetColor;
-	polygonColor = targetColor;
-	customLineColor = targetColor;
+	// Delegate ke ColorManager
+	colorManager->syncColorPickersFromSelection();
 
 	// Update SEMUA color picker UI
 	for (auto& gui : guiComponents) {
@@ -2682,7 +2424,7 @@ void ofApp::duplicateDotAbove() {
     // Buat DotShape baru dengan userDotRadius (langsung dari slider User Custom)
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
-    dotShape->setColor(userDotColor);  // Set warna dari userDotColor
+    dotShape->setColor(colorManager->getUserDotColor());  // Set warna dari userDotColor
 
     // Set lower bound ke dotPos (dot parent)
     dotShape->setLowerBound(dotPos);
@@ -2715,7 +2457,7 @@ void ofApp::duplicateDotBelow() {
     // Buat DotShape baru dengan userDotRadius (langsung dari slider User Custom)
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
-    dotShape->setColor(userDotColor);  // Set warna dari userDotColor
+    dotShape->setColor(colorManager->getUserDotColor());  // Set warna dari userDotColor
 
     // Set lower bound ke dotPos (dot parent)
     dotShape->setLowerBound(dotPos);
@@ -2748,7 +2490,7 @@ void ofApp::duplicateDotLeft() {
     // Buat DotShape baru dengan userDotRadius (langsung dari slider User Custom)
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
-    dotShape->setColor(userDotColor);  // Set warna dari userDotColor
+    dotShape->setColor(colorManager->getUserDotColor());  // Set warna dari userDotColor
 
     // Set lower bound ke dotPos (dot parent)
     dotShape->setLowerBound(dotPos);
@@ -2781,7 +2523,7 @@ void ofApp::duplicateDotRight() {
     // Buat DotShape baru dengan userDotRadius (langsung dari slider User Custom)
     auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
     dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
-    dotShape->setColor(userDotColor);  // Set warna dari userDotColor
+    dotShape->setColor(colorManager->getUserDotColor());  // Set warna dari userDotColor
 
     // Set lower bound ke dotPos (dot parent)
     dotShape->setLowerBound(dotPos);

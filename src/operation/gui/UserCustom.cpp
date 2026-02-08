@@ -3,50 +3,50 @@
 #include <vector>
 
 UserCustom::UserCustom(ofApp* app) : app(app) {
-    // Initialize color picker dari app->customLineColor (default biru)
-    customLineColor[0] = app->customLineColor.r / 255.0f; // R
-    customLineColor[1] = app->customLineColor.g / 255.0f; // G
-    customLineColor[2] = app->customLineColor.b / 255.0f; // B
-    customLineColor[3] = app->customLineColor.a / 255.0f; // A
+    // Initialize color picker dari app->colorManager->getCustomLineColor() (default biru)
+    customLineColor[0] = app->colorManager->getCustomLineColor().r / 255.0f; // R
+    customLineColor[1] = app->colorManager->getCustomLineColor().g / 255.0f; // G
+    customLineColor[2] = app->colorManager->getCustomLineColor().b / 255.0f; // B
+    customLineColor[3] = app->colorManager->getCustomLineColor().a / 255.0f; // A
 
-    // Initialize color picker dari app->polygonColor (default biru)
-    polygonColor[0] = app->polygonColor.r / 255.0f; // R
-    polygonColor[1] = app->polygonColor.g / 255.0f; // G
-    polygonColor[2] = app->polygonColor.b / 255.0f; // B
-    polygonColor[3] = app->polygonColor.a / 255.0f; // A
+    // Initialize color picker dari app->colorManager->getPolygonColor() (default biru)
+    polygonColor[0] = app->colorManager->getPolygonColor().r / 255.0f; // R
+    polygonColor[1] = app->colorManager->getPolygonColor().g / 255.0f; // G
+    polygonColor[2] = app->colorManager->getPolygonColor().b / 255.0f; // B
+    polygonColor[3] = app->colorManager->getPolygonColor().a / 255.0f; // A
 
-    // Initialize color picker dari app->userDotColor (default biru)
-    userDotColor[0] = app->userDotColor.r / 255.0f; // R
-    userDotColor[1] = app->userDotColor.g / 255.0f; // G
-    userDotColor[2] = app->userDotColor.b / 255.0f; // B
-    userDotColor[3] = app->userDotColor.a / 255.0f; // A
+    // Initialize color picker dari app->colorManager->getUserDotColor() (default biru)
+    userDotColor[0] = app->colorManager->getUserDotColor().r / 255.0f; // R
+    userDotColor[1] = app->colorManager->getUserDotColor().g / 255.0f; // G
+    userDotColor[2] = app->colorManager->getUserDotColor().b / 255.0f; // B
+    userDotColor[3] = app->colorManager->getUserDotColor().a / 255.0f; // A
 }
 
 //--------------------------------------------------------------
 void UserCustom::updateColorFromApp() {
-    // Update color picker values dari app->customLineColor
-    customLineColor[0] = app->customLineColor.r / 255.0f; // R
-    customLineColor[1] = app->customLineColor.g / 255.0f; // G
-    customLineColor[2] = app->customLineColor.b / 255.0f; // B
-    customLineColor[3] = app->customLineColor.a / 255.0f; // A
+    // Update color picker values dari app->colorManager->getCustomLineColor()
+    customLineColor[0] = app->colorManager->getCustomLineColor().r / 255.0f; // R
+    customLineColor[1] = app->colorManager->getCustomLineColor().g / 255.0f; // G
+    customLineColor[2] = app->colorManager->getCustomLineColor().b / 255.0f; // B
+    customLineColor[3] = app->colorManager->getCustomLineColor().a / 255.0f; // A
 }
 
 //--------------------------------------------------------------
 void UserCustom::updatePolygonColorFromApp() {
-    // Update polygon color picker values dari app->polygonColor
-    polygonColor[0] = app->polygonColor.r / 255.0f; // R
-    polygonColor[1] = app->polygonColor.g / 255.0f; // G
-    polygonColor[2] = app->polygonColor.b / 255.0f; // B
-    polygonColor[3] = app->polygonColor.a / 255.0f; // A
+    // Update polygon color picker values dari app->colorManager->getPolygonColor()
+    polygonColor[0] = app->colorManager->getPolygonColor().r / 255.0f; // R
+    polygonColor[1] = app->colorManager->getPolygonColor().g / 255.0f; // G
+    polygonColor[2] = app->colorManager->getPolygonColor().b / 255.0f; // B
+    polygonColor[3] = app->colorManager->getPolygonColor().a / 255.0f; // A
 }
 
 //--------------------------------------------------------------
 void UserCustom::updateUserDotColorFromApp() {
-    // Update userDot color picker values dari app->userDotColor
-    userDotColor[0] = app->userDotColor.r / 255.0f; // R
-    userDotColor[1] = app->userDotColor.g / 255.0f; // G
-    userDotColor[2] = app->userDotColor.b / 255.0f; // B
-    userDotColor[3] = app->userDotColor.a / 255.0f; // A
+    // Update userDot color picker values dari app->colorManager->getUserDotColor()
+    userDotColor[0] = app->colorManager->getUserDotColor().r / 255.0f; // R
+    userDotColor[1] = app->colorManager->getUserDotColor().g / 255.0f; // G
+    userDotColor[2] = app->colorManager->getUserDotColor().b / 255.0f; // B
+    userDotColor[3] = app->colorManager->getUserDotColor().a / 255.0f; // A
 }
 
 //--------------------------------------------------------------
@@ -71,10 +71,10 @@ void UserCustom::syncUserDotFromSelection() {
     }
     else {
         // Jika tidak ada yang terseleksi, sync dari global color variable
-        userDotColor[0] = app->userDotColor.r / 255.0f;
-        userDotColor[1] = app->userDotColor.g / 255.0f;
-        userDotColor[2] = app->userDotColor.b / 255.0f;
-        userDotColor[3] = app->userDotColor.a / 255.0f;
+        userDotColor[0] = app->colorManager->getUserDotColor().r / 255.0f;
+        userDotColor[1] = app->colorManager->getUserDotColor().g / 255.0f;
+        userDotColor[2] = app->colorManager->getUserDotColor().b / 255.0f;
+        userDotColor[3] = app->colorManager->getUserDotColor().a / 255.0f;
     }
 }
 
@@ -93,10 +93,10 @@ void UserCustom::syncLineColorFromSelection() {
     }
     else {
         // Jika tidak ada yang terseleksi, sync dari global color variable
-        customLineColor[0] = app->customLineColor.r / 255.0f;
-        customLineColor[1] = app->customLineColor.g / 255.0f;
-        customLineColor[2] = app->customLineColor.b / 255.0f;
-        customLineColor[3] = app->customLineColor.a / 255.0f;
+        customLineColor[0] = app->colorManager->getCustomLineColor().r / 255.0f;
+        customLineColor[1] = app->colorManager->getCustomLineColor().g / 255.0f;
+        customLineColor[2] = app->colorManager->getCustomLineColor().b / 255.0f;
+        customLineColor[3] = app->colorManager->getCustomLineColor().a / 255.0f;
     }
 }
 
@@ -115,10 +115,10 @@ void UserCustom::syncPolygonColorFromSelection() {
     }
     else {
         // Jika tidak ada yang terseleksi, sync dari global color variable
-        polygonColor[0] = app->polygonColor.r / 255.0f;
-        polygonColor[1] = app->polygonColor.g / 255.0f;
-        polygonColor[2] = app->polygonColor.b / 255.0f;
-        polygonColor[3] = app->polygonColor.a / 255.0f;
+        polygonColor[0] = app->colorManager->getPolygonColor().r / 255.0f;
+        polygonColor[1] = app->colorManager->getPolygonColor().g / 255.0f;
+        polygonColor[2] = app->colorManager->getPolygonColor().b / 255.0f;
+        polygonColor[3] = app->colorManager->getPolygonColor().a / 255.0f;
     }
 }
 

@@ -18,6 +18,7 @@
     <ClCompile Include="src\shape\PolygonShape.cpp" />
     <ClCompile Include="src\operation\FileManager.cpp" />
     <ClCompile Include="src\managers\SelectionManager.cpp" />
+    <ClCompile Include="src\managers\ColorManager.cpp" />
     <ClCompile Include="src\operation\gui\MenuBar.cpp" />
     <ClCompile Include="src\operation\gui\SacredGeometry.cpp" />
     <ClCompile Include="src\operation\gui\Playground.cpp" />
@@ -62,6 +63,8 @@
     <ClInclude Include="src\shape\PolygonShape.h" />
     <ClInclude Include="src\operation\FileManager.h" />
     <ClInclude Include="src\managers\SelectionManager.h" />
+    <ClInclude Include="src\managers\ColorManager.h" />
+    <ClInclude Include="src\undo\UndoAction.h" />
     <ClInclude Include="src\operation\gui\AbstractGuiComponent.h" />
     <ClInclude Include="src\operation\gui\MenuBar.h" />
     <ClInclude Include="src\operation\gui\SacredGeometry.h" />

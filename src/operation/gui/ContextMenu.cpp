@@ -318,7 +318,7 @@ void ContextMenu::showCopyPasteColorMenus(int selectedCount, ContextMenuType typ
 	// ===== MENU 2: Paste Color =====
 	// Paste color boleh multi-type (tidak perlu validasi mixed type)
 	// Validasi: Harus ada object yang terseleksi DAN ada color di clipboard
-	bool canPaste = (selectedCount >= 1) && app->hasClipboardColor;
+	bool canPaste = (selectedCount >= 1) && app->colorManager->hasClipboardColor();
 
 	if (canPaste) {
 		// Enable jika ada minimal 1 selected DAN ada color di clipboard
