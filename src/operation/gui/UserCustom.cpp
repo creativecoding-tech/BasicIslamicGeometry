@@ -1,5 +1,6 @@
 #include "UserCustom.h"
 #include "../../ofApp.h"
+#include <vector>
 
 UserCustom::UserCustom(ofApp* app) : app(app) {
     // Initialize color picker dari app->customLineColor (default biru)
@@ -80,8 +81,8 @@ void UserCustom::syncUserDotFromSelection() {
 //--------------------------------------------------------------
 void UserCustom::syncLineColorFromSelection() {
     // Jika ada customLine yang terseleksi, sync color dengan line pertama yang terseleksi
-    if (!app->selectedLineIndices.empty()) {
-        int firstIndex = *app->selectedLineIndices.begin();
+    if (app->selectionManager.hasSelectedLine()) {
+        int firstIndex = *app->selectionManager.getSelectedLineIndices().begin();
         if (firstIndex >= 0 && firstIndex < app->customLines.size()) {
             ofColor lineColor = app->customLines[firstIndex].getColor();
             customLineColor[0] = lineColor.r / 255.0f;
@@ -177,20 +178,25 @@ void UserCustom::draw() {
         ImGui::Text("Line");
 
         // Info customLine yang terseleksi
-        if (!app->selectedLineIndices.empty()) {
-            int selectedCount = app->selectedLineIndices.size();
+        if (app->selectionManager.hasSelectedLine()) {
+            int selectedCount = app->selectionManager.getSelectedLineCount();
+
+            // Copy indices ke local vector untuk menghindari iterator invalidation
+            std::vector<int> selectedLineIndices(app->selectionManager.getSelectedLineIndices().begin(),
+                                                 app->selectionManager.getSelectedLineIndices().end());
 
             // Tampilkan label customLine yang terseleksi (dengan auto wrap)
             std::string labels = "Selected: ";
-            for (auto it = app->selectedLineIndices.begin(); it != app->selectedLineIndices.end(); ++it) {
+            for (size_t i = 0; i < selectedLineIndices.size(); ++i) {
+                int lineIndex = selectedLineIndices[i];
                 // Ambil label dari CustomLine (bukan hardcoded "customLine" + index)
-                if (*it >= 0 && *it < app->customLines.size()) {
-                    labels += app->customLines[*it].getLabel();
+                if (lineIndex >= 0 && lineIndex < app->customLines.size()) {
+                    labels += app->customLines[lineIndex].getLabel();
                 } else {
-                    labels += "customLine" + std::to_string(*it);  // Fallback kalau index invalid
+                    labels += "customLine" + std::to_string(lineIndex);  // Fallback kalau index invalid
                 }
                 // Tambah koma kecuali ini elemen terakhir
-                if (std::next(it) != app->selectedLineIndices.end()) {
+                if (i < selectedLineIndices.size() - 1) {
                     labels += ", ";
                 }
             }
@@ -229,7 +235,7 @@ void UserCustom::draw() {
         }
 
         // Button: Reset Selected Line Colors (hanya enabled jika ada selection)
-        if (!app->selectedLineIndices.empty()) {
+        if (app->selectionManager.hasSelectedLine()) {
             if (ImGui::Button("Reset Selected Line Colors", ImVec2(buttonWidth, 0))) {
                 app->resetSelectedCustomLineColor();
             }
@@ -241,7 +247,7 @@ void UserCustom::draw() {
         }
 
         // Button: Duplicate Line R 180° (hanya enabled jika ada >= 2 selected lines)
-        if (app->selectedLineIndices.size() >= 2) {
+        if (app->selectionManager.getSelectedLineCount() >= 2) {
             if (ImGui::Button("Duplicate Line R 180°", ImVec2(buttonWidth, 0))) {
                 app->duplicateLineR180();
             }

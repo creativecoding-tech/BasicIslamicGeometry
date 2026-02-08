@@ -1,5 +1,6 @@
 #include "ObjectTooltip.h"
 #include "../ofApp.h"
+#include <vector>
 
 ObjectTooltip::ObjectTooltip(ofApp* app) : app(app) {
 }
@@ -17,7 +18,10 @@ void ObjectTooltip::draw() {
 	}
 
 	// TODO: Tooltip untuk selected customLines
-	for (int index : app->selectedLineIndices) {
+	// Copy indices ke local vector untuk menghindari iterator invalidation
+	std::vector<int> selectedLineIndices(app->selectionManager.getSelectedLineIndices().begin(),
+	                                      app->selectionManager.getSelectedLineIndices().end());
+	for (int index : selectedLineIndices) {
 		drawCustomLineTooltip(index);
 	}
 

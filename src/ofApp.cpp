@@ -4,6 +4,7 @@
 #include "template/templates/BasicZelligeTemplate.h"
 #include "operation/gui/SacredGeometry.h"
 #include "operation/gui/UserCustom.h"
+#include <vector>
 
 
 //--------------------------------------------------------------
@@ -393,7 +394,7 @@ void ofApp::draw() {
 void ofApp::drawCustomLinesAndUI() {
   // Update selection state untuk semua lines
   for (int i = 0; i < customLines.size(); i++) {
-    bool isSelected = (selectedLineIndices.count(i) > 0);
+    bool isSelected = selectionManager.isLineSelected(i);
     customLines[i].setSelected(isSelected);
     customLines[i].draw();
   }
@@ -514,11 +515,11 @@ void ofApp::keyPressed(int key) {
     }
 
     // Prioritas 3: Hapus customLine selected
-    if (!selectedLineIndices.empty()) {
+    if (selectionManager.hasSelectedLine()) {
       // Hapus SEMUA garis yang terselect (support multi-delete)
       // Sort descending agar aman untuk erase
-      vector<int> toDelete(selectedLineIndices.begin(),
-                           selectedLineIndices.end());
+      const std::set<int>& indices = selectionManager.getSelectedLineIndices();
+      vector<int> toDelete(indices.begin(), indices.end());
       std::sort(toDelete.rbegin(), toDelete.rend()); // Descending
 
       // Push undo action untuk setiap line yang dihapus (reverse order)
@@ -534,7 +535,7 @@ void ofApp::keyPressed(int key) {
       for (int index : toDelete) {
         customLines.erase(customLines.begin() + index);
       }
-      selectedLineIndices.clear();
+      selectionManager.clearLineSelection();
     }
     // Note: CartesianAxes toggle dihapus karena tidak sesuai dengan Draw Only concept
   }
@@ -577,7 +578,7 @@ void ofApp::keyPressed(int key) {
   // SHIFT+B = Select SEMUA customLines (bisa 'B' atau 'b' karena CAPSLOCK)
   if ((key == 'B' || key == 'b') && ofGetKeyPressed(OF_KEY_SHIFT)) {
     for (int i = 0; i < customLines.size(); i++) {
-      selectedLineIndices.insert(i);
+      selectionManager.selectLine(i);
     }
     syncColorFromSelectedObjects();  // Sync global color dari first selected line
     return;
@@ -903,9 +904,18 @@ void ofApp::undo() {
 				customLines.pop_back();
 
 				// Clear selection jika index yang dipilih tidak valid lagi
-				if (!selectedLineIndices.empty()) {
-					selectedLineIndices.clear();
-					lastSelectedLineIndex = -1;
+				if (selectionManager.hasSelectedLine()) {
+					// Cek apakah ada selected index yang out of bounds
+					bool hasInvalidIndex = false;
+					for (int index : selectionManager.getSelectedLineIndices()) {
+						if (index >= customLines.size()) {
+							hasInvalidIndex = true;
+							break;
+						}
+					}
+					if (hasInvalidIndex) {
+						selectionManager.clearLineSelection();
+					}
 				}
 			}
 			// Push ke redo stack
@@ -1212,7 +1222,7 @@ void ofApp::redo() {
 
 //--------------------------------------------------------------
 void ofApp::createInvisiblePolygonFromSelected() {
-  if (selectedLineIndices.empty())
+  if (!selectionManager.hasSelectedLine())
     return; // Tidak ada yang selected
 
   // 1. Collect all selected lines dengan data endpoint-nya
@@ -1224,6 +1234,9 @@ void ofApp::createInvisiblePolygonFromSelected() {
   };
   vector<LineData> lines;
 
+  // Copy indices ke local vector untuk menghindari iterator invalidation
+  std::vector<int> selectedLineIndices(selectionManager.getSelectedLineIndices().begin(),
+                                       selectionManager.getSelectedLineIndices().end());
   for (int lineIndex : selectedLineIndices) {
     if (lineIndex >= 0 && lineIndex < customLines.size()) {
       const CustomLine& line = customLines[lineIndex];
@@ -1332,8 +1345,7 @@ void ofApp::createInvisiblePolygonFromSelected() {
   pushUndoAction(undoAction);
 
   // 4. Clear selection
-  selectedLineIndices.clear();
-  lastSelectedLineIndex = -1;
+  selectionManager.clearLineSelection();
 }
 
 //--------------------------------------------------------------
@@ -1407,7 +1419,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 
     // CEK 3: Klik kanan pada CUSTOMLINE yang terseleksi
     int clickedLineIndex = getLineIndexAtPosition(adjustedMousePos);
-    if (clickedLineIndex >= 0 && selectedLineIndices.count(clickedLineIndex) > 0) {
+    if (clickedLineIndex >= 0 && selectionManager.isLineSelected(clickedLineIndex) > 0) {
       // Tampilkan context menu untuk semua customLine (original dan DcustomLine)
       contextMenu->setHoveredLineIndex(clickedLineIndex);
       contextMenu->showWindow(ContextMenu::CUSTOMLINE_CONTEXT, vec2(x, y));
@@ -1461,12 +1473,7 @@ void ofApp::mousePressed(int x, int y, int button) {
     int clickedLineIndex = getLineIndexAtPosition(adjustedMousePos);
     if (clickedLineIndex >= 0) {
       // Toggle selection customLine
-      if (selectedLineIndices.count(clickedLineIndex)) {
-        selectedLineIndices.erase(clickedLineIndex); // Deselect
-      } else {
-        selectedLineIndices.insert(clickedLineIndex); // Select
-      }
-      lastSelectedLineIndex = clickedLineIndex;
+      selectionManager.toggleLineSelection(clickedLineIndex);
       syncColorFromSelectedObjects();  // Sync global color dari selected object
     }
     return; // Jangan lanjut ke logic drag
@@ -1514,7 +1521,7 @@ void ofApp::mousePressed(int x, int y, int button) {
         clickedOnDot = true;
 
         // Deselect line yang mungkin terpilih
-        selectedLineIndices.clear();
+        selectionManager.clearLineSelection();
 
         return;
       }
@@ -1529,7 +1536,7 @@ void ofApp::mousePressed(int x, int y, int button) {
           // Select polygon ini (single select: hapus yang lama, select yang baru)
           selectionManager.clearPolygonSelection();
           selectionManager.selectPolygon(i);
-          selectedLineIndices.clear(); // Deselect semua lines
+          selectionManager.clearLineSelection(); // Deselect semua lines
           clickedOnPolygon = true;
           syncColorFromSelectedObjects();  // Sync global color dari selected object
           break;
@@ -1541,15 +1548,13 @@ void ofApp::mousePressed(int x, int y, int button) {
         int lineIndex = getLineIndexAtPosition(adjustedMousePos);
         if (lineIndex >= 0) {
           // Select garis ini (single select: hapus yang lama, select yang baru)
-          selectedLineIndices.clear();
-          selectedLineIndices.insert(lineIndex);
-          lastSelectedLineIndex = lineIndex;
+          selectionManager.clearLineSelection();
+          selectionManager.selectLine(lineIndex);
           selectionManager.clearPolygonSelection(); // Deselect polygon
           syncColorFromSelectedObjects();  // Sync global color dari selected object
         } else {
           // Klik di tempat kosong → deselect semua
-          selectedLineIndices.clear();
-          lastSelectedLineIndex = -1;
+          selectionManager.clearLineSelection();
           selectionManager.clearPolygonSelection(); // Deselect polygon
           // Tidak perlu syncColorFromSelectedObjects() karena tidak ada yang selected
         }
@@ -1738,9 +1743,12 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
   }
 
   // Handle scroll untuk DcustomLine (duplicate lines) - HANYA jika CTRL ditekan
-  if (isCtrlPressed && !selectedLineIndices.empty()) {
+  if (isCtrlPressed && selectionManager.hasSelectedLine()) {
     float scrollSpeed = 2.0f;  // Kecepatan scroll
 
+    // Copy indices ke local vector untuk menghindari iterator invalidation
+    std::vector<int> selectedLineIndices(selectionManager.getSelectedLineIndices().begin(),
+                                         selectionManager.getSelectedLineIndices().end());
     // Filter hanya DcustomLine yang terseleksi
     for (int lineIndex : selectedLineIndices) {
       if (lineIndex >= 0 && lineIndex < customLines.size()) {
@@ -1790,13 +1798,16 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
   }
 
   // Update curve untuk SEMUA garis yang selected - HANYA jika TANPA CTRL
-  if (!isCtrlPressed && !selectedLineIndices.empty()) {
+  if (!isCtrlPressed && selectionManager.hasSelectedLine()) {
     // Siapkan undo action
     UndoAction undoAction;
     undoAction.type = CHANGE_CURVE;
     undoAction.newCurve = 0.0f;  // Placeholder, tidak dipakai
 
     float curveSpeed = 2.0f; // Kecepatan perubahan curve
+    // Copy indices ke local vector untuk menghindari iterator invalidation
+    std::vector<int> selectedLineIndices(selectionManager.getSelectedLineIndices().begin(),
+                                         selectionManager.getSelectedLineIndices().end());
     for (int lineIndex : selectedLineIndices) {
       if (lineIndex >= 0 && lineIndex < customLines.size()) {
         // Simpan old curve SEBELUM mengubah
@@ -1896,7 +1907,10 @@ void ofApp::updateCustomLineColor(ofColor color) {
 	undoAction.newColor = color;
 
 	// Jika ada customLine yang selected, hanya update yang selected saja
-	if (!selectedLineIndices.empty()) {
+	if (selectionManager.hasSelectedLine()) {
+		// Copy indices ke local vector untuk menghindari iterator invalidation
+		std::vector<int> selectedLineIndices(selectionManager.getSelectedLineIndices().begin(),
+		                                     selectionManager.getSelectedLineIndices().end());
 		for (int lineIndex : selectedLineIndices) {
 			if (lineIndex >= 0 && lineIndex < customLines.size()) {
 				// Simpan old color SEBELUM mengubah
@@ -1959,7 +1973,10 @@ void ofApp::resetSelectedCustomLineColor() {
 	undoAction.newColor = defaultColor;
 
 	// Hanya update yang selected
-	if (!selectedLineIndices.empty()) {
+	if (selectionManager.hasSelectedLine()) {
+		// Copy indices ke local vector untuk menghindari iterator invalidation
+		std::vector<int> selectedLineIndices(selectionManager.getSelectedLineIndices().begin(),
+		                                     selectionManager.getSelectedLineIndices().end());
 		for (int lineIndex : selectedLineIndices) {
 			if (lineIndex >= 0 && lineIndex < customLines.size()) {
 				// Simpan old color SEBELUM mengubah
@@ -2179,11 +2196,11 @@ void ofApp::copyPolygonColor() {
 //--------------------------------------------------------------
 void ofApp::copyLineColor() {
 	// Validasi: Harus tepat 1 customLine yang terseleksi
-	if (selectedLineIndices.size() != 1) {
+	if (selectionManager.getSelectedLineCount() != 1) {
 		return;  // Tidak valid
 	}
 
-	int lineIndex = *selectedLineIndices.begin();
+	int lineIndex = selectionManager.getLastSelectedLineIndex();
 	if (lineIndex >= 0 && lineIndex < customLines.size()) {
 		// Copy color dari customLine ke clipboard
 		clipboardColor = customLines[lineIndex].getColor();
@@ -2249,7 +2266,7 @@ void ofApp::pasteColorToLine() {
 	}
 
 	// Validasi: Harus ada customLine yang terseleksi
-	if (selectedLineIndices.empty()) {
+	if (!selectionManager.hasSelectedLine()) {
 		return;  // Tidak ada customLine terseleksi
 	}
 
@@ -2257,7 +2274,8 @@ void ofApp::pasteColorToLine() {
 	customLineColor = clipboardColor;
 
 	// Paste color ke semua customLine yang terseleksi
-	for (int index : selectedLineIndices) {
+	const std::set<int>& indices = selectionManager.getSelectedLineIndices();
+	for (int index : indices) {
 		if (index >= 0 && index < customLines.size()) {
 			customLines[index].setColor(clipboardColor);
 		}
@@ -2352,8 +2370,8 @@ void ofApp::syncColorFromSelectedObjects() {
 		}
 	}
 	// 3. Cek customLine
-	else if (!selectedLineIndices.empty()) {
-		int firstIndex = *selectedLineIndices.begin();
+	else if (selectionManager.hasSelectedLine()) {
+		int firstIndex = selectionManager.getLastSelectedLineIndex();
 		if (firstIndex >= 0 && firstIndex < customLines.size()) {
 			targetColor = customLines[firstIndex].getColor();
 		}
@@ -2414,8 +2432,7 @@ void ofApp::deleteAllCustomLines() {
 	if (!fileManager.isLoadParallelMode()) {
 		FileManager::clearCustomLines(customLines);
 	}
-	selectedLineIndices.clear();
-	lastSelectedLineIndex = -1;
+	selectionManager.clearLineSelection();
 }
 
 //--------------------------------------------------------------
@@ -2785,7 +2802,7 @@ void ofApp::duplicateDotRight() {
 //--------------------------------------------------------------
 void ofApp::duplicateLineR180() {
     // Cek apakah ada selected lines
-    if (selectedLineIndices.empty()) {
+    if (!selectionManager.hasSelectedLine()) {
         return;  // Tidak ada line yang terseleksi
     }
 
@@ -2793,7 +2810,8 @@ void ofApp::duplicateLineR180() {
     vec2 globalCenter = vec2(0, 0);
     int totalPoints = 0;
 
-    for (int index : selectedLineIndices) {
+    const std::set<int>& indices = selectionManager.getSelectedLineIndices();
+    for (int index : indices) {
         if (index >= 0 && index < customLines.size()) {
             const vector<vec2>& points = customLines[index].getPoints();
             for (const vec2& point : points) {
@@ -2813,7 +2831,7 @@ void ofApp::duplicateLineR180() {
     size_t oldSize = customLines.size();
 
     // 2. Untuk setiap selected line, buat duplicate dengan rotate 180°
-    for (int index : selectedLineIndices) {
+    for (int index : indices) {
         if (index >= 0 && index < customLines.size()) {
             const CustomLine& originalLine = customLines[index];
 
@@ -2848,7 +2866,7 @@ void ofApp::duplicateLineR180() {
     }
 
     // 3. Push undo action untuk setiap line yang diduplicate
-    for (int index : selectedLineIndices) {
+    for (int index : indices) {
         UndoAction undoAction;
         undoAction.type = CREATE_LINE;
         undoAction.isCreate = true;
@@ -2856,16 +2874,11 @@ void ofApp::duplicateLineR180() {
     }
 
     // 4. Clear selection original lines, lalu select semua DcustomLine baru
-    selectedLineIndices.clear();
+    selectionManager.clearLineSelection();
 
     // Select semua DcustomLine yang baru saja dibuat
     for (size_t i = oldSize; i < customLines.size(); i++) {
-        selectedLineIndices.insert(i);
-    }
-
-    // Set lastSelectedLineIndex ke DcustomLine terakhir yang dibuat
-    if (customLines.size() > oldSize) {
-        lastSelectedLineIndex = customLines.size() - 1;
+        selectionManager.selectLine(i);
     }
 
     // Sync global color dari first selected DcustomLine
@@ -3147,8 +3160,7 @@ void ofApp::loadWorkspaceSeq() {
     // Clear customLines dan polygons yang sudah ada sebelumnya
     // HARUS DILAKUKAN SEBELUM loadAllSequential agar buffer diisi dengan benar!
     customLines.clear();
-    selectedLineIndices.clear();
-    lastSelectedLineIndex = -1;
+    selectionManager.clearLineSelection();
     polygonShapes.clear();
     selectionManager.clearPolygonSelection();
 

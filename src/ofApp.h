@@ -74,9 +74,6 @@ class ofApp : public ofBaseApp{
 		vector<vec2> currentPolylinePoints;  // Capture points saat drag untuk polyline
 		vector<CustomLine> customLines;  // CustomLine dari FileManager
 
-		std::set<int> selectedLineIndices;  // Bisa select 1 atau banyak garis
-		int lastSelectedLineIndex = -1;  // Untuk track line terakhir di-klik
-
 		// User-created dots system (untuk fitur "Duplicate Dot Above")
 		vector<std::unique_ptr<DotShape>> userDots;
 

@@ -1,5 +1,6 @@
 #include "SelectionInfo.h"
 #include "../../ofApp.h"
+#include <vector>
 
 SelectionInfo::SelectionInfo(ofApp* app) : app(app) {
 }
@@ -39,7 +40,7 @@ void SelectionInfo::draw() {
 	if (ImGui::Begin("Selection Info", &windowOpen, ImGuiWindowFlags_None)) {
 		// Cek apakah ada selection
 		bool hasSelection = (app->selectionManager.hasSelectedUserDot() ||
-							!app->selectedLineIndices.empty() ||
+							app->selectionManager.hasSelectedLine() ||
 							app->selectionManager.hasSelectedPolygon());
 
 		if (!hasSelection) {
@@ -94,11 +95,13 @@ void SelectionInfo::draw() {
 			}
 
 			// Tampilkan info untuk selected lines
-			if (!app->selectedLineIndices.empty()) {
-				ImGui::Text("Selected Lines: %d", app->selectedLineIndices.size());
+			if (app->selectionManager.hasSelectedLine()) {
+				ImGui::Text("Selected Lines: %d", app->selectionManager.getSelectedLineCount());
 
-				for (auto it = app->selectedLineIndices.begin(); it != app->selectedLineIndices.end(); ++it) {
-					int lineIndex = *it;
+				// Copy indices ke local vector untuk menghindari iterator invalidation
+				std::vector<int> selectedLineIndices(app->selectionManager.getSelectedLineIndices().begin(),
+				                                     app->selectionManager.getSelectedLineIndices().end());
+				for (int lineIndex : selectedLineIndices) {
 					if (lineIndex >= 0 && lineIndex < app->customLines.size()) {
 						CustomLine& line = app->customLines[lineIndex];
 

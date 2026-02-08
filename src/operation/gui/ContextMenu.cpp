@@ -1,5 +1,6 @@
 #include "ContextMenu.h"
 #include "../../ofApp.h"
+#include <vector>
 
 //--------------------------------------------------------------
 ContextMenu::ContextMenu(ofApp* app) : app(app) {
@@ -72,7 +73,7 @@ void ContextMenu::draw() {
 		// Context menu untuk CUSTOMLINE (Create Polygon, Copy/Paste Color, Lock Axis untuk DcustomLine)
 		else if (currentType == CUSTOMLINE_CONTEXT) {
 			// ===== MENU 1: Create Polygon =====
-			int selectedCount = app->selectedLineIndices.size();
+			int selectedCount = app->selectionManager.getSelectedLineCount();
 
 			if (selectedCount > 1) {
 				// Enable hanya jika > 1 selected line
@@ -104,9 +105,13 @@ void ContextMenu::draw() {
 					ImGui::Separator();
 					ImGui::SeparatorText("DcustomLine Axis Lock");
 
+					// Copy indices ke local vector untuk menghindari iterator invalidation
+					std::vector<int> selectedLineIndices(app->selectionManager.getSelectedLineIndices().begin(),
+					                                     app->selectionManager.getSelectedLineIndices().end());
+
 					// Hitung jumlah DcustomLine yang terseleksi
 					int selectedDLineCount = 0;
-					for (int index : app->selectedLineIndices) {
+					for (int index : selectedLineIndices) {
 						if (index >= 0 && index < app->customLines.size()) {
 							if (app->customLines[index].getIsDuplicate()) {
 								selectedDLineCount++;
@@ -168,8 +173,12 @@ void ContextMenu::draw() {
 					else {
 						ImGui::SeparatorText("Bulk Operation");
 
+						// Copy indices ke local vector untuk menghindari iterator invalidation
+						std::vector<int> bulkLineIndices(app->selectionManager.getSelectedLineIndices().begin(),
+						                                 app->selectionManager.getSelectedLineIndices().end());
+
 						if (ImGui::MenuItem("Unlock All")) {
-							for (int index : app->selectedLineIndices) {
+							for (int index : bulkLineIndices) {
 								if (index >= 0 && index < app->customLines.size()) {
 									if (app->customLines[index].getIsDuplicate()) {
 										app->customLines[index].setAxisLock(AxisLock::NONE);
@@ -180,7 +189,7 @@ void ContextMenu::draw() {
 						}
 
 						if (ImGui::MenuItem("Lock All")) {
-							for (int index : app->selectedLineIndices) {
+							for (int index : bulkLineIndices) {
 								if (index >= 0 && index < app->customLines.size()) {
 									if (app->customLines[index].getIsDuplicate()) {
 										app->customLines[index].setAxisLock(AxisLock::LOCK_BOTH);
@@ -191,7 +200,7 @@ void ContextMenu::draw() {
 						}
 
 						if (ImGui::MenuItem("Lock X All")) {
-							for (int index : app->selectedLineIndices) {
+							for (int index : bulkLineIndices) {
 								if (index >= 0 && index < app->customLines.size()) {
 									if (app->customLines[index].getIsDuplicate()) {
 										app->customLines[index].setAxisLock(AxisLock::LOCK_X);
@@ -202,7 +211,7 @@ void ContextMenu::draw() {
 						}
 
 						if (ImGui::MenuItem("Lock Y All")) {
-							for (int index : app->selectedLineIndices) {
+							for (int index : bulkLineIndices) {
 								if (index >= 0 && index < app->customLines.size()) {
 									if (app->customLines[index].getIsDuplicate()) {
 										app->customLines[index].setAxisLock(AxisLock::LOCK_Y);
@@ -213,7 +222,7 @@ void ContextMenu::draw() {
 						}
 
 						if (ImGui::MenuItem("Unlock X All")) {
-							for (int index : app->selectedLineIndices) {
+							for (int index : bulkLineIndices) {
 								if (index >= 0 && index < app->customLines.size()) {
 									if (app->customLines[index].getIsDuplicate()) {
 										AxisLock currentLock = app->customLines[index].getAxisLock();
@@ -230,7 +239,7 @@ void ContextMenu::draw() {
 						}
 
 						if (ImGui::MenuItem("Unlock Y All")) {
-							for (int index : app->selectedLineIndices) {
+							for (int index : bulkLineIndices) {
 								if (index >= 0 && index < app->customLines.size()) {
 									if (app->customLines[index].getIsDuplicate()) {
 										AxisLock currentLock = app->customLines[index].getAxisLock();
@@ -274,11 +283,11 @@ void ContextMenu::showCopyPasteColorMenus(int selectedCount, ContextMenuType typ
 		// Cek apakah ada mixed type selection
 		if (type == DOT_CONTEXT) {
 			// Copy dari DOT: pastikan tidak ada line atau polygon yang terseleksi
-			canCopyColor = app->selectedLineIndices.empty() && !app->selectionManager.hasSelectedPolygon();
+			canCopyColor = !app->selectionManager.hasSelectedLine() && !app->selectionManager.hasSelectedPolygon();
 		}
 		else if (type == POLYGON_CONTEXT) {
 			// Copy dari POLYGON: pastikan tidak ada dot atau line yang terseleksi
-			canCopyColor = !app->selectionManager.hasSelectedUserDot() && app->selectedLineIndices.empty();
+			canCopyColor = !app->selectionManager.hasSelectedUserDot() && !app->selectionManager.hasSelectedLine();
 		}
 		else if (type == CUSTOMLINE_CONTEXT) {
 			// Copy dari CUSTOMLINE: pastikan tidak ada dot atau polygon yang terseleksi
