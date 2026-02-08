@@ -21,6 +21,7 @@
 #include "template/TemplateRegistry.h"
 #include "managers/SelectionManager.h"
 #include "managers/ColorManager.h"
+#include "managers/DuplicateManager.h"
 #include "undo/UndoAction.h"
 #include "imgui/imgui.h"
 #include "imgui/backends/imgui_impl_opengl3.h"
@@ -99,7 +100,6 @@ class ofApp : public ofBaseApp{
 		float mouseLineWidth = 3.f;    // Line width khusus untuk mouse drag lines
 
 		float threshold = 9.0f; //dalam radius saat mouse hover pada dot
-		float duplicateDotOffsetDistance = 7.0f;  // Jarak offset duplikat dot ke atas (dalam pixels)
 		float userDotRadius = 8.0f;  // Radius untuk userDot/duplicate dot
 		bool isCtrlPressed = false;
 
@@ -136,6 +136,9 @@ class ofApp : public ofBaseApp{
 
 		// Color Manager untuk handle semua color operations
 		std::unique_ptr<ColorManager> colorManager;
+
+		// Duplicate Manager untuk handle semua duplicate operations
+		std::unique_ptr<DuplicateManager> duplicateManager;
 
 		// Play button delay state
 		bool isWaitingForLoad = false;

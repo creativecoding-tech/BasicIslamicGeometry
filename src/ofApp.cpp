@@ -33,6 +33,9 @@ void ofApp::setup() {
   // Initialize ColorManager (after ofApp is fully constructed)
   colorManager = std::make_unique<ColorManager>(this);
 
+  // Initialize DuplicateManager (after ofApp is fully constructed)
+  duplicateManager = std::make_unique<DuplicateManager>(this);
+
   //define ImGUI
   setupImGui();
 }
@@ -2411,220 +2414,27 @@ void ofApp::toggleSelectionInfoWindow() {
 
 //--------------------------------------------------------------
 void ofApp::duplicateDotAbove() {
-    // Cek apakah ada dot yang di-hover
-    if (!contextMenu->getHasHoveredDot()) {
-        return;  // Tidak ada dot valid
-    }
-
-    vec2 dotPos = contextMenu->getHoveredDotPos();
-
-    // Gunakan offset distance dari member variable
-    vec2 newDotPos = dotPos + vec2(0, -duplicateDotOffsetDistance);  // Ke atas (Y negatif)
-
-    // Buat DotShape baru dengan userDotRadius (langsung dari slider User Custom)
-    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
-    dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
-    dotShape->setColor(colorManager->getUserDotColor());  // Set warna dari userDotColor
-
-    // Set lower bound ke dotPos (dot parent)
-    dotShape->setLowerBound(dotPos);
-
-    // Tambahkan ke vector userDots
-    userDots.push_back(std::move(dotShape));
-
-    // Undo action untuk dot creation
-    UndoAction undoAction;
-    undoAction.type = CREATE_DOT;
-    undoAction.isCreate = true;
-    pushUndoAction(undoAction);
-
-    // Reset hovered state
-    contextMenu->resetHoveredDotState();
+	duplicateManager->duplicateDotAbove();
 }
 
 //--------------------------------------------------------------
 void ofApp::duplicateDotBelow() {
-    // Cek apakah ada dot yang di-hover
-    if (!contextMenu->getHasHoveredDot()) {
-        return;  // Tidak ada dot valid
-    }
-
-    vec2 dotPos = contextMenu->getHoveredDotPos();
-
-    // Gunakan offset distance dari member variable - arah ke bawah (Y positif)
-    vec2 newDotPos = dotPos + vec2(0, duplicateDotOffsetDistance);  // Ke bawah (Y positif)
-
-    // Buat DotShape baru dengan userDotRadius (langsung dari slider User Custom)
-    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
-    dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
-    dotShape->setColor(colorManager->getUserDotColor());  // Set warna dari userDotColor
-
-    // Set lower bound ke dotPos (dot parent)
-    dotShape->setLowerBound(dotPos);
-
-    // Tambahkan ke vector userDots
-    userDots.push_back(std::move(dotShape));
-
-    // Undo action untuk dot creation
-    UndoAction undoAction;
-    undoAction.type = CREATE_DOT;
-    undoAction.isCreate = true;
-    pushUndoAction(undoAction);
-
-    // Reset hovered state
-    contextMenu->resetHoveredDotState();
+	duplicateManager->duplicateDotBelow();
 }
 
 //--------------------------------------------------------------
 void ofApp::duplicateDotLeft() {
-    // Cek apakah ada dot yang di-hover
-    if (!contextMenu->getHasHoveredDot()) {
-        return;  // Tidak ada dot valid
-    }
-
-    vec2 dotPos = contextMenu->getHoveredDotPos();
-
-    // Offset ke kiri (X negatif)
-    vec2 newDotPos = dotPos + vec2(-duplicateDotOffsetDistance, 0);
-
-    // Buat DotShape baru dengan userDotRadius (langsung dari slider User Custom)
-    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
-    dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
-    dotShape->setColor(colorManager->getUserDotColor());  // Set warna dari userDotColor
-
-    // Set lower bound ke dotPos (dot parent)
-    dotShape->setLowerBound(dotPos);
-
-    // Tambahkan ke vector userDots
-    userDots.push_back(std::move(dotShape));
-
-    // Undo action untuk dot creation
-    UndoAction undoAction;
-    undoAction.type = CREATE_DOT;
-    undoAction.isCreate = true;
-    pushUndoAction(undoAction);
-
-    // Reset hovered state
-    contextMenu->resetHoveredDotState();
+	duplicateManager->duplicateDotLeft();
 }
 
 //--------------------------------------------------------------
 void ofApp::duplicateDotRight() {
-    // Cek apakah ada dot yang di-hover
-    if (!contextMenu->getHasHoveredDot()) {
-        return;  // Tidak ada dot valid
-    }
-
-    vec2 dotPos = contextMenu->getHoveredDotPos();
-
-    // Offset ke kanan (X positif)
-    vec2 newDotPos = dotPos + vec2(duplicateDotOffsetDistance, 0);
-
-    // Buat DotShape baru dengan userDotRadius (langsung dari slider User Custom)
-    auto dotShape = std::make_unique<DotShape>(newDotPos, "Dot", userDotRadius);
-    dotShape->progress = 1.0f;  // Langsung muncul penuh (no animation)
-    dotShape->setColor(colorManager->getUserDotColor());  // Set warna dari userDotColor
-
-    // Set lower bound ke dotPos (dot parent)
-    dotShape->setLowerBound(dotPos);
-
-    // Tambahkan ke vector userDots
-    userDots.push_back(std::move(dotShape));
-
-    // Undo action untuk dot creation
-    UndoAction undoAction;
-    undoAction.type = CREATE_DOT;
-    undoAction.isCreate = true;
-    pushUndoAction(undoAction);
-
-    // Reset hovered state
-    contextMenu->resetHoveredDotState();
+	duplicateManager->duplicateDotRight();
 }
 
 //--------------------------------------------------------------
 void ofApp::duplicateLineR180() {
-    // Cek apakah ada selected lines
-    if (!selectionManager.hasSelectedLine()) {
-        return;  // Tidak ada line yang terseleksi
-    }
-
-    // 1. Hitung global center point dari semua selected lines
-    vec2 globalCenter = vec2(0, 0);
-    int totalPoints = 0;
-
-    const std::set<int>& indices = selectionManager.getSelectedLineIndices();
-    for (int index : indices) {
-        if (index >= 0 && index < customLines.size()) {
-            const vector<vec2>& points = customLines[index].getPoints();
-            for (const vec2& point : points) {
-                globalCenter += point;
-                totalPoints++;
-            }
-        }
-    }
-
-    if (totalPoints == 0) {
-        return;  // Tidak ada points valid
-    }
-
-    globalCenter /= totalPoints;  // Average dari semua points
-
-    // Simpan size awal customLines (sebelum duplicate)
-    size_t oldSize = customLines.size();
-
-    // 2. Untuk setiap selected line, buat duplicate dengan rotate 180°
-    for (int index : indices) {
-        if (index >= 0 && index < customLines.size()) {
-            const CustomLine& originalLine = customLines[index];
-
-            // Copy semua properties
-            vector<vec2> originalPoints = originalLine.getPoints();
-            ofColor lineColor = originalLine.getColor();
-            float lineWidth = originalLine.getLineWidth();
-            float curve = originalLine.getCurve();
-            std::string originalLabel = originalLine.getLabel();
-
-            // Rotate semua points 180° di sekitar global center
-            vector<vec2> rotatedPoints;
-            for (const vec2& point : originalPoints) {
-                vec2 offset = point - globalCenter;
-                vec2 rotatedPoint = globalCenter - offset;  // 180° rotation
-                rotatedPoints.push_back(rotatedPoint);
-            }
-
-            // Buat label dengan prefix "D"
-            std::string newLabel = "D" + originalLabel;
-
-            // Buat CustomLine baru
-            CustomLine newLine(rotatedPoints, lineColor, lineWidth, newLabel);
-            newLine.setCurve(curve);
-            newLine.setProgress(1.0f);  // Langsung muncul penuh (no animation)
-            newLine.setIsDuplicate(true);  // Tandai sebagai duplicate line
-            newLine.setAxisLock(AxisLock::NONE);  // Bisa langsung digeser dengan CTRL+Scroll
-
-            // Add ke customLines
-            customLines.push_back(newLine);
-        }
-    }
-
-    // 3. Push undo action untuk setiap line yang diduplicate
-    for (int index : indices) {
-        UndoAction undoAction;
-        undoAction.type = CREATE_LINE;
-        undoAction.isCreate = true;
-        pushUndoAction(undoAction);
-    }
-
-    // 4. Clear selection original lines, lalu select semua DcustomLine baru
-    selectionManager.clearLineSelection();
-
-    // Select semua DcustomLine yang baru saja dibuat
-    for (size_t i = oldSize; i < customLines.size(); i++) {
-        selectionManager.selectLine(static_cast<int>(i));
-    }
-
-    // Sync global color dari first selected DcustomLine
-    syncColorFromSelectedObjects();
+	duplicateManager->duplicateLineR180();
 }
 
 //--------------------------------------------------------------
