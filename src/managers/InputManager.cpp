@@ -5,6 +5,7 @@
 #include "../operation/gui/UserCustom.h"
 #include "../operation/gui/ContextMenu.h"
 #include "../shape/CustomLine.h"
+#include "../utils/GeometryUtils.h"
 #include "../undo/UndoAction.h"
 
 //--------------------------------------------------------------
@@ -32,7 +33,7 @@ void InputManager::handleMousePressed(int x, int y, int button) {
 
 	// Klik kanan untuk context menu (DOT atau POLYGON)
 	if (button == 2) {
-		vec2 adjustedMousePos = app->screenToWorld(vec2(x, y));
+		vec2 adjustedMousePos = GeometryUtils::screenToWorld(vec2(x, y), app->canvasTranslation, app->canvasZoom, app->canvasRotation);
 
 		// CEK 1: Klik kanan pada DOT ORIGINAL (dari template)
 		vector<DotInfo> allDots = app->getAllDots();
@@ -44,7 +45,7 @@ void InputManager::handleMousePressed(int x, int y, int button) {
 		}
 
 		for (const auto& dot : templateDots) {
-			if (app->isMouseOverDot(adjustedMousePos, dot.position)) {
+			if (GeometryUtils::isMouseOverDot(adjustedMousePos, dot.position, app->threshold)) {
 				app->contextMenu->setHoveredDotPos(dot.position);
 				app->contextMenu->setIsUserDotContext(false);  // Flag bahwa ini dari original dot
 				app->contextMenu->showWindow(ContextMenu::DOT_CONTEXT, vec2(x, y));
@@ -85,7 +86,7 @@ void InputManager::handleMousePressed(int x, int y, int button) {
 		}
 
 		// CEK 3: Klik kanan pada CUSTOMLINE yang terseleksi
-		int clickedLineIndex = app->getLineIndexAtPosition(adjustedMousePos);
+		int clickedLineIndex = GeometryUtils::getLineIndexAtPosition(adjustedMousePos, app->customLines, app->mouseLineWidth);
 		if (clickedLineIndex >= 0 && app->selectionManager.isLineSelected(clickedLineIndex)) {
 			// Tampilkan context menu untuk semua customLine (original dan DcustomLine)
 			app->contextMenu->setHoveredLineIndex(clickedLineIndex);
@@ -106,7 +107,7 @@ void InputManager::handleMousePressed(int x, int y, int button) {
 
 	// CTRL+Click untuk multi-select (userDot PRIORITY lebih tinggi dari customLine)
 	if (button == 0 && app->isCtrlPressed) {
-		vec2 adjustedMousePos = app->screenToWorld(vec2(x, y));
+		vec2 adjustedMousePos = GeometryUtils::screenToWorld(vec2(x, y), app->canvasTranslation, app->canvasZoom, app->canvasRotation);
 
 		// CEK USER DOTS DULU (priority tertinggi)
 		for (int i = 0; i < app->userDots.size(); i++) {
@@ -137,7 +138,7 @@ void InputManager::handleMousePressed(int x, int y, int button) {
 		}
 
 		// Kalau tidak klik polygon, cek customLine
-		int clickedLineIndex = app->getLineIndexAtPosition(adjustedMousePos);
+		int clickedLineIndex = GeometryUtils::getLineIndexAtPosition(adjustedMousePos, app->customLines, app->mouseLineWidth);
 		if (clickedLineIndex >= 0) {
 			// Toggle selection customLine
 			app->selectionManager.toggleLineSelection(clickedLineIndex);
@@ -149,7 +150,7 @@ void InputManager::handleMousePressed(int x, int y, int button) {
 	// Logic untuk interactive line creation & line selection
 	if (button == 0) {
 		// Adjust mouse position dengan inverse transform
-		vec2 adjustedMousePos = app->screenToWorld(vec2(x, y));
+		vec2 adjustedMousePos = GeometryUtils::screenToWorld(vec2(x, y), app->canvasTranslation, app->canvasZoom, app->canvasRotation);
 
 		// CEK USER DOTS (normal click tanpa CTRL)
 		bool clickedOnUserDot = false;
@@ -179,7 +180,7 @@ void InputManager::handleMousePressed(int x, int y, int button) {
 		// Check jika klik di atas dot - HANYA bisa mulai dari dot
 		bool clickedOnDot = false;
 		for (auto &dot : dots) {
-			if (app->isMouseOverDot(adjustedMousePos, dot.position)) {
+			if (GeometryUtils::isMouseOverDot(adjustedMousePos, dot.position, app->threshold)) {
 				app->drawState = ofApp::DRAGGING;
 				app->currentPolylinePoints.clear();
 				app->currentPolylinePoints.push_back(dot.position); // Start dari dot
@@ -212,7 +213,7 @@ void InputManager::handleMousePressed(int x, int y, int button) {
 
 			// Kalau tidak klik di polygon, cek garis
 			if (!clickedOnPolygon) {
-				int lineIndex = app->getLineIndexAtPosition(adjustedMousePos);
+				int lineIndex = GeometryUtils::getLineIndexAtPosition(adjustedMousePos, app->customLines, app->mouseLineWidth);
 				if (lineIndex >= 0) {
 					// Select garis ini (single select: hapus yang lama, select yang baru)
 					app->selectionManager.clearLineSelection();
@@ -243,14 +244,14 @@ void InputManager::handleMouseReleased(int x, int y, int button) {
 	}
 
 	// Adjust mouse position dengan inverse transform
-	vec2 releasePos = app->screenToWorld(vec2(x, y));
+	vec2 releasePos = GeometryUtils::screenToWorld(vec2(x, y), app->canvasTranslation, app->canvasZoom, app->canvasRotation);
 	vector<DotInfo> dots = app->getAllDots();
 
 	// Check jika release di atas valid dot - HANYA bisa selesai di dot
 	for (auto &dot : dots) {
-		if (app->isMouseOverDot(releasePos, dot.position)) {
+		if (GeometryUtils::isMouseOverDot(releasePos, dot.position, app->threshold)) {
 			// Cek apakah line sudah ada (duplicate check)
-			if (!app->lineExists(app->startDotPos, dot.position)) {
+			if (!GeometryUtils::lineExists(app->startDotPos, dot.position, app->customLines)) {
 				// Cek apakah start != end (bukan garis panjang 0)
 				if (glm::length(app->startDotPos - dot.position) > 1.0f) {
 					// Update end point ke posisi dot yang dilepas
@@ -295,7 +296,7 @@ void InputManager::handleMouseDragged(int x, int y, int button) {
 
 	if (app->drawState == ofApp::DRAGGING) {
 		// Adjust mouse position dengan inverse transform
-		vec2 currentPos = app->screenToWorld(vec2(x, y));
+		vec2 currentPos = GeometryUtils::screenToWorld(vec2(x, y), app->canvasTranslation, app->canvasZoom, app->canvasRotation);
 		app->mousePos = currentPos;
 
 		// Untuk garis lurus, kita hanya perlu 2 titik: start dan end
@@ -316,7 +317,7 @@ void InputManager::handleMouseMoved(int x, int y) {
 	io.AddMousePosEvent(x, y);
 
 	// Update mouse position dengan inverse transform (screen to world)
-	app->mousePos = app->screenToWorld(vec2(x, y));
+	app->mousePos = GeometryUtils::screenToWorld(vec2(x, y), app->canvasTranslation, app->canvasZoom, app->canvasRotation);
 }
 
 //--------------------------------------------------------------

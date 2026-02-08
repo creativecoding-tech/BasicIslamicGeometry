@@ -24,6 +24,7 @@
 #include "managers/DuplicateManager.h"
 #include "managers/InputManager.h"
 #include "undo/UndoAction.h"
+#include "utils/GeometryUtils.h"
 #include "imgui/imgui.h"
 #include "imgui/backends/imgui_impl_opengl3.h"
 #include "imgui/backends/imgui_impl_win32.h"
