@@ -1,10 +1,14 @@
 #include "ParallelogramLine.h"
+#include "DotInfo.h"
 
-ParallelogramLine::ParallelogramLine(vec2 start, vec2 end, vec2 intersecCrossLine, std::string label) :
+ParallelogramLine::ParallelogramLine(vec2 start, vec2 end, vec2 intersecCrossLine, std::string label, float radius) :
 	start(start),
 	end(end),
 	intersecCrossLine(intersecCrossLine),
-	label(label) {
+	label(label),
+	radius(radius),
+	originalRadius(radius)  // Simpan original radius
+{
 	loadFonts();  // Load font dari AbstractShape
 	maxProgress = totalSegments;  // Set max progress untuk isComplete()
 }
@@ -25,6 +29,16 @@ void ParallelogramLine::setLabel(std::string label) {
 	this->label = label;
 }
 
+void ParallelogramLine::setRadius(float r) {
+	// Re-calculate secara proporsional
+	float scaleFactor = r / originalRadius;
+	start = start * scaleFactor;
+	end = end * scaleFactor;
+	intersecCrossLine = intersecCrossLine * scaleFactor;
+	radius = r;
+	originalRadius = r;  // Update originalRadius untuk scaling berikutnya
+}
+
 void ParallelogramLine::showDot() {
 	dotVisible = true;
 }
@@ -41,13 +55,9 @@ void ParallelogramLine::hideLabel() {
 	labelVisible = false;
 }
 
-void ParallelogramLine::update() {
-	if (showing) {
-		if (progress < totalSegments) progress += speed;
-	}
-	else {
-		if (progress > 0) progress -= speed;
-	}
+void ParallelogramLine::update(float deltaTime) {
+	// Animasi muncul dari 0 ke totalSegments
+	if (progress < totalSegments) progress += speed * deltaTime;
 }
 
 void ParallelogramLine::draw() {
@@ -75,7 +85,7 @@ void ParallelogramLine::draw() {
 	polyline.close();
 	polyline.draw();
 
-	if (showing && progress >= totalSegments) {
+	if (progress >= totalSegments) {
 		ofFill();
 		// Gambar dot hanya jika dotVisible = true
 		if (dotVisible) {
@@ -92,4 +102,10 @@ void ParallelogramLine::draw() {
 	}
 	ofPopMatrix();
 
+}
+
+//--------------------------------------------------------------
+void ParallelogramLine::addDotsToCache(std::vector<DotInfo>& dots) {
+	// ParallelogramLine hanya punya satu dot: intersecCrossLine
+	dots.push_back({intersecCrossLine, "Parallelogram"});
 }

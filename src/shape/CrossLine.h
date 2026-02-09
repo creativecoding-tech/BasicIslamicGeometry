@@ -14,7 +14,6 @@ public:
 	vec2 end;
 	string label1 = "";
 	string label2 = "";
-	float radius;  // Radius untuk dot position
 	vec2 radiusDot;  // Posisi dot pada radius (intersection point)
 
 	CrossLine(vec2 start, vec2 end, string label1, string label2, float radius);
@@ -22,6 +21,7 @@ public:
 	// Helper method position
 	void setStart(float startX, float startY);
 	void setEnd(float endX, float endY);
+	void setRadius(float r) override;  // Override setRadius
 
 	// Label setters
 	void setLabel1(string lbl);
@@ -35,11 +35,17 @@ public:
 	void showDot();
 	void hideDot();
 
+	// Override addDotsToCache untuk menambahkan CrossLine dots
+	void addDotsToCache(std::vector<DotInfo>& dots) override;
+
 	// Override pure virtual methods dari AbstractShape
-	void update() override;
+	void update(float deltaTime = 0.016f) override;
 	void draw() override;
 
 private:
+	float radius;         // Pindah ke private
+	float originalRadius; // Simpan radius awal untuk proportional scaling
+	int quadrant;   // 0,1,2,3 - Simpan kuadran untuk re-calculate
 	float totalSegments = 100;  // CrossLine-specific
 	bool labelVisible = true;   // Flag untuk label visibility
 	bool dotVisible = true;     // Flag untuk dot visibility

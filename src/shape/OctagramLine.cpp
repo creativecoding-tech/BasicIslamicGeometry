@@ -1,9 +1,13 @@
 #include "OctagramLine.h"
-OctagramLine::OctagramLine(vec2 start, vec2 end, std::optional<vec2> nextPoint, string label) :
+#include "DotInfo.h"
+OctagramLine::OctagramLine(vec2 start, vec2 end, std::optional<vec2> nextPoint, string label, float radius) :
 	start(start),
 	end(end),
 	nextPoint(nextPoint),
-	label(label){
+	label(label),
+	radius(radius),
+	originalRadius(radius)  // Simpan original radius
+{
 	loadFonts();  // Load font dari AbstractShape
 	maxProgress = totalSegments;  // Set max progress untuk isComplete()
 }
@@ -24,68 +28,52 @@ void OctagramLine::hideLabel() {
 	labelVisible = false;
 }
 
-void OctagramLine::update() {
-	if (showing) {
-		if (isSequentialMode) {
-			// SEQUENTIAL MODE: Phase 1 dulu, baru Phase 2
-			if (progress < totalSegments) {
-				progress += speed;
-			}
-			else if (nextPoint.has_value() && extensionProgress < totalSegments) {
-				extensionProgress += speed;
-			}
+void OctagramLine::setRadius(float r) {
+	// Re-calculate secara proporsional
+	float scaleFactor = r / originalRadius;
+	start = start * scaleFactor;
+	end = end * scaleFactor;
+
+	// Jika nextPoint ada, re-calculate juga
+	if (nextPoint.has_value()) {
+		vec2 np = nextPoint.value();
+		nextPoint = np * scaleFactor;
+	}
+
+	radius = r;
+	originalRadius = r;  // Update originalRadius untuk scaling berikutnya
+}
+
+void OctagramLine::update(float deltaTime) {
+	// Animasi muncul saja (tidak ada reverse/hide animation)
+	if (isSequentialMode) {
+		// SEQUENTIAL MODE: Phase 1 dulu, baru Phase 2
+		if (progress < totalSegments) {
+			progress += speed * deltaTime;
 		}
-		else {
-			// PARALEL MODE: Kedua line berjalan barengan
-			if (progress < totalSegments) {
-				progress += speed;
-			}
-			if (nextPoint.has_value() && extensionProgress < totalSegments) {
-				extensionProgress += speed;
-			}
+		else if (nextPoint.has_value() && extensionProgress < totalSegments) {
+			extensionProgress += speed * deltaTime;
 		}
 	}
 	else {
-		if (isSequentialMode) {
-			// SEQUENTIAL MODE: Hide extension dulu, baru main line
-			if (extensionProgress > 0) {
-				extensionProgress -= speed;
-			}
-			else if (progress > 0) {
-				progress -= speed;
-			}
+		// PARALEL MODE: Kedua line berjalan barengan
+		if (progress < totalSegments) {
+			progress += speed * deltaTime;
 		}
-		else {
-			// PARALEL MODE: Kedua line hide barengan
-			if (extensionProgress > 0) {
-				extensionProgress -= speed;
-			}
-			if (progress > 0) {
-				progress -= speed;
-			}
+		if (nextPoint.has_value() && extensionProgress < totalSegments) {
+			extensionProgress += speed * deltaTime;
 		}
 	}
 }
 
 bool OctagramLine::isComplete() {
-	if (showing) {
-		// Jika ada nextPoint, harus ngecek kedua progress (main + extension)
-		if (nextPoint.has_value()) {
-			return (progress >= totalSegments) && (extensionProgress >= totalSegments);
-		}
-		// Jika tidak ada nextPoint, cuma ngecek main progress
-		else {
-			return progress >= totalSegments;
-		}
+	// Jika ada nextPoint, harus ngecek kedua progress (main + extension)
+	if (nextPoint.has_value()) {
+		return (progress >= totalSegments) && (extensionProgress >= totalSegments);
 	}
+	// Jika tidak ada nextPoint, cuma ngecek main progress
 	else {
-		// Saat hiding, complete jika kedua progress sudah 0
-		if (nextPoint.has_value()) {
-			return (progress <= 0) && (extensionProgress <= 0);
-		}
-		else {
-			return progress <= 0;
-		}
+		return progress >= totalSegments;
 	}
 }
 
@@ -135,7 +123,7 @@ void OctagramLine::draw() {
 	}
 
 	// === DOT & LABEL ===
-	if (showing && progress >= totalSegments) {
+	if (progress >= totalSegments) {
 		ofFill();
 		// Gambar dot di end point
 		if (dotVisible) {
@@ -149,4 +137,10 @@ void OctagramLine::draw() {
 		}
 	}
 	ofPopMatrix();
+}
+
+//--------------------------------------------------------------
+void OctagramLine::addDotsToCache(std::vector<DotInfo>& dots) {
+	// OctagramLine punya satu dot: end point
+	dots.push_back({end, "Octagram"});
 }

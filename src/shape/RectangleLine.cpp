@@ -1,12 +1,16 @@
 #include "RectangleLine.h"
+#include "DotInfo.h"
 
-RectangleLine::RectangleLine(vec2 start, vec2 end, vec2 intersec1, vec2 intersec2, string label1, string label2):
+RectangleLine::RectangleLine(vec2 start, vec2 end, vec2 intersec1, vec2 intersec2, string label1, string label2, float radius):
 start(start),
 end(end),
 intersec1(intersec1),
 intersec2(intersec2),
 label1(label1),
-label2(label2){
+label2(label2),
+radius(radius),
+originalRadius(radius)  // Simpan original radius
+{
 	loadFonts();  // Load font dari AbstractShape
 	maxProgress = totalSegments;  // Set max progress untuk isComplete()
 }
@@ -35,13 +39,20 @@ void RectangleLine::hideLabel() {
 	labelVisible = false;
 }
 
-void RectangleLine::update() {
-	if (showing) {
-		if (progress < totalSegments) progress += speed;
-	}
-	else {
-		if (progress > 0) progress -= speed;
-	}
+void RectangleLine::setRadius(float r) {
+	// Re-calculate secara proporsional
+	float scaleFactor = r / originalRadius;
+	start = start * scaleFactor;
+	end = end * scaleFactor;
+	intersec1 = intersec1 * scaleFactor;
+	intersec2 = intersec2 * scaleFactor;
+	radius = r;
+	originalRadius = r;  // Update originalRadius untuk scaling berikutnya
+}
+
+void RectangleLine::update(float deltaTime) {
+	// Animasi muncul dari 0 ke totalSegments
+	if (progress < totalSegments) progress += speed * deltaTime;
 }
 
 void RectangleLine::draw() {
@@ -69,7 +80,7 @@ void RectangleLine::draw() {
 	polyline.close();
 	polyline.draw();
 
-	if (showing && progress >= totalSegments) {
+	if (progress >= totalSegments) {
 		ofFill();
 		// Gambar 2 dot di intersection points
 		if (dotVisible) {
@@ -87,4 +98,11 @@ void RectangleLine::draw() {
 		}
 	}
 	ofPopMatrix();
+}
+
+//--------------------------------------------------------------
+void RectangleLine::addDotsToCache(std::vector<DotInfo>& dots) {
+	// RectangleLine punya 2 dots: intersec1 dan intersec2
+	dots.push_back({intersec1, "Rectangle"});
+	dots.push_back({intersec2, "Rectangle"});
 }

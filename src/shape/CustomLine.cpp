@@ -5,20 +5,26 @@ CustomLine::CustomLine()
 	: lineWidth(3.0f)
 	, curve(0.0f)
 	, progress(1.0f)
-	, speed(0.02f)
+	, speed(1.2f)  // Delta time calibrated (0.02f * 60 FPS)
 	, selected(false)
-	, color(ofColor(0, 0, 255)) {  // Default biru
+	, color(ofColor(0, 0, 255))  // Default biru
+	, label("")
+	, isDuplicate(false)
+	, axisLock(AxisLock::NONE) {
 }
 
 //--------------------------------------------------------------
-CustomLine::CustomLine(vector<vec2> points, ofColor color, float lineWidth)
+CustomLine::CustomLine(vector<vec2> points, ofColor color, float lineWidth, std::string label)
 	: points(points)
 	, color(color)
 	, lineWidth(lineWidth)
 	, curve(0.0f)
 	, progress(1.0f)
-	, speed(0.02f)
-	, selected(false) {
+	, speed(1.2f)  // Delta time calibrated (0.02f * 60 FPS)
+	, selected(false)
+	, label(label)
+	, isDuplicate(false)
+	, axisLock(AxisLock::NONE) {
 }
 
 //--------------------------------------------------------------
@@ -28,12 +34,8 @@ void CustomLine::draw() const {
 	vec2 start = points[0];
 	vec2 end = points[1];
 
-	// Set warna: merah jika selected, original color jika tidak
-	if (selected) {
-		ofSetColor(255, 0, 0);  // Merah untuk selected
-	} else {
-		ofSetColor(color);
-	}
+	// Set warna: selalu pakai original color (tidak berubah saat selected)
+	ofSetColor(color);
 
 	ofSetLineWidth(lineWidth);
 
@@ -42,17 +44,6 @@ void CustomLine::draw() const {
 		drawCurvedLine(start, end);
 	} else {
 		drawStraightLine(start, end);
-	}
-
-	// Draw curve value label jika selected
-	if (selected) {
-		vec2 midPoint = (start + end) / 2.0f;
-		ofPushStyle();
-		ofSetColor(0, 0, 0);  // Hitam untuk label
-
-		// Need font for drawString - will be handled externally atau load di sini
-		// Untuk sekarang skip, font akan di-handle di ofApp level
-		ofPopStyle();
 	}
 }
 
@@ -156,16 +147,50 @@ void CustomLine::setSpeed(float speed) {
 }
 
 //--------------------------------------------------------------
+void CustomLine::setLabel(const std::string& label) {
+	this->label = label;
+}
+
+//--------------------------------------------------------------
 void CustomLine::setSelected(bool selected) {
 	this->selected = selected;
 }
 
 //--------------------------------------------------------------
-void CustomLine::updateProgress() {
+void CustomLine::updateProgress(float deltaTime) {
 	if (progress < 1.0f) {
-		progress += speed;
+		progress += speed * deltaTime;
 		if (progress > 1.0f) {
 			progress = 1.0f;
 		}
 	}
+}
+
+//--------------------------------------------------------------
+vector<vec2> CustomLine::getSampledPoints() const {
+	if (points.size() < 2) return vector<vec2>();
+
+	vec2 start = points[0];
+	vec2 end = points[1];
+
+	// Kalau curve = 0, return 2 titik saja (lurus)
+	if (curve == 0.0f) {
+		return {start, end};
+	}
+
+	// Kalau curve != 0, ambil 100 sampled points dari bezier curve
+	vector<vec2> sampledPoints;
+	vec2 controlPoint = calculateControlPoint(start, end);
+	int segments = 100;
+
+	for (int j = 0; j <= segments; j++) {
+		float t = (float)j / segments;
+		vec2 point =
+			start * (1 - t) * (1 - t) +
+			controlPoint * 2 * (1 - t) * t +
+			end * t * t;
+		sampledPoints.push_back(point);
+	}
+
+	return sampledPoints;
 }

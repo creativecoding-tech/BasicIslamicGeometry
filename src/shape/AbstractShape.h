@@ -1,5 +1,7 @@
 #pragma once
 #include "ofMain.h"
+#include "DotInfo.h"
+#include <vector>
 
 /**
  * AbstractShape - Base class untuk semua shape geometri
@@ -9,36 +11,42 @@ class AbstractShape {
 public:
 	// Common attributes untuk animasi
 	float progress = 0;
-	float speed = 0.5f;
-	bool showing = false;
+	float speed = 50.0f;  // Delta time calibrated (60 FPS * 0.5f lama)
 	float lineWidth = 4;
 
 	// Constructor
 	AbstractShape() = default;
 	virtual ~AbstractShape() = default;
 
-	// Common methods untuk visibility control
-	virtual void show();
-	virtual void hide();
-
 	// Pure virtual methods - WAJIB di-override oleh derived class
-	virtual void update() = 0;
+	virtual void update(float deltaTime = 0.016f) = 0;  // Default 60 FPS
 	virtual void draw() = 0;
+
+	// Polymorphic method untuk menambahkan dots ke cache (default: no-op)
+	// Derived classes yang punya dots (Circle, CrossLine, dll) harus override
+	virtual void addDotsToCache(std::vector<DotInfo>& dots) {}
+
+	// Label dan dot control (default: no-op, dapat di-override jika diperlukan)
+	virtual void showLabel() {}
+	virtual void hideLabel() {}
+	virtual void showDot() {}
+	virtual void hideDot() {}
+
+	// Sequential mode control (default: no-op, OctagramLine akan override)
+	virtual void setSequentialMode(bool sequential) {}
 
 	// Common method untuk line width
 	virtual void setLineWidth(float width);
+
+	// Runtime radius update (default: no-op, shapes dengan radius akan override)
+	virtual void setRadius(float r) {}
 
 	// Optional - dapat di-override jika diperlukan
 	virtual void setThin(bool thin) { useThin = thin; }
 
 	// Status check - dapat di-override jika logic berbeda
 	virtual bool isComplete() {
-		if (showing) {
-			return progress >= maxProgress;
-		}
-		else {
-			return progress <= 0;
-		}
+		return progress >= maxProgress;
 	}
 
 protected:

@@ -3,21 +3,15 @@
 
 CartesianAxes::CartesianAxes(float r) {
 	radius = r;
-	speed = 0.02f;
+	speed = 1.2f;  // Delta time calibrated (0.02f * 60 FPS)
 	maxProgress = maxScale;  // Set max progress untuk isComplete()
 	loadFonts();  // Load font untuk label sudut
 }
 
-void CartesianAxes::update() {
-	if (showing) {
-		if (progress < maxScale) {
-			progress += speed;
-		}
-	}
-	else {
-		if (progress > 0) {
-			progress -= speed;
-		}
+void CartesianAxes::update(float deltaTime) {
+	// Animasi muncul dari 0 ke maxScale
+	if (progress < maxScale) {
+		progress += speed * deltaTime;
 	}
 }
 
@@ -40,7 +34,7 @@ void CartesianAxes::draw() {
 			// Ujung bawah (PI/2 = 90°)
 			fontNormal.drawString("PI/2 (90°)", -90, currentLength - 100);
 			// Ujung kiri (PI = 180°)
-			fontNormal.drawString("PI (180°)", -currentLength - 80, 5);
+			fontNormal.drawString("PI (180°)", -currentLength + 45, -20);
 			// Ujung atas (-PI/2 = 270°)
 			fontNormal.drawString("-PI/2 (270°)", -100, -currentLength + 100);
 		}
@@ -48,12 +42,7 @@ void CartesianAxes::draw() {
 }
 
 bool CartesianAxes::isComplete() {
-	if (showing) {
-		return progress >= maxScale;
-	}
-	else {
-		return progress <= 0;
-	}
+	return progress >= maxScale;
 }
 
 void CartesianAxes::showLabel() {
@@ -64,3 +53,6 @@ void CartesianAxes::hideLabel() {
 	labelVisible = false;
 }
 
+void CartesianAxes::setRadius(float r) {
+	radius = r;  // CartesianAxes pakai radius langsung di draw(), jadi cukup assign
+}

@@ -1,789 +1,1072 @@
 #include "ofApp.h"
 #include "shape/AbstractShape.h"
+#include "shape/DotShape.h"
+#include "template/templates/BasicZelligeTemplate.h"
+#include "operation/gui/SacredGeometry.h"
+#include "operation/gui/UserCustom.h"
+#include "utils/GeometryUtils.h"
+#include <vector>
+
 
 //--------------------------------------------------------------
-void ofApp::setup(){
-	ofSetVerticalSync(false); //Tidak ada limit dari refresh rate monitor
-	ofSetFrameRate(60);
-	ofSetEscapeQuitsApp(false);
-	ofSetBackgroundAuto(false);
-	ofEnableAntiAliasing();
-	ofEnableSmoothing();
-	ofHideCursor();
+void ofApp::setup() {
+  ofSetVerticalSync(false);
+  ofSetFrameRate(60);
+  ofSetEscapeQuitsApp(false);
+  ofSetBackgroundAuto(false);
+  ofEnableAntiAliasing();
+  ofEnableSmoothing();
 
-	// Load font untuk custom line labels
-	fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
+  // Load font untuk custom line labels
+  fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
 
-	// Call modular setup methods
-	setupCircles();
-	setupCartesianAxes();
-	setupCrossLines();
-	setupParallelograms();
-	setupRectangleLine();
-	setupOctagramLine();
+  // Setup template system (REGISTER SEMUA TEMPLATES)
+  setupTemplateSystem();
 
-	// Initial dots cache build (cache di-build saat pertama kali getAllDots() dipanggil)
-	dotsCacheDirty = true;
+  // Set default template (Basic Zellige) TANPA otomatis setupShapes()
+  // User harus klik radio button "Parallel" atau "Sequential" untuk draw
+  TemplateRegistry &registry = TemplateRegistry::getInstance();
+  currentTemplate = registry.getTemplate("Basic Zellige");
+
+  // Initial dots cache build
+  dotsCacheDirty = true;
+
+  // Initialize ColorManager (after ofApp is fully constructed)
+  colorManager = std::make_unique<ColorManager>(this);
+
+  // Initialize DuplicateManager (after ofApp is fully constructed)
+  duplicateManager = std::make_unique<DuplicateManager>(this);
+
+  // Initialize InputManager (after ofApp is fully constructed)
+  inputManager = std::make_unique<InputManager>(this);
+
+  //define ImGUI
+  setupImGui();
 }
 
 //--------------------------------------------------------------
-void ofApp::setupCircles(){
-	//Circle
-	circleA = std::make_unique<CircleShape>(radiusCircle,"A",0,0);
-	circleB = std::make_unique<CircleShape>(radiusCircle, "B", radiusCircle, 0);
-	circleC = std::make_unique<CircleShape>(radiusCircle, "C", -radiusCircle, 0);
-	circleD = std::make_unique<CircleShape>(radiusCircle, "D", 0, radiusCircle);
-	circleE = std::make_unique<CircleShape>(radiusCircle, "E", 0, -radiusCircle);
+void ofApp::setupTemplateSystem() {
+  // Get template registry instance
+  TemplateRegistry &registry = TemplateRegistry::getInstance();
+
+  // Register semua available templates
+  registry.registerTemplate(std::make_unique<BasicZelligeTemplate>());
+
+  // Nanti kalau ada template lain, tambahkan di sini:
+  // registry.registerTemplate(std::make_unique<FlowerOfLifeTemplate>());
+  // registry.registerTemplate(std::make_unique<StarTemplate>());
 }
 
 //--------------------------------------------------------------
-void ofApp::setupCartesianAxes(){
-	//Cartesian
-	cartesianAxes = std::make_unique<CartesianAxes>(radiusCircle);
+void ofApp::switchTemplate(const std::string &templateName) {
+  // Get template dari registry
+  TemplateRegistry &registry = TemplateRegistry::getInstance();
+  SacredGeometryTemplate* oldTemplate = currentTemplate;
+  currentTemplate = registry.getTemplate(templateName);
+
+  // Null check - template tidak ditemukan
+  if (!currentTemplate) {
+    // Template tidak ditemukan, jangan lanjut
+    return;
+  }
+
+  // Keep previous radius setting if available
+  if (oldTemplate) {
+      currentTemplate->radius = oldTemplate->radius;  // Copy radius dari template lama
+  }
+
+  // Setup shapes SAH radius di-set (REQUIRED!)
+  currentTemplate->setupShapes();
+
+  // Reset dots cache agar di-rebuild
+  dotsCacheDirty = true;
 }
 
 //--------------------------------------------------------------
-void ofApp::setupCrossLines(){
-	//CrossLine
-	crossLineF = std::make_unique<CrossLine>(vec2(0, 0), vec2(-radiusCircle, -radiusCircle), "F","J", radiusCircle);
-	crossLineG = std::make_unique<CrossLine>(vec2(0, 0), vec2(radiusCircle, -radiusCircle), "G","K", radiusCircle);
-	crossLineH = std::make_unique<CrossLine>(vec2(0, 0), vec2(-radiusCircle, radiusCircle), "H","L", radiusCircle);
-	crossLineI = std::make_unique<CrossLine>(vec2(0, 0), vec2(radiusCircle, radiusCircle), "I","M", radiusCircle);
+void ofApp::update() {
+  // STRATEGY PATTERN: Delegate update ke method yang sesuai berdasarkan state
+  switch (currentState) {
+    case UpdateState::NORMAL:
+      updateNormal();
+      break;
+
+    case UpdateState::SEQUENTIAL_DRAWING:
+      updateSequentialDrawing();
+      break;
+
+    case UpdateState::DELAYED_LOAD:
+      updateDelayedLoad();
+      break;
+
+    case UpdateState::STAGGERED_LOAD:
+      updateStaggeredLoad();
+      break;
+  }
+}
+
+void ofApp::updateNormal() {
+  // Template sequential drawing
+  if (currentTemplate && currentTemplate->sequentialMode) {
+    float deltaTime = ofGetLastFrameTime();
+    bool complete = currentTemplate->updateSequentialDrawing(deltaTime);
+    if (complete) {
+      dotsCacheDirty = true;
+    }
+  } else {
+    // Hanya update semua template shapes jika TIDAK sequential mode
+    updateTemplateShapes();
+  }
+
+  // Rebuild dots cache
+  dotsCacheDirty = true;
+
+  // Handle scaling
+  updateScaling();
+
+  // Update custom lines & polygons
+  updateCustomLines();
+  updatePolygons();
+
+  // Update user-created dots
+  for (auto& dot : userDots) {
+    if (dot) {
+      dot->update();
+    }
+  }
 }
 
 //--------------------------------------------------------------
-void ofApp::setupParallelograms(){
-	//Parallelogram dengan Polar Thinking
-	// Intersection point dihitung menggunakan trigonometri: x = cos(angle) * distance, y = sin(angle) * distance
-
-	// C→E memotong F: Northwest (-120, -120)
-	// Polar: angle = -3*PI/4 (-135°), distance = r*√2/2
-	// Contoh: radiusCircle = 240, maka distance = 240 * √2 / 2 = 169.68
-	// x = cos(-135°) × 169.68 = -0.707 × 169.68 = -120
-	// y = sin(-135°) × 169.68 = -0.707 × 169.68 = -120
-	float angleC_E_F = -3 * PI / 4;  // -135 derajat (Northwest)
-	float distC_E_F = radiusCircle * sqrt(2) / 2;
-	vec2 intersecC_E_F = vec2(cos(angleC_E_F) * distC_E_F, sin(angleC_E_F) * distC_E_F);
-	parallelogramCtoE = std::make_unique<ParallelogramLine>(vec2(-radiusCircle, 0), vec2(0, -radiusCircle), intersecC_E_F, "N");
-
-	// E→B memotong G: Northeast (120, -120)
-	// Polar: angle = -PI/4 (-45°), distance = r*√2/2
-	// Contoh: radiusCircle = 240, maka distance = 240 * √2 / 2 = 169.68
-	// x = cos(-45°) × 169.68 = 0.707 × 169.68 = 120
-	// y = sin(-45°) × 169.68 = -0.707 × 169.68 = -120
-	float angleE_B_G = -PI / 4;  // -45 derajat (Northeast)
-	float distE_B_G = radiusCircle * sqrt(2) / 2;
-	vec2 intersecE_B_G = vec2(cos(angleE_B_G) * distE_B_G, sin(angleE_B_G) * distE_B_G);
-	parallelogramEtoB = std::make_unique<ParallelogramLine>(vec2(0, -radiusCircle), vec2(radiusCircle, 0), intersecE_B_G, "O");
-
-	// B→D memotong I: Southeast (120, 120)
-	// Polar: angle = PI/4 (45°), distance = r*√2/2
-	// Contoh: radiusCircle = 240, maka distance = 240 * √2 / 2 = 169.68
-	// x = cos(45°) × 169.68 = 0.707 × 169.68 = 120
-	// y = sin(45°) × 169.68 = 0.707 × 169.68 = 120
-	float angleB_D_I = PI / 4;  // 45 derajat (Southeast)
-	float distB_D_I = radiusCircle * sqrt(2) / 2;
-	vec2 intersecB_D_I = vec2(cos(angleB_D_I) * distB_D_I, sin(angleB_D_I) * distB_D_I);
-	parallelogramBtoD = std::make_unique<ParallelogramLine>(vec2(radiusCircle, 0), vec2(0, radiusCircle), intersecB_D_I, "P");
-
-	// D→C memotong H: Southwest (-120, 120)
-	// Polar: angle = 3*PI/4 (135°), distance = r*√2/2
-	// Contoh: radiusCircle = 240, maka distance = 240 * √2 / 2 = 169.68
-	// x = cos(135°) × 169.68 = -0.707 × 169.68 = -120
-	// y = sin(135°) × 169.68 = 0.707 × 169.68 = 120
-	float angleD_C_H = 3 * PI / 4;  // 135 derajat (Southwest)
-	float distD_C_H = radiusCircle * sqrt(2) / 2;
-	vec2 intersecD_C_H = vec2(cos(angleD_C_H) * distD_C_H, sin(angleD_C_H) * distD_C_H);
-	parallelogramDtoC = std::make_unique<ParallelogramLine>(vec2(0, radiusCircle), vec2(-radiusCircle, 0), intersecD_C_H, "Q");
+void ofApp::updateSequentialDrawing() {
+  // Template fully autonomous - template handles sequential drawing
+  if (currentTemplate && currentTemplate->sequentialMode) {
+    float deltaTime = ofGetLastFrameTime();
+    bool complete = currentTemplate->updateSequentialDrawing(deltaTime);
+    if (complete) {
+      dotsCacheDirty = true;
+      currentState = UpdateState::NORMAL;  // Kembali ke normal setelah selesai
+    }
+  }
 }
 
 //--------------------------------------------------------------
-void ofApp::setupRectangleLine(){
-	//RectangleLine dari F ke G dengan intersection points
-	// F = dot pertama CrossLine F: cos(-135°) * radius
-	// G = dot pertama CrossLine G: cos(-45°) * radius
+void ofApp::updateDelayedLoad() {
+  // Check play button delay timer
+  if (!isWaitingForLoad) {
+    currentState = UpdateState::NORMAL;
+    return;
+  }
 
-	// Hitung posisi F dan G dengan polar (SCALABLE!)
-	float angleF = -3 * PI / 4;  // -135°
-	vec2 posF = vec2(cos(angleF) * radiusCircle, sin(angleF) * radiusCircle);
+  // Accumulate deltaTime untuk smooth delay
+  float deltaTime = ofGetLastFrameTime();
+  loadDelayAccumulator += deltaTime;
 
-	float angleG = -PI / 4;  // -45°
-	vec2 posG = vec2(cos(angleG) * radiusCircle, sin(angleG) * radiusCircle);
+  if (loadDelayAccumulator >= loadDelayDuration) {
+    // Timer selesai, panggil load method
+    if (pendingLoadMode == 0) {
+      loadWorkspace();
+    } else if (pendingLoadMode == 1) {
+      loadWorkspaceSeq();
+    }
 
-	// Hitung intersection F→G ∩ C→E (Dot R) dengan polar thinking
-	// Garis C→E memotong F→G di y = posF.y
-	// Dari geometri: x = -radiusCircle * (1 - √2/2)
-	vec2 intersecR = vec2(-radiusCircle * (1 - sqrt(2) / 2), posF.y);
-
-	// Hitung intersection F→G ∩ B→E (Dot S) dengan polar thinking
-	// Garis B→E memotong F→G di y = posF.y
-	// Dari geometri: x = radiusCircle * (√2/2)
-	vec2 intersecS = vec2(radiusCircle * (1-sqrt(2) / 2), posF.y);
-
-	rectangleLineFtoG = std::make_unique<RectangleLine>(
-		posF,        // Start: F
-		posG,        // End:   G
-		intersecR,   // Intersec1: F→G ∩ C→E (SCALABLE!)
-		intersecS,   // Intersec2: F→G ∩ B→E (SCALABLE!)
-		"R",         // Label1
-		"S"          // Label2
-	);
-
-	float angleI= PI / 4; //45°
-	vec2 posI = vec2(cos(angleI) * radiusCircle, sin(angleI) * radiusCircle);
-
-	// Hitung intersection G→I ∩ B→E (Dot T) dengan polar thinking
-	// Garis B→E: y = x - r, G→I vertical di x = r*√2/2
-	// Jadi: y = r*√2/2 - r = r(√2/2 - 1)
-	vec2 intersecT = vec2(radiusCircle * sqrt(2) / 2, radiusCircle * (sqrt(2) / 2 - 1));
-
-	// Hitung intersection G→I ∩ B→D (Dot U) dengan polar thinking
-	// Garis B→D: y = -x + r, G→I vertical di x = r*√2/2
-	// Jadi: y = -r*√2/2 + r = r(1 - √2/2)
-	vec2 intersecU = vec2(radiusCircle * sqrt(2) / 2, radiusCircle * (1 - sqrt(2) / 2));
-
-	rectangleLineGtoI = std::make_unique<RectangleLine>(
-		posG,        // Start: G
-		posI,        // End:   I
-		intersecT,   // Intersec1: G→I ∩ B→E (SCALABLE!)
-		intersecU,   // Intersec2: G→I ∩ B→D (SCALABLE!)
-		"T",         // Label1
-		"U"          // Label2
-	);
-
-	float angleH = 3 * PI / 4; //135°
-	vec2 posH = vec2(cos(angleH) * radiusCircle, sin(angleH) * radiusCircle);
-	vec2 intersecV = vec2(radiusCircle * (1 - sqrt(2) / 2), posH.y);
-	vec2 intersecW = vec2(-radiusCircle * (1 - sqrt(2) / 2), posH.y);
-	rectangleLineItoH = std::make_unique<RectangleLine>(
-		posI,        // Start: I
-		posH,        // End:   H
-		intersecV,   // Intersec1: I→H ∩ B→D (SCALABLE!)
-		intersecW,   // Intersec2: I→H ∩ D→C (SCALABLE!)
-		"V",         // Label1
-		"W"          // Label2
-	);
-
-	vec2 intersecX = vec2(-radiusCircle * sqrt(2) / 2, radiusCircle * (1 - sqrt(2) / 2));
-	vec2 intersecY = vec2(-radiusCircle * sqrt(2) / 2, radiusCircle * (sqrt(2) / 2 - 1));
-
-	rectangleLineHtoF = std::make_unique<RectangleLine>(
-		posH,        // Start: H
-		posF,        // End:   F
-		intersecX,   // Intersec1: H→F ∩ D→C (SCALABLE!)
-		intersecY,   // Intersec2: H→F ∩ C→E (SCALABLE!)
-		"X",         // Label1
-		"Y"          // Label2
-	);
+    // Reset flag dan accumulator
+    isWaitingForLoad = false;
+    pendingLoadMode = -1;
+    loadDelayAccumulator = 0.0f;
+    currentState = UpdateState::STAGGERED_LOAD;  // Lanjut ke staggered load
+  }
 }
 
 //--------------------------------------------------------------
-void ofApp::setupOctagramLine(){
-	//OctagramLine: Dua garis dari Circle E → posEnd → posG
-	// Start: Circle E (0, -240)
-	// End: Posisi di -45° dari Circle E dengan distance r = 240 → (170, -410)
-	// NextPoint: Dot G (170, -170)
+void ofApp::updateStaggeredLoad() {
+  switch (loadStage) {
+    case LOAD_TEMPLATE:
+      updateStaggeredTemplate();
+      break;
 
-	// Posisi Circle E
-	vec2 posE = vec2(0, -radiusCircle);
+    case LOAD_CUSTOMLINES:
+      updateStaggeredCustomLines();
+      break;
 
-	// Posisi di -45° dari Circle E dengan distance r = 240
-	float angle0 = -PI / 4;  // -45°
-	vec2 posEnd = vec2(
-		posE.x + cos(angle0) * radiusCircle,
-		posE.y + sin(angle0) * radiusCircle
-	);  // (170, -410)
+    case LOAD_POLYGONS:
+      updateStaggeredPolygons();
+      break;
 
-	// Posisi Dot G (di -45° dari center)
-	vec2 posG = vec2(cos(angle0) * radiusCircle, sin(angle0) * radiusCircle);  // (170, -170)
-
-	// Buat octagramLine0 dengan nextPoint (akan menggambar 2 garis)
-	octagramLine0 = std::make_unique<OctagramLine>(
-		posE,        // Start: Circle E (0, -240)
-		posEnd,      // End: (170, -410)
-		posG,        // NextPoint: Dot G (170, -170)
-		"0"          // Label untuk end point
-	);
-
-	// === OCTAGRAM LINE 2 ===
-	// Garis 1: Dot G → -45° dari Circle B
-	// Garis 2: -45° Circle B → pusat Circle B
-
-	// Posisi Circle B
-	vec2 posB = vec2(radiusCircle, 0);  // (240, 0)
-
-	// Posisi di -45° dari Circle B
-	vec2 posEnd1 = vec2(
-		posB.x + cos(angle0) * radiusCircle,
-		posB.y + sin(angle0) * radiusCircle
-	);  // (410, -170)
-
-	// Buat octagramLine1 dengan nextPoint (akan menggambar 2 garis)
-	octagramLine1 = std::make_unique<OctagramLine>(
-		posG,         // Start: Dot G (170, -170)
-		posEnd1,      // End: (410, -170)
-		posB,         // NextPoint: Pusat Circle B (240, 0)
-		"1"           // Label untuk end point
-	);
-
-	// === OCTAGRAM LINE 2 ===
-	// Garis 1: Circle B → 45° dari Circle B
-	// Garis 2: 45° Circle B → Dot I
-
-	// Posisi di 45° dari Circle B
-	float angle2 = PI / 4;  // 45°
-	vec2 posEnd2 = vec2(
-		posB.x + cos(angle2) * radiusCircle,
-		posB.y + sin(angle2) * radiusCircle
-	);  // (410, 170)
-
-	// Posisi Dot I (45° dari center)
-	vec2 posI = vec2(cos(angle2) * radiusCircle, sin(angle2) * radiusCircle);  // (170, 170)
-
-	// Buat octagramLine2 dengan nextPoint (akan menggambar 2 garis)
-	octagramLine2 = std::make_unique<OctagramLine>(
-		posB,         // Start: Circle B (240, 0)
-		posEnd2,      // End: (410, 170)
-		posI,         // NextPoint: Dot I (170, 170)
-		"2"           // Label untuk end point
-	);
-
-
-	// Posisi Circle D
-	vec2 posD = vec2(0, radiusCircle);  // (0, 240)
-
-	// Posisi di +45° dari Dot I
-	float angle3 = angle2;  // 45°
-	vec2 posEnd3 = vec2(
-		posD.x + cos(angle3) * radiusCircle,
-		posD.y + sin(angle3) * radiusCircle
-	);
-
-	// Buat octagramLine3 dengan nextPoint (akan menggambar 2 garis)
-	octagramLine3 = std::make_unique<OctagramLine>(
-		posI,         // Start Dot I
-		posEnd3,      // End
-		posD,         // NextPoint: Circle D (0, 240)
-		"3"           // Label untuk end point
-	);
-
-	float angle4 = 3 * angle2;  // 135°
-	vec2 posEnd4 = vec2(
-		posD.x + cos(angle4) * radiusCircle,
-		posD.y + sin(angle4) * radiusCircle
-	); 
-	vec2 posH = vec2(cos(angle4) * radiusCircle, sin(angle4) * radiusCircle);
-	octagramLine4 = std::make_unique<OctagramLine>(
-		posD,         // Start: Dot D
-		posEnd4,
-		posH,
-		"4"           
-	);
-
-	vec2 posC = vec2(-radiusCircle, 0);
-	float angle5 = angle4;  // 135°
-	vec2 posEnd5 = vec2(
-		posC.x + cos(angle5) * radiusCircle,
-		posC.y + sin(angle5) * radiusCircle
-	);
-	octagramLine5 = std::make_unique<OctagramLine>(
-		posH,         // Start: posH crossLine H
-		posEnd5,
-		posC,
-		"5"
-	);
-
-
-	float angle6 = -angle5;  // -135°
-	vec2 posEnd6 = vec2(
-		posC.x + cos(angle6) * radiusCircle,
-		posC.y + sin(angle6) * radiusCircle
-	);
-	vec2 posF = vec2(cos(angle6) * radiusCircle, sin(angle6) * radiusCircle);
-	octagramLine6 = std::make_unique<OctagramLine>(
-		posC,         // Start: circle C
-		posEnd6,
-		posF,
-		"6"
-	);
-
-	float angle7 = angle6;  // -135°
-	vec2 posEnd7 = vec2(
-		posE.x + cos(angle7) * radiusCircle,
-		posE.y + sin(angle7) * radiusCircle
-	);
-	octagramLine7 = std::make_unique<OctagramLine>(
-		posF,         // Start: posF crossline F
-		posEnd7,
-		posE,
-		"7"
-	);
+    case LOAD_DONE:
+      // Selesai, kembali ke normal
+      isStaggeredLoad = false;
+      isSequentialShapeLoad = false;
+      currentState = UpdateState::NORMAL;
+      break;
+  }
 }
 
 //--------------------------------------------------------------
-void ofApp::update(){
-	//Circle Update
-	circleA->update();
-	circleB->update();
-	circleC->update();
-	circleD->update();
-	circleE->update();
-	//Cartesian update
-	cartesianAxes->update();
-	//CrossLine update
-	crossLineF->update();
-	crossLineG->update();
-	crossLineH->update();
-	crossLineI->update();
-	//Parallelogram update
-	parallelogramCtoE->update();
-	parallelogramEtoB->update();
-	parallelogramBtoD->update();
-	parallelogramDtoC->update();
-	//RectangleLine update
-	rectangleLineFtoG->update();
-	rectangleLineGtoI->update();
-	rectangleLineItoH->update();
-	rectangleLineHtoF->update();
-	//OctagramLine update
-	octagramLine0->update();
-	octagramLine1->update();
-	octagramLine2->update();
-	octagramLine3->update();
-	octagramLine4->update();
-	octagramLine5->update();
-	octagramLine6->update();
-	octagramLine7->update();
+void ofApp::updateStaggeredTemplate() {
+  if (!currentTemplate) {
+    loadStage = LOAD_CUSTOMLINES;
+    return;
+  }
 
+  if (isSequentialShapeLoad) {
+    // SEQUENTIAL MODE: Update satu per satu
+    const auto& shapes = currentTemplate->getShapes();
+    if (currentTemplateIndex < shapes.size()) {
+      shapes[currentTemplateIndex]->update();
 
-	// Update sequential drawing logic
-	if (sequentialMode) {
-		updateSequentialDrawing();
-	}
+      if (shapes[currentTemplateIndex]->isComplete()) {
+        currentTemplateIndex++;
+      }
+    } else {
+      loadStage = LOAD_CUSTOMLINES;
+      currentTemplateIndex = 0;
+    }
+  } else {
+    // PARALLEL MODE: Update semua bareng
+    currentTemplate->update();
 
-	// Update sequential load logic dari FileManager
-	fileManager.updateSequentialLoad(customLines);
+    // Cek apakah semua complete
+    bool allComplete = true;
+    const auto& shapes = currentTemplate->getShapes();
+    for (auto& shape : shapes) {
+      if (!shape->isComplete()) {
+        allComplete = false;
+        break;
+      }
+    }
+
+    if (allComplete) {
+      loadStage = LOAD_CUSTOMLINES;
+      fileManager.setLoadParallelMode(true);
+    }
+  }
 }
 
 //--------------------------------------------------------------
-void ofApp::draw(){
-	ofSetColor(255, 25);
-	ofFill();
-	ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
-	ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
-	//Draw circle
-	circleA->draw();
-	circleB->draw();
-	circleC->draw();
-	circleD->draw();
-	circleE->draw();
-	//Draw Cartesian
-	cartesianAxes->draw();
-	//Draw CrossLine
-	crossLineF->draw();
-	crossLineG->draw();
-	crossLineH->draw();
-	crossLineI->draw();
-	//Draw paralellogram
-	parallelogramCtoE->draw();
-	parallelogramEtoB->draw();
-	parallelogramBtoD->draw();
-	parallelogramDtoC->draw();
-	//Draw RectangleLine
-	rectangleLineFtoG->draw();
-	rectangleLineGtoI->draw();
-	rectangleLineItoH->draw();
-	rectangleLineHtoF->draw();
-	//Draw OctagramLine
-	octagramLine0->draw();
-	octagramLine1->draw();
-	octagramLine2->draw();
-	octagramLine3->draw();
-	octagramLine4->draw();
-	octagramLine5->draw();
-	octagramLine6->draw();
-	octagramLine7->draw();
+void ofApp::updateStaggeredCustomLines() {
+  // Sequential load: updateSequentialLoad akan menambah customLines bertahap
+  size_t previousSize = customLines.size();
+  fileManager.updateSequentialLoad(customLines, polygonShapes);
 
-	// Draw custom lines dan UI elements
-	drawCustomLinesAndUI();
+  // Sync ColorPicker saat customLines pertama kali muncul (sequential load)
+  if (previousSize == 0 && !customLines.empty()) {
+    syncColorPickerFromLoadedLines();
+  }
+
+  // Update progress semua customLines yang sudah ada
+  float deltaTime = ofGetLastFrameTime();
+  for (auto& line : customLines) {
+    line.updateProgress(deltaTime);
+  }
+
+  // Cek apakah semua customLines sudah complete DAN semua sudah di-load
+  bool allComplete = true;
+  bool allLoaded = (fileManager.getCurrentLoadIndex() >= fileManager.getTotalLoadedLines());
+
+  for (const auto& line : customLines) {
+    if (line.getProgress() < 1.0f) {
+      allComplete = false;
+      break;
+    }
+  }
+
+  // Pindah ke stage POLYGONS jika semua complete DAN semua sudah di-load
+  if (allComplete && allLoaded) {
+    loadStage = LOAD_POLYGONS;
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::updateStaggeredPolygons() {
+  // Sequential load: updateSequentialLoad akan menambah polygons bertahap
+  size_t previousSize = polygonShapes.size();
+  fileManager.updateSequentialLoad(customLines, polygonShapes);
+
+  // Sync ColorPicker saat polygons pertama kali muncul (sequential load)
+  if (previousSize == 0 && !polygonShapes.empty()) {
+    syncColorPickerFromLoadedPolygons();
+  }
+
+  // Update animation semua polygons yang sudah ada
+  float deltaTime = ofGetLastFrameTime();
+  for (auto& polygon : polygonShapes) {
+    polygon.update(deltaTime);
+  }
+
+  // Cek apakah semua polygons sudah complete DAN sequential load sudah selesai
+  bool allComplete = true;
+  bool allLoaded = !fileManager.isLoadSequentialMode();
+
+  for (const auto& polygon : polygonShapes) {
+    if (!polygon.isAnimationComplete()) {
+      allComplete = false;
+      break;
+    }
+  }
+
+  // Selesai staggered load jika semua complete DAN semua sudah di-load
+  if (allComplete && allLoaded) {
+    loadStage = LOAD_DONE;
+    fileManager.cancelSequentialLoad();
+  }
+}
+
+//--------------------------------------------------------------
+// NORMAL UPDATE HELPERS
+//--------------------------------------------------------------
+
+void ofApp::updateTemplateShapes() {
+  if (currentTemplate) {
+    float deltaTime = ofGetLastFrameTime();
+    currentTemplate->update(deltaTime);
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::updateScaling() {
+  if (!currentTemplate || currentTemplate->radius == previousRadius) {
+    return;
+  }
+
+  // Update radius di setiap shape individual
+  const auto& shapes = currentTemplate->getShapes();
+  for (auto& shape : shapes) {
+    shape->setRadius(currentTemplate->radius);
+  }
+
+  // Scale customLines & polygons
+  scaleCustomLinesAndPolygons(previousRadius, currentTemplate->radius);
+  previousRadius = currentTemplate->radius;
+}
+
+//--------------------------------------------------------------
+void ofApp::updateCustomLines() {
+  fileManager.updateSequentialLoad(customLines, polygonShapes);
+  float deltaTime = ofGetLastFrameTime();
+  for (auto& line : customLines) {
+    line.updateProgress(deltaTime);
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::updatePolygons() {
+  float deltaTime = ofGetLastFrameTime();
+  if (fileManager.isLoadParallelMode()) {
+    for (auto& polygon : polygonShapes) {
+      polygon.update(deltaTime);
+    }
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::draw() {
+  // Trail effect untuk geometry
+  ofSetColor(255, 25);
+  ofFill();
+  ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
+
+  // Push matrix untuk geometry drawing (centered)
+  ofPushMatrix();
+
+  // Apply canvas transform dalam urutan yang benar:
+  // 1. Translate ke center screen
+  ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+
+  // 2. Apply rotation (dari center)
+  ofRotateDeg(canvasRotation);
+
+  // 3. Apply zoom/scale (dari center)
+  ofScale(canvasZoom, canvasZoom);
+
+  // 4. Apply pan/translation (geser posisi canvas)
+  ofTranslate(canvasTranslation.x, canvasTranslation.y);
+
+  // Draw template - template handle drawing sendiri!
+  if (currentTemplate) {
+    currentTemplate->draw();
+  }
+
+  
+  drawUserDots();
+
+  // Draw custom lines dan UI elements
+  drawCustomLinesAndUI();
+
+  // Reset transform
+  ofPopMatrix();
+
+  //ImGUI (always render if context menu, popups, or visible)
+  if (imguiVisible || contextMenu->isVisible() || successPopup->isVisible() || errorPopup->isVisible() || confirmationPopup->isVisible()) {
+    drawImGui();
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::drawCustomLinesAndUI() {
-	// Update selection state dan draw semua custom lines
-	for (int i = 0; i < customLines.size(); i++) {
-		customLines[i].setSelected(i == selectedLineIndex);
-		customLines[i].draw();
-	}
+  // Update selection state untuk semua lines
+  for (int i = 0; i < customLines.size(); i++) {
+    bool isSelected = selectionManager.isLineSelected(i);
+    customLines[i].setSelected(isSelected);
+    customLines[i].draw();
+  }
 
-	// Draw curve value label untuk garis yang selected
-	if (selectedLineIndex >= 0 && selectedLineIndex < customLines.size()) {
-		const CustomLine& line = customLines[selectedLineIndex];
-		if (line.getPoints().size() >= 2) {
-			vec2 midPoint = (line.getPoints()[0] + line.getPoints()[1]) / 2.0f;
+  // Draw invisible polygons
+  // TAPI jangan draw kalau sedang staggered load dan belum di stage POLYGONS
+  bool shouldDrawPolygons = true;
+  if (isStaggeredLoad && loadStage != LOAD_POLYGONS && loadStage != LOAD_DONE) {
+    shouldDrawPolygons = false;  // Jangan draw polygons
+  }
 
-			ofPushStyle();
-			ofSetColor(0, 0, 0);  // Hitam untuk label
-			fontNormal.drawString("Curve: " + ofToString(line.getCurve(), 1), midPoint.x + 10, midPoint.y - 10);
-			ofPopStyle();
-		}
-	}
+  if (shouldDrawPolygons) {
+    for (int i = 0; i < polygonShapes.size(); i++) {
+      polygonShapes[i].setSelected(selectionManager.isPolygonSelected(i));
+      polygonShapes[i].draw();
+    }
+  }
 
-	// Draw preview polyline (sedang drag)
-	if (drawState == DRAGGING && currentPolylinePoints.size() > 1) {
-		ofPushStyle();
-		ofSetColor(0, 0, 255, 150);  // Biru transparan
-		ofSetLineWidth(mouseLineWidth);  // Pakai mouseLineWidth untuk preview
 
-		// Gambar preview polyline
-		ofPolyline previewPolyline;
-		for (auto& point : currentPolylinePoints) {
-			previewPolyline.addVertex(point.x, point.y);
-		}
-		previewPolyline.draw();
+  // Draw preview polyline (sedang drag)
+  if (drawState == DRAGGING && currentPolylinePoints.size() > 1) {
+    ofPushStyle();
+    ofSetColor(colorManager->getCustomLineColor());
+    ofSetLineWidth(mouseLineWidth); // Pakai mouseLineWidth untuk preview
 
-		ofPopStyle();
-	}
+    // Gambar preview polyline
+    ofPolyline previewPolyline;
+    for (auto &point : currentPolylinePoints) {
+      previewPolyline.addVertex(point.x, point.y);
+    }
+    previewPolyline.draw();
 
-	// Draw dot highlights (hover state) - HANYA ketika TIDAK sedang drag DAN dots visible
-	if (drawState != DRAGGING && dotsVisible) {
-		vector<DotInfo> dots = getAllDots();
-		for (auto& dot : dots) {
-			if (isMouseOverDot(mousePos, dot.position)) {
-				// Highlight dot
-				ofPushStyle();
-				ofSetColor(255, 0, 0, 200);  // Red highlight
-				ofDrawCircle(dot.position, threshold);  // Larger circle
-				ofPopStyle();
-			}
-		}
-	}
+    ofPopStyle();
+  }
+
+  // Draw dot highlights (hover state) - HANYA ketika TIDAK sedang drag DAN dots
+  // visible
+  if (drawState != DRAGGING && (!currentTemplate || currentTemplate->dotsVisible)) {
+    vector<DotInfo> dots = getAllDots();
+    for (auto &dot : dots) {
+      if (isMouseOverDot(mousePos, dot.position)) {
+        // Highlight dot
+        ofPushStyle();
+        ofSetColor(255, 0, 0, 200);            // Red highlight
+        ofDrawCircle(dot.position, threshold); // Larger circle
+        ofPopStyle();
+      }
+    }
+  }
 }
 
 //--------------------------------------------------------------
-void ofApp::keyPressed(int key){
-	if (key == OF_KEY_END) ofExit();
-
-	// Sequential drawing dengan SHIFT+1
-	if (key == '!' && ofGetKeyPressed(OF_KEY_SHIFT)) {
-		startSequentialDrawing();
-	}
-
-	// Toggle label visibility dengan ` atau ~
-	if (key == '`' || key == '~') {
-		toggleLabels();
-	}
-
-	// Toggle dot visibility dengan . atau >
-	if (key == '.' || key == '>') {
-		toggleDots();
-	}
-
-	if (key == OF_KEY_DEL) {
-		if (isCtrlPressed) {
-			// CTRL+DEL: Clear semua custom lines - HANYA jika TIDAK sedang load
-			if (!fileManager.isLoadSequentialMode() && !fileManager.isLoadParallelMode()) {
-				FileManager::clearCustomLines(customLines);
-			}
-			return;  // Jangan lanjut ke hideAllShapes()
-		} else {
-			// DEL saja: Hide semua shapes (hanya jika TIDAK sequential drawing)
-			if (!sequentialMode) {
-				hideAllShapes();
-			}
-		}
-	}
-
-	if (key == OF_KEY_BACKSPACE) {
-		// Jika ada customLine yang terselect, hapus customLine tersebut
-		if (selectedLineIndex != -1) {
-			customLines.erase(customLines.begin() + selectedLineIndex);
-			selectedLineIndex = -1;  // Reset selection
-		} else {
-			// Jika tidak ada customLine terselect, toggle CartesianAxes
-			if (cartesianAxes->showing) {
-				cartesianAxes->hide();
-			} else {
-				cartesianAxes->show();
-			}
-		}
-	}
-
-	if (key == ')' && ofGetKeyPressed(OF_KEY_SHIFT)) {
-		// Hanya boleh show semua jika TIDAK sedang sequential drawing
-		if (!sequentialMode) {
-			showAllShapes();
-		}
-	}
-
-	if (key == '-' || key == '_') {
-		decreaseLineWidth();
-	}
-
-	if (key == '+' || key == '=') {
-		increaseLineWidth();
-	}
-
-	// Handle CTRL key ditekan
-	if (key == 3683 || key == OF_KEY_CONTROL) {  // 3683 = CTRL pada Windows
-		isCtrlPressed = true;
-		return;  // Jangan lanjut ke logic lain
-	}
-
-	// Handle tombol saat CTRL aktif - gunakan switch-case
-	if (isCtrlPressed) {
-		switch(key) {
-			case 'z':
-			case 'Z':
-			case 26:  // CTRL+Z (ASCII 26)
-				undoLastLine();
-				break;
-
-			case 's':
-			case 'S':
-			case 19:  // CTRL+S (ASCII 19)
-				fileManager.saveCustomLines(customLines);
-				break;
-
-			case 'o':
-			case 'O':
-			case 15:  // CTRL+O (ASCII 15)
-				// Cek apakah SHIFT juga ditekan
-				if (ofGetKeyPressed(OF_KEY_SHIFT)) {
-					fileManager.loadCustomLinesSequential(customLines);  // Sequential load dengan animasi
-				} else {
-					fileManager.loadCustomLines(customLines);  // Load semua sekaligus
-				}
-				break;
-		}
-	}
+void ofApp::keyPressed(int key) {
+	inputManager->handleKeyPressed(key);
 }
 
 //--------------------------------------------------------------
 // Interactive Line Creation Helpers
 void ofApp::updateDotsCache() {
-	cachedDots.clear();
+  cachedDots.clear();
 
-	// Hanya tambahkan dots jika shape-nya visible (showing == true)
+  // Iterate semua template shapes dan collect dots secara polymorphic
+  // Setiap shape bertanggung jawab untuk menambahkan dots-nya sendiri
+  if (currentTemplate) {
+    const auto& shapes = currentTemplate->getShapes();
+    for (auto &shape : shapes) {
+      if (shape) {
+        shape->addDotsToCache(cachedDots);
+      }
+    }
+  }
 
-	// Circle centers - ambil langsung dari CircleShape objects
-	if (circleA && circleA->showing) {
-		cachedDots.push_back({vec2(circleA->posX, circleA->posY), "Circle"});
-		cachedDots.push_back({vec2(circleB->posX, circleB->posY), "Circle"});
-		cachedDots.push_back({vec2(circleC->posX, circleC->posY), "Circle"});
-		cachedDots.push_back({vec2(circleD->posX, circleD->posY), "Circle"});
-		cachedDots.push_back({vec2(circleE->posX, circleE->posY), "Circle"});
-	}
+  // Tambahkan user-created dots ke cache untuk hover detection
+  for (auto& dot : userDots) {
+    if (dot) {
+      dot->addDotsToCache(cachedDots);
+    }
+  }
 
-	// CrossLine dots - ambil radiusDot yang sudah dihitung di draw() (SCALABLE!)
-	if (crossLineF && crossLineF->showing) {
-		// F, G, H, I pada radius
-		cachedDots.push_back({crossLineF->radiusDot, "CrossLine"});
-		cachedDots.push_back({crossLineG->radiusDot, "CrossLine"});
-		cachedDots.push_back({crossLineH->radiusDot, "CrossLine"});
-		cachedDots.push_back({crossLineI->radiusDot, "CrossLine"});
-
-		// J, K, L, M ends
-		cachedDots.push_back({crossLineF->end, "CrossLine"});
-		cachedDots.push_back({crossLineG->end, "CrossLine"});
-		cachedDots.push_back({crossLineH->end, "CrossLine"});
-		cachedDots.push_back({crossLineI->end, "CrossLine"});
-	}
-
-	// Parallelogram intersections - ambil langsung dari ParallelogramLine objects (SCALABLE!)
-	if (parallelogramCtoE && parallelogramCtoE->showing) {
-		cachedDots.push_back({parallelogramCtoE->intersecCrossLine, "Parallelogram"});
-		cachedDots.push_back({parallelogramEtoB->intersecCrossLine, "Parallelogram"});
-		cachedDots.push_back({parallelogramBtoD->intersecCrossLine, "Parallelogram"});
-		cachedDots.push_back({parallelogramDtoC->intersecCrossLine, "Parallelogram"});
-	}
-
-	// Rectangle intersections - ambil langsung dari RectangleLine objects (SCALABLE!)
-	if (rectangleLineFtoG && rectangleLineFtoG->showing) {
-		cachedDots.push_back({rectangleLineFtoG->intersec1, "Rectangle"});
-		cachedDots.push_back({rectangleLineFtoG->intersec2, "Rectangle"});
-		cachedDots.push_back({rectangleLineGtoI->intersec1, "Rectangle"});
-		cachedDots.push_back({rectangleLineGtoI->intersec2, "Rectangle"});
-		cachedDots.push_back({rectangleLineItoH->intersec1, "Rectangle"});
-		cachedDots.push_back({rectangleLineItoH->intersec2, "Rectangle"});
-		cachedDots.push_back({rectangleLineHtoF->intersec1, "Rectangle"});
-		cachedDots.push_back({rectangleLineHtoF->intersec2, "Rectangle"});
-	}
-
-	// Octagram endpoints - ambil langsung dari OctagramLine objects (SCALABLE!)
-	if (octagramLine0 && octagramLine0->showing) {
-		cachedDots.push_back({octagramLine0->end, "Octagram"});
-		cachedDots.push_back({octagramLine1->end, "Octagram"});
-		cachedDots.push_back({octagramLine2->end, "Octagram"});
-		cachedDots.push_back({octagramLine3->end, "Octagram"});
-		cachedDots.push_back({octagramLine4->end, "Octagram"});
-		cachedDots.push_back({octagramLine5->end, "Octagram"});
-		cachedDots.push_back({octagramLine6->end, "Octagram"});
-		cachedDots.push_back({octagramLine7->end, "Octagram"});
-	}
-
-	dotsCacheDirty = false;
+  dotsCacheDirty = false;
 }
 
 //--------------------------------------------------------------
-const vector<ofApp::DotInfo>& ofApp::getAllDots() {
-	// Lazy update cache kalau dirty
-	if (dotsCacheDirty) {
-		updateDotsCache();
-	}
+const vector<DotInfo> &ofApp::getAllDots() {
+  // Lazy update cache kalau dirty
+  if (dotsCacheDirty) {
+    updateDotsCache();
+  }
 
-	return cachedDots;  // Return reference, tidak copy
+  return cachedDots; // Return reference, tidak copy
 }
 
 //--------------------------------------------------------------
 bool ofApp::isMouseOverDot(vec2 mousePos, vec2 dotPos) {
-	//Euclidean distance
-	//ukuran jarak antara 2 titik
-	float distance = glm::length(mousePos - dotPos);
-	return distance <= this->threshold;
+	// Delegate to GeometryUtils
+	return GeometryUtils::isMouseOverDot(mousePos, dotPos, threshold);
 }
 
 bool ofApp::lineExists(vec2 from, vec2 to) {
-	// Cek apakah ada line dengan titik awal dan akhir yang sama
-	for (auto& line : customLines) {
-		const vector<vec2>& points = line.getPoints();
-		if (points.size() >= 2) {
-			vec2 lineStart = points.front();
-			vec2 lineEnd = points.back();
-
-			if ((glm::length(lineStart - from) < 1.0f && glm::length(lineEnd - to) < 1.0f) ||
-				(glm::length(lineStart - to) < 1.0f && glm::length(lineEnd - from) < 1.0f)) {
-				return true;
-			}
-		}
-	}
-	return false;
+	// Delegate to GeometryUtils
+	return GeometryUtils::lineExists(from, to, customLines);
 }
 
 //--------------------------------------------------------------
-bool ofApp::isMouseOverLine(vec2 mousePos, vec2 lineStart, vec2 lineEnd, float lineWidth) {
-	// Hitung jarak dari titik ke garis (point-to-line distance)
-	// Formula: jarak = |(end - start) × (start - point)| / |end - start|
-	vec2 lineVec = lineEnd - lineStart;
-	vec2 pointVec = mousePos - lineStart;
-	float lineLength = glm::length(lineVec);
-
-	if (lineLength == 0) return false;
-
-	// Project pointVec ke lineVec
-	float projection = glm::dot(pointVec, lineVec) / lineLength;
-	vec2 closestPoint = lineStart + (lineVec / lineLength) * projection;
-
-	// Clamp projection ke line segment (biar tidak extend)
-	if (projection < 0) closestPoint = lineStart;
-	if (projection > 1) closestPoint = lineEnd;
-
-	// Hitung jarak dari mousePos ke closestPoint di garis
-	float distance = glm::length(mousePos - closestPoint);
-
-	// Threshold = setengah line width + sedikit buffer
-	return distance <= (lineWidth / 2.0f) + 2.0f;
+bool ofApp::isMouseOverLine(vec2 mousePos, vec2 lineStart, vec2 lineEnd,
+                            float lineWidth) {
+	// Delegate to GeometryUtils
+	return GeometryUtils::isMouseOverLine(mousePos, lineStart, lineEnd, lineWidth);
 }
 
 //--------------------------------------------------------------
-float ofApp::distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd, float curve) {
-	// Hitung jarak terpendek dari point ke garis/lengkungan
-
-	// Jika curve != 0, hitung jarak ke bezier curve
-	if (curve != 0.0f) {
-		// Hitung control point
-		vec2 midPoint = (lineStart + lineEnd) / 2.0f;
-		vec2 dir = lineEnd - lineStart;
-		vec2 perp = vec2(-dir.y, dir.x);
-		float perpLen = glm::length(perp);
-		if (perpLen > 0) {
-			perp = perp / perpLen;
-		}
-		vec2 controlPoint = midPoint + perp * curve;
-
-		// Sampling bezier curve untuk cari jarak minimum
-		float minDistance = 999999.0f;
-		int samples = 50;
-
-		for (int i = 0; i <= samples; i++) {
-			float t = (float)i / samples;
-			// Quadratic bezier
-			vec2 curvePoint =
-				lineStart * (1 - t) * (1 - t) +
-				controlPoint * 2 * (1 - t) * t +
-				lineEnd * t * t;
-
-			float distance = glm::length(point - curvePoint);
-			if (distance < minDistance) {
-				minDistance = distance;
-			}
-		}
-
-		return minDistance;
-	} else {
-		// Hitung jarak ke garis lurus (original code)
-		vec2 lineVec = lineEnd - lineStart;
-		vec2 pointVec = point - lineStart;
-		float lineLengthSq = glm::dot(lineVec, lineVec);
-
-		if (lineLengthSq == 0) return 0.0f;
-
-		// Project pointVec ke lineVec (hasilnya parameter t dalam [0,1])
-		float projection = glm::dot(pointVec, lineVec) / lineLengthSq;
-
-		// Clamp projection ke line segment (biar tidak extend)
-		projection = ofClamp(projection, 0.0f, 1.0f);
-
-		vec2 closestPoint = lineStart + lineVec * projection;
-
-		// Hitung jarak dari point ke closestPoint
-		return glm::length(point - closestPoint);
-	}
+float ofApp::distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd,
+                            float curve) {
+	// Delegate to GeometryUtils
+	return GeometryUtils::distanceToLine(point, lineStart, lineEnd, curve);
 }
 
 //--------------------------------------------------------------
 int ofApp::getLineIndexAtPosition(vec2 pos) {
-	// Cari garis dengan JARAK TERDEKAT
-	int closestLineIndex = -1;
-	float closestDistance = 999999.0f;
-
-	for (int i = 0; i < customLines.size(); i++) {
-		const CustomLine& line = customLines[i];
-		const vector<vec2>& points = line.getPoints();
-		if (points.size() >= 2) {
-			vec2 start = points[0];
-			vec2 end = points[1];
-
-			// Skip invalid lines (start == end)
-			if (glm::length(start - end) < 1.0f) {
-				continue;
-			}
-
-			// Hitung jarak ke garis ini (dengan curve support)
-			float distance = distanceToLine(pos, start, end, line.getCurve());
-
-			// Update jika lebih dekat
-			if (distance < closestDistance) {
-				closestDistance = distance;
-				closestLineIndex = i;
-			}
-		}
-	}
-
-	// Return line terdekat (jika dalam threshold)
-	if (closestDistance <= (mouseLineWidth / 2.0f) + 2.0f) {
-		return closestLineIndex;
-	}
-
-	return -1;  // Tidak ada yang diklik
+	// Delegate to GeometryUtils
+	return GeometryUtils::getLineIndexAtPosition(pos, customLines, mouseLineWidth);
 }
 
 //--------------------------------------------------------------
-void ofApp::undoLastLine() {
-	// Hapus garis terakhir yang dibuat user
-	if (!customLines.empty()) {
-		customLines.pop_back();
+void ofApp::pushUndoAction(UndoAction action) {
+	// Saat action baru, clear redo stack (redo tidak valid lagi)
+	clearRedoStack();
+
+	// Add ke stack, jika sudah full, hapus yang paling lama
+	if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+		undoStack.erase(undoStack.begin());  // Hapus yang paling lama (front)
 	}
+	undoStack.push_back(action);
+}
+
+//--------------------------------------------------------------
+void ofApp::clearUndoStack() {
+	undoStack.clear();
+}
+
+//--------------------------------------------------------------
+void ofApp::clearRedoStack() {
+	redoStack.clear();
+}
+
+//--------------------------------------------------------------
+void ofApp::undo() {
+	if (undoStack.empty()) {
+		return;  // Tidak ada apa-apa untuk di-undo
+	}
+
+	// Ambil action terakhir
+	UndoAction action = undoStack.back();
+	undoStack.pop_back();
+
+	// Siapkan redo action (perlu modifikasi untuk CHANGE actions)
+	UndoAction redoAction = action;
+
+	// Handle berdasarkan tipe action
+	switch (action.type) {
+		case CREATE_LINE:
+		{
+			// Undo create line = hapus line terakhir
+			if (!customLines.empty()) {
+				// SIMPAN line yang akan dihapus ke redoAction SEBELUM pop_back
+				redoAction.deletedLine = customLines.back();
+				redoAction.deletedLineIndex = static_cast<int>(customLines.size()) - 1;
+
+				customLines.pop_back();
+
+				// Clear selection jika index yang dipilih tidak valid lagi
+				if (selectionManager.hasSelectedLine()) {
+					// Cek apakah ada selected index yang out of bounds
+					bool hasInvalidIndex = false;
+					for (int index : selectionManager.getSelectedLineIndices()) {
+						if (index >= customLines.size()) {
+							hasInvalidIndex = true;
+							break;
+						}
+					}
+					if (hasInvalidIndex) {
+						selectionManager.clearLineSelection();
+					}
+				}
+			}
+			// Push ke redo stack
+			redoStack.push_back(redoAction);
+			break;
+		}
+
+		case CREATE_POLYGON:
+		{
+			// Undo create polygon = hapus polygon terakhir
+			if (!polygonShapes.empty()) {
+				// SIMPAN polygon yang akan dihapus ke redoAction SEBELUM pop_back
+				redoAction.deletedPolygon = polygonShapes.back();
+				redoAction.deletedPolygonIndex = static_cast<int>(polygonShapes.size()) - 1;
+
+				polygonShapes.pop_back();
+				selectionManager.clearPolygonSelection();
+			}
+			// Push ke redo stack
+			redoStack.push_back(redoAction);
+			break;
+		}
+
+		case CREATE_DOT:
+		{
+			// Undo create dot = hapus dot terakhir
+			if (!userDots.empty()) {
+				// SIMPAN position dan radius dot yang akan dihapus ke redoAction SEBELUM pop_back
+				redoAction.deletedDotPos = userDots.back()->getPosition();
+				redoAction.deletedDotRadius = userDots.back()->getRadius();
+
+				// Hapus dot terakhir
+				userDots.pop_back();
+			}
+			// Push ke redo stack
+			redoStack.push_back(redoAction);
+			break;
+		}
+
+		case CHANGE_COLOR_LINE:
+		{
+			// Capture current colors dulu (sebelum restore) untuk redo
+			std::vector<ofColor> currentColors;
+			for (size_t i = 0; i < action.colorIndices.size(); i++) {
+				int idx = static_cast<int>(action.colorIndices[i]);
+				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+					currentColors.push_back(customLines[idx].getColor());
+				}
+			}
+
+			// Restore old colors
+			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
+				int idx = static_cast<int>(action.colorIndices[i]);
+				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+					customLines[idx].setColor(action.oldColors[i]);
+				}
+			}
+
+			// Setup redo action: redo akan apply new color (current colors)
+			redoAction.oldColors = currentColors;
+			redoStack.push_back(redoAction);
+			break;
+		}
+
+		case CHANGE_COLOR_POLYGON:
+		{
+			// Capture current color dulu (sebelum restore) untuk redo
+			ofColor currentColor;
+			if (!action.colorIndices.empty() && action.colorIndices[0] >= 0 && action.colorIndices[0] < static_cast<int>(polygonShapes.size())) {
+				currentColor = polygonShapes[action.colorIndices[0]].getColor();
+			}
+
+			// Restore old color
+			if (!action.colorIndices.empty() && !action.oldColors.empty()) {
+				int idx = action.colorIndices[0];
+				if (idx >= 0 && idx < static_cast<int>(polygonShapes.size())) {
+					polygonShapes[idx].setColor(action.oldColors[0]);
+				}
+			}
+
+			// Setup redo action: redo akan apply new color (current color)
+			if (!redoAction.oldColors.empty()) {
+				redoAction.oldColors[0] = currentColor;
+			}
+			redoStack.push_back(redoAction);
+			break;
+		}
+
+		case CHANGE_COLOR_DOT:
+		{
+			// Capture current colors dulu (sebelum restore) untuk redo
+			std::vector<ofColor> currentColors;
+			for (size_t i = 0; i < action.colorIndices.size(); i++) {
+				int idx = static_cast<int>(action.colorIndices[i]);
+				if (idx >= 0 && idx < static_cast<int>(userDots.size()) && userDots[idx]) {
+					currentColors.push_back(userDots[idx]->getColor());
+				}
+			}
+
+			// Restore old colors
+			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
+				int idx = static_cast<int>(action.colorIndices[i]);
+				if (idx >= 0 && idx < static_cast<int>(userDots.size()) && userDots[idx]) {
+					userDots[idx]->setColor(action.oldColors[i]);
+				}
+			}
+
+			// Setup redo action: redo akan apply new color (current colors)
+			redoAction.oldColors = currentColors;
+			redoStack.push_back(redoAction);
+			break;
+		}
+
+		case DELETE_LINE:
+			// Restore line yang dihapus
+			if (action.deletedLineIndex >= 0 && action.deletedLineIndex <= static_cast<int>(customLines.size())) {
+				customLines.insert(customLines.begin() + action.deletedLineIndex, action.deletedLine);
+			}
+			// Push ke redo stack
+			redoStack.push_back(redoAction);
+			break;
+
+		case DELETE_POLYGON:
+			// Restore polygon yang dihapus
+			if (action.deletedPolygonIndex >= 0 && action.deletedPolygonIndex <= static_cast<int>(polygonShapes.size())) {
+				polygonShapes.insert(polygonShapes.begin() + action.deletedPolygonIndex, action.deletedPolygon);
+			}
+			// Push ke redo stack
+			redoStack.push_back(redoAction);
+			break;
+
+		case DELETE_DOT:
+		{
+			// Restore userDot yang dihapus
+			if (action.deletedDotIndex >= 0 && action.deletedDotIndex <= static_cast<int>(userDots.size())) {
+				auto dotShape = std::make_unique<DotShape>(action.deletedDotPos, "Dot", action.deletedDotRadius);
+				dotShape->progress = 1.0f;
+				dotShape->setLowerBound(action.deletedDotLowerBound);
+				userDots.insert(userDots.begin() + action.deletedDotIndex, std::move(dotShape));
+			}
+			// Push ke redo stack
+			redoStack.push_back(redoAction);
+			break;
+		}
+
+		case CHANGE_CURVE:
+		{
+			// Capture current curves dulu (sebelum restore) untuk redo
+			std::vector<float> currentCurves;
+			for (size_t i = 0; i < action.curveLineIndices.size(); i++) {
+				int idx = static_cast<int>(action.curveLineIndices[i]);
+				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+					currentCurves.push_back(customLines[idx].getCurve());
+				}
+			}
+
+			// Restore old curves
+			for (size_t i = 0; i < action.curveLineIndices.size() && i < action.oldCurves.size(); i++) {
+				int idx = static_cast<int>(action.curveLineIndices[i]);
+				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+					customLines[idx].setCurve(action.oldCurves[i]);
+				}
+			}
+
+			// Setup redo action: redo akan apply new curve (current curves)
+			redoAction.oldCurves = currentCurves;
+			redoStack.push_back(redoAction);
+			break;
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::redo() {
+	if (redoStack.empty()) {
+		return;  // Tidak ada apa-apa untuk di-redo
+	}
+
+	// Ambil redo action terakhir
+	UndoAction action = redoStack.back();
+	redoStack.pop_back();
+
+	// Handle berdasarkan tipe action
+	switch (action.type) {
+		case CREATE_LINE:
+			// Redo create line = create line lagi
+			customLines.push_back(action.deletedLine);
+			// Push langsung ke undo stack (TANPA clearRedoStack)
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(action);
+			break;
+
+		case CREATE_POLYGON:
+			// Redo create polygon = create polygon lagi
+			polygonShapes.push_back(action.deletedPolygon);
+			// Push langsung ke undo stack
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(action);
+			break;
+
+		case CREATE_DOT:
+			// Redo create dot = buat dot baru dari position dan radius yang tersimpan
+			{
+				auto dotShape = std::make_unique<DotShape>(action.deletedDotPos, "Dot", action.deletedDotRadius);
+				dotShape->progress = 1.0f;
+				userDots.push_back(std::move(dotShape));
+			}
+			// Push langsung ke undo stack
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(action);
+			break;
+
+		case CHANGE_COLOR_LINE:
+		{
+			// Capture current colors dulu untuk membuat undo action baru
+			UndoAction newUndoAction;
+			newUndoAction.type = CHANGE_COLOR_LINE;
+			newUndoAction.colorIndices = action.colorIndices;
+			newUndoAction.newColor = action.newColor;
+
+			// Apply redo colors (apply newColor) dan simpan current colors
+			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
+				int idx = action.colorIndices[i];
+				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+					newUndoAction.oldColors.push_back(customLines[idx].getColor());
+					customLines[idx].setColor(action.newColor);  // Apply NEW color (redo)
+				}
+			}
+			// Push langsung ke undo stack
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(newUndoAction);
+			break;
+		}
+
+		case CHANGE_COLOR_POLYGON:
+		{
+			// Capture current color
+			UndoAction newUndoActionPoly;
+			newUndoActionPoly.type = CHANGE_COLOR_POLYGON;
+			newUndoActionPoly.newColor = action.newColor;
+
+			if (!action.colorIndices.empty()) {
+				int idx = action.colorIndices[0];
+				if (idx >= 0 && idx < static_cast<int>(polygonShapes.size())) {
+					newUndoActionPoly.colorIndices = action.colorIndices;
+					newUndoActionPoly.oldColors.push_back(polygonShapes[idx].getColor());
+					polygonShapes[idx].setColor(action.newColor);  // Apply NEW color (redo)
+				}
+			}
+			// Push langsung ke undo stack
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(newUndoActionPoly);
+			break;
+		}
+
+		case CHANGE_COLOR_DOT:
+		{
+			// Capture current colors dulu untuk membuat undo action baru
+			UndoAction newUndoAction;
+			newUndoAction.type = CHANGE_COLOR_DOT;
+			newUndoAction.colorIndices = action.colorIndices;
+			newUndoAction.newColor = action.newColor;
+
+			// Apply redo colors (apply newColor) dan simpan current colors
+			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
+				int idx = action.colorIndices[i];
+				if (idx >= 0 && idx < static_cast<int>(userDots.size()) && userDots[idx]) {
+					newUndoAction.oldColors.push_back(userDots[idx]->getColor());
+					userDots[idx]->setColor(action.newColor);  // Apply NEW color (redo)
+				}
+			}
+			// Push langsung ke undo stack
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(newUndoAction);
+			break;
+		}
+
+		case DELETE_LINE:
+			// Redo = delete line lagi
+			if (action.deletedLineIndex >= 0 && action.deletedLineIndex < static_cast<int>(customLines.size())) {
+				customLines.erase(customLines.begin() + action.deletedLineIndex);
+			}
+			// Push langsung ke undo stack
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(action);
+			break;
+
+		case DELETE_POLYGON:
+			// Redo = delete polygon lagi
+			if (action.deletedPolygonIndex >= 0 && action.deletedPolygonIndex < static_cast<int>(polygonShapes.size())) {
+				polygonShapes.erase(polygonShapes.begin() + action.deletedPolygonIndex);
+			}
+			selectionManager.clearPolygonSelection();
+			// Push langsung ke undo stack
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(action);
+			break;
+
+		case DELETE_DOT:
+			// Redo = delete userDot lagi
+			if (action.deletedDotIndex >= 0 && action.deletedDotIndex < static_cast<int>(userDots.size())) {
+				userDots.erase(userDots.begin() + action.deletedDotIndex);
+			}
+			selectionManager.clearUserDotSelection();
+			// Push langsung ke undo stack
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(action);
+			break;
+
+		case CHANGE_CURVE:
+		{
+			// Capture current curves dan apply redo curves
+			UndoAction newUndoActionCurve;
+			newUndoActionCurve.type = CHANGE_CURVE;
+			newUndoActionCurve.curveLineIndices = action.curveLineIndices;
+			newUndoActionCurve.newCurve = action.newCurve;
+
+			for (size_t i = 0; i < action.curveLineIndices.size() && i < action.oldCurves.size(); i++) {
+				int idx = action.curveLineIndices[i];
+				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+					newUndoActionCurve.oldCurves.push_back(customLines[idx].getCurve());
+					customLines[idx].setCurve(action.oldCurves[i]);
+				}
+			}
+			// Push langsung ke undo stack
+			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+				undoStack.erase(undoStack.begin());
+			}
+			undoStack.push_back(newUndoActionCurve);
+			break;
+		}
+	}
+}
+
+
+//--------------------------------------------------------------
+void ofApp::createInvisiblePolygonFromSelected() {
+  if (!selectionManager.hasSelectedLine())
+    return; // Tidak ada yang selected
+
+  // 1. Collect all selected lines dengan data endpoint-nya
+  struct LineData {
+    int index;
+    vec2 start;  // Start point (points[0])
+    vec2 end;    // End point (points[1])
+    vector<vec2> sampledPoints;  // Full sampled points untuk curve
+  };
+  vector<LineData> lines;
+
+  // Copy indices ke local vector untuk menghindari iterator invalidation
+  std::vector<int> selectedLineIndices(selectionManager.getSelectedLineIndices().begin(),
+                                       selectionManager.getSelectedLineIndices().end());
+  for (int lineIndex : selectedLineIndices) {
+    if (lineIndex >= 0 && lineIndex < customLines.size()) {
+      const CustomLine& line = customLines[lineIndex];
+      const vector<vec2>& points = line.getPoints();
+
+      if (points.size() >= 2) {
+        LineData lineData;
+        lineData.index = lineIndex;
+        lineData.start = points[0];
+        lineData.end = points[1];
+        lineData.sampledPoints = line.getSampledPoints();
+        lines.push_back(lineData);
+      }
+    }
+  }
+
+  if (lines.size() < 1) {
+    return;  // Tidak ada valid lines
+  }
+
+  // 2. Susun lines supaya connected secara berurutan
+  // Dimulai dari line pertama sebagai anchor
+  vector<LineData> orderedLines;
+  orderedLines.push_back(lines[0]);
+  lines.erase(lines.begin());
+
+  // Loop sampa semua lines ter-order
+  while (!lines.empty()) {
+    vec2 currentEnd = orderedLines.back().end;
+    bool found = false;
+
+    // Cari line yang start-nya cocok dengan currentEnd
+    for (size_t i = 0; i < lines.size(); i++) {
+      if (glm::length(lines[i].start - currentEnd) < 1.0f) {
+        // Found! Start point cocok dengan end point sebelumnya
+        orderedLines.push_back(lines[i]);
+        lines.erase(lines.begin() + i);
+        found = true;
+        break;
+      } else if (glm::length(lines[i].end - currentEnd) < 1.0f) {
+        // Found! End point cocok (butuh reverse)
+        LineData reversed = lines[i];
+        std::reverse(reversed.sampledPoints.begin(), reversed.sampledPoints.end());
+        std::swap(reversed.start, reversed.end);
+        orderedLines.push_back(reversed);
+        lines.erase(lines.begin() + i);
+        found = true;
+        break;
+      }
+    }
+
+    // Kalau tidak ketemu yang cocok, coba cari dari awal (untuk handle kasus khusus)
+    if (!found) {
+      // Coba connect dari start point line pertama
+      vec2 currentStart = orderedLines.front().start;
+      for (size_t i = 0; i < lines.size(); i++) {
+        if (glm::length(lines[i].end - currentStart) < 1.0f) {
+          // Found! End point cocok dengan start point pertama (insert di depan)
+          LineData reversed = lines[i];
+          std::reverse(reversed.sampledPoints.begin(), reversed.sampledPoints.end());
+          std::swap(reversed.start, reversed.end);
+          orderedLines.insert(orderedLines.begin(), reversed);
+          lines.erase(lines.begin() + i);
+          found = true;
+          break;
+        } else if (glm::length(lines[i].start - currentStart) < 1.0f) {
+          // Found! Start point cocok dengan start point pertama (insert di depan, no reverse)
+          orderedLines.insert(orderedLines.begin(), lines[i]);
+          lines.erase(lines.begin() + i);
+          found = true;
+          break;
+        }
+      }
+    }
+
+    // Kalau masih tidak ketemu, break untuk avoid infinite loop
+    if (!found) {
+      ofLog(OF_LOG_WARNING) << "createInvisiblePolygon - Cannot connect all lines, path is broken";
+      break;
+    }
+  }
+
+  // 3. Extract semua titik dari ordered lines
+  vector<vec2> allPoints;
+  for (const LineData& lineData : orderedLines) {
+    for (const vec2& p : lineData.sampledPoints) {
+      allPoints.push_back(p);
+    }
+  }
+
+  if (allPoints.size() < 3) {
+    // Kurang dari 3 titik, tidak bisa buat polygon
+    return;
+  }
+
+  int polygonIndex =
+      static_cast<int>(polygonShapes.size());
+  PolygonShape newPolygon(allPoints, colorManager->getPolygonColor(),
+                          polygonIndex);
+  polygonShapes.push_back(newPolygon);
+
+  // Push undo action
+  UndoAction undoAction;
+  undoAction.type = CREATE_POLYGON;
+  undoAction.isCreate = true;
+  pushUndoAction(undoAction);
+
+  // 4. Clear selection
+  selectionManager.clearLineSelection();
 }
 
 //--------------------------------------------------------------
@@ -792,126 +1075,30 @@ void ofApp::undoLastLine() {
 //--------------------------------------------------------------
 // Mouse Event Handlers
 void ofApp::mousePressed(int x, int y, int button) {
-	// Logic lama: Cursor toggle dengan right click (button 2)
-	if (button == 2) {
-		cursorVisible = !cursorVisible;
-		if (cursorVisible) ofShowCursor();
-		if (!cursorVisible) ofHideCursor();
-		return;  // Jangan lanjut ke interactive line creation untuk right click
-	}
-
-	// Logic untuk interactive line creation & line selection
-	if (button == 0) {
-		// Adjust mouse position untuk center translation
-		vec2 adjustedMousePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
-		vector<DotInfo> dots = getAllDots();
-
-		// Check jika klik di atas dot - HANYA bisa mulai dari dot
-		bool clickedOnDot = false;
-		for (auto& dot : dots) {
-			if (isMouseOverDot(adjustedMousePos, dot.position)) {
-				drawState = DRAGGING;
-				currentPolylinePoints.clear();
-				currentPolylinePoints.push_back(dot.position);  // Start dari dot
-				startDotPos = dot.position;
-				mousePos = adjustedMousePos;
-				clickedOnDot = true;
-
-				// Deselect line yang mungkin terpilih
-				selectedLineIndex = -1;
-
-				return;
-			}
-		}
-
-		// Kalau tidak klik di dot, cek apakah klik di garis untuk SELECT
-		if (!clickedOnDot) {
-			int lineIndex = getLineIndexAtPosition(adjustedMousePos);
-			if (lineIndex >= 0) {
-				// Select garis ini
-				selectedLineIndex = lineIndex;
-			} else {
-				// Klik di tempat kosong → deselect
-				selectedLineIndex = -1;
-			}
-		}
-	}
+	inputManager->handleMousePressed(x, y, button);
 }
 
 void ofApp::mouseDragged(int x, int y, int button) {
-	if (drawState == DRAGGING) {
-		// Adjust mouse position untuk center translation
-		vec2 currentPos = vec2(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
-		mousePos = currentPos;
-
-		// Untuk garis lurus, kita hanya perlu 2 titik: start dan end
-		// currentPolylinePoints[0] = start (diset di mousePressed)
-		// currentPolylinePoints[1] = end (diupdate setiap drag)
-		if (currentPolylinePoints.size() < 2) {
-			currentPolylinePoints.push_back(currentPos);  // Add end point
-		} else {
-			currentPolylinePoints[1] = currentPos;  // Update end point
-		}
-	}
+	inputManager->handleMouseDragged(x, y, button);
 }
 
 void ofApp::mouseReleased(int x, int y, int button) {
-	if (drawState != DRAGGING) {
-		return;
-	}
-
-	// Adjust mouse position untuk center translation
-	vec2 releasePos(x - ofGetWidth() / 2, y - ofGetHeight() / 2);
-	vector<DotInfo> dots = getAllDots();
-
-	// Check jika release di atas valid dot - HANYA bisa selesai di dot
-	for (auto& dot : dots) {
-		if (isMouseOverDot(releasePos, dot.position)) {
-			// Cek apakah line sudah ada (duplicate check)
-			if (!lineExists(startDotPos, dot.position)) {
-				// Cek apakah start != end (bukan garis panjang 0)
-				if (glm::length(startDotPos - dot.position) > 1.0f) {
-					// Update end point ke posisi dot yang dilepas
-					if (currentPolylinePoints.size() < 2) {
-						currentPolylinePoints.push_back(dot.position);
-					} else {
-						currentPolylinePoints[1] = dot.position;
-					}
-
-					// Simpan polyline dengan 2 points (start dan end)
-					CustomLine newLine(currentPolylinePoints, ofColor(0, 0, 255), mouseLineWidth);
-					customLines.push_back(newLine);
-				}
-			}
-			break;
-		}
-	}
-
-	// Clear dan reset state
-	currentPolylinePoints.clear();
-	drawState = IDLE;
+	inputManager->handleMouseReleased(x, y, button);
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
-	// Update curve untuk garis yang sedang dipilih
-	if (selectedLineIndex >= 0 && selectedLineIndex < customLines.size()) {
-		// scrollY positif = scroll up, scrollY negatif = scroll down
-		float curveSpeed = 5.0f;  // Kecepatan perubahan curve
-		float newCurve = customLines[selectedLineIndex].getCurve() + scrollY * curveSpeed;
-		customLines[selectedLineIndex].setCurve(newCurve);
-	}
+	inputManager->handleMouseScrolled(x, y, scrollX, scrollY);
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y) {
-	// Update mouse position untuk hover detection (adjust untuk center translation)
-	mousePos = vec2(x - ofGetWidth()/2, y - ofGetHeight()/2);
+	inputManager->handleMouseMoved(x, y);
 }
 
 //--------------------------------------------------------------
-void ofApp::keyReleased(int key){
-	if (key == OF_KEY_CONTROL) isCtrlPressed = false;
+void ofApp::keyReleased(int key) {
+	inputManager->handleKeyReleased(key);
 }
 
 //--------------------------------------------------------------
@@ -923,471 +1110,994 @@ void ofApp::dragEvent(ofDragInfo dragInfo) {}
 
 //--------------------------------------------------------------
 void ofApp::startSequentialDrawing() {
-	// Cek apakah semua shapes sudah visible/showing (berarti sudah show semua dengan S)
-	bool allVisible = circleA->showing &&
-		circleB->showing && circleC->showing &&
-		circleD->showing && circleE->showing &&
-		crossLineF->showing && crossLineG->showing &&
-		crossLineH->showing && crossLineI->showing &&
-		parallelogramCtoE->showing && parallelogramEtoB->showing &&
-		parallelogramBtoD->showing && parallelogramDtoC->showing &&
-		rectangleLineFtoG->showing && rectangleLineGtoI->showing &&
-		rectangleLineItoH->showing && rectangleLineHtoF->showing &&
-		octagramLine0->showing && octagramLine1->showing && 
-		octagramLine2->showing && octagramLine3->showing && 
-		octagramLine4->showing && octagramLine5->showing && 
-		octagramLine6->showing && octagramLine7->showing;
+  if (!currentTemplate) return;
 
-	if (allVisible) {
-		// Semua shapes sudah visible, jangan jalankan sequential
-		return;
-	}
+  // Delegate ke template
+  currentTemplate->startSequentialDrawing();
 
-	// Cek apakah ada shape yang sedang drawing (belum complete)
-	bool stillDrawing = !circleA->isComplete() ||
-	                   !circleB->isComplete() || !circleC->isComplete() ||
-	                   !circleD->isComplete() || !circleE->isComplete() ||
-	                   !crossLineF->isComplete() || !crossLineG->isComplete() ||
-	                   !crossLineH->isComplete() || !crossLineI->isComplete() ||
-	                   !parallelogramCtoE->isComplete() || !parallelogramEtoB->isComplete() ||
-	                   !parallelogramBtoD->isComplete() || !parallelogramDtoC->isComplete() ||
-	                   !rectangleLineFtoG->isComplete() || !rectangleLineGtoI->isComplete() ||
-						!rectangleLineItoH->isComplete() || !rectangleLineHtoF->isComplete() ||
-						!octagramLine0->isComplete() || !octagramLine1->isComplete() || 
-						!octagramLine2->isComplete() || !octagramLine3->isComplete() || 
-						!octagramLine4->isComplete() || !octagramLine5->isComplete() || 
-						!octagramLine6->isComplete() || !octagramLine7->isComplete();
-
-	if (stillDrawing) {
-		// Ada shape yang masih drawing, jangan jalankan sequential
-		return;
-	}
-
-	// Cek apakah sequential sudah pernah selesai
-	if (sequentialCompleted) {
-		// Sequential sudah selesai sebelumnya, jangan jalankan lagi
-		return;
-	}
-
-	// Reset semua shapes ke hidden
-	circleA->hide();
-	circleB->hide();
-	circleC->hide();
-	circleD->hide();
-	circleE->hide();
-	cartesianAxes->hide();
-	crossLineF->hide();
-	crossLineG->hide();
-	crossLineH->hide();
-	crossLineI->hide();
-	parallelogramCtoE->hide();
-	parallelogramEtoB->hide();
-	parallelogramBtoD->hide();
-	parallelogramDtoC->hide();
-	rectangleLineFtoG->hide();
-	rectangleLineGtoI->hide();
-	rectangleLineItoH->hide();
-	rectangleLineHtoF->hide();
-	octagramLine0->hide();
-	octagramLine1->hide();
-	octagramLine2->hide();
-	octagramLine3->hide();
-	octagramLine4->hide();
-	octagramLine5->hide();
-	octagramLine6->hide();
-	octagramLine7->hide();
-
-	// Set sequential mode untuk octagramLine
-	octagramLine0->setSequentialMode(true);
-	octagramLine1->setSequentialMode(true);
-	octagramLine2->setSequentialMode(true);
-	octagramLine3->setSequentialMode(true);
-	octagramLine4->setSequentialMode(true);
-	octagramLine5->setSequentialMode(true);
-	octagramLine6->setSequentialMode(true);
-	octagramLine7->setSequentialMode(true);
-
-	// Mulai sequential mode
-	sequentialMode = true;
-	sequentialCompleted = false;  // Reset flag
-	currentShapeIndex = 0;
-
-	// Show shape pertama (CartesianAxes)
-	cartesianAxes->show();
+  // NOTE: JANGAN ubah currentState di sini!
+  // sequentialMode adalah flag TEMPLATE level, bukan application state
+  // Sequential drawing di-handle langsung di updateNormal() line 97-102
+  // Jadi biarkan currentState tetap NORMAL
 }
 
 //--------------------------------------------------------------
-void ofApp::updateSequentialDrawing() {
-	AbstractShape* currentShape = nullptr;
+// NOTE: updateSequentialDrawing() sudah dihapus!
+// Logic sekarang ada di SacredGeometryTemplate::updateSequentialDrawing()
+// Template handle sequential drawing secara autonomous
 
-	// Tentukan shape berdasarkan index
-	switch (currentShapeIndex) {
-		case 0: currentShape = cartesianAxes.get(); break;
-		case 1: currentShape = circleA.get(); break;
-		case 2: currentShape = circleB.get(); break;
-		case 3: currentShape = circleC.get(); break;
-		case 4: currentShape = circleD.get(); break;
-		case 5: currentShape = circleE.get(); break;
-		case 6: currentShape = crossLineF.get(); break;
-		case 7: currentShape = crossLineG.get(); break;
-		case 8: currentShape = crossLineH.get(); break;
-		case 9: currentShape = crossLineI.get(); break;
-		case 10: currentShape = parallelogramCtoE.get(); break;
-		case 11: currentShape = parallelogramEtoB.get(); break;
-		case 12: currentShape = parallelogramBtoD.get(); break;
-		case 13: currentShape = parallelogramDtoC.get(); break;
-		case 14: currentShape = rectangleLineFtoG.get(); break;
-		case 15: currentShape = rectangleLineGtoI.get(); break;
-		case 16: currentShape = rectangleLineItoH.get(); break;
-		case 17: currentShape = rectangleLineHtoF.get(); break;
-		case 18: currentShape = octagramLine0.get(); break;
-		case 19: currentShape = octagramLine1.get(); break;
-		case 20: currentShape = octagramLine2.get(); break;
-		case 21: currentShape = octagramLine3.get(); break;
-		case 22: currentShape = octagramLine4.get(); break;
-		case 23: currentShape = octagramLine5.get(); break;
-		case 24: currentShape = octagramLine6.get(); break;
-		case 25: currentShape = octagramLine7.get(); break;
-	}
+//--------------------------------------------------------------
+void ofApp::toggleLabels() {
+  if (!currentTemplate) return;
 
-	// Cek jika current shape sudah complete
-	if (currentShape && currentShape->isComplete()) {
-		// Pindah ke shape berikutnya
-		currentShapeIndex++;
+  // NOTE: ImGui Checkbox SUDAH mengubah nilai labelsVisible
+  // Jadi JANGAN toggle lagi, langsung apply saja
+  currentTemplate->toggleLabels();
+}
 
-		// Show shape berikutnya jika masih ada
-		if (currentShapeIndex <= 25) {
-			switch (currentShapeIndex) {
-				case 1: circleA->show(); break;
-				case 2: circleB->show(); break;
-				case 3: circleC->show(); break;
-				case 4: circleD->show(); break;
-				case 5: circleE->show(); break;
-				case 6: crossLineF->show(); break;
-				case 7: crossLineG->show(); break;
-				case 8: crossLineH->show(); break;
-				case 9: crossLineI->show(); break;
-				case 10: parallelogramCtoE->show(); break;
-				case 11: parallelogramEtoB->show(); break;
-				case 12: parallelogramBtoD->show(); break;
-				case 13: parallelogramDtoC->show(); break;
-				case 14: rectangleLineFtoG->show(); break;
-				case 15: rectangleLineGtoI->show(); break;
-				case 16: rectangleLineItoH->show(); break;
-				case 17: rectangleLineHtoF->show(); break;
-				case 18: octagramLine0->show(); break;
-				case 19: octagramLine1->show(); break;
-				case 20: octagramLine2->show(); break;
-				case 21: octagramLine3->show(); break;
-				case 22: octagramLine4->show(); break;
-				case 23: octagramLine5->show(); break;
-				case 24: octagramLine6->show(); break;
-				case 25: octagramLine7->show(); break;
+//--------------------------------------------------------------
+void ofApp::toggleDots() {
+  if (!currentTemplate) return;
+
+  // NOTE: ImGui Checkbox SUDAH mengubah nilai dotsVisible
+  // Jadi JANGAN toggle lagi, langsung apply saja
+  currentTemplate->toggleDots();
+}
+
+//--------------------------------------------------------------
+// (hideAllShapes, showAllShapes, dan setCartesianAxesVisibility sudah dihapus - tidak diperlukan lagi dengan Draw Only concept)
+//--------------------------------------------------------------
+void ofApp::updateLineWidth() {
+    if (!currentTemplate) return;
+
+    // Delegate ke template - pakai nilai yang sudah ada di template
+    currentTemplate->updateLineWidth(currentTemplate->lineWidth);
+}
+
+//--------------------------------------------------------------
+void ofApp::updateCustomLineColor(ofColor color) {
+	// Delegate ke ColorManager
+	colorManager->updateCustomLineColor(color);
+}
+
+//--------------------------------------------------------------
+void ofApp::resetAllCustomLineColor() {
+	// Delegate ke ColorManager
+	colorManager->resetAllCustomLineColor();
+}
+
+//--------------------------------------------------------------
+void ofApp::resetSelectedCustomLineColor() {
+	// Delegate ke ColorManager
+	colorManager->resetSelectedCustomLineColor();
+}
+
+//--------------------------------------------------------------
+void ofApp::updatePolygonColor(ofColor color) {
+	// Delegate ke ColorManager
+	colorManager->updatePolygonColor(color);
+}
+
+//--------------------------------------------------------------
+void ofApp::resetAllPolygonColor() {
+	// Delegate ke ColorManager
+	colorManager->resetAllPolygonColor();
+}
+
+//--------------------------------------------------------------
+void ofApp::resetSelectedPolygonColor() {
+	// Delegate ke ColorManager
+	colorManager->resetSelectedPolygonColor();
+}
+
+//--------------------------------------------------------------
+void ofApp::updatePolygonAlpha(uint8_t alpha) {
+	// Delegate ke ColorManager
+	colorManager->updatePolygonAlpha(alpha);
+}
+
+//--------------------------------------------------------------
+void ofApp::updateUserDotRadius(float radius) {
+	// Update variabel global
+	userDotRadius = radius;
+
+	// Jika ada userDot yang terseleksi, update hanya yang terseleksi
+	if (selectionManager.hasSelectedUserDot()) {
+		const std::set<int>& indices = selectionManager.getSelectedUserDotIndices();
+		for (int index : indices) {
+			if (index >= 0 && index < userDots.size()) {
+				if (userDots[index]) {
+					userDots[index]->setRadius(radius);
+				}
 			}
-		} else {
-			// Semua shapes sudah complete, matikan sequential mode dan tandai selesai
-			sequentialMode = false;
-			sequentialCompleted = true;
+		}
+	} else {
+		// Jika tidak ada yang terseleksi, update semua userDots
+		for (auto& dot : userDots) {
+			if (dot) {
+				dot->setRadius(radius);
+			}
 		}
 	}
 }
 
 //--------------------------------------------------------------
-void ofApp::toggleLabels() {
-	// Toggle label visibility
-	labelsVisible = !labelsVisible;
+void ofApp::updateUserDotColor(ofColor color) {
+	// Delegate ke ColorManager
+	colorManager->updateUserDotColor(color);
+}
 
-	if (labelsVisible) {
-		// Show semua labels
-		circleA->showLabel();
-		circleB->showLabel();
-		circleC->showLabel();
-		circleD->showLabel();
-		circleE->showLabel();
-		cartesianAxes->showLabel();
-		crossLineF->showLabel();
-		crossLineG->showLabel();
-		crossLineH->showLabel();
-		crossLineI->showLabel();
-		parallelogramCtoE->showLabel();
-		parallelogramEtoB->showLabel();
-		parallelogramBtoD->showLabel();
-		parallelogramDtoC->showLabel();
-		rectangleLineFtoG->showLabel();
-		rectangleLineGtoI->showLabel();
-		rectangleLineItoH->showLabel();
-		rectangleLineHtoF->showLabel();
-		octagramLine0->showLabel();
-		octagramLine1->showLabel();
-		octagramLine2->showLabel();
-		octagramLine3->showLabel();
-		octagramLine4->showLabel();
-		octagramLine5->showLabel();
-		octagramLine6->showLabel();
-		octagramLine7->showLabel();
+//--------------------------------------------------------------
+void ofApp::copyDotColor() {
+	// Delegate ke ColorManager
+	colorManager->copyDotColor();
+}
+
+//--------------------------------------------------------------
+void ofApp::copyPolygonColor() {
+	// Delegate ke ColorManager
+	colorManager->copyPolygonColor();
+}
+
+//--------------------------------------------------------------
+void ofApp::copyLineColor() {
+	// Delegate ke ColorManager
+	colorManager->copyLineColor();
+}
+
+//--------------------------------------------------------------
+void ofApp::pasteColorToDot() {
+	// Delegate ke ColorManager
+	colorManager->pasteColorToDot();
+}
+
+//--------------------------------------------------------------
+void ofApp::pasteColorToPolygon() {
+	// Delegate ke ColorManager
+	colorManager->pasteColorToPolygon();
+}
+
+//--------------------------------------------------------------
+void ofApp::pasteColorToLine() {
+	// Delegate ke ColorManager
+	colorManager->pasteColorToLine();
+}
+
+//--------------------------------------------------------------
+void ofApp::syncColorPickerFromLoadedLines() {
+	// Ambil warna dari customLine pertama yang diload (jika ada)
+	if (!customLines.empty()) {
+		ofColor loadedColor = customLines[0].getColor();
+
+		// Update global color (ColorManager will sync internally when needed)
+		// colorManager->customLineColor = loadedColor;
+
+		// Update UserCustom color picker UI
+		for (auto& gui : guiComponents) {
+			// Cari UserCustom component
+			UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
+			if (userCustom) {
+				userCustom->updateColorFromApp();
+				break; // Found, no need to continue
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::syncColorPickerFromLoadedPolygons() {
+	// Ambil warna dari polygon pertama yang diload (jika ada)
+	if (!polygonShapes.empty()) {
+		ofColor loadedColor = polygonShapes[0].getColor();
+
+		// Update global color (ColorManager will sync internally when needed)
+		// colorManager->polygonColor = loadedColor;
+
+		// Update UserCustom color picker UI
+		for (auto& gui : guiComponents) {
+			// Cari UserCustom component
+			UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
+			if (userCustom) {
+				userCustom->updatePolygonColorFromApp();
+				break; // Found, no need to continue
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::syncUserDotFromLoaded() {
+	// Ambil radius dan warna dari userDot pertama yang diload (jika ada)
+	if (!userDots.empty() && userDots[0]) {
+		float loadedRadius = userDots[0]->getRadius();
+		ofColor loadedColor = userDots[0]->getColor();
+
+		// Update global radius dan color
+		userDotRadius = loadedRadius;
+		// colorManager->userDotColor = loadedColor;  // ColorManager will sync internally
+
+		// Update UserCustom color picker UI
+		for (auto& gui : guiComponents) {
+			// Cari UserCustom component
+			UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
+			if (userCustom) {
+				userCustom->updateUserDotColorFromApp();
+				break; // Found, no need to continue
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::syncColorFromSelectedObjects() {
+	// Delegate ke ColorManager
+	colorManager->syncColorPickersFromSelection();
+
+	// Update SEMUA color picker UI
+	for (auto& gui : guiComponents) {
+		UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
+		if (userCustom) {
+			userCustom->updateUserDotColorFromApp();  // Update userDot color picker
+			userCustom->updateColorFromApp();         // Update customLine color picker
+			userCustom->updatePolygonColorFromApp();  // Update polygon color picker
+			break;
+		}
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::clearCustomLinesAndPolygons() {
+	// Jangan hapus jika sedang sequential load
+	if (fileManager.isLoadSequentialMode()) {
+		return; // Aborted, sedang loading
+	}
+
+	// Jangan hapus jika sedang parallel load dan masih ada polygon animasi
+	if (fileManager.isLoadParallelMode()) {
+		// Cek apakah masih ada polygon yang sedang animasi
+		for (const auto &polygon : polygonShapes) {
+			if (polygon.hasAnimation()) {
+				return; // Masih ada polygon yang animasi, tunggu kelar
+			}
+		}
+	}
+
+	// Hapus semua polygons - delegate ke deleteAllPolygons()
+	deleteAllPolygons();
+
+	// Hapus semua custom lines - delegate ke deleteAllCustomLines()
+	deleteAllCustomLines();
+}
+
+//--------------------------------------------------------------
+void ofApp::deleteAllCustomLines() {
+	// Jangan hapus jika sedang sequential load
+	if (fileManager.isLoadSequentialMode()) {
+		return;
+	}
+
+	// Hapus semua custom lines
+	if (!fileManager.isLoadParallelMode()) {
+		FileManager::clearCustomLines(customLines);
+	}
+	selectionManager.clearLineSelection();
+}
+
+//--------------------------------------------------------------
+void ofApp::deleteAllPolygons() {
+	// Jangan hapus jika sedang sequential load
+	if (fileManager.isLoadSequentialMode()) {
+		return;
+	}
+
+	// Hapus semua polygons
+	if (!polygonShapes.empty()) {
+		polygonShapes.clear();
+		selectionManager.clearPolygonSelection();
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::deleteAllUserDots() {
+	// Hapus semua userDots (duplicat dots)
+	if (!userDots.empty()) {
+		userDots.clear();
+		selectionManager.clearUserDotSelection();
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::deleteSelectedUserDot() {
+	// Cek apakah ada userDot yang terseleksi
+	if (!selectionManager.hasSelectedUserDot()) {
+		return;
+	}
+
+	// Hapus SEMUA userDots yang terselect (support multi-delete)
+	// Sort descending agar aman untuk erase
+	const std::set<int>& indices = selectionManager.getSelectedUserDotIndices();
+	vector<int> toDelete(indices.begin(), indices.end());
+	std::sort(toDelete.rbegin(), toDelete.rend()); // Descending
+
+	// Push undo action untuk setiap dot yang dihapus (reverse order)
+	for (int index : toDelete) {
+		if (index >= 0 && index < userDots.size()) {
+			UndoAction undoAction;
+			undoAction.type = DELETE_DOT;
+			undoAction.deletedDotPos = userDots[index]->getPosition();
+			undoAction.deletedDotLowerBound = userDots[index]->getLowerBound();
+			undoAction.deletedDotRadius = userDots[index]->getRadius();
+			undoAction.deletedDotIndex = index;
+			pushUndoAction(undoAction);
+		}
+	}
+
+	// Hapus dots
+	for (int index : toDelete) {
+		if (index >= 0 && index < userDots.size()) {
+			userDots.erase(userDots.begin() + index);
+		}
+	}
+	selectionManager.clearUserDotSelection();
+}
+
+//--------------------------------------------------------------
+void ofApp::deleteSelectedPolygons() {
+	// Cek apakah ada polygon yang terseleksi
+	if (!selectionManager.hasSelectedPolygon()) {
+		return;
+	}
+
+	// Hapus SEMUA polygons yang terselect (support multi-delete)
+	// Sort descending agar aman untuk erase
+	vector<int> toDelete(selectionManager.getSelectedPolygonIndices().begin(),
+						 selectionManager.getSelectedPolygonIndices().end());
+	std::sort(toDelete.rbegin(), toDelete.rend()); // Descending
+
+	// Push undo action untuk setiap polygon yang dihapus (reverse order)
+	for (int index : toDelete) {
+		if (index >= 0 && index < polygonShapes.size()) {
+			UndoAction undoAction;
+			undoAction.type = DELETE_POLYGON;
+			undoAction.deletedPolygon = polygonShapes[index];
+			undoAction.deletedPolygonIndex = index;
+			pushUndoAction(undoAction);
+		}
+	}
+
+	// Hapus polygons
+	for (int index : toDelete) {
+		if (index >= 0 && index < polygonShapes.size()) {
+			polygonShapes.erase(polygonShapes.begin() + index);
+		}
+	}
+	selectionManager.clearPolygonSelection();
+}
+
+//--------------------------------------------------------------
+void ofApp::cleanCanvas() {
+	// Tampilkan confirmation popup dulu
+	// Callback akan memanggil cleanCanvasInternal() saat user klik Yes
+	confirmationPopup->show(
+		"Clean Canvas",
+		"Are you sure you want to clean the canvas?\n\nEverything on the canvas will be deleted.",
+		"Yes, Clean",
+		"Cancel",
+		[this]() {
+			// User klik Yes, execute clean
+			cleanCanvasInternal();
+		}
+	);
+}
+
+//--------------------------------------------------------------
+void ofApp::cleanCanvasInternal() {
+    // Skip kalau sedang load sequential
+    if (fileManager.isLoadSequentialMode()) {
+        return;
+    }
+
+    // Hapus semua polygons dan custom lines
+    clearCustomLinesAndPolygons();
+
+    // Hapus semua userDots
+    userDots.clear();
+    selectionManager.clearUserDotSelection();
+
+    // Benar-benar HAPUS semua template shapes - delegate ke template
+    if (currentTemplate) {
+        currentTemplate->clearAllShapes();
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::resetTransform() {
+	// Reset canvas transform ke default values
+	canvasTranslation = vec2(0, 0);
+	canvasRotation = 0.0f;
+	canvasZoom = 1.0f;
+}
+
+//--------------------------------------------------------------
+void ofApp::toggleSacredGeometryWindow() {
+    if (!imguiVisible || !showSacredGeometry) {
+        // Show SacredGeometry window
+        imguiVisible = true;
+        showSacredGeometry = true;
+        // Jangan hide Playground, biarkan user punya banyak windows terbuka
+
+        // Set windowOpen flag di SacredGeometry
+        for (auto& gui : guiComponents) {
+            SacredGeometry* sacredGeo = dynamic_cast<SacredGeometry*>(gui.get());
+            if (sacredGeo) {
+                sacredGeo->showWindow();
+                break;
+            }
+        }
+    } else {
+        // SacredGeometry already visible, focus it
+        for (auto& gui : guiComponents) {
+            SacredGeometry* sacredGeo = dynamic_cast<SacredGeometry*>(gui.get());
+            if (sacredGeo) {
+                sacredGeo->focusWindow();
+                break;
+            }
+        }
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::togglePlaygroundWindow() {
+    if (!imguiVisible || !showPlayground) {
+        // Show Playground window
+        imguiVisible = true;
+        showPlayground = true;
+        // Jangan hide SacredGeometry, biarkan user punya banyak windows terbuka
+
+        // Set windowOpen flag di Playground
+        for (auto& gui : guiComponents) {
+            Playground* playground = dynamic_cast<Playground*>(gui.get());
+            if (playground) {
+                playground->showWindow();
+                break;
+            }
+        }
+    } else {
+        // Playground already visible, focus it
+        for (auto& gui : guiComponents) {
+            Playground* playground = dynamic_cast<Playground*>(gui.get());
+            if (playground) {
+                playground->focusWindow();
+                break;
+            }
+        }
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::toggleUserCustomWindow() {
+    if (!imguiVisible || !showUserCustom) {
+        // Show UserCustom window
+        imguiVisible = true;
+        showUserCustom = true;
+        // Jangan hide SacredGeometry dan Playground, biarkan user punya banyak windows terbuka
+
+        // Set windowOpen flag di UserCustom
+        for (auto& gui : guiComponents) {
+            UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
+            if (userCustom) {
+                userCustom->showWindow();
+                break;
+            }
+        }
+    } else {
+        // UserCustom already visible, focus it
+        for (auto& gui : guiComponents) {
+            UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
+            if (userCustom) {
+                userCustom->focusWindow();
+                break;
+            }
+        }
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::toggleSelectionInfoWindow() {
+	if (!imguiVisible || !showSelectionInfo) {
+		// Show SelectionInfo window
+		imguiVisible = true;
+		showSelectionInfo = true;
+		selectionInfo->showWindow();
 	} else {
-		// Hide semua labels
-		circleA->hideLabel();
-		circleB->hideLabel();
-		circleC->hideLabel();
-		circleD->hideLabel();
-		circleE->hideLabel();
-		cartesianAxes->hideLabel();
-		crossLineF->hideLabel();
-		crossLineG->hideLabel();
-		crossLineH->hideLabel();
-		crossLineI->hideLabel();
-		parallelogramCtoE->hideLabel();
-		parallelogramEtoB->hideLabel();
-		parallelogramBtoD->hideLabel();
-		parallelogramDtoC->hideLabel();
-		rectangleLineFtoG->hideLabel();
-		rectangleLineGtoI->hideLabel();
-		rectangleLineItoH->hideLabel();
-		rectangleLineHtoF->hideLabel();
-		octagramLine0->hideLabel();
-		octagramLine1->hideLabel();
-		octagramLine2->hideLabel();
-		octagramLine3->hideLabel();
-		octagramLine4->hideLabel();
-		octagramLine5->hideLabel();
-		octagramLine6->hideLabel();
-		octagramLine7->hideLabel();
+		// SelectionInfo already visible, focus it
+		selectionInfo->focusWindow();
 	}
 }
 
 //--------------------------------------------------------------
-void ofApp::toggleDots() {
-	// Toggle dot visibility
-	dotsVisible = !dotsVisible;
+void ofApp::duplicateDotAbove() {
+	duplicateManager->duplicateDotAbove();
+}
 
-	if (dotsVisible) {
-		// Show semua dots
-		circleA->showDot();
-		circleB->showDot();
-		circleC->showDot();
-		circleD->showDot();
-		circleE->showDot();
-		crossLineF->showDot();
-		crossLineG->showDot();
-		crossLineH->showDot();
-		crossLineI->showDot();
-		parallelogramCtoE->showDot();
-		parallelogramEtoB->showDot();
-		parallelogramBtoD->showDot();
-		parallelogramDtoC->showDot();
-		rectangleLineFtoG->showDot();
-		rectangleLineGtoI->showDot();
-		rectangleLineItoH->showDot();
-		rectangleLineHtoF->showDot();
-		octagramLine0->showDot();
-		octagramLine1->showDot();
-		octagramLine2->showDot();
-		octagramLine3->showDot();
-		octagramLine4->showDot();
-		octagramLine5->showDot();
-		octagramLine6->showDot();
-		octagramLine7->showDot();
-	} else {
-		// Hide semua dots
-		circleA->hideDot();
-		circleB->hideDot();
-		circleC->hideDot();
-		circleD->hideDot();
-		circleE->hideDot();
-		crossLineF->hideDot();
-		crossLineG->hideDot();
-		crossLineH->hideDot();
-		crossLineI->hideDot();
-		parallelogramCtoE->hideDot();
-		parallelogramEtoB->hideDot();
-		parallelogramBtoD->hideDot();
-		parallelogramDtoC->hideDot();
-		rectangleLineFtoG->hideDot();
-		rectangleLineGtoI->hideDot();
-		rectangleLineItoH->hideDot();
-		rectangleLineHtoF->hideDot();
-		octagramLine0->hideDot();
-		octagramLine1->hideDot();
-		octagramLine2->hideDot();
-		octagramLine3->hideDot();
-		octagramLine4->hideDot();
-		octagramLine5->hideDot();
-		octagramLine6->hideDot();
-		octagramLine7->hideDot();
+//--------------------------------------------------------------
+void ofApp::duplicateDotBelow() {
+	duplicateManager->duplicateDotBelow();
+}
+
+//--------------------------------------------------------------
+void ofApp::duplicateDotLeft() {
+	duplicateManager->duplicateDotLeft();
+}
+
+//--------------------------------------------------------------
+void ofApp::duplicateDotRight() {
+	duplicateManager->duplicateDotRight();
+}
+
+//--------------------------------------------------------------
+void ofApp::duplicateLineR180() {
+	duplicateManager->duplicateLineR180();
+}
+
+//--------------------------------------------------------------
+void ofApp::drawUserDots() {
+
+    // Hanya draw userDot jika showUserDot == true
+    if (showUserDot) {
+        for (auto& dot : userDots) {
+            if (dot) {
+                dot->draw();
+            }
+        }
+    }
+
+    // Label sudah dihapus, diganti dengan ImGui tooltip di ObjectTooltip
+}
+
+//--------------------------------------------------------------
+void ofApp::scaleCustomLinesAndPolygons(float oldRadius, float newRadius) {
+	// Hitung rasio scaling
+	float scaleRatio = newRadius / oldRadius;
+
+	// Hindari scaling jika ratio ~1 (untuk performance dan presisi)
+	if (std::abs(scaleRatio - 1.0f) < 0.0001f) {
+		return;
+	}
+
+	// Scale semua customLines
+	for (auto& line : customLines) {
+		vector<vec2> points = line.getPoints();
+		for (auto& point : points) {
+			point = point * scaleRatio;  // Scale setiap titik
+		}
+		line.setPoints(points);
+
+		// Scale juga curve parameter agar kelengkungan proporsional
+		float oldCurve = line.getCurve();
+		float newCurve = oldCurve * scaleRatio;
+		line.setCurve(newCurve);
+	}
+
+	// Scale semua polygons
+	for (auto& polygon : polygonShapes) {
+		vector<vec2> vertices = polygon.getVertices();
+		for (auto& vertex : vertices) {
+			vertex = vertex * scaleRatio;  // Scale setiap vertex
+		}
+		polygon.setVertices(vertices);
+	}
+
+	// Scale semua userDots (duplikat dots)
+	for (auto& dot : userDots) {
+		if (dot) {
+			// Scale posisi userDot
+			vec2 currentPos = dot->getPosition();
+			vec2 newPos = currentPos * scaleRatio;
+			dot->setPosition(newPos);
+
+			// Scale juga lowerBound (posisi parent dot)
+			vec2 currentLowerBound = dot->getLowerBound();
+			vec2 newLowerBound = currentLowerBound * scaleRatio;
+			dot->setLowerBound(newLowerBound);
+		}
 	}
 }
 
 //--------------------------------------------------------------
-void ofApp::hideAllShapes() {
-	// Set paralel mode untuk octagramLine (kedua line hide barengan)
-	octagramLine0->setSequentialMode(false);
-	octagramLine1->setSequentialMode(false);
-	octagramLine2->setSequentialMode(false);
-	octagramLine3->setSequentialMode(false);
-	octagramLine4->setSequentialMode(false);
-	octagramLine5->setSequentialMode(false);
-	octagramLine6->setSequentialMode(false);
-	octagramLine7->setSequentialMode(false);
-
-	// Hide semua shapes
-	circleA->hide();
-	circleB->hide();
-	circleC->hide();
-	circleD->hide();
-	circleE->hide();
-	cartesianAxes->hide();
-	crossLineF->hide();
-	crossLineG->hide();
-	crossLineH->hide();
-	crossLineI->hide();
-	parallelogramCtoE->hide();
-	parallelogramEtoB->hide();
-	parallelogramBtoD->hide();
-	parallelogramDtoC->hide();
-	rectangleLineFtoG->hide();
-	rectangleLineGtoI->hide();
-	rectangleLineItoH->hide();
-	rectangleLineHtoF->hide();
-	octagramLine0->hide();
-	octagramLine1->hide();
-	octagramLine2->hide();
-	octagramLine3->hide();
-	octagramLine4->hide();
-	octagramLine5->hide();
-	octagramLine6->hide();
-	octagramLine7->hide();
-
-	// Reset sequential completed flag agar bisa jalankan lagi
-	sequentialCompleted = false;
-
-	// Mark dots cache dirty karena visibility berubah
-	dotsCacheDirty = true;
-}
-
-//--------------------------------------------------------------
-void ofApp::showAllShapes() {
-	// Set paralel mode untuk octagramLine (kedua line berjalan barengan)
-	octagramLine0->setSequentialMode(false);
-	octagramLine1->setSequentialMode(false);
-	octagramLine2->setSequentialMode(false);
-	octagramLine3->setSequentialMode(false);
-	octagramLine4->setSequentialMode(false);
-	octagramLine5->setSequentialMode(false);
-	octagramLine6->setSequentialMode(false);
-	octagramLine7->setSequentialMode(false);
-
-	// Show semua shapes
-	circleA->show();
-	circleB->show();
-	circleC->show();
-	circleD->show();
-	circleE->show();
-	cartesianAxes->show();
-	crossLineF->show();
-	crossLineG->show();
-	crossLineH->show();
-	crossLineI->show();
-	parallelogramCtoE->show();
-	parallelogramEtoB->show();
-	parallelogramBtoD->show();
-	parallelogramDtoC->show();
-	rectangleLineFtoG->show();
-	rectangleLineGtoI->show();
-	rectangleLineItoH->show();
-	rectangleLineHtoF->show();
-	octagramLine0->show();
-	octagramLine1->show();
-	octagramLine2->show();
-	octagramLine3->show();
-	octagramLine4->show();
-	octagramLine5->show();
-	octagramLine6->show();
-	octagramLine7->show();
-
-	// Reset sequential completed flag agar bisa jalankan lagi
-	sequentialCompleted = false;
-
-	// Mark dots cache dirty karena visibility berubah
-	dotsCacheDirty = true;
-}
-
-//--------------------------------------------------------------
-void ofApp::decreaseLineWidth() {
-	// Kurangi line width secara bertahap
-	currentLineWidth -= 0.5f;
-
-	// Batasi minimum line width
-	if (currentLineWidth < 0.f) {
-		currentLineWidth = 0.f;
+bool ofApp::isCanvasEmpty() {
+	// Cek apakah ada template shapes
+	if (currentTemplate && !currentTemplate->getShapes().empty()) {
+		return false;  // Ada template shapes, canvas tidak kosong
 	}
 
-	// Set line width ke semua shapes
-	circleA->setLineWidth(currentLineWidth);
-	circleB->setLineWidth(currentLineWidth);
-	circleC->setLineWidth(currentLineWidth);
-	circleD->setLineWidth(currentLineWidth);
-	circleE->setLineWidth(currentLineWidth);
-	cartesianAxes->setLineWidth(currentLineWidth);
-	crossLineF->setLineWidth(currentLineWidth);
-	crossLineG->setLineWidth(currentLineWidth);
-	crossLineH->setLineWidth(currentLineWidth);
-	crossLineI->setLineWidth(currentLineWidth);
-	parallelogramCtoE->setLineWidth(currentLineWidth);
-	parallelogramEtoB->setLineWidth(currentLineWidth);
-	parallelogramBtoD->setLineWidth(currentLineWidth);
-	parallelogramDtoC->setLineWidth(currentLineWidth);
-	rectangleLineFtoG->setLineWidth(currentLineWidth);
-	rectangleLineGtoI->setLineWidth(currentLineWidth);
-	rectangleLineItoH->setLineWidth(currentLineWidth);
-	rectangleLineHtoF->setLineWidth(currentLineWidth);
-	octagramLine0->setLineWidth(currentLineWidth);
-	octagramLine1->setLineWidth(currentLineWidth);
-	octagramLine2->setLineWidth(currentLineWidth);
-	octagramLine3->setLineWidth(currentLineWidth);
-	octagramLine4->setLineWidth(currentLineWidth);
-	octagramLine5->setLineWidth(currentLineWidth);
-	octagramLine6->setLineWidth(currentLineWidth);
-	octagramLine7->setLineWidth(currentLineWidth);
+	// Cek customLines
+	if (!customLines.empty()) {
+		return false;  // Ada customLines, canvas tidak kosong
+	}
+
+	// Cek polygons
+	if (!polygonShapes.empty()) {
+		return false;  // Ada polygons, canvas tidak kosong
+	}
+
+	return true;  // Canvas benar-bener kosong
 }
 
 //--------------------------------------------------------------
-void ofApp::increaseLineWidth() {
-	// Tambah line width secara bertahap
-	currentLineWidth += 0.5f;
+void ofApp::saveWorkspace() {
+  if (!currentTemplate) {
+    return;
+  }
 
-	// Batasi maximum line width
-	if (currentLineWidth > 4.0f) {
-		currentLineWidth = 4.0f;
-	}
+  // Kalau belum pernah Save As, langsung buka dialog (Save As)
+  if (lastSavedPath.empty()) {
+    saveWorkspaceAs();
+    return;
+  }
 
-	// Set line width ke semua shapes
-	circleA->setLineWidth(currentLineWidth);
-	circleB->setLineWidth(currentLineWidth);
-	circleC->setLineWidth(currentLineWidth);
-	circleD->setLineWidth(currentLineWidth);
-	circleE->setLineWidth(currentLineWidth);
-	cartesianAxes->setLineWidth(currentLineWidth);
-	crossLineF->setLineWidth(currentLineWidth);
-	crossLineG->setLineWidth(currentLineWidth);
-	crossLineH->setLineWidth(currentLineWidth);
-	crossLineI->setLineWidth(currentLineWidth);
-	parallelogramCtoE->setLineWidth(currentLineWidth);
-	parallelogramEtoB->setLineWidth(currentLineWidth);
-	parallelogramBtoD->setLineWidth(currentLineWidth);
-	parallelogramDtoC->setLineWidth(currentLineWidth);
-	rectangleLineFtoG->setLineWidth(currentLineWidth);
-	rectangleLineGtoI->setLineWidth(currentLineWidth);
-	rectangleLineItoH->setLineWidth(currentLineWidth);
-	rectangleLineHtoF->setLineWidth(currentLineWidth);
-	octagramLine0->setLineWidth(currentLineWidth);
-	octagramLine1->setLineWidth(currentLineWidth);
-	octagramLine2->setLineWidth(currentLineWidth);
-	octagramLine3->setLineWidth(currentLineWidth);
-	octagramLine4->setLineWidth(currentLineWidth);
-	octagramLine5->setLineWidth(currentLineWidth);
-	octagramLine6->setLineWidth(currentLineWidth);
-	octagramLine7->setLineWidth(currentLineWidth);
+  // Sudah ada Save As sebelumnya, save langsung ke file tersebut
+  fileManager.saveAll(currentTemplate->getName(), currentTemplate->radius,
+                      customLines, polygonShapes, userDots, currentTemplate->lineWidth,
+                      currentTemplate->labelsVisible, currentTemplate->dotsVisible,
+                      showUserDot, lastSavedPath);
+
+  // Show MenuBar agar popup terlihat
+  imguiVisible = true;
+  successPopup->show();
 }
 
+//--------------------------------------------------------------
+void ofApp::saveWorkspaceAs() {
+  if (!currentTemplate) {
+    return;  // Tidak ada template aktif
+  }
+
+  // Buka save dialog untuk pilih lokasi dan nama file
+  ofFileDialogResult saveDialog = ofSystemSaveDialog("workspace.nay", "Save Workspace As");
+
+  // Cek apakah user memilih file (tidak cancel)
+  if (saveDialog.getPath().empty()) {
+    return;  // User cancel
+  }
+
+  // Ambil filepath dari dialog
+  string filepath = saveDialog.getPath();
+
+  // Tambah extension .nay kalau belum ada
+  if (filepath.find(".nay") == string::npos) {
+    filepath += ".nay";
+  }
+
+  // Simpan langsung ke filepath yang user pilih
+  fileManager.saveAll(currentTemplate->getName(), currentTemplate->radius,
+                      customLines, polygonShapes, userDots, currentTemplate->lineWidth,
+                      currentTemplate->labelsVisible, currentTemplate->dotsVisible,
+                      showUserDot, filepath);
+
+  // Simpan path ini sebagai lastSavedPath (CTRL+S selanjutnya akan kesini)
+  lastSavedPath = filepath;
+
+  // Show MenuBar agar popup terlihat
+  imguiVisible = true;
+  successPopup->show();
+}
+
+//--------------------------------------------------------------
+void ofApp::openWorkspace() {
+  // Buka open file dialog
+  ofFileDialogResult openDialog = ofSystemLoadDialog("Open Workspace", false);
+
+  // Cek apakah user memilih file (tidak cancel)
+  if (openDialog.getPath().empty()) {
+    return;  // User cancel
+  }
+
+  // Ambil filepath dari dialog
+  string filepath = openDialog.getPath();
+
+  // Cek apakah file extension .nay
+  if (filepath.find(".nay") == string::npos) {
+    // File bukan format .nay, tampilkan error popup
+    // Show MenuBar agar popup terlihat
+    imguiVisible = true;
+    showSacredGeometry = false;
+    showPlayground = false;
+    errorPopup->show("Invalid File Format",
+                     "Please select a .nay file format!",
+                     "OK");
+    return;
+  }
+
+  // Set lastSavedPath ke filepath yang di-open (untuk load dan save)
+  lastSavedPath = filepath;
+
+  // Show dan focus Playground window (file valid, akan diload)
+  imguiVisible = true;
+  showPlayground = true;
+
+  // Set windowOpen flag dan focus ke Playground
+  for (auto& gui : guiComponents) {
+    Playground* playground = dynamic_cast<Playground*>(gui.get());
+    if (playground) {
+      playground->showWindow();
+      playground->focusWindow();
+      break;
+    }
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::loadWorkspace() {
+    // NOTE: Validasi canvas sudah dilakukan di UI level (Playground)
+    // Jangan cek lagi di sini agar autoCleanCanvas bisa berfungsi
+
+    // Cek apakah ada file yang di-open (lastSavedPath)
+    if (lastSavedPath.empty()) return;
+
+    // Load workspace dengan template name, radius, dan ALL settings
+    string loadedTemplateName;
+    float loadedRadius;
+    float loadedLineWidth;
+    bool loadedLabelsVisible;
+    bool loadedDotsVisible;
+
+    if (fileManager.loadAll(loadedTemplateName, loadedRadius, customLines,
+        polygonShapes, userDots, loadedLineWidth,
+        loadedLabelsVisible, loadedDotsVisible, showUserDot, lastSavedPath)) {
+
+        // Switch ke template yang di-load DULU
+        switchTemplate(loadedTemplateName);
+
+        // Rebuild shapes dengan loaded radius yang benar!
+        currentTemplate->setRadius(loadedRadius);
+
+        // Update tracking untuk scaling
+        previousRadius = loadedRadius;  // Reset tracking agar tidak scaling saat load
+
+        // Sync Settings ke template
+        currentTemplate->lineWidth = loadedLineWidth;
+        currentTemplate->labelsVisible = loadedLabelsVisible;
+        currentTemplate->dotsVisible = loadedDotsVisible;
+
+        // Apply settings ke semua shapes yang baru di-load
+        const auto& shapes = currentTemplate->getShapes();
+        for (auto& shape : shapes) {
+            shape->setRadius(currentTemplate->radius);  // Update radius dengan loadedRadius!
+            shape->setLineWidth(currentTemplate->lineWidth);
+
+            if (currentTemplate->labelsVisible)
+                shape->showLabel();
+            else
+                shape->hideLabel();
+
+            if (currentTemplate->dotsVisible)
+                shape->showDot();
+            else
+                shape->hideDot();
+
+            shape->setSequentialMode(false);  // PARALLEL mode (CTRL+O)
+        }
+
+        // Apply speed multiplier ke semua shapes (SESUAI SLIDER!)
+        currentTemplate->applySpeedMultiplier();
+
+        // Mulai staggered parallel load - show all shapes secara parallel
+        if (currentTemplate) {
+            currentTemplate->drawParallel();
+        }
+
+        // Note: Shapes visibility sudah di-filter di setupShapes() (Draw Only concept)
+        // Tidak perlu show/hide logic di sini lagi
+
+        // Matikan parallel dulu supaya customLines tidak langsung di-animate
+        fileManager.setLoadParallelMode(false);
+
+        // Sync ColorPicker dengan warna customLines yang diload
+        syncColorPickerFromLoadedLines();
+        syncColorPickerFromLoadedPolygons();
+        syncUserDotFromLoaded();
+
+        loadStage = LOAD_TEMPLATE;
+        isStaggeredLoad = true;
+        isSequentialShapeLoad = false;  // PARALLEL mode (CTRL+O)
+        currentState = UpdateState::STAGGERED_LOAD;  // STRATEGY PATTERN: Set state ke STAGGERED_LOAD
+    }
+}
+
+void ofApp::loadWorkspaceSeq() {
+    // NOTE: Validasi canvas sudah dilakukan di UI level (Playground)
+    // Jangan cek lagi di sini agar autoCleanCanvas bisa berfungsi
+
+    // Cek apakah ada file yang di-open (lastSavedPath)
+    if (lastSavedPath.empty()) return;
+
+    // Clear customLines dan polygons yang sudah ada sebelumnya
+    // HARUS DILAKUKAN SEBELUM loadAllSequential agar buffer diisi dengan benar!
+    customLines.clear();
+    selectionManager.clearLineSelection();
+    polygonShapes.clear();
+    selectionManager.clearPolygonSelection();
+
+    // Sequential load dengan animasi
+    string loadedTemplateName;
+    float loadedRadius;
+    float loadedLineWidth;
+    bool loadedLabelsVisible;
+    bool loadedDotsVisible;
+
+    fileManager.loadAllSequential(loadedTemplateName, loadedRadius,
+        loadedLineWidth, loadedLabelsVisible, loadedDotsVisible,
+        customLines, polygonShapes, userDots, showUserDot, lastSavedPath);
+
+    // Sync userDotRadius dan userDotColor dari userDots yang diload
+    syncUserDotFromLoaded();
+
+    // Switch ke template yang di-load DULU
+    switchTemplate(loadedTemplateName);
+
+    // Rebuild shapes dengan loaded radius yang benar!
+    currentTemplate->setRadius(loadedRadius);
+
+    // Update tracking untuk scaling
+    previousRadius = loadedRadius;  // Reset tracking agar tidak scaling saat load
+
+    // Sync Settings ke template
+    currentTemplate->lineWidth = loadedLineWidth;
+    currentTemplate->labelsVisible = loadedLabelsVisible;
+    currentTemplate->dotsVisible = loadedDotsVisible;
+
+    // Apply settings ke semua template shapes
+    const auto& shapes = currentTemplate->getShapes();
+    for (auto& shape : shapes) {
+        shape->setRadius(currentTemplate->radius);  // ← Update radius dengan loadedRadius!
+        shape->setLineWidth(currentTemplate->lineWidth);
+        if (currentTemplate->labelsVisible)
+            shape->showLabel();
+        else
+            shape->hideLabel();
+        if (currentTemplate->dotsVisible)
+            shape->showDot();
+        else
+            shape->hideDot();
+    }
+
+    // Apply speed multiplier ke semua shapes (SESUAI SLIDER!)
+    currentTemplate->applySpeedMultiplier();
+
+    // Reset animasi template - show all shapes secara parallel
+    if (currentTemplate) {
+        currentTemplate->drawParallel();
+    }
+
+    // Note: Shapes visibility sudah di-filter di setupShapes() (Draw Only concept)
+    // Tidak perlu show/hide logic di sini lagi
+
+    // Set sequential mode SETELAH showAllShapes (karena showAllShapes akan reset ke false)
+    for (auto& shape : shapes) {
+        shape->setSequentialMode(true);
+    }
+
+    fileManager.setLoadParallelMode(false);
+    loadStage = LOAD_TEMPLATE;
+    isStaggeredLoad = true;
+    isSequentialShapeLoad = true;  // Sequential per shape
+    currentTemplateIndex = 0;  // Reset index template
+    currentState = UpdateState::STAGGERED_LOAD;  // STRATEGY PATTERN: Set state ke STAGGERED_LOAD
+}
+
+//--------------------------------------------------------------
+vec2 ofApp::screenToWorld(vec2 screenPos) {
+	// Delegate to GeometryUtils
+	return GeometryUtils::screenToWorld(screenPos, canvasTranslation, canvasZoom, canvasRotation);
+}
+
+//--------------------------------------------------------------
+void ofApp::exit() {
+  // Cleanup jika ada
+
+    //ImGUI
+    exitImGui();
+}
+
+void ofApp::setupImGui() {
+    IMGUI_CHECKVERSION(); //cek versi imgui.h and imgui.cpp harus sama
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    ImGui::StyleColorsDark();
+    ImGui_ImplOpenGL3_Init();
+    HWND hwnd = ofGetWin32Window();
+    ImGui_ImplWin32_Init(hwnd);
+
+    // Initialize GUI Components
+    guiComponents.push_back(std::make_unique<MenuBar>(this));
+    guiComponents.push_back(std::make_unique<SacredGeometry>(this));
+    guiComponents.push_back(std::make_unique<Playground>(this));
+    guiComponents.push_back(std::make_unique<UserCustom>(this));
+
+    // Initialize Context Menu (bukan bagian dari guiComponents karena draw-nya khusus)
+    contextMenu = std::make_unique<ContextMenu>(this);
+
+    // Initialize popup (not in guiComponents, drawn separately)
+    successPopup = std::make_unique<SuccessPopup>(this);
+    errorPopup = std::make_unique<ErrorPopup>(this);
+    confirmationPopup = std::make_unique<ConfirmationPopup>(this);
+
+    // Initialize Selection Info window
+    selectionInfo = std::make_unique<SelectionInfo>(this);
+
+    // Initialize Object Tooltip manager
+    objectTooltip = std::make_unique<ObjectTooltip>(this);
+}
+
+
+//--------------------------------------------------------------
+void ofApp::drawImGui() {
+    // Skip ImGui render jika window minimized (DisplaySize = 0,0)
+    int width = ofGetWidth();
+    int height = ofGetHeight();
+
+    if (width <= 0 || height <= 0) {
+        return;  // Skip ImGui render jika window minimized
+    }
+
+    // Update display size BEFORE NewFrame! (WAJIB!)
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize = ImVec2(width, height);
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui::NewFrame();
+
+    // Draw GUI components
+    // MenuBar (component 0) selalu draw jika imguiVisible
+    if (imguiVisible && !guiComponents.empty()) {
+        guiComponents[0]->draw();  // MenuBar
+    }
+
+    // SacredGeometry (component 1)
+    if (imguiVisible && showSacredGeometry && guiComponents.size() > 1) {
+        guiComponents[1]->draw();  // SacredGeometry
+    }
+
+    // Playground (component 2)
+    if (imguiVisible && showPlayground && guiComponents.size() > 2) {
+        guiComponents[2]->draw();  // Playground
+    }
+
+    // UserCustom (component 3)
+    if (imguiVisible && showUserCustom && guiComponents.size() > 3) {
+        guiComponents[3]->draw();  // UserCustom
+    }
+
+    // Draw popup dialogs
+    successPopup->draw();
+    errorPopup->draw();
+    confirmationPopup->draw();
+
+    // Draw Selection Info window
+    if (imguiVisible && showSelectionInfo) {
+        selectionInfo->draw();
+    }
+
+    // Draw tooltips (SELALU render, tidak tergantung imguiVisible)
+    objectTooltip->draw();
+
+    // Draw context menu (SELALU render terlepas dari imguiVisible)
+    contextMenu->draw();
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void ofApp::exitImGui() {
+    //Shutdown OpenGL3 Backend
+    ImGui_ImplOpenGL3_Shutdown();
+
+    //Shutdown Win32 Backend
+    ImGui_ImplWin32_Shutdown();
+
+    //Destroy ImGui Context
+    ImGui::DestroyContext();
+}
 

@@ -5,11 +5,28 @@
 *.userosscache
 *.sln.docstates
 
+# Ultralight SDK (download separately, NOT in repo due to license restrictions)
+# DO NOT commit Ultralight SDK to repository
+ultralight/
+
 # Build outputs
-bin/
-!bin/data/
 obj/
 exe/
+
+# Ignore file di bin/ kecuali HTML files
+bin/*.exe
+bin/*.dll
+bin/*.obj
+bin/*.lib
+bin/*.exp
+bin/*.pdb
+bin/*.a
+bin/*.so
+bin/*.dylib
+**/*.bin
+**/*.dat
+**/*.nay
+bin/resources/
 
 # Compiled files (intermediate)
 *.obj

@@ -1,4 +1,5 @@
 #include "CrossLine.h"
+#include "DotInfo.h"
 #include <ofMain.h>
 
 CrossLine::CrossLine(vec2 start, vec2 end, string label1, string label2, float radius):
@@ -7,8 +8,15 @@ CrossLine::CrossLine(vec2 start, vec2 end, string label1, string label2, float r
 	label1(label1),
 	label2(label2),
 	radius(radius),
+	originalRadius(radius),  // Simpan original radius
 	radiusDot(vec2(0, 0))
 {
+	// SIMPAN kuadran dari end position
+	if (end.x >= 0 && end.y >= 0) quadrant = 0;      // (+,+) Kuadran 1 (45°)
+	else if (end.x < 0 && end.y >= 0) quadrant = 1;   // (-,+) Kuadran 2 (135°)
+	else if (end.x < 0 && end.y < 0) quadrant = 2;    // (-,-) Kuadran 3 (-135°)
+	else quadrant = 3;                                 // (+,-) Kuadran 4 (-45°)
+
 	// Hitung radiusDot SEKALI di constructor untuk akses dari ofApp
 	float totalAngle = atan2(end.y - start.y, end.x - start.x);
 	radiusDot = vec2(cos(totalAngle) * radius, sin(totalAngle) * radius);
@@ -39,6 +47,15 @@ void CrossLine::setEnd(float endX, float endY) {
 	radiusDot = vec2(cos(totalAngle) * radius, sin(totalAngle) * radius);
 }
 
+void CrossLine::setRadius(float r) {
+	// Re-calculate secara proporsional
+	float scaleFactor = r / originalRadius;
+	end = end * scaleFactor;
+	radiusDot = radiusDot * scaleFactor;
+	radius = r;
+	originalRadius = r;  // Update originalRadius untuk scaling berikutnya
+}
+
 void CrossLine::showLabel() {
 	labelVisible = true;
 }
@@ -55,13 +72,9 @@ void CrossLine::hideDot() {
 	dotVisible = false;
 }
 
-void CrossLine::update() {
-	if (showing) {
-		if (progress < totalSegments) progress += speed;
-	}
-	else {
-		if (progress > 0) progress -= speed;
-	}
+void CrossLine::update(float deltaTime) {
+	// Animasi muncul dari 0 ke totalSegments
+	if (progress < totalSegments) progress += speed * deltaTime;
 }
 
 void CrossLine::draw() {
@@ -90,7 +103,7 @@ void CrossLine::draw() {
 	polyline.close();
 	polyline.draw();
 
-	if (showing && progress >= totalSegments) {
+	if (progress >= totalSegments) {
 		ofFill();
 		// Gambar dot hanya jika dotVisible = true
 		if (dotVisible) {
@@ -107,4 +120,11 @@ void CrossLine::draw() {
 		}
 	}
 	ofPopMatrix();
+}
+
+//--------------------------------------------------------------
+void CrossLine::addDotsToCache(std::vector<DotInfo>& dots) {
+	// CrossLine punya 2 dots: radiusDot dan end
+	dots.push_back({radiusDot, "CrossLine"});
+	dots.push_back({end, "CrossLine"});
 }

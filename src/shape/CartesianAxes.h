@@ -4,12 +4,12 @@
 class CartesianAxes : public AbstractShape
 {
 public:
-	float radius;
 	CartesianAxes(float r);
 
 	// Override pure virtual methods dari AbstractShape
-	void update() override;
+	void update(float deltaTime = 0.016f) override;
 	void draw() override;
+	void setRadius(float r) override;  // Override setRadius
 
 	// Override isComplete untuk custom logic
 	bool isComplete() override;
@@ -19,6 +19,7 @@ public:
 	void hideLabel();
 
 private:
+	float radius;  // Pindah ke private
 	float maxScale = 2.5;  // Axes-specific
 	bool labelVisible = true;  // Flag untuk label visibility
 };
