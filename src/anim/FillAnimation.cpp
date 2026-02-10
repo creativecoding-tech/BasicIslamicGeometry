@@ -18,10 +18,10 @@ void FillAnimation::update(float deltaTime) {
 
 //--------------------------------------------------------------
 float FillAnimation::getWaterLevel() const {
-    // Animation mulai dari 50% (setengah) ke 100% (penuh)
-    // progress 0.0 → 0.5 (setengah)
-    // progress 1.0 → 1.0 (penuh)
-    return 0.5f + (progress * 0.5f);
+    // Animation mulai dari BAWAH (0%) ke ATAS (100%)
+    // progress 0.0 → 0.0 (kosong/bawah)
+    // progress 1.0 → 1.0 (penuh/atas)
+    return progress;
 }
 
 

@@ -63,4 +63,12 @@ private:
 	mutable float minY;                      // Y minimum (atas)
 	mutable float maxY;                      // Y maksimum (bawah)
 	mutable float currentWaterY;             // Posisi Y air saat ini
+
+	// Shader untuk FillAnimation
+	mutable ofShader fillShader;             // Pixel based fill shader
+	mutable bool shaderLoaded;               // Flag shader loaded
+	mutable ofFbo maskFbo;                   // Mask Fbo untuk polygon
+	mutable bool fboAllocated;               // Flag FBO allocated
+	mutable int lastFboWidth;                // Track FBO width
+	mutable int lastFboHeight;               // Track FBO height
 };

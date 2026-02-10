@@ -16,6 +16,7 @@ void ofApp::setup() {
   ofSetBackgroundAuto(false);
   ofEnableAntiAliasing();
   ofEnableSmoothing();
+  ofDisableArbTex();  // Required for FBO texture sampling in FillAnimation
 
   // Load font untuk custom line labels
   fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
