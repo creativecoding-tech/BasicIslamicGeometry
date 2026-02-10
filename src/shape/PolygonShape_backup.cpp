@@ -33,7 +33,6 @@ PolygonShape::PolygonShape(const PolygonShape& other)
 	, fillColor(other.fillColor)
 	, selected(other.selected)
 	, index(other.index)
-	, loadedFromFile(other.loadedFromFile)
 	, animation(nullptr)
 	, minY(0.0f), maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
 	  lastFboWidth(0), lastFboHeight(0) {}
@@ -45,7 +44,6 @@ PolygonShape& PolygonShape::operator=(const PolygonShape& other) {
 		fillColor = other.fillColor;
 		selected = other.selected;
 		index = other.index;
-		loadedFromFile = other.loadedFromFile;
 		animation = nullptr;  // Animation tidak dicopy (reset ke nullptr)
 	}
 	return *this;
@@ -58,7 +56,6 @@ PolygonShape::PolygonShape(PolygonShape&& other) noexcept
 	, fillColor(other.fillColor)
 	, selected(other.selected)
 	, index(other.index)
-	, loadedFromFile(other.loadedFromFile)
 	, animation(std::move(other.animation))
 	, minY(0.0f), maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
 	  lastFboWidth(0), lastFboHeight(0) {}
@@ -71,7 +68,6 @@ PolygonShape& PolygonShape::operator=(PolygonShape&& other) noexcept {
 		fillColor = other.fillColor;
 		selected = other.selected;
 		index = other.index;
-		loadedFromFile = other.loadedFromFile;
 		animation = std::move(other.animation);
 	}
 	return *this;
@@ -82,13 +78,212 @@ void PolygonShape::draw() const {
 	ofPushStyle();
 	ofFill();
 
-	// Conditional rendering berdasarkan asal polygon
-	if (loadedFromFile) {
-		// Polygon diload dari file .nay → Gunakan GLSL shaders
-		drawGLSL();
+	// GLOBAL shader untuk basic polygon rendering (semua polygon kecuali Wave Fill)
+	static ofShader globalPolygonShader;
+	static bool globalPolygonShaderLoaded = false;
+
+	// Load shader sekali saja
+	if (!globalPolygonShaderLoaded) {
+		globalPolygonShader.load("shaders/polygon.vert", "shaders/polygon.frag");
+		globalPolygonShaderLoaded = true;
+	}
+
+	// Cek tipe animation dan apply effect yang sesuai
+	if (animation) {
+		ofColor animatedColor = fillColor;
+
+		// Cek FadeInAnimation
+		if (auto* fadeAnim = dynamic_cast<FadeInAnimation*>(animation.get())) {
+			float progress = animation->getProgress();
+
+			// Kalau progress masih 0, alpha harus 0 (BENAR-BENAR HIDDEN)
+			if (progress == 0.0f) {
+				animatedColor.a = 0;  // FORCE alpha 0!
+			} else {
+				// Progress > 0, pakai current alpha
+				float currentAlpha = fadeAnim->getCurrentAlpha();
+				animatedColor.a = static_cast<int>(currentAlpha);
+			}
+
+			// Render dengan shader
+			globalPolygonShader.begin();
+			globalPolygonShader.setUniform4f("color",
+				animatedColor.r / 255.0f,
+				animatedColor.g / 255.0f,
+				animatedColor.b / 255.0f,
+				animatedColor.a / 255.0f);
+
+			// Draw polygon mesh
+			ofMesh polygonMesh;
+			for (const auto& v : vertices) {
+				polygonMesh.addVertex(ofVec3f(v.x, v.y, 0.0f));
+			}
+			polygonMesh.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
+			polygonMesh.draw();
+
+			globalPolygonShader.end();
+		}
+		// Cek WobbleAnimation
+		else if (auto* wobbleAnim = dynamic_cast<WobbleAnimation*>(animation.get())) {
+			// Gambar polygon dengan wobble effect pada vertices
+			glm::vec2 offset = wobbleAnim->getWobbleOffset();
+
+			// Render dengan shader
+			globalPolygonShader.begin();
+			globalPolygonShader.setUniform4f("color",
+				fillColor.r / 255.0f,
+				fillColor.g / 255.0f,
+				fillColor.b / 255.0f,
+				fillColor.a / 255.0f);
+
+			// Draw polygon mesh dengan offset
+			ofMesh polygonMesh;
+			for (const auto& v : vertices) {
+				polygonMesh.addVertex(ofVec3f(v.x + offset.x, v.y + offset.y, 0.0f));
+			}
+			polygonMesh.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
+			polygonMesh.draw();
+
+			globalPolygonShader.end();
+		}
+		// Cek FillAnimation (Wave Fill)
+		else if (auto* fillAnim = dynamic_cast<FillAnimation*>(animation.get())) {
+			// Multi-pass rendering dengan per-polygon FBO
+
+			// Hitung bounding box X dan Y (minX/maxX/minY/maxY)
+			// Hitung di sini untuk memastikan nilai tersedia sebelum allocate FBO
+			float minX = vertices[0].x, maxX = vertices[0].x;
+			float minY = vertices[0].y, maxY = vertices[0].y;
+			for (const auto& v : vertices) {
+				if (v.x < minX) minX = v.x;
+				if (v.x > maxX) maxX = v.x;
+				if (v.y < minY) minY = v.y;
+				if (v.y > maxY) maxY = v.y;
+			}
+			float width = maxX - minX;
+			float height = maxY - minY;
+
+			// Update member variables untuk currentWaterY calculation
+			this->minY = minY;
+			this->maxY = maxY;
+
+			// Recalculate currentWaterY dengan minY/maxY yang baru
+			float waterLevel = fillAnim->getWaterLevel();
+			currentWaterY = maxY - (maxY - minY) * waterLevel;
+
+			// GLOBAL shader (shared untuk semua polygon)
+			static ofShader globalFillShader;
+			static bool globalShaderLoaded = false;
+
+			// Load shader sekali saja
+			if (!globalShaderLoaded) {
+				globalFillShader.load("shaders/fillShader.vert", "shaders/waveFill.frag");
+				globalShaderLoaded = true;
+			}
+
+			// Allocate FBO untuk polygon ini (instance member)
+			// Round ke integer untuk menghindari reallocation karena floating point precision
+			int fboWidth = (int)std::round(width);
+			int fboHeight = (int)std::round(height);
+
+			if (!fboAllocated || lastFboWidth != fboWidth || lastFboHeight != fboHeight) {
+				maskFbo.allocate(fboWidth, fboHeight);
+				fboAllocated = true;
+				lastFboWidth = fboWidth;
+				lastFboHeight = fboHeight;
+			}
+
+			// Pass 1: Render polygon mask ke FBO (offset ke 0,0)
+			maskFbo.begin();
+			ofClear(0, 0, 0, 0);
+			ofFill();
+			ofSetColor(255);
+			ofPushMatrix();
+			ofTranslate(-minX, -minY);  // Offset supaya polygon mulai dari (0,0)
+			ofBeginShape();
+			for (auto& v : vertices) {
+				ofVertex(v.x, v.y);
+			}
+			ofEndShape(true);
+			ofPopMatrix();
+			maskFbo.end();
+
+			// Pass 2: Draw quad dengan wave effect shader
+			ofMesh quad;
+			quad.addVertex(ofVec3f(minX, minY, 0));
+			quad.addVertex(ofVec3f(maxX, minY, 0));
+			quad.addVertex(ofVec3f(maxX, maxY, 0));
+			quad.addVertex(ofVec3f(minX, maxY, 0));
+
+			quad.addTexCoord(ofVec2f(0, 0));
+			quad.addTexCoord(ofVec2f(1, 0));
+			quad.addTexCoord(ofVec2f(1, 1));
+			quad.addTexCoord(ofVec2f(0, 1));
+
+			quad.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
+
+			// Draw quad dengan shader
+			globalFillShader.begin();
+			globalFillShader.setUniformTexture("maskTexture", maskFbo.getTexture(), 0);
+			globalFillShader.setUniform4f("fillColor",
+				fillColor.r / 255.0f,
+				fillColor.g / 255.0f,
+				fillColor.b / 255.0f,
+				fillColor.a / 255.0f);
+			globalFillShader.setUniform1f("minY", minY);
+			globalFillShader.setUniform1f("maxY", maxY);
+			globalFillShader.setUniform1f("currentWaterY", currentWaterY);
+			globalFillShader.setUniform1f("waveAmplitude", fillAnim->getWaveAmplitude());
+			globalFillShader.setUniform1f("waveFrequency", fillAnim->getWaveFrequency());
+			globalFillShader.setUniform1f("progress", fillAnim->getProgress());
+			globalFillShader.setUniform1f("aaMargin", 4.0f);
+			globalFillShader.setUniform2f("uMaskSize", maskFbo.getWidth(), maskFbo.getHeight());
+			globalFillShader.setUniform2f("uBoundingBoxMin", minX, minY);
+			globalFillShader.setUniform2f("uBoundingBoxMax", maxX, maxY);
+
+			quad.draw();
+
+			globalFillShader.end();
+		}
+		// Unknown animation type - fallback ke no animation
+		else {
+			// Render dengan shader
+			globalPolygonShader.begin();
+			globalPolygonShader.setUniform4f("color",
+				fillColor.r / 255.0f,
+				fillColor.g / 255.0f,
+				fillColor.b / 255.0f,
+				fillColor.a / 255.0f);
+
+			// Draw polygon mesh
+			ofMesh polygonMesh;
+			for (const auto& v : vertices) {
+				polygonMesh.addVertex(ofVec3f(v.x, v.y, 0.0f));
+			}
+			polygonMesh.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
+			polygonMesh.draw();
+
+			globalPolygonShader.end();
+		}
 	} else {
-		// Polygon dibuat baru (CTRL+G / right-click) → Gunakan CPU rendering
-		drawCPU();
+		// Tidak ada animation, pakai fillColor asli
+		// Render dengan shader
+		globalPolygonShader.begin();
+		globalPolygonShader.setUniform4f("color",
+			fillColor.r / 255.0f,
+			fillColor.g / 255.0f,
+			fillColor.b / 255.0f,
+			fillColor.a / 255.0f);
+
+		// Draw polygon mesh
+		ofMesh polygonMesh;
+		for (const auto& v : vertices) {
+			polygonMesh.addVertex(ofVec3f(v.x, v.y, 0.0f));
+		}
+		polygonMesh.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
+		polygonMesh.draw();
+
+		globalPolygonShader.end();
 	}
 
 	ofPopStyle();
@@ -173,223 +368,4 @@ bool PolygonShape::containsPoint(vec2 point) const {
 	}
 
 	return poly.inside(point.x, point.y);
-}
-
-//--------------------------------------------------------------
-// CPU-based rendering untuk newly created polygons (CTRL+G / right-click)
-// Polygon baru TIDAK punya animasi, jadi simple rendering saja
-void PolygonShape::drawCPU() const {
-	ofSetColor(fillColor);
-
-	ofBeginShape();
-	for (auto& v : vertices) {
-		ofVertex(v.x, v.y);
-	}
-	ofEndShape(true);
-}
-
-//--------------------------------------------------------------
-// GPU-based rendering untuk polygons loaded dari .nay files
-void PolygonShape::drawGLSL() const {
-	// GLOBAL shader untuk basic polygon rendering (semua polygon kecuali Wave Fill)
-	static ofShader globalPolygonShader;
-	static bool globalPolygonShaderLoaded = false;
-
-	// Load shader sekali saja
-	if (!globalPolygonShaderLoaded) {
-		globalPolygonShader.load("shaders/polygon.vert", "shaders/polygon.frag");
-		globalPolygonShaderLoaded = true;
-	}
-
-	// Cek tipe animation dan apply effect yang sesuai
-	if (animation) {
-		ofColor animatedColor = fillColor;
-
-		// Cek FadeInAnimation
-		if (auto* fadeAnim = dynamic_cast<FadeInAnimation*>(animation.get())) {
-			float progress = animation->getProgress();
-
-			// Kalau progress masih 0, alpha harus 0 (BENAR-BENAR HIDDEN)
-			if (progress == 0.0f) {
-				animatedColor.a = 0;  // FORCE alpha 0!
-			} else {
-				// Progress > 0, pakai current alpha
-				float currentAlpha = fadeAnim->getCurrentAlpha();
-				animatedColor.a = static_cast<int>(currentAlpha);
-			}
-
-			// Render dengan shader + ofBeginShape (untuk support tessellated curve)
-			globalPolygonShader.begin();
-			globalPolygonShader.setUniform4f("color",
-				animatedColor.r / 255.0f,
-				animatedColor.g / 255.0f,
-				animatedColor.b / 255.0f,
-				animatedColor.a / 255.0f);
-
-			// Draw polygon dengan ofBeginShape (bukan ofMesh) untuk tessellated curve
-			ofBeginShape();
-			for (const auto& v : vertices) {
-				ofVertex(v.x, v.y);
-			}
-			ofEndShape(true);
-
-			globalPolygonShader.end();
-		}
-		// Cek WobbleAnimation
-		else if (auto* wobbleAnim = dynamic_cast<WobbleAnimation*>(animation.get())) {
-			// Gambar polygon dengan wobble effect pada vertices
-			glm::vec2 offset = wobbleAnim->getWobbleOffset();
-
-			// Render dengan shader + ofBeginShape (untuk support tessellated curve)
-			globalPolygonShader.begin();
-			globalPolygonShader.setUniform4f("color",
-				fillColor.r / 255.0f,
-				fillColor.g / 255.0f,
-				fillColor.b / 255.0f,
-				fillColor.a / 255.0f);
-
-			// Draw polygon dengan ofBeginShape (bukan ofMesh) untuk tessellated curve
-			ofBeginShape();
-			for (const auto& v : vertices) {
-				ofVertex(v.x + offset.x, v.y + offset.y);
-			}
-			ofEndShape(true);
-
-			globalPolygonShader.end();
-		}
-		// Cek FillAnimation (Wave Fill)
-		else if (auto* fillAnim = dynamic_cast<FillAnimation*>(animation.get())) {
-			// Multi-pass rendering dengan per-polygon FBO
-
-			// Hitung bounding box X dan Y (minX/maxX/minY/maxY)
-			float minX = vertices[0].x, maxX = vertices[0].x;
-			float minY = vertices[0].y, maxY = vertices[0].y;
-			for (const auto& v : vertices) {
-				if (v.x < minX) minX = v.x;
-				if (v.x > maxX) maxX = v.x;
-				if (v.y < minY) minY = v.y;
-				if (v.y > maxY) maxY = v.y;
-			}
-			float width = maxX - minX;
-			float height = maxY - minY;
-
-			// Update member variables untuk currentWaterY calculation
-			this->minY = minY;
-			this->maxY = maxY;
-
-			// Recalculate currentWaterY dengan minY/maxY yang baru
-			float waterLevel = fillAnim->getWaterLevel();
-			currentWaterY = maxY - (maxY - minY) * waterLevel;
-
-			// GLOBAL shader (shared untuk semua polygon)
-			static ofShader globalFillShader;
-			static bool globalShaderLoaded = false;
-
-			// Load shader sekali saja
-			if (!globalShaderLoaded) {
-				globalFillShader.load("shaders/fillShader.vert", "shaders/waveFill.frag");
-				globalShaderLoaded = true;
-			}
-
-			// Allocate FBO untuk polygon ini (instance member)
-			int fboWidth = (int)std::round(width);
-			int fboHeight = (int)std::round(height);
-
-			if (!fboAllocated || lastFboWidth != fboWidth || lastFboHeight != fboHeight) {
-				maskFbo.allocate(fboWidth, fboHeight);
-				fboAllocated = true;
-				lastFboWidth = fboWidth;
-				lastFboHeight = fboHeight;
-			}
-
-			// Pass 1: Render polygon mask ke FBO (offset ke 0,0)
-			maskFbo.begin();
-			ofClear(0, 0, 0, 0);
-			ofFill();
-			ofSetColor(255);
-			ofPushMatrix();
-			ofTranslate(-minX, -minY);
-			ofBeginShape();
-			for (auto& v : vertices) {
-				ofVertex(v.x, v.y);
-			}
-			ofEndShape(true);
-			ofPopMatrix();
-			maskFbo.end();
-
-			// Pass 2: Draw quad dengan wave effect shader
-			ofMesh quad;
-			quad.addVertex(ofVec3f(minX, minY, 0));
-			quad.addVertex(ofVec3f(maxX, minY, 0));
-			quad.addVertex(ofVec3f(maxX, maxY, 0));
-			quad.addVertex(ofVec3f(minX, maxY, 0));
-
-			quad.addTexCoord(ofVec2f(0, 0));
-			quad.addTexCoord(ofVec2f(1, 0));
-			quad.addTexCoord(ofVec2f(1, 1));
-			quad.addTexCoord(ofVec2f(0, 1));
-
-			quad.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
-
-			// Draw quad dengan shader
-			globalFillShader.begin();
-			globalFillShader.setUniformTexture("maskTexture", maskFbo.getTexture(), 0);
-			globalFillShader.setUniform4f("fillColor",
-				fillColor.r / 255.0f,
-				fillColor.g / 255.0f,
-				fillColor.b / 255.0f,
-				fillColor.a / 255.0f);
-			globalFillShader.setUniform1f("minY", minY);
-			globalFillShader.setUniform1f("maxY", maxY);
-			globalFillShader.setUniform1f("currentWaterY", currentWaterY);
-			globalFillShader.setUniform1f("waveAmplitude", fillAnim->getWaveAmplitude());
-			globalFillShader.setUniform1f("waveFrequency", fillAnim->getWaveFrequency());
-			globalFillShader.setUniform1f("progress", fillAnim->getProgress());
-			globalFillShader.setUniform1f("aaMargin", 4.0f);
-			globalFillShader.setUniform2f("uMaskSize", maskFbo.getWidth(), maskFbo.getHeight());
-			globalFillShader.setUniform2f("uBoundingBoxMin", minX, minY);
-			globalFillShader.setUniform2f("uBoundingBoxMax", maxX, maxY);
-
-			quad.draw();
-
-			globalFillShader.end();
-		}
-		// Unknown animation type - fallback ke no animation
-		else {
-			// Render dengan shader + ofBeginShape (untuk support tessellated curve)
-			globalPolygonShader.begin();
-			globalPolygonShader.setUniform4f("color",
-				fillColor.r / 255.0f,
-				fillColor.g / 255.0f,
-				fillColor.b / 255.0f,
-				fillColor.a / 255.0f);
-
-			// Draw polygon dengan ofBeginShape (bukan ofMesh) untuk tessellated curve
-			ofBeginShape();
-			for (const auto& v : vertices) {
-				ofVertex(v.x, v.y);
-			}
-			ofEndShape(true);
-
-			globalPolygonShader.end();
-		}
-	} else {
-		// Tidak ada animation, pakai fillColor asli
-		// Render dengan shader + ofBeginShape (untuk support tessellated curve)
-		globalPolygonShader.begin();
-		globalPolygonShader.setUniform4f("color",
-			fillColor.r / 255.0f,
-			fillColor.g / 255.0f,
-			fillColor.b / 255.0f,
-			fillColor.a / 255.0f);
-
-		// Draw polygon dengan ofBeginShape (bukan ofMesh) untuk tessellated curve
-		ofBeginShape();
-		for (const auto& v : vertices) {
-			ofVertex(v.x, v.y);
-		}
-		ofEndShape(true);
-
-		globalPolygonShader.end();
-	}
 }

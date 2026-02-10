@@ -48,15 +48,23 @@ public:
 	bool isSelected() const;
 	const vector<vec2>& getVertices() const;
 	int getIndex() const { return index; }  // Get index polygon
+	bool isLoadedFromFile() const { return loadedFromFile; }  // Cek apakah diload dari file .nay
+
+	// Setters
+	void setLoadedFromFile(bool loaded) { loadedFromFile = loaded; }  // Set flag loaded dari file
 
 	// Utils
 	bool containsPoint(vec2 point) const;  // Cek apakah point ada di dalam polygon
 
 private:
+	// Rendering helper methods
+	void drawCPU() const;  // CPU-based rendering (ofBeginShape) - untuk newly created polygons
+	void drawGLSL() const;  // GPU-based rendering (GLSL shaders) - untuk polygons loaded from .nay
 	vector<vec2> vertices;
 	ofColor fillColor;
 	bool selected;
 	int index;  // Index polygon untuk label
+	bool loadedFromFile = false;  // Flag: true jika diload dari file .nay
 	std::unique_ptr<AbstractAnimation> animation;  // Animation system (optional)
 
 	// Fill state (dihitung di update(), dipakai di draw())

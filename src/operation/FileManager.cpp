@@ -442,6 +442,7 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
 
     // Buat PolygonShape dengan atau tanpa animation tergantung mode
     PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
+    polygon.setLoadedFromFile(true);  // Flag sebagai loaded dari file .nay
     polygons.push_back(std::move(polygon));
   }
 
@@ -803,6 +804,7 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
 
       // Buat PolygonShape dengan atau tanpa animation tergantung mode
       PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
+      polygon.setLoadedFromFile(true);  // Flag sebagai loaded dari file .nay
       loadedPolygonsBuffer.push_back(std::move(polygon));
     }
   }
