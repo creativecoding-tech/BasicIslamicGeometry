@@ -356,7 +356,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 			// Radio button changed
 		}
 
-		if (ImGui::RadioButton("Fill", &polygonAnimationMode, 3)) {
+		if (ImGui::RadioButton("Wave Fill", &polygonAnimationMode, 3)) {
 			// Radio button changed
 		}
 	}
@@ -405,7 +405,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 						polyMode = PolygonAnimationMode::WOBBLE;
 						break;
 					case 3:
-						polyMode = PolygonAnimationMode::FILL;
+						polyMode = PolygonAnimationMode::WAVE_FILL;
 						break;
 					case 0:
 					default:
@@ -448,7 +448,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 								polyMode = PolygonAnimationMode::WOBBLE;
 								break;
 							case 3:
-								polyMode = PolygonAnimationMode::FILL;
+								polyMode = PolygonAnimationMode::WAVE_FILL;
 								break;
 							case 0:
 							default:
