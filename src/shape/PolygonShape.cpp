@@ -120,13 +120,6 @@ void PolygonShape::draw() const {
 		}
 		// Cek FillAnimation
 		else if (auto* fillAnim = dynamic_cast<FillAnimation*>(animation.get())) {
-			// DEBUG: Log progress hanya sekali di awal (per polygon instance)
-			if (fillAnim->getProgress() < 0.01f) {  // Hanya log saat progress masih ~0
-				ofLog() << "Polygon " << index << " INITIAL STATE - progress: " << fillAnim->getProgress()
-				        << " waterLevel: " << fillAnim->getWaterLevel()
-				        << " minY: " << minY << " maxY: " << maxY << " currentWaterY: " << currentWaterY;
-			}
-
 			// Multi-pass rendering dengan per-polygon FBO
 
 			// Hitung bounding box X dan Y (minX/maxX/minY/maxY)
@@ -156,12 +149,7 @@ void PolygonShape::draw() const {
 
 			// Load shader sekali saja
 			if (!globalShaderLoaded) {
-				bool loaded = globalFillShader.load("shaders/fillShader.vert", "shaders/waveFill.frag");
-				if (loaded) {
-					ofLog() << "GLOBAL Wave Fill shader loaded successfully";
-				} else {
-					ofLog() << "GLOBAL Wave Fill shader FAILED to load!";
-				}
+				globalFillShader.load("shaders/fillShader.vert", "shaders/waveFill.frag");
 				globalShaderLoaded = true;
 			}
 
@@ -172,7 +160,6 @@ void PolygonShape::draw() const {
 
 			if (!fboAllocated || lastFboWidth != fboWidth || lastFboHeight != fboHeight) {
 				maskFbo.allocate(fboWidth, fboHeight);
-				ofLog() << "Polygon FBO allocated: " << fboWidth << "x" << fboHeight;
 				fboAllocated = true;
 				lastFboWidth = fboWidth;
 				lastFboHeight = fboHeight;
