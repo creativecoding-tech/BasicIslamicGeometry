@@ -7,14 +7,14 @@ void MenuBar::draw() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Open","CTRL+O ")) {
-                app->openWorkspace();
+                app->fileOperationManager->openWorkspace();
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Save Workspace", "CTRL+S")) {
-                app->saveWorkspace();
+                app->fileOperationManager->saveWorkspace();
             }
             if (ImGui::MenuItem("Save As...", "CTRL+SHIFT+S")) {
-                app->saveWorkspaceAs();
+                app->fileOperationManager->saveWorkspaceAs();
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Exit", "END")) {

@@ -668,16 +668,16 @@ void InputManager::handleKeyPressed(int key) {
 		case 19: // CTRL+S (ASCII 19)
 			// Cek apakah SHIFT juga ditekan
 			if (ofGetKeyPressed(OF_KEY_SHIFT)) {
-				app->saveWorkspaceAs();
+				app->fileOperationManager->saveWorkspaceAs();
 			} else {
-				app->saveWorkspace();
+				app->fileOperationManager->saveWorkspace();
 			}
 			break;
 
 		case 'o':
 		case 'O':
 		case 15: // CTRL+O (ASCII 15)
-			app->openWorkspace();
+			app->fileOperationManager->openWorkspace();
 			break;
 
 		case 'g':

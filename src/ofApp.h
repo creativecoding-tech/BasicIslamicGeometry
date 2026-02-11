@@ -23,6 +23,7 @@
 #include "managers/ColorManager.h"
 #include "managers/DuplicateManager.h"
 #include "managers/InputManager.h"
+#include "operation/FileOperationManager.h"
 #include "undo/UndoAction.h"
 #include "utils/GeometryUtils.h"
 #include "imgui/imgui.h"
@@ -78,6 +79,8 @@ class ofApp : public ofBaseApp{
 		vec2 mousePos = vec2(9999, 9999);
 		vector<vec2> currentPolylinePoints;  // Capture points saat drag untuk polyline
 		vector<CustomLine> customLines;  // CustomLine dari FileManager
+	int loadedFileCustomLinesCount = 0;  // Jumlah customLines dari file yang sedang di-load
+	int loadedFilePolygonCount = 0;  // Jumlah polygons dari file yang sedang di-load
 
 		// User-created dots system (untuk fitur "Duplicate Dot Above")
 		vector<std::unique_ptr<DotShape>> userDots;
@@ -144,6 +147,9 @@ class ofApp : public ofBaseApp{
 
 		// Input Manager untuk handle semua input events (mouse + keyboard)
 		std::unique_ptr<InputManager> inputManager;
+
+		// File Operation Manager untuk handle semua file operations
+		std::unique_ptr<FileOperationManager> fileOperationManager;
 
 		// Play button delay state
 		bool isWaitingForLoad = false;
@@ -230,13 +236,6 @@ class ofApp : public ofBaseApp{
 		void duplicateDotRight();  // Duplicate dot yang di-hover dengan offset ke kanan
 		void duplicateLineR180();  // Duplicate selected lines dengan rotate 180° di global center
 		void drawUserDots();  // Draw user-created dots dan label
-
-		// File operations
-		void saveWorkspace();          // Save workspace to file
-		void saveWorkspaceAs();        // Save workspace to custom location
-		void openWorkspace();          // Open file dialog dengan validasi .nay
-		void loadWorkspace();          // Load workspace from file
-		void loadWorkspaceSeq();          // Load workspace seq from file
 
 		// Interactive Line Creation helpers
 		const std::vector<DotInfo>& getAllDots();  // Return cached dots by reference

@@ -4,6 +4,7 @@
 #include "template/templates/BasicZelligeTemplate.h"
 #include "operation/gui/SacredGeometry.h"
 #include "operation/gui/UserCustom.h"
+#include "operation/FileOperationManager.h"
 #include "utils/GeometryUtils.h"
 #include <vector>
 
@@ -40,6 +41,9 @@ void ofApp::setup() {
 
   // Initialize InputManager (after ofApp is fully constructed)
   inputManager = std::make_unique<InputManager>(this);
+
+  // Initialize FileOperationManager (after ofApp is fully constructed)
+  fileOperationManager = std::make_unique<FileOperationManager>(this);
 
   //define ImGUI
   setupImGui();
@@ -164,9 +168,9 @@ void ofApp::updateDelayedLoad() {
   if (loadDelayAccumulator >= loadDelayDuration) {
     // Timer selesai, panggil load method
     if (pendingLoadMode == 0) {
-      loadWorkspace();
+      fileOperationManager->loadWorkspace();
     } else if (pendingLoadMode == 1) {
-      loadWorkspaceSeq();
+      fileOperationManager->loadWorkspaceSeq();
     }
 
     // Reset flag dan accumulator
@@ -1723,268 +1727,6 @@ bool ofApp::isCanvasEmpty() {
 	}
 
 	return true;  // Canvas benar-bener kosong
-}
-
-//--------------------------------------------------------------
-void ofApp::saveWorkspace() {
-  if (!currentTemplate) {
-    return;
-  }
-
-  // Kalau belum pernah Save As, langsung buka dialog (Save As)
-  if (lastSavedPath.empty()) {
-    saveWorkspaceAs();
-    return;
-  }
-
-  // Sudah ada Save As sebelumnya, save langsung ke file tersebut
-  fileManager.saveAll(currentTemplate->getName(), currentTemplate->radius,
-                      customLines, polygonShapes, userDots, currentTemplate->lineWidth,
-                      currentTemplate->labelsVisible, currentTemplate->dotsVisible,
-                      showUserDot, lastSavedPath);
-
-  // Show MenuBar agar popup terlihat
-  imguiVisible = true;
-  successPopup->show();
-}
-
-//--------------------------------------------------------------
-void ofApp::saveWorkspaceAs() {
-  if (!currentTemplate) {
-    return;  // Tidak ada template aktif
-  }
-
-  // Buka save dialog untuk pilih lokasi dan nama file
-  ofFileDialogResult saveDialog = ofSystemSaveDialog("workspace.nay", "Save Workspace As");
-
-  // Cek apakah user memilih file (tidak cancel)
-  if (saveDialog.getPath().empty()) {
-    return;  // User cancel
-  }
-
-  // Ambil filepath dari dialog
-  string filepath = saveDialog.getPath();
-
-  // Tambah extension .nay kalau belum ada
-  if (filepath.find(".nay") == string::npos) {
-    filepath += ".nay";
-  }
-
-  // Simpan langsung ke filepath yang user pilih
-  fileManager.saveAll(currentTemplate->getName(), currentTemplate->radius,
-                      customLines, polygonShapes, userDots, currentTemplate->lineWidth,
-                      currentTemplate->labelsVisible, currentTemplate->dotsVisible,
-                      showUserDot, filepath);
-
-  // Simpan path ini sebagai lastSavedPath (CTRL+S selanjutnya akan kesini)
-  lastSavedPath = filepath;
-
-  // Show MenuBar agar popup terlihat
-  imguiVisible = true;
-  successPopup->show();
-}
-
-//--------------------------------------------------------------
-void ofApp::openWorkspace() {
-  // Buka open file dialog
-  ofFileDialogResult openDialog = ofSystemLoadDialog("Open Workspace", false);
-
-  // Cek apakah user memilih file (tidak cancel)
-  if (openDialog.getPath().empty()) {
-    return;  // User cancel
-  }
-
-  // Ambil filepath dari dialog
-  string filepath = openDialog.getPath();
-
-  // Cek apakah file extension .nay
-  if (filepath.find(".nay") == string::npos) {
-    // File bukan format .nay, tampilkan error popup
-    // Show MenuBar agar popup terlihat
-    imguiVisible = true;
-    showSacredGeometry = false;
-    showPlayground = false;
-    errorPopup->show("Invalid File Format",
-                     "Please select a .nay file format!",
-                     "OK");
-    return;
-  }
-
-  // Set lastSavedPath ke filepath yang di-open (untuk load dan save)
-  lastSavedPath = filepath;
-
-  // Show dan focus Playground window (file valid, akan diload)
-  imguiVisible = true;
-  showPlayground = true;
-
-  // Set windowOpen flag dan focus ke Playground
-  for (auto& gui : guiComponents) {
-    Playground* playground = dynamic_cast<Playground*>(gui.get());
-    if (playground) {
-      playground->showWindow();
-      playground->focusWindow();
-      break;
-    }
-  }
-}
-
-//--------------------------------------------------------------
-void ofApp::loadWorkspace() {
-    // NOTE: Validasi canvas sudah dilakukan di UI level (Playground)
-    // Jangan cek lagi di sini agar autoCleanCanvas bisa berfungsi
-
-    // Cek apakah ada file yang di-open (lastSavedPath)
-    if (lastSavedPath.empty()) return;
-
-    // Load workspace dengan template name, radius, dan ALL settings
-    string loadedTemplateName;
-    float loadedRadius;
-    float loadedLineWidth;
-    bool loadedLabelsVisible;
-    bool loadedDotsVisible;
-
-    if (fileManager.loadAll(loadedTemplateName, loadedRadius, customLines,
-        polygonShapes, userDots, loadedLineWidth,
-        loadedLabelsVisible, loadedDotsVisible, showUserDot, lastSavedPath)) {
-
-        // Switch ke template yang di-load DULU
-        switchTemplate(loadedTemplateName);
-
-        // Rebuild shapes dengan loaded radius yang benar!
-        currentTemplate->setRadius(loadedRadius);
-
-        // Update tracking untuk scaling
-        previousRadius = loadedRadius;  // Reset tracking agar tidak scaling saat load
-
-        // Sync Settings ke template
-        currentTemplate->lineWidth = loadedLineWidth;
-        currentTemplate->labelsVisible = loadedLabelsVisible;
-        currentTemplate->dotsVisible = loadedDotsVisible;
-
-        // Apply settings ke semua shapes yang baru di-load
-        const auto& shapes = currentTemplate->getShapes();
-        for (auto& shape : shapes) {
-            shape->setRadius(currentTemplate->radius);  // Update radius dengan loadedRadius!
-            shape->setLineWidth(currentTemplate->lineWidth);
-
-            if (currentTemplate->labelsVisible)
-                shape->showLabel();
-            else
-                shape->hideLabel();
-
-            if (currentTemplate->dotsVisible)
-                shape->showDot();
-            else
-                shape->hideDot();
-
-            shape->setSequentialMode(false);  // PARALLEL mode (CTRL+O)
-        }
-
-        // Apply speed multiplier ke semua shapes (SESUAI SLIDER!)
-        currentTemplate->applySpeedMultiplier();
-
-        // Mulai staggered parallel load - show all shapes secara parallel
-        if (currentTemplate) {
-            currentTemplate->drawParallel();
-        }
-
-        // Note: Shapes visibility sudah di-filter di setupShapes() (Draw Only concept)
-        // Tidak perlu show/hide logic di sini lagi
-
-        // Matikan parallel dulu supaya customLines tidak langsung di-animate
-        fileManager.setLoadParallelMode(false);
-
-        // Sync ColorPicker dengan warna customLines yang diload
-        syncColorPickerFromLoadedLines();
-        syncColorPickerFromLoadedPolygons();
-        syncUserDotFromLoaded();
-
-        loadStage = LOAD_TEMPLATE;
-        isStaggeredLoad = true;
-        isSequentialShapeLoad = false;  // PARALLEL mode (CTRL+O)
-        currentState = UpdateState::STAGGERED_LOAD;  // STRATEGY PATTERN: Set state ke STAGGERED_LOAD
-    }
-}
-
-void ofApp::loadWorkspaceSeq() {
-    // NOTE: Validasi canvas sudah dilakukan di UI level (Playground)
-    // Jangan cek lagi di sini agar autoCleanCanvas bisa berfungsi
-
-    // Cek apakah ada file yang di-open (lastSavedPath)
-    if (lastSavedPath.empty()) return;
-
-    // Clear customLines dan polygons yang sudah ada sebelumnya
-    // HARUS DILAKUKAN SEBELUM loadAllSequential agar buffer diisi dengan benar!
-    customLines.clear();
-    selectionManager.clearLineSelection();
-    polygonShapes.clear();
-    selectionManager.clearPolygonSelection();
-
-    // Sequential load dengan animasi
-    string loadedTemplateName;
-    float loadedRadius;
-    float loadedLineWidth;
-    bool loadedLabelsVisible;
-    bool loadedDotsVisible;
-
-    fileManager.loadAllSequential(loadedTemplateName, loadedRadius,
-        loadedLineWidth, loadedLabelsVisible, loadedDotsVisible,
-        customLines, polygonShapes, userDots, showUserDot, lastSavedPath);
-
-    // Sync userDotRadius dan userDotColor dari userDots yang diload
-    syncUserDotFromLoaded();
-
-    // Switch ke template yang di-load DULU
-    switchTemplate(loadedTemplateName);
-
-    // Rebuild shapes dengan loaded radius yang benar!
-    currentTemplate->setRadius(loadedRadius);
-
-    // Update tracking untuk scaling
-    previousRadius = loadedRadius;  // Reset tracking agar tidak scaling saat load
-
-    // Sync Settings ke template
-    currentTemplate->lineWidth = loadedLineWidth;
-    currentTemplate->labelsVisible = loadedLabelsVisible;
-    currentTemplate->dotsVisible = loadedDotsVisible;
-
-    // Apply settings ke semua template shapes
-    const auto& shapes = currentTemplate->getShapes();
-    for (auto& shape : shapes) {
-        shape->setRadius(currentTemplate->radius);  // ← Update radius dengan loadedRadius!
-        shape->setLineWidth(currentTemplate->lineWidth);
-        if (currentTemplate->labelsVisible)
-            shape->showLabel();
-        else
-            shape->hideLabel();
-        if (currentTemplate->dotsVisible)
-            shape->showDot();
-        else
-            shape->hideDot();
-    }
-
-    // Apply speed multiplier ke semua shapes (SESUAI SLIDER!)
-    currentTemplate->applySpeedMultiplier();
-
-    // Reset animasi template - show all shapes secara parallel
-    if (currentTemplate) {
-        currentTemplate->drawParallel();
-    }
-
-    // Note: Shapes visibility sudah di-filter di setupShapes() (Draw Only concept)
-    // Tidak perlu show/hide logic di sini lagi
-
-    // Set sequential mode SETELAH showAllShapes (karena showAllShapes akan reset ke false)
-    for (auto& shape : shapes) {
-        shape->setSequentialMode(true);
-    }
-
-    fileManager.setLoadParallelMode(false);
-    loadStage = LOAD_TEMPLATE;
-    isStaggeredLoad = true;
-    isSequentialShapeLoad = true;  // Sequential per shape
-    currentTemplateIndex = 0;  // Reset index template
-    currentState = UpdateState::STAGGERED_LOAD;  // STRATEGY PATTERN: Set state ke STAGGERED_LOAD
 }
 
 //--------------------------------------------------------------

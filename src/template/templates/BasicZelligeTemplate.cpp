@@ -340,26 +340,48 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 
 	ImGui::Separator();
 
-	// Polygon CollapsingHeader
-	if (ImGui::CollapsingHeader("Polygon", ImGuiTreeNodeFlags_DefaultOpen)) {
-		// Polygon Appearance section
-		ImGui::Text("Polygon Appearance");
-		if (ImGui::RadioButton("No Animation", &polygonAnimationMode, 0)) {
-			// Radio button changed
-		}
-		ImGui::SameLine();
-		if (ImGui::RadioButton("FadeIn", &polygonAnimationMode, 1)) {
-			// Radio button changed
-		}
-		ImGui::SameLine();
-		if (ImGui::RadioButton("Wobble", &polygonAnimationMode, 2)) {
-			// Radio button changed
-		}
+	// Custom Line CollapsingHeader - hanya muncul jika ada customLine dari file .nay
+	bool hasCustomLinesInFile = app->loadedFileCustomLinesCount > 0;
 
-		if (ImGui::RadioButton("Wave Fill", &polygonAnimationMode, 3)) {
-			// Radio button changed
+	if (hasCustomLinesInFile) {
+		if (ImGui::CollapsingHeader("Custom Line", ImGuiTreeNodeFlags_DefaultOpen)) {
+			// Show/Hide checkbox
+			static bool showCustomLines = true;
+			ImGui::Checkbox("Show Custom Lines", &showCustomLines);
+
+			// Custom Line Appearance section - hanya muncul jika checkbox dicheck
+			if (showCustomLines) {
+				ImGui::Text("Custom Line Appearance");
+				// TODO: Add custom line controls here
+			}
 		}
 	}
+
+	// Polygon CollapsingHeader - hanya muncul jika ada polygon dari file .nay
+	bool hasPolygonsInFile = app->loadedFilePolygonCount > 0;
+
+	if (hasPolygonsInFile) {
+		if (ImGui::CollapsingHeader("Polygon", ImGuiTreeNodeFlags_DefaultOpen)) {
+			// Polygon Appearance section
+			ImGui::Text("Polygon Appearance");
+			if (ImGui::RadioButton("No Animation", &polygonAnimationMode, 0)) {
+				// Radio button changed
+			}
+			ImGui::SameLine();
+			if (ImGui::RadioButton("FadeIn", &polygonAnimationMode, 1)) {
+				// Radio button changed
+			}
+			ImGui::SameLine();
+			if (ImGui::RadioButton("Wobble", &polygonAnimationMode, 2)) {
+				// Radio button changed
+			}
+
+			if (ImGui::RadioButton("Wave Fill", &polygonAnimationMode, 3)) {
+				// Radio button changed
+			}
+		}
+	}
+
 	ImGui::Separator();
 	ImGui::Text("Speed Control");
 	ImGui::SetNextItemWidth(150.0f);
