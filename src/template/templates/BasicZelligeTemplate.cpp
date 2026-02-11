@@ -345,12 +345,11 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 
 	if (hasCustomLinesInFile) {
 		if (ImGui::CollapsingHeader("Custom Line", ImGuiTreeNodeFlags_DefaultOpen)) {
-			// Show/Hide checkbox
-			static bool showCustomLines = true;
-			ImGui::Checkbox("Show Custom Lines", &showCustomLines);
+			// Draw Custom Lines checkbox - update flag di ofApp
+			ImGui::Checkbox("Draw Custom Lines", &app->shouldDrawCustomLines);
 
 			// Custom Line Appearance section - hanya muncul jika checkbox dicheck
-			if (showCustomLines) {
+			if (app->shouldDrawCustomLines) {
 				ImGui::Text("Custom Line Appearance");
 				// TODO: Add custom line controls here
 			}

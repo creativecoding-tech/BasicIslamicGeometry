@@ -291,10 +291,12 @@ void ofApp::updateStaggeredPolygons() {
     syncColorPickerFromLoadedPolygons();
   }
 
-  // Update animation semua polygons yang sudah ada
+  // Update animation polygons yang BELUM complete saja
   float deltaTime = ofGetLastFrameTime();
   for (auto& polygon : polygonShapes) {
-    polygon.update(deltaTime);
+    if (!polygon.isAnimationComplete()) {
+      polygon.update(deltaTime);
+    }
   }
 
   // Cek apakah semua polygons sudah complete DAN sequential load sudah selesai
@@ -355,8 +357,9 @@ void ofApp::updateCustomLines() {
 //--------------------------------------------------------------
 void ofApp::updatePolygons() {
   float deltaTime = ofGetLastFrameTime();
-  if (fileManager.isLoadParallelMode()) {
-    for (auto& polygon : polygonShapes) {
+  // Update polygons yang BELUM complete (bebas apa pun modenya)
+  for (auto& polygon : polygonShapes) {
+    if (!polygon.isAnimationComplete()) {
       polygon.update(deltaTime);
     }
   }

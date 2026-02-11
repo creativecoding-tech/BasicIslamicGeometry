@@ -81,6 +81,7 @@ class ofApp : public ofBaseApp{
 		vector<CustomLine> customLines;  // CustomLine dari FileManager
 	int loadedFileCustomLinesCount = 0;  // Jumlah customLines dari file yang sedang di-load
 	int loadedFilePolygonCount = 0;  // Jumlah polygons dari file yang sedang di-load
+	bool shouldDrawCustomLines = true;  // Flag untuk mengontrol apakah customLines harus digambar saat Draw
 
 		// User-created dots system (untuk fitur "Duplicate Dot Above")
 		vector<std::unique_ptr<DotShape>> userDots;

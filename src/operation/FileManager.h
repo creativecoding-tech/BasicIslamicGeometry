@@ -58,6 +58,7 @@ public:
     bool isLoadParallelMode() const;
     int getCurrentLoadIndex() const;
     int getTotalLoadedLines() const;
+    int getTotalLoadedPolygons() const;  // Getter untuk jumlah polygons di buffer
 
     // Setter untuk load mode (diperlukan untuk staggered load)
     void setLoadParallelMode(bool enabled);
@@ -73,6 +74,10 @@ public:
     // Polygon animation mode control
     void setPolygonAnimationMode(PolygonAnimationMode mode);
     PolygonAnimationMode getPolygonAnimationMode() const;
+
+    // CustomLines load control untuk sequential load
+    void setShouldLoadCustomLines(bool shouldLoad);
+    bool getShouldLoadCustomLines() const;
 
 private:
     // Helper methods untuk .na format
@@ -104,6 +109,9 @@ private:
 
     // Polygon animation mode
     PolygonAnimationMode polygonAnimationMode;
+
+    // Should load customLines flag (untuk Draw Custom Lines checkbox)
+    bool shouldLoadCustomLines = true;
 
     // Animation speed multiplier (untuk polygons & customLines)
     float animationSpeedMultiplier;

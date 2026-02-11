@@ -136,6 +136,9 @@ void FileOperationManager::loadWorkspace() {
 	bool loadedLabelsVisible;
 	bool loadedDotsVisible;
 
+	// Set flag untuk customLines loading (untuk konsistency, meskipun parallel load tidak pakai buffer)
+	app->fileManager.setShouldLoadCustomLines(app->shouldDrawCustomLines);
+
 	if (app->fileManager.loadAll(loadedTemplateName, loadedRadius, app->customLines,
 	    app->polygonShapes, app->userDots, loadedLineWidth,
 	    loadedLabelsVisible, loadedDotsVisible, app->showUserDot, app->lastSavedPath)) {
@@ -179,9 +182,24 @@ void FileOperationManager::loadWorkspace() {
 		app->canvasRotation = 0.0f;
 		app->canvasZoom = 1.0f;
 
-		app->successPopup->show("Workspace Loaded Successfully!",
-		                         "File: " + app->lastSavedPath,
-		                         "OK");
+		// Cek flag Draw Custom Lines - jika false, clear customLines yang baru diload
+		if (!app->shouldDrawCustomLines) {
+			app->customLines.clear();
+			app->selectionManager.clearLineSelection();
+		}
+
+		// Matikan parallel dulu supaya customLines tidak langsung di-animate
+		app->fileManager.setLoadParallelMode(false);
+
+		// Sync ColorPicker dengan warna customLines yang diload
+		app->syncColorPickerFromLoadedLines();
+		app->syncColorPickerFromLoadedPolygons();
+		app->syncUserDotFromLoaded();
+
+		app->loadStage = ofApp::LOAD_TEMPLATE;
+		app->isStaggeredLoad = true;
+		app->isSequentialShapeLoad = false;  // PARALLEL mode (CTRL+O)
+		app->currentState = ofApp::UpdateState::STAGGERED_LOAD;  // STRATEGY PATTERN: Set state ke STAGGERED_LOAD
 	} else {
 		app->errorPopup->show("Failed to Load Workspace",
 		                     "Invalid file format or corrupted data!",
@@ -203,6 +221,9 @@ void FileOperationManager::loadWorkspaceSeq() {
 	float loadedLineWidth;
 	bool loadedLabelsVisible;
 	bool loadedDotsVisible;
+
+	// Set flag untuk customLines loading SEBELUM load
+	app->fileManager.setShouldLoadCustomLines(app->shouldDrawCustomLines);
 
 	app->fileManager.loadAllSequential(loadedTemplateName, loadedRadius,
 	                                  loadedLineWidth, loadedLabelsVisible, loadedDotsVisible,
@@ -251,10 +272,6 @@ void FileOperationManager::loadWorkspaceSeq() {
 	// Sequential load akan mengupdate customLines dan polygons secara bertahap di update()
 	// Update state ke SEQUENTIAL_DRAWING untuk enable sequential animation
 	app->currentState = ofApp::UpdateState::SEQUENTIAL_DRAWING;
-
-	app->successPopup->show("Sequential Load Started!",
-	                         "Drawing shapes one by one...",
-	                         "OK");
 }
 
 //--------------------------------------------------------------
@@ -312,106 +329,30 @@ bool FileOperationManager::peekFileCustomLinesCount(const std::string& filepath,
 
 //--------------------------------------------------------------
 bool FileOperationManager::peekFilePolygonCount(const std::string& filepath, int& outCount) {
-	// Baca file header saja untuk mendapatkan jumlah polygons
-	ofFile file(filepath);
-	if (!file.exists()) {
-		outCount = 0;
-		return false;
-	}
+	// Cara MUDAH: Gunakan loadAllSequential untuk load polygons ke buffer, lalu ambil count-nya saja
+	// Kita tidak akan memakai customLines yang diload, jadi langsung clear saja
 
-	// Read file ke buffer
-	ofBuffer buffer = ofBufferFromFile(filepath);
-	char* data = buffer.getData();
-	size_t bufferSize = buffer.size();
+	std::string dummyTemplateName;
+	float dummyRadius;
+	float dummyLineWidth;
+	bool dummyLabelsVisible;
+	bool dummyDotsVisible;
 
-	if (bufferSize < 64) {
-		outCount = 0;
-		return false;
-	}
+	std::vector<CustomLine> dummyCustomLines;
+	std::vector<PolygonShape> dummyPolygons;
+	std::vector<std::unique_ptr<DotShape>> dummyUserDots;
 
-	size_t offset = 0;
+	// Load ke buffer dulu (file manager akan load ke loadedLinesBuffer dan loadedPolygonsBuffer)
+	app->fileManager.loadAllSequential(dummyTemplateName, dummyRadius,
+	                                  dummyLineWidth, dummyLabelsVisible, dummyDotsVisible,
+	                                  dummyCustomLines, dummyPolygons, dummyUserDots,
+	                                  app->showUserDot, filepath);
 
-	// Validasi Magic Number
-	if (memcmp(data + offset, "NA01", 4) != 0) {
-		outCount = 0;
-		return false;
-	}
-	offset += 4;
+	// Ambil jumlah polygons dari buffer via getter
+	outCount = app->fileManager.getTotalLoadedPolygons();
 
-	// Skip Version (4 bytes)
-	offset += sizeof(int);
+	// Clear buffer agar tidak mempengaruhi load selanjutnya
+	app->fileManager.cancelSequentialLoad();
 
-	// Skip Template Name Length (4 bytes) + Template Name
-	int nameLen = *reinterpret_cast<int*>(data + offset);
-	offset += sizeof(int) + nameLen;
-
-	// Skip Global Radius (4 bytes)
-	offset += sizeof(float);
-
-	// Skip Additional Settings (20 bytes)
-	offset += 20;
-
-	// Read jumlah Custom Lines
-	if (offset + sizeof(int) > bufferSize) {
-		outCount = 0;
-		return false;
-	}
-	int numLines = *reinterpret_cast<int*>(data + offset);
-	offset += sizeof(int);
-
-	// Skip semua Custom Lines data
-	for (int i = 0; i < numLines; i++) {
-		// Skip numPoints (4 bytes)
-		if (offset + sizeof(int) > bufferSize) {
-			outCount = 0;
-			return false;
-		}
-		int numPoints = *reinterpret_cast<int*>(data + offset);
-		offset += sizeof(int);
-
-		// Skip points (numPoints * sizeof(vec2))
-		if (offset + numPoints * sizeof(vec2) > bufferSize) {
-			outCount = 0;
-			return false;
-		}
-		offset += numPoints * sizeof(vec2);
-
-		// Skip color (4 bytes), lineWidth (4 bytes), curve (4 bytes)
-		if (offset + 12 > bufferSize) {
-			outCount = 0;
-			return false;
-		}
-		offset += 12;
-
-		// Skip label string (length + data)
-		if (offset + sizeof(int) > bufferSize) {
-			outCount = 0;
-			return false;
-		}
-		int labelLength = *reinterpret_cast<int*>(data + offset);
-		offset += sizeof(int);
-		if (offset + labelLength > bufferSize) {
-			outCount = 0;
-			return false;
-		}
-		offset += labelLength;
-
-		// Skip isDuplicate (1 byte) dan axisLock (4 bytes)
-		if (offset + 5 > bufferSize) {
-			outCount = 0;
-			return false;
-		}
-		offset += 5;
-	}
-
-	// Baca jumlah Polygons
-	if (offset + sizeof(int) > bufferSize) {
-		outCount = 0;
-		return false;
-	}
-
-	int numPolygons = *reinterpret_cast<int*>(data + offset);
-	outCount = numPolygons;
-
-	return true;
+	return outCount > 0;  // Return true jika ada polygons
 }

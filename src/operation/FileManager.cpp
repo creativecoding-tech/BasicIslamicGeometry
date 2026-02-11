@@ -745,8 +745,10 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
       line.setProgress(0.0f);
       line.setSpeed(1.8f * animationSpeedMultiplier);  // Delta time calibrated (0.03f * 60 FPS)
 
-      // Add ke buffer
-      loadedLinesBuffer.push_back(line);
+      // Add ke buffer HANYA jika shouldLoadCustomLines = true
+      if (shouldLoadCustomLines) {
+        loadedLinesBuffer.push_back(line);
+      }
     }
   }
 
@@ -973,6 +975,11 @@ int FileManager::getTotalLoadedLines() const {
 }
 
 //--------------------------------------------------------------
+int FileManager::getTotalLoadedPolygons() const {
+  return static_cast<int>(loadedPolygonsBuffer.size());
+}
+
+//--------------------------------------------------------------
 PolygonShape FileManager::createPolygonWithAnimation(const std::vector<vec2>& vertices, ofColor color, int index) {
   // Buat PolygonShape dengan animation berdasarkan polygonAnimationMode
   switch (polygonAnimationMode) {
@@ -1020,6 +1027,16 @@ void FileManager::setPolygonAnimationMode(PolygonAnimationMode mode) { polygonAn
 
 //--------------------------------------------------------------
 PolygonAnimationMode FileManager::getPolygonAnimationMode() const { return polygonAnimationMode; }
+
+//--------------------------------------------------------------
+void FileManager::setShouldLoadCustomLines(bool shouldLoad) {
+	shouldLoadCustomLines = shouldLoad;
+}
+
+//--------------------------------------------------------------
+bool FileManager::getShouldLoadCustomLines() const {
+	return shouldLoadCustomLines;
+}
 
 //--------------------------------------------------------------
 void FileManager::setLoadParallelMode(bool enabled) {
