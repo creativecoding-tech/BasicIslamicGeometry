@@ -1,6 +1,7 @@
 #include "FileOperationManager.h"
 #include "../ofApp.h"
 #include "gui/Playground.h"
+#include "../template/templates/BasicZelligeTemplate.h"
 
 //--------------------------------------------------------------
 FileOperationManager::FileOperationManager(ofApp* app) : app(app) {
@@ -31,6 +32,12 @@ void FileOperationManager::saveWorkspace() {
 	// Show MenuBar agar popup terlihat
 	app->imguiVisible = true;
 	app->successPopup->show();
+
+	// Enable playback settings (karena sekarang sudah ada file yang disave)
+	BasicZelligeTemplate* zelligeTemplate = dynamic_cast<BasicZelligeTemplate*>(app->currentTemplate);
+	if (zelligeTemplate) {
+		zelligeTemplate->enablePlaybackSettings();
+	}
 }
 
 //--------------------------------------------------------------
@@ -71,6 +78,12 @@ void FileOperationManager::saveWorkspaceAs() {
 	// Show MenuBar agar popup terlihat
 	app->imguiVisible = true;
 	app->successPopup->show();
+
+	// Enable playback settings (karena sekarang sudah ada file yang disave)
+	BasicZelligeTemplate* zelligeTemplate = dynamic_cast<BasicZelligeTemplate*>(app->currentTemplate);
+	if (zelligeTemplate) {
+		zelligeTemplate->enablePlaybackSettings();
+	}
 }
 
 //--------------------------------------------------------------
@@ -107,6 +120,12 @@ void FileOperationManager::openWorkspace() {
 
 	// Cek jumlah polygons di file (untuk CollapsingHeader di playground)
 	peekFilePolygonCount(filepath, app->loadedFilePolygonCount);
+
+	// Enable playback settings (show playback UI di Playground)
+	BasicZelligeTemplate* zelligeTemplate = dynamic_cast<BasicZelligeTemplate*>(app->currentTemplate);
+	if (zelligeTemplate) {
+		zelligeTemplate->enablePlaybackSettings();
+	}
 
 	// Show dan focus Playground window (file valid, akan diload)
 	app->imguiVisible = true;
@@ -355,4 +374,32 @@ bool FileOperationManager::peekFilePolygonCount(const std::string& filepath, int
 	app->fileManager.cancelSequentialLoad();
 
 	return outCount > 0;  // Return true jika ada polygons
+}
+
+//--------------------------------------------------------------
+void FileOperationManager::closeFile() {
+	// Clear file reference TANPA clean canvas
+	// Canvas content (shapes, customLines, polygons) tetap ada
+
+	// Clear lastSavedPath
+	app->lastSavedPath.clear();
+
+	// Clear file count info
+	app->loadedFileCustomLinesCount = 0;
+	app->loadedFilePolygonCount = 0;
+
+	// Reset draw mode ke belum memilih dan hide playback UI
+	if (app->currentTemplate) {
+		BasicZelligeTemplate* zelligeTemplate = dynamic_cast<BasicZelligeTemplate*>(app->currentTemplate);
+		if (zelligeTemplate) {
+			zelligeTemplate->resetDrawMode();
+		}
+	}
+
+	// Reset speed multiplier ke default (1.0f)
+	if (app->currentTemplate) {
+		app->currentTemplate->speedMultiplier = 1.0f;
+	}
+
+	// Canvas TIDAK dibersihkan - user bisa terus bekerja dengan content yang ada
 }

@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--islamic--gs--refactor-orange)
+![Branch](https://img.shields.io/badge/Branch-sketch--islamic--gs--playgroundhandle-orange)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -76,6 +76,22 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - CustomLines (drawing animation)
 - **Consistent Speed** - Saat load file .nay, speed mengikuti slider setting
 - **No Speed Variation** - Tidak ada lagi animasi "cepat kedua, lambat ketiga" - selalu konsisten!
+
+### FileOperationManager ⭐ NEW
+- **Wrapper Pattern** - FileOperationManager class untuk semua file operations (save, open, load)
+- **Clean Architecture** - Mengikuti pattern yang sama dengan ColorManager/DuplicateManager
+- **Centralized File Operations** - Semua file operations dipindah dari ofApp ke FileOperationManager:
+  - `saveWorkspace()` - Save ke lastSavedPath (CTRL+S)
+  - `saveWorkspaceAs()` - Save dengan dialog (CTRL+SHIFT+S)
+  - `openWorkspace()` - Buka file dialog untuk load workspace
+  - `loadWorkspace()` - Parallel load dengan staggered animation
+  - `loadWorkspaceSeq()` - Sequential load dengan per-group animation
+- **Peek Functions** - Optimasi untuk membaca file header tanpa load full data:
+  - `peekFileCustomLinesCount()` - Baca jumlah customLines dari file
+  - `peekFilePolygonCount()` - Baca jumlah polygons dari file menggunakan sequential load buffer
+- **Conditional UI Display** - CollapsingHeader hanya muncul jika file punya data:
+  - Custom Line CollapsingHeader hanya muncul jika `loadedFileCustomLinesCount > 0`
+  - Polygon CollapsingHeader hanya muncul jika `loadedFilePolygonCount > 0`
 
 ### Transform Canvas System ⭐ NEW
 - **Canvas Transform Controls** - Transform slider di SacredGeometry panel:
@@ -224,9 +240,35 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Multi-Select System** - CTRL+Klik untuk toggle selection multiple garis
 - **CustomLine Labels** - Saat selected, muncul label dari getLabel() (customLine0, DcustomLine0, dst)
 - **Curve Label** - Display nilai curve saat garis di-select
+- **Draw Custom Lines Checkbox** - Checkbox "Draw Custom Lines" mengontrol apakah customLines digambar saat Draw ⭐ NEW:
+  - ✓ Dicentang = CustomLines diload dan digambar
+  - ✗ Tidak dicentang = CustomLines TIDAK diload (di-skip saat load)
+- **Skip CustomLines Load** - Parallel vs Sequential load behavior ⭐ NEW:
+  - **Parallel load**: CustomLines diload, lalu di-clear jika flag false
+  - **Sequential load**: CustomLines TIDAK ditambahkan ke buffer jika flag false
 - **PolygonShape System** - Class untuk polygon fill-only tanpa outline (hanya warna)
 - **Create Polygon (CTRL+G)** - Buat polygon dari selected customLines (otomatis deteksi closed loop)
 - **Polygon Color Preset** - 9 warna preset untuk polygon (merah, hijau, biru, kuning, magenta, cyan, orange, ungu, abu-abu)
+- **GLSL vs CPU Rendering** - Conditional rendering berdasarkan `loadedFromFile` flag ⭐ NEW:
+  - **Loaded polygons** (dari .nay file) → Gunakan GLSL shaders untuk rendering dan animations
+    - FadeIn: GLSL alpha blending dengan deltaTime
+    - Wobble: GLSL offset animation dengan deltaTime
+    - Wave Fill: Multi-pass FBO dengan wave shader
+  - **New polygons** (CTRL+G / right-click) → Gunakan CPU rendering sederhana
+    - Tidak ada animation
+    - Direct ofSetColor() + ofBeginShape()
+- **Animation System** - AbstractAnimation base class untuk reusable polygon animations:
+  - **FadeInAnimation** - Alpha blending fade-in (0 → targetAlpha) dengan deltaTime
+  - **WobbleAnimation** - Oscillation effect dengan amplitude dan frequency dengan deltaTime
+  - **FillAnimation** - Water fill effect dari bawah ke atas dengan wave dan deltaTime
+  - **Configurable Speed** - Animation speed di-adjust via speed slider (0.12f - 1.8f * multiplier)
+  - **Different Base Speeds** - Setiap tipe animation punya base speed berbeda:
+    - Wobble: 1.8f * animationSpeedMultiplier
+    - FadeIn: 0.18f * animationSpeedMultiplier
+    - Wave Fill: 0.12f * animationSpeedMultiplier
+- **Update Strategy** - Polygons hanya di-update jika belum complete (isAnimationComplete() check) ⭐ NEW
+  - Mencegah animations berhenti prematur
+  - Berlaku untuk semua load modes (parallel dan sequential)
 - **Color Picker Integration** - Ubah warna custom line dan polygon secara real-time via color picker di UserCustom panel
 - **Color Sync System** - Color picker otomatis sync dengan warna object yang terseleksi:
   - Saat select object → color picker update ke warna object tersebut
@@ -287,7 +329,13 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Priority: userDot > DcustomLine > curve adjustment
 
 ### Workspace Save/Load
-- **Centralized Save/Load** - Satu method `saveWorkspace()`, `saveWorkspaceAs()`, dan `loadWorkspace()` untuk semua state
+- **FileOperationManager** - Wrapper class untuk semua file operations (mirip ColorManager/DuplicateManager pattern) ⭐ NEW
+- **Centralized Save/Load** - Semua file operations dipindah ke FileOperationManager:
+  - `saveWorkspace()` - Save ke lastSavedPath (CTRL+S)
+  - `saveWorkspaceAs()` - Save dengan dialog (CTRL+SHIFT+S)
+  - `openWorkspace()` - Buka file dialog untuk load workspace
+  - `loadWorkspace()` - Parallel load dengan staggered animation
+  - `loadWorkspaceSeq()` - Sequential load dengan per-group animation
 - **.nay Binary Format** - Workspace format dengan magic number "NA01", version 2
 - **Complete State Persistence** - Save template name, radius, custom lines, polygons, semua settings (labels, dots, line width, draw settings)
 - **Direct File Save** - Save langsung ke filepath target tanpa intermediate "workspace.nay" file
@@ -295,10 +343,21 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Draw Mode Selection** - Mode animate dipilih lewat radio button di Playground:
   - **Parallel Per Group**: Template → CustomLines → Polygons animate simultaneously per group
   - **Sequential Per Group**: Groups animate satu per satu dengan delay
+- **Staggered Load Setup** - Parallel load (CTRL+O) menggunakan staggered load system ⭐ NEW:
+  - LOAD_TEMPLATE → LOAD_CUSTOMLINES → LOAD_POLYGONS → LOAD_DONE
+  - Template shapes dibuat progress=0, baru di-animate via Draw button
+  - CustomLines dan polygons diload dengan animation sesuai mode
+- **Sequential Load Setup** - Sequential load (CTRL+SHIFT+O) dengan per-group animation:
+  - Template shapes dulu → CustomLines → Polygons
+  - Setiap group tunggu sampai complete sebelum lanjut
+- **Draw Custom Lines Integration** - "Draw Custom Lines" checkbox mengontrol customLines load ⭐ NEW:
+  - Dicentang → CustomLines diload dan digambar
+  - Tidak dicentang → CustomLines di-skip saat load
 - **Auto Clean Canvas** - Otomatis bersihkan canvas sebelum load (selalu dicenterangkan)
 - **Delay Load System** - Smooth transition dengan delay sebelum animation starts (0.0f = tanpa delay)
 - **Animation State Preservation** - State animasi di-save dan di-restore dengan benar
 - **Playground Auto-Focus** - Saat file berhasil dibuka, Playground window otomatis muncul dan focus
+- **No Success Popup on Load** - Load operations tidak menampilkan success popup (hanya save yang menampilkan) ⭐ NEW
 - **Error Handling** - Comprehensive error handling untuk no file selected, invalid format, canvas not empty, no mode selected
 - **Color Picker Sync** - Color picker otomatis sync dengan warna customLines/polygons yang diload
 - **Speed Sync** - Speed multiplier otomatis sync ke FileManager saat load
@@ -370,6 +429,15 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Mode Draw** | Pilihan mode animasi: |
 |  - **Parallel Per Group** | Template, CustomLines, dan Polygons animate secara parallel per group |
 |  - **Sequential Per Group** | Groups animate satu per satu dengan delay |
+| **Custom Line CollapsingHeader** | ⭐ NEW Hanya muncul jika file punya customLines: |
+|  - **Draw Custom Lines Checkbox** | CustomLines diload/digambar jika dicentang |
+|  - **Custom Line Appearance** | CustomLine controls (color, curve, etc) |
+| **Polygon CollapsingHeader** | ⭐ NEW Hanya muncul jika file punya polygons: |
+|  - **Polygon Animate** | Pilihan animation mode untuk polygons: |
+|  - **No Animation** | Polygons langsung muncul tanpa animasi |
+|  - **FadeIn** | Alpha blending fade-in effect |
+|  - **Wobble** | Oscillation/goyang effect |
+|  - **Fill** | Water fill effect dari bawah ke atas |
 | **Draw Settings** ⭐ UPDATED | Shapes yang DIBUAT saat Draw diklik: |
 |  - **Cartesian** Checkbox | Cartesian axes dibuat jika dicentang |
 |  - **Circles** Checkbox | Circle shapes dibuat jika dicentang |
@@ -377,11 +445,6 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 |  - **Parallelograms** Checkbox | ParallelogramLine shapes dibuat jika dicentang |
 |  - **RectangleLines** Checkbox | RectangleLine shapes dibuat jika dicentang |
 |  - **OctagramLines** Checkbox | OctagramLine shapes dibuat jika dicentang |
-| **Polygon Animate** | Pilihan animation mode untuk polygons: |
-|  - **No Animation** | Polygons langsung muncul tanpa animasi |
-|  - **FadeIn** | Alpha blending fade-in effect |
-|  - **Wobble** | Oscillation/goyang effect |
-|  - **Fill** | Water fill effect dari bawah ke atas |
 | **Speed Control** ⭐ NEW | Slider speed 0.1 - 1.5x untuk semua animations |
 | **Draw Arrow Button (←)** | Load dan animate workspace |
    - Clean canvas dulu
@@ -450,7 +513,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Auto-Center** - SelectionInfo window muncul di tengah screen saat pertama dibuka ⭐ NEW
 
 **Success Popup:**
-- Muncul setelah save berhasil
+- Muncul setelah save berhasil ⭐ UPDATED (tidak muncul untuk load operations)
 - Menampilkan pesan konfirmasi
 - Auto-close setelah klik OK atau anywhere
 
@@ -568,8 +631,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 # Clone repository ini
 git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 
-# Checkout branch sketch-islamic-gs-refactor
-git checkout sketch-islamic-gs-refactor
+# Checkout branch sketch-islamic-gs-playgroundhandle
+git checkout sketch-islamic-gs-playgroundhandle
 
 # Jalankan OpenFrameworks Project Generator
 # Buka: openFrameworks/apps/projectGenerator/projectGenerator.exe
@@ -865,6 +928,72 @@ class FileManager {
 | Polygons (Wobble) | 0.03f | 1.8f | × 60 |
 | Polygons (Fill) | 0.002f | 0.12f | × 60 |
 
+### GLSL Polygon Rendering System ⭐ NEW
+
+Polygon rendering menggunakan conditional rendering berdasarkan `loadedFromFile` flag:
+
+```cpp
+void PolygonShape::draw() const {
+    if (loadedFromFile) {
+        // Polygon diload dari file .nay → Gunakan GLSL shaders
+        drawGLSL();
+    } else {
+        // Polygon dibuat baru (CTRL+G / right-click) → Gunakan CPU rendering
+        drawCPU();
+    }
+}
+```
+
+**CPU Rendering (New Polygons):**
+- Simple ofSetColor() + ofBeginShape() rendering
+- Tidak ada animation
+- Direct color fill
+
+**GLSL Rendering (Loaded Polygons):**
+
+1. **Basic Rendering (No Animation/FadeIn/Wobble):**
+   - Vertex shader untuk tessellated curve support
+   - Fragment shader untuk solid color rendering
+   - Alpha fade untuk FadeIn animation
+
+2. **Wave Fill Rendering (FillAnimation):**
+   - Multi-pass rendering dengan FBO (mask + quad)
+   - Mask FBO untuk polygon shape
+   - Wave shader untuk water fill effect
+
+3. **Animation Integration:**
+   - Delta time untuk smooth animations
+   - Progress-based rendering (0.0 → 1.0)
+   - Wave parameters: amplitude, frequency, water level
+
+**Update Strategy:**
+```cpp
+void ofApp::updateStaggeredPolygons() {
+    float deltaTime = ofGetLastFrameTime();
+    // Update animation polygons yang BELUM complete saja ⭐ BUG FIX
+    for (auto& polygon : polygonShapes) {
+        if (!polygon.isAnimationComplete()) {
+            polygon.update(deltaTime);
+        }
+    }
+}
+
+void ofApp::updatePolygons() {
+    float deltaTime = ofGetLastFrameTime();
+    // Update polygons yang BELUM complete (bebas apa pun modenya) ⭐ BUG FIX
+    for (auto& polygon : polygonShapes) {
+        if (!polygon.isAnimationComplete()) {
+            polygon.update(deltaTime);
+        }
+    }
+}
+```
+
+**Bug Fix - Animation Stopping Prematurely:**
+- Sebelumnya: `updatePolygons()` hanya update saat `isLoadParallelMode() == true`
+- Masalah: Setelah sequential load complete, `isLoadParallelMode` = false, animations stop
+- Solusi: Selalu update polygons yang belum complete, regardless of mode
+
 ### Undo/Redo System Architecture
 
 ```cpp
@@ -1010,6 +1139,7 @@ BasicIslamicGeometry/
 │   │       └── BasicZelligeTemplate.cpp/h # Moroccan pattern (26 shapes)
 │   └── operation/            # Operations layer
 │       ├── FileManager.cpp/h       # .nay save/load dengan speed sync
+│       ├── FileOperationManager.cpp/h # File operations wrapper ⭐ NEW
 │       └── gui/                    # ImGui components
 │           ├── AbstractGuiComponent.cpp/h # GUI base
 │           ├── MenuBar.cpp/h            # File/Edit/View menus
@@ -1033,16 +1163,20 @@ BasicIslamicGeometry/
 - **Template System**: SacredGeometryTemplate base class untuk extensibility
 - **Template Registry**: Singleton pattern untuk managing patterns
 - **GUI System**: Modular ImGui components dengan AbstractGuiComponent
-- **Shape Hierarchy**: Semua shapes inherit dari AbstractShape (no show/hide) ⭐ UPDATED
+- **Shape Hierarchy**: Semua shapes inherit dari AbstractShape (no show/hide)
 - **Animation System**: AbstractAnimation base untuk reusable animations dengan deltaTime
 - **Speed Control**: Centralized speed multiplier system untuk semua animations
-- **Object Tooltip System**: Custom OF rendering untuk selected objects info ⭐ NEW
-- **UserDot System**: Flexible dot placement dengan radius dari slider ⭐ NEW
-- **Color Management**: Smart sync antara objects dan color pickers ⭐ NEW
-- **Undo/Redo**: 100-step history dengan comprehensive state tracking (termasuk CREATE_DOT radius) ⭐ UPDATED
-- **File Operations**: Centralized FileManager dengan direct file save dan speed sync
+- **GLSL Rendering**: Conditional GPU/CPU rendering untuk polygons berdasarkan `loadedFromFile` ⭐ NEW
+- **FileOperationManager**: Wrapper pattern untuk file operations (mirip ColorManager) ⭐ NEW
+- **Conditional UI**: CollapsingHeader hanya muncul jika file punya data ⭐ NEW
+- **Skip Load**: CustomLines load bisa di-skip via checkbox ⭐ NEW
+- **Object Tooltip System**: Custom OF rendering untuk selected objects info
+- **UserDot System**: Flexible dot placement dengan radius dari slider
+- **Color Management**: Smart sync antara objects dan color pickers
+- **Undo/Redo**: 100-step history dengan comprehensive state tracking (termasuk CREATE_DOT radius)
+- **File Operations**: FileOperationManager dengan direct file save dan speed sync ⭐ UPDATED
 - **Window Management**: Independent window visibility controls
-- **Transform System**: Canvas transform dengan inverse transform untuk mouse input ⭐ NEW
+- **Transform System**: Canvas transform dengan inverse transform untuk mouse input
 
 ---
 
@@ -1057,10 +1191,12 @@ Project ini adalah bagian dari eksplorasi **Creative Coding** dan pembelajaran:
 - 🌿 Fondasi untuk project Islamic geometric patterns yang lebih kompleks
 - 💾 Workspace persistence untuk save/load creative work
 - 🎛️ Professional GUI development dengan ImGui
-- 🖼️ Canvas transform system untuk viewport control ⭐ NEW
-- 📋 Selection info display untuk better UX ⭐ NEW
-- 💡 Object tooltips untuk enhanced user experience ⭐ NEW
-- ✨ UserDot system untuk flexible dot placement ⭐ NEW
+- 🖼️ Canvas transform system untuk viewport control
+- 📋 Selection info display untuk better UX
+- 💡 Object tooltips untuk enhanced user experience
+- ✨ UserDot system untuk flexible dot placement
+- 🎭 GLSL shaders untuk advanced polygon rendering ⭐ NEW
+- 🗂️ File operation manager pattern untuk clean architecture ⭐ NEW
 
 ---
 
@@ -1071,30 +1207,38 @@ Dengan optimasi C++ modern dan openFrameworks:
 - **Solid 60 FPS** pada resolusi bervariasi (1920x1080 default)
 - **Smooth drawing animation** tanpa lag dengan deltaTime system
 - **Anti-aliased rendering** untuk kualitas visual tinggi
-- **CPU-based rendering** (ideal untuk basic geometric shapes)
+- **Hybrid Rendering System** - GLSL untuk loaded polygons, CPU untuk new polygons ⭐ NEW
 - **Lazy caching** untuk dot position queries
 - **Smart pointer optimization** untuk memory management
 - **Consistent Animation Speed** - Delta time system memastikan speed konsisten
-- **Efficient Rendering** - Draw Only concept menghemat resources ⭐ NEW
+- **Efficient Rendering** - Draw Only concept menghemat resources
+- **Update Strategy Optimization** - Hanya update incomplete animations ⭐ NEW
 
 ---
 
-## 📝 Current Status: **sketch-islamic-gs-refactor**
+## 📝 Current Status: **sketch-islamic-gs-playgroundhandle**
 
-Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, speed control global, transform canvas, draw only concept, object tooltips, dan userDot system.
+Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, speed control global, transform canvas, draw only concept, object tooltips, userDot system, GLSL rendering, dan file operation manager.
 
 ### ✨ Key Features (Latest Updates)
 
-✅ **Draw Only Concept** - Hanya shapes yang dicentang yang dibuat (tidak ada show/hide) ⭐ NEW
-✅ **No More Showing Flag** - AbstractShape tidak punya `showing` flag ⭐ NEW
-✅ **Forward Only Animation** - Shapes selalu forward animation (0 → maxProgress) ⭐ NEW
+✅ **FileOperationManager** - Wrapper class untuk semua file operations (save, open, load) ⭐ NEW
+✅ **Conditional CollapsingHeader** - Custom Line/Polygon hanya muncul jika file punya data ⭐ NEW
+✅ **Draw Custom Lines Checkbox** - Kontrol apakah customLines diload/digambar ⭐ NEW
+✅ **Skip CustomLines Load** - Parallel dan sequential load skip customLines jika unchecked ⭐ NEW
+✅ **GLSL Polygon Rendering** - Conditional rendering berdasarkan `loadedFromFile` flag ⭐ NEW
+✅ **Polygon Animation Bug Fixes** - Fixed update logic untuk complete animations ⭐ NEW
+✅ **Draw Order Bug Fix** - Fixed staggered load setup untuk proper draw order ⭐ NEW
+✅ **Draw Only Concept** - Hanya shapes yang dicentang yang dibuat (tidak ada show/hide)
+✅ **No More Showing Flag** - AbstractShape tidak punya `showing` flag
+✅ **Forward Only Animation** - Shapes selalu forward animation (0 → maxProgress)
 ✅ **Delta Time Animation System** - Semua animasi menggunakan deltaTime untuk consistency
 ✅ **Global Speed Control** - Slider speed 0.1x - 1.5x berlaku untuk SEMUA animations
-✅ **Transform Canvas System** - Pan X/Y, Rotate, Zoom controls dengan inverse transform ⭐ NEW
-✅ **Selection Info Panel** - Floating window untuk selected objects info ⭐ NEW
-✅ **Object Tooltip System** - Custom tooltips untuk selected objects (dots, lines, polygons) ⭐ NEW
-✅ **UserDot System** - Duplicate dots dengan radius dari slider User Custom ⭐ NEW
-✅ **Color Sync Improvements** - Better sync antara objects dan color pickers ⭐ NEW
+✅ **Transform Canvas System** - Pan X/Y, Rotate, Zoom controls dengan inverse transform
+✅ **Selection Info Panel** - Floating window untuk selected objects info
+✅ **Object Tooltip System** - Custom tooltips untuk selected objects (dots, lines, polygons)
+✅ **UserDot System** - Duplicate dots dengan radius dari slider User Custom
+✅ **Color Sync Improvements** - Better sync antara objects dan color pickers
 ✅ **Draw Template UI** - Parallel/Sequential draw di SacredGeometry panel
 ✅ **Clean & Draw Workflow** - Clean canvas dulu, baru draw dengan Draw button (Playground)
 ✅ **Auto Speed Sync** - Saat load file, speed mengikuti slider setting
@@ -1104,6 +1248,28 @@ Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk memb
 ✅ **Axis Lock System** - Control pergerakan DcustomLine (NONE, LOCK_X, LOCK_Y, LOCK_BOTH)
 ✅ **Context Menu System** - Per-line dan bulk operation untuk DcustomLine lock/unlock
 ✅ **Scroll Control** - Mouse scroll untuk menggerakkan DcustomLine sesuai axis lock
+
+### 🐛 Bug Fixes (Latest Updates)
+
+✅ **Polygon Animation Bug** - Fixed polygons stopping mid-animation ⭐ NEW:
+  - Problem: `updatePolygons()` hanya update saat `isLoadParallelMode() == true`
+  - Result: Setelah sequential load complete, animations stop prematur
+  - Fix: Selalu update polygons yang belum complete, regardless of mode
+
+✅ **Draw Order Bug** - Fixed polygons appearing before template shapes ⭐ NEW:
+  - Problem: Sequential Per Group mode showed polygons first
+  - Result: Wrong visual order (should be: template → customLines → polygons)
+  - Fix: Added staggered load setup to `loadWorkspace()` (missing initialization)
+
+✅ **FadeIn Animation Bug** - Fixed last polygon not colored correctly ⭐ NEW:
+  - Problem: Update logic stopping before animation complete
+  - Result: Last polygon tidak terwarnai dengan benar
+  - Fix: Check `isAnimationComplete()` before updating
+
+✅ **Wave Fill Animation Bug** - Fixed water stopping mid-way ⭐ NEW:
+  - Problem: Same root cause as other animation bugs
+  - Result: Wave berhenti sebelum mewarnai semua area
+  - Fix: Same fix - update sampai complete
 
 ---
 

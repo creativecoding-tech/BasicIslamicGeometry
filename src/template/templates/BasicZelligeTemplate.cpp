@@ -299,13 +299,12 @@ void BasicZelligeTemplate::showSettingsUI() {
 
 //--------------------------------------------------------------
 bool BasicZelligeTemplate::hasPlaybackSettings() {
-	return true;
+	return showPlaybackSettings;
 }
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 	ImGui::Text("Mode Draw");
-	static int playMode = -1;  // -1 = belum pilih, 0 = Parallel, 1 = Sequential
 
 	if (ImGui::RadioButton("Parallel Per Group", &playMode, 0)) {
 		// Radio button changed

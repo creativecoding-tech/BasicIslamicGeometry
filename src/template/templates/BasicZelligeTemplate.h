@@ -45,4 +45,21 @@ private:
 	void setupParallelograms();
 	void setupRectangleLines();
 	void setupOctagramLines();
+
+	// Playback state
+	int playMode = -1;  // -1 = belum pilih, 0 = Parallel, 1 = Sequential
+	int polygonAnimationMode = 0;  // 0=None, 1=FadeIn, 2=Wobble, 3=Fill
+	bool showPlaybackSettings = false;  // Control visibility of playback UI
+
+public:
+	// Reset draw mode ke belum memilih
+	void resetDrawMode() {
+		playMode = -1;
+		showPlaybackSettings = false;
+	}
+
+	// Enable playback settings (dipanggil saat file dibuka)
+	void enablePlaybackSettings() {
+		showPlaybackSettings = true;
+	}
 };

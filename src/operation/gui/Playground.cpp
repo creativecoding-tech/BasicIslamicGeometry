@@ -15,6 +15,9 @@ void Playground::showWindow() {
 
 //--------------------------------------------------------------
 void Playground::draw() {
+    // Simpan state windowOpen sebelum ImGui::Begin()
+    bool wasWindowOpen = windowOpen;
+
     // Set posisi window di sebelah kanan canvas
     ImGui::SetNextWindowPos(ImVec2(ofGetWidth() - 260, 30), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(250, 400), ImGuiCond_FirstUseEver);
@@ -38,6 +41,17 @@ void Playground::draw() {
                 ? app->lastSavedPath.substr(lastSlash + 1)
                 : app->lastSavedPath;
             ImGui::Text("%s", filename.c_str());
+
+            // Close File button - hanya enabled jika ada file yang di-open
+            ImGui::Spacing();
+            float closeButtonWidth = ImGui::CalcTextSize("Close File").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+            float windowWidth = ImGui::GetContentRegionAvail().x;
+            ImGui::SetCursorPosX((windowWidth - closeButtonWidth) / 2.0f);
+
+            if (ImGui::Button("Close File")) {
+                // Close file tanpa clean canvas
+                app->fileOperationManager->closeFile();
+            }
         } else {
             ImGui::TextDisabled("(No file opened)");
         }
@@ -54,6 +68,34 @@ void Playground::draw() {
     }
     ImGui::End();
 
-    // Sync window open state ke app
-    app->showPlayground = windowOpen;
+    // Cek apakah user baru saja menutup window (klik tombol X)
+    if (wasWindowOpen && !windowOpen) {
+        // Window baru saja ditutup, cek apakah ada file yang terbuka
+        if (!app->lastSavedPath.empty()) {
+            // Ada file yang terbuka, tampilkan confirmation
+            app->confirmationPopup->show(
+                "Close File",
+                "Do you want to close the opened file?\n\nThe canvas will remain intact.",
+                "Yes, Close File",
+                "No, Keep File Open",
+                [this]() {
+                    // Callback: User klik Yes, Close File
+                    app->fileOperationManager->closeFile();
+                    app->showPlayground = false;
+                    windowOpen = false;
+                },
+                [this]() {
+                    // Callback: User klik No, Keep File Open
+                    app->showPlayground = true;
+                    windowOpen = true;
+                }
+            );
+        } else {
+            // Tidak ada file yang terbuka, biarkan window tutup
+            app->showPlayground = false;
+        }
+    } else {
+        // Sync window open state ke app
+        app->showPlayground = windowOpen;
+    }
 }
