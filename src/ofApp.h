@@ -14,9 +14,17 @@
 #include "operation/gui/ContextMenu.h"
 #include "operation/gui/SuccessPopup.h"
 #include "operation/gui/ErrorPopup.h"
+#include "operation/gui/ConfirmationPopup.h"
 #include "operation/gui/SelectionInfo.h"
+#include "operation/gui/ObjectTooltip.h"
 #include "template/SacredGeometryTemplate.h"
 #include "template/TemplateRegistry.h"
+#include "managers/SelectionManager.h"
+#include "managers/ColorManager.h"
+#include "managers/DuplicateManager.h"
+#include "managers/InputManager.h"
+#include "undo/UndoAction.h"
+#include "utils/GeometryUtils.h"
 #include "imgui/imgui.h"
 #include "imgui/backends/imgui_impl_opengl3.h"
 #include "imgui/backends/imgui_impl_win32.h"
@@ -71,18 +79,11 @@ class ofApp : public ofBaseApp{
 		vector<vec2> currentPolylinePoints;  // Capture points saat drag untuk polyline
 		vector<CustomLine> customLines;  // CustomLine dari FileManager
 
-		std::set<int> selectedLineIndices;  // Bisa select 1 atau banyak garis
-		int lastSelectedLineIndex = -1;  // Untuk track line terakhir di-klik
-
 		// User-created dots system (untuk fitur "Duplicate Dot Above")
 		vector<std::unique_ptr<DotShape>> userDots;
-		std::set<int> selectedUserDotIndices;  // Bisa select 1 atau banyak userDot
-		int lastSelectedUserDotIndex = -1;  // Untuk track userDot terakhir di-klik
 
 		// Invisible polygon system
 		vector<PolygonShape> polygonShapes;
-		std::set<int> selectedPolygonIndices;  // Bisa select 1 atau banyak polygons
-		int lastSelectedPolygonIndex = -1;  // Untuk track polygon terakhir di-klik
 
 		// Preset warna untuk polygon
 		vector<ofColor> polygonPresetColors = {
@@ -100,65 +101,11 @@ class ofApp : public ofBaseApp{
 		// Line width control
 		float mouseLineWidth = 3.f;    // Line width khusus untuk mouse drag lines
 
-		// CustomLine color control
-		ofColor customLineColor = ofColor(0, 0, 255);  // Default biru
-
-		// Polygon color control
-		ofColor polygonColor = ofColor(0, 0, 255);  // Default biru
-
-		// UserDot color control
-		ofColor userDotColor = ofColor(0, 0, 255);  // Default biru
-
-		// Global clipboard untuk Copy/Paste Color
-		ofColor clipboardColor = ofColor(0, 0, 255);  // Default biru
-		bool hasClipboardColor = false;  // Flag untuk mengecek apakah ada color yang di-copy
-
 		float threshold = 9.0f; //dalam radius saat mouse hover pada dot
-		float duplicateDotOffsetDistance = 7.0f;  // Jarak offset duplikat dot ke atas (dalam pixels)
 		float userDotRadius = 8.0f;  // Radius untuk userDot/duplicate dot
 		bool isCtrlPressed = false;
 
 		// Undo System (Max 100 steps)
-		enum UndoActionType {
-			CREATE_LINE,
-			CREATE_POLYGON,
-			CREATE_DOT,
-			CHANGE_COLOR_LINE,
-			CHANGE_COLOR_POLYGON,
-			DELETE_LINE,
-			DELETE_POLYGON,
-			DELETE_DOT,
-			CHANGE_CURVE
-		};
-
-		struct UndoAction {
-			UndoActionType type;
-
-			// For CREATE actions
-			bool isCreate;
-
-			// For CHANGE_COLOR actions (support multi-select)
-			std::vector<int> colorIndices;
-			std::vector<ofColor> oldColors;
-			ofColor newColor;
-
-			// For DELETE actions
-			CustomLine deletedLine;
-			int deletedLineIndex;
-			PolygonShape deletedPolygon;
-			int deletedPolygonIndex;
-			vec2 deletedDotPos;  // For CREATE_DOT undo/redo (position dot yang dihapus)
-			vec2 deletedDotLowerBound;  // For DELETE_DOT undo/redo (lowerBound dot yang dihapus)
-			float deletedDotRadius;  // For DELETE_DOT undo/redo (radius dot yang dihapus)
-			int deletedDotIndex;  // For DELETE_DOT undo/redo (index dot yang dihapus)
-
-			// For CHANGE_CURVE (support multi-select)
-			std::vector<int> curveLineIndices;
-			std::vector<float> oldCurves;
-			float newCurve;
-		};
-
-		static const int MAX_UNDO_STEPS = 100;
 		std::vector<UndoAction> undoStack;
 		std::vector<UndoAction> redoStack;  // Redo stack
 
@@ -186,6 +133,18 @@ class ofApp : public ofBaseApp{
 		FileManager fileManager;
 		std::string lastSavedPath;  // Path file terakhir yang di-save/open (untuk Save As dan Load)
 
+		// Selection Manager untuk handle semua selection logic
+		SelectionManager selectionManager;
+
+		// Color Manager untuk handle semua color operations
+		std::unique_ptr<ColorManager> colorManager;
+
+		// Duplicate Manager untuk handle semua duplicate operations
+		std::unique_ptr<DuplicateManager> duplicateManager;
+
+		// Input Manager untuk handle semua input events (mouse + keyboard)
+		std::unique_ptr<InputManager> inputManager;
+
 		// Play button delay state
 		bool isWaitingForLoad = false;
 		float loadDelayTimer = 0.0f;
@@ -197,7 +156,9 @@ class ofApp : public ofBaseApp{
 		std::vector<std::unique_ptr<AbstractGuiComponent>> guiComponents;
 		std::unique_ptr<SuccessPopup> successPopup;  // Success popup dialog
 		std::unique_ptr<ErrorPopup> errorPopup;  // Error popup dialog
+		std::unique_ptr<ConfirmationPopup> confirmationPopup;  // Confirmation popup dialog
 		std::unique_ptr<class SelectionInfo> selectionInfo;  // Selection Info window
+		std::unique_ptr<ObjectTooltip> objectTooltip;  // Object tooltip manager
 
 		void setup();
 		void setupTemplateSystem();  // Register semua templates ke registry
@@ -234,7 +195,6 @@ class ofApp : public ofBaseApp{
 		// Shape control methods
 		void toggleLabels();           // Toggle label visibility
 		void toggleDots();             // Toggle dot visibility
-		void setCartesianAxesVisibility(bool show);  // Show/hide CartesianAxes
 		void updateLineWidth();
 		void updateCustomLineColor(ofColor color);  // Update warna semua customLines
 		void resetAllCustomLineColor();  // Reset semua warna customLine ke default biru
@@ -254,7 +214,9 @@ class ofApp : public ofBaseApp{
 		void syncColorPickerFromLoadedLines();  // Sync ColorPicker dari customLines yang diload
 		void syncColorPickerFromLoadedPolygons();  // Sync ColorPicker dari polygons yang diload
 		void syncUserDotFromLoaded();  // Sync userDotRadius dan userDotColor dari userDots yang diload
-		void cleanCanvas();             // Clear all polygons, custom lines, and hide template shapes
+		void syncColorFromSelectedObjects();  // Sync global color variables dari selected objects
+		void cleanCanvas();             // Show confirmation popup, then clean
+		void cleanCanvasInternal();    // Execute clean canvas TANPA confirmation (internal use)
 		void resetTransform();          // Reset canvas transform ke default
 		void scaleCustomLinesAndPolygons(float oldRadius, float newRadius);  // Scale customLines & polygons saat radius berubah
 		bool isCanvasEmpty();  // Cek apakah canvas benar-bener kosong (tidak ada template showing, customLines, atau polygons)

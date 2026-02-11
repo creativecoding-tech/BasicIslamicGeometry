@@ -1,58 +1,59 @@
 #include "UserCustom.h"
 #include "../../ofApp.h"
+#include <vector>
 
 UserCustom::UserCustom(ofApp* app) : app(app) {
-    // Initialize color picker dari app->customLineColor (default biru)
-    customLineColor[0] = app->customLineColor.r / 255.0f; // R
-    customLineColor[1] = app->customLineColor.g / 255.0f; // G
-    customLineColor[2] = app->customLineColor.b / 255.0f; // B
-    customLineColor[3] = app->customLineColor.a / 255.0f; // A
+    // Initialize color picker dari app->colorManager->getCustomLineColor() (default biru)
+    customLineColor[0] = app->colorManager->getCustomLineColor().r / 255.0f; // R
+    customLineColor[1] = app->colorManager->getCustomLineColor().g / 255.0f; // G
+    customLineColor[2] = app->colorManager->getCustomLineColor().b / 255.0f; // B
+    customLineColor[3] = app->colorManager->getCustomLineColor().a / 255.0f; // A
 
-    // Initialize color picker dari app->polygonColor (default biru)
-    polygonColor[0] = app->polygonColor.r / 255.0f; // R
-    polygonColor[1] = app->polygonColor.g / 255.0f; // G
-    polygonColor[2] = app->polygonColor.b / 255.0f; // B
-    polygonColor[3] = app->polygonColor.a / 255.0f; // A
+    // Initialize color picker dari app->colorManager->getPolygonColor() (default biru)
+    polygonColor[0] = app->colorManager->getPolygonColor().r / 255.0f; // R
+    polygonColor[1] = app->colorManager->getPolygonColor().g / 255.0f; // G
+    polygonColor[2] = app->colorManager->getPolygonColor().b / 255.0f; // B
+    polygonColor[3] = app->colorManager->getPolygonColor().a / 255.0f; // A
 
-    // Initialize color picker dari app->userDotColor (default biru)
-    userDotColor[0] = app->userDotColor.r / 255.0f; // R
-    userDotColor[1] = app->userDotColor.g / 255.0f; // G
-    userDotColor[2] = app->userDotColor.b / 255.0f; // B
-    userDotColor[3] = app->userDotColor.a / 255.0f; // A
+    // Initialize color picker dari app->colorManager->getUserDotColor() (default biru)
+    userDotColor[0] = app->colorManager->getUserDotColor().r / 255.0f; // R
+    userDotColor[1] = app->colorManager->getUserDotColor().g / 255.0f; // G
+    userDotColor[2] = app->colorManager->getUserDotColor().b / 255.0f; // B
+    userDotColor[3] = app->colorManager->getUserDotColor().a / 255.0f; // A
 }
 
 //--------------------------------------------------------------
 void UserCustom::updateColorFromApp() {
-    // Update color picker values dari app->customLineColor
-    customLineColor[0] = app->customLineColor.r / 255.0f; // R
-    customLineColor[1] = app->customLineColor.g / 255.0f; // G
-    customLineColor[2] = app->customLineColor.b / 255.0f; // B
-    customLineColor[3] = app->customLineColor.a / 255.0f; // A
+    // Update color picker values dari app->colorManager->getCustomLineColor()
+    customLineColor[0] = app->colorManager->getCustomLineColor().r / 255.0f; // R
+    customLineColor[1] = app->colorManager->getCustomLineColor().g / 255.0f; // G
+    customLineColor[2] = app->colorManager->getCustomLineColor().b / 255.0f; // B
+    customLineColor[3] = app->colorManager->getCustomLineColor().a / 255.0f; // A
 }
 
 //--------------------------------------------------------------
 void UserCustom::updatePolygonColorFromApp() {
-    // Update polygon color picker values dari app->polygonColor
-    polygonColor[0] = app->polygonColor.r / 255.0f; // R
-    polygonColor[1] = app->polygonColor.g / 255.0f; // G
-    polygonColor[2] = app->polygonColor.b / 255.0f; // B
-    polygonColor[3] = app->polygonColor.a / 255.0f; // A
+    // Update polygon color picker values dari app->colorManager->getPolygonColor()
+    polygonColor[0] = app->colorManager->getPolygonColor().r / 255.0f; // R
+    polygonColor[1] = app->colorManager->getPolygonColor().g / 255.0f; // G
+    polygonColor[2] = app->colorManager->getPolygonColor().b / 255.0f; // B
+    polygonColor[3] = app->colorManager->getPolygonColor().a / 255.0f; // A
 }
 
 //--------------------------------------------------------------
 void UserCustom::updateUserDotColorFromApp() {
-    // Update userDot color picker values dari app->userDotColor
-    userDotColor[0] = app->userDotColor.r / 255.0f; // R
-    userDotColor[1] = app->userDotColor.g / 255.0f; // G
-    userDotColor[2] = app->userDotColor.b / 255.0f; // B
-    userDotColor[3] = app->userDotColor.a / 255.0f; // A
+    // Update userDot color picker values dari app->colorManager->getUserDotColor()
+    userDotColor[0] = app->colorManager->getUserDotColor().r / 255.0f; // R
+    userDotColor[1] = app->colorManager->getUserDotColor().g / 255.0f; // G
+    userDotColor[2] = app->colorManager->getUserDotColor().b / 255.0f; // B
+    userDotColor[3] = app->colorManager->getUserDotColor().a / 255.0f; // A
 }
 
 //--------------------------------------------------------------
 void UserCustom::syncUserDotFromSelection() {
     // Jika ada userDot yang terseleksi, sync radius dan color dengan dot pertama yang terseleksi
-    if (!app->selectedUserDotIndices.empty()) {
-        int firstIndex = *app->selectedUserDotIndices.begin();
+    if (app->selectionManager.hasSelectedUserDot()) {
+        int firstIndex = app->selectionManager.getLastSelectedUserDotIndex();
         if (firstIndex >= 0 && firstIndex < app->userDots.size()) {
             auto& dot = app->userDots[firstIndex];
             if (dot) {
@@ -68,13 +69,20 @@ void UserCustom::syncUserDotFromSelection() {
             }
         }
     }
+    else {
+        // Jika tidak ada yang terseleksi, sync dari global color variable
+        userDotColor[0] = app->colorManager->getUserDotColor().r / 255.0f;
+        userDotColor[1] = app->colorManager->getUserDotColor().g / 255.0f;
+        userDotColor[2] = app->colorManager->getUserDotColor().b / 255.0f;
+        userDotColor[3] = app->colorManager->getUserDotColor().a / 255.0f;
+    }
 }
 
 //--------------------------------------------------------------
 void UserCustom::syncLineColorFromSelection() {
     // Jika ada customLine yang terseleksi, sync color dengan line pertama yang terseleksi
-    if (!app->selectedLineIndices.empty()) {
-        int firstIndex = *app->selectedLineIndices.begin();
+    if (app->selectionManager.hasSelectedLine()) {
+        int firstIndex = *app->selectionManager.getSelectedLineIndices().begin();
         if (firstIndex >= 0 && firstIndex < app->customLines.size()) {
             ofColor lineColor = app->customLines[firstIndex].getColor();
             customLineColor[0] = lineColor.r / 255.0f;
@@ -83,13 +91,20 @@ void UserCustom::syncLineColorFromSelection() {
             customLineColor[3] = lineColor.a / 255.0f;
         }
     }
+    else {
+        // Jika tidak ada yang terseleksi, sync dari global color variable
+        customLineColor[0] = app->colorManager->getCustomLineColor().r / 255.0f;
+        customLineColor[1] = app->colorManager->getCustomLineColor().g / 255.0f;
+        customLineColor[2] = app->colorManager->getCustomLineColor().b / 255.0f;
+        customLineColor[3] = app->colorManager->getCustomLineColor().a / 255.0f;
+    }
 }
 
 //--------------------------------------------------------------
 void UserCustom::syncPolygonColorFromSelection() {
     // Jika ada polygon yang terseleksi, sync color dengan polygon pertama yang terseleksi
-    if (!app->selectedPolygonIndices.empty()) {
-        int firstIndex = *app->selectedPolygonIndices.begin();
+    if (app->selectionManager.hasSelectedPolygon()) {
+        int firstIndex = app->selectionManager.getLastSelectedPolygonIndex();
         if (firstIndex >= 0 && firstIndex < app->polygonShapes.size()) {
             ofColor polyColor = app->polygonShapes[firstIndex].getColor();
             polygonColor[0] = polyColor.r / 255.0f;
@@ -97,6 +112,13 @@ void UserCustom::syncPolygonColorFromSelection() {
             polygonColor[2] = polyColor.b / 255.0f;
             polygonColor[3] = polyColor.a / 255.0f;
         }
+    }
+    else {
+        // Jika tidak ada yang terseleksi, sync dari global color variable
+        polygonColor[0] = app->colorManager->getPolygonColor().r / 255.0f;
+        polygonColor[1] = app->colorManager->getPolygonColor().g / 255.0f;
+        polygonColor[2] = app->colorManager->getPolygonColor().b / 255.0f;
+        polygonColor[3] = app->colorManager->getPolygonColor().a / 255.0f;
     }
 }
 
@@ -132,8 +154,7 @@ void UserCustom::draw() {
             // Event handler: toggle userDot visibility
             if (!app->showUserDot) {
                 // Unselect semua userDot ketika di-hide
-                app->selectedUserDotIndices.clear();
-                app->lastSelectedUserDotIndex = -1;
+                app->selectionManager.clearUserDotSelection();
             }
         }
         ImGui::SetNextItemWidth(100.0f);
@@ -157,20 +178,25 @@ void UserCustom::draw() {
         ImGui::Text("Line");
 
         // Info customLine yang terseleksi
-        if (!app->selectedLineIndices.empty()) {
-            int selectedCount = app->selectedLineIndices.size();
+        if (app->selectionManager.hasSelectedLine()) {
+            int selectedCount = app->selectionManager.getSelectedLineCount();
+
+            // Copy indices ke local vector untuk menghindari iterator invalidation
+            std::vector<int> selectedLineIndices(app->selectionManager.getSelectedLineIndices().begin(),
+                                                 app->selectionManager.getSelectedLineIndices().end());
 
             // Tampilkan label customLine yang terseleksi (dengan auto wrap)
             std::string labels = "Selected: ";
-            for (auto it = app->selectedLineIndices.begin(); it != app->selectedLineIndices.end(); ++it) {
+            for (size_t i = 0; i < selectedLineIndices.size(); ++i) {
+                int lineIndex = selectedLineIndices[i];
                 // Ambil label dari CustomLine (bukan hardcoded "customLine" + index)
-                if (*it >= 0 && *it < app->customLines.size()) {
-                    labels += app->customLines[*it].getLabel();
+                if (lineIndex >= 0 && lineIndex < app->customLines.size()) {
+                    labels += app->customLines[lineIndex].getLabel();
                 } else {
-                    labels += "customLine" + std::to_string(*it);  // Fallback kalau index invalid
+                    labels += "customLine" + std::to_string(lineIndex);  // Fallback kalau index invalid
                 }
                 // Tambah koma kecuali ini elemen terakhir
-                if (std::next(it) != app->selectedLineIndices.end()) {
+                if (i < selectedLineIndices.size() - 1) {
                     labels += ", ";
                 }
             }
@@ -209,7 +235,7 @@ void UserCustom::draw() {
         }
 
         // Button: Reset Selected Line Colors (hanya enabled jika ada selection)
-        if (!app->selectedLineIndices.empty()) {
+        if (app->selectionManager.hasSelectedLine()) {
             if (ImGui::Button("Reset Selected Line Colors", ImVec2(buttonWidth, 0))) {
                 app->resetSelectedCustomLineColor();
             }
@@ -221,7 +247,7 @@ void UserCustom::draw() {
         }
 
         // Button: Duplicate Line R 180° (hanya enabled jika ada >= 2 selected lines)
-        if (app->selectedLineIndices.size() >= 2) {
+        if (app->selectionManager.getSelectedLineCount() >= 2) {
             if (ImGui::Button("Duplicate Line R 180°", ImVec2(buttonWidth, 0))) {
                 app->duplicateLineR180();
             }
@@ -235,12 +261,13 @@ void UserCustom::draw() {
         ImGui::Text("Polygon");
 
         // Info polygon yang terseleksi
-        if (!app->selectedPolygonIndices.empty()) {
-            int selectedCount = app->selectedPolygonIndices.size();
+        if (app->selectionManager.hasSelectedPolygon()) {
+            int selectedCount = app->selectionManager.getSelectedPolygonCount();
 
             // Tampilkan label polygon yang terseleksi (dengan auto wrap)
             std::string labels = "Selected: ";
-            for (auto it = app->selectedPolygonIndices.begin(); it != app->selectedPolygonIndices.end(); ++it) {
+            const std::set<int>& indices = app->selectionManager.getSelectedPolygonIndices();
+            for (auto it = indices.begin(); it != indices.end(); ++it) {
                 // Ambil label dari PolygonShape (index + "polygon" prefix)
                 if (*it >= 0 && *it < app->polygonShapes.size()) {
                     labels += "polygon" + std::to_string(app->polygonShapes[*it].getIndex());
@@ -248,7 +275,7 @@ void UserCustom::draw() {
                     labels += "polygon" + std::to_string(*it);  // Fallback kalau index invalid
                 }
                 // Tambah koma kecuali ini elemen terakhir
-                if (std::next(it) != app->selectedPolygonIndices.end()) {
+                if (std::next(it) != indices.end()) {
                     labels += ", ";
                 }
             }
@@ -287,7 +314,7 @@ void UserCustom::draw() {
         }
 
         // Button: Reset Selected Polygon Colors (hanya enabled jika ada selection)
-        if (!app->selectedPolygonIndices.empty()) {
+        if (app->selectionManager.hasSelectedPolygon()) {
             if (ImGui::Button("Reset Selected Polygon Colors", ImVec2(polygonButtonWidth, 0))) {
                 app->resetSelectedPolygonColor();
             }
@@ -299,9 +326,9 @@ void UserCustom::draw() {
         }
 
         // Slider transparansi (alpha) untuk polygon - hanya untuk selected polygon
-        if (app->selectedPolygonIndices.size() >= 2) {
+        if (app->selectionManager.hasSelectedPolygon()) {
             // Ambil alpha dari polygon pertama yang terseleksi untuk inisialisasi slider
-            int firstIndex = *app->selectedPolygonIndices.begin();
+            int firstIndex = app->selectionManager.getLastSelectedPolygonIndex();
             if (firstIndex >= 0 && firstIndex < app->polygonShapes.size()) {
                 static int polygonAlpha = 255;  // Nilai slider 0-255 (disimpan antar frame)
 

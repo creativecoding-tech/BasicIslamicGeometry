@@ -442,6 +442,7 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
 
     // Buat PolygonShape dengan atau tanpa animation tergantung mode
     PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
+    polygon.setLoadedFromFile(true);  // Flag sebagai loaded dari file .nay
     polygons.push_back(std::move(polygon));
   }
 
@@ -803,6 +804,7 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
 
       // Buat PolygonShape dengan atau tanpa animation tergantung mode
       PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
+      polygon.setLoadedFromFile(true);  // Flag sebagai loaded dari file .nay
       loadedPolygonsBuffer.push_back(std::move(polygon));
     }
   }
@@ -984,7 +986,7 @@ PolygonShape FileManager::createPolygonWithAnimation(const std::vector<vec2>& ve
         auto wobble = std::make_unique<WobbleAnimation>(30.0f, 5.0f, 1.8f * animationSpeedMultiplier);  // Delta time calibrated (0.03f * 60 FPS)
         return PolygonShape(vertices, color, index, std::move(wobble));
       }
-    case PolygonAnimationMode::FILL:
+    case PolygonAnimationMode::WAVE_FILL:
       {
         auto fill = std::make_unique<FillAnimation>(20.0f, 4.0f, 0.12f * animationSpeedMultiplier);  // Delta time calibrated (0.002f * 60 FPS)
         return PolygonShape(vertices, color, index, std::move(fill));

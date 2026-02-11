@@ -1,5 +1,6 @@
 #include "SelectionInfo.h"
 #include "../../ofApp.h"
+#include <vector>
 
 SelectionInfo::SelectionInfo(ofApp* app) : app(app) {
 }
@@ -38,18 +39,19 @@ void SelectionInfo::draw() {
 	// Begin window dengan close button (windowOpen flag)
 	if (ImGui::Begin("Selection Info", &windowOpen, ImGuiWindowFlags_None)) {
 		// Cek apakah ada selection
-		bool hasSelection = (!app->selectedUserDotIndices.empty() ||
-							!app->selectedLineIndices.empty() ||
-							!app->selectedPolygonIndices.empty());
+		bool hasSelection = (app->selectionManager.hasSelectedUserDot() ||
+							app->selectionManager.hasSelectedLine() ||
+							app->selectionManager.hasSelectedPolygon());
 
 		if (!hasSelection) {
 			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "No objects selected");
 		} else {
 			// Tampilkan info untuk selected dots
-			if (!app->selectedUserDotIndices.empty()) {
-				ImGui::Text("Selected Dots: %d", app->selectedUserDotIndices.size());
+			if (app->selectionManager.hasSelectedUserDot()) {
+				ImGui::Text("Selected Dots: %d", app->selectionManager.getSelectedUserDotCount());
 
-				for (auto it = app->selectedUserDotIndices.begin(); it != app->selectedUserDotIndices.end(); ++it) {
+				const std::set<int>& indices = app->selectionManager.getSelectedUserDotIndices();
+				for (auto it = indices.begin(); it != indices.end(); ++it) {
 					int dotIndex = *it;
 					if (dotIndex >= 0 && dotIndex < app->userDots.size()) {
 						auto& dot = app->userDots[dotIndex];
@@ -93,11 +95,13 @@ void SelectionInfo::draw() {
 			}
 
 			// Tampilkan info untuk selected lines
-			if (!app->selectedLineIndices.empty()) {
-				ImGui::Text("Selected Lines: %d", app->selectedLineIndices.size());
+			if (app->selectionManager.hasSelectedLine()) {
+				ImGui::Text("Selected Lines: %d", app->selectionManager.getSelectedLineCount());
 
-				for (auto it = app->selectedLineIndices.begin(); it != app->selectedLineIndices.end(); ++it) {
-					int lineIndex = *it;
+				// Copy indices ke local vector untuk menghindari iterator invalidation
+				std::vector<int> selectedLineIndices(app->selectionManager.getSelectedLineIndices().begin(),
+				                                     app->selectionManager.getSelectedLineIndices().end());
+				for (int lineIndex : selectedLineIndices) {
 					if (lineIndex >= 0 && lineIndex < app->customLines.size()) {
 						CustomLine& line = app->customLines[lineIndex];
 
@@ -142,10 +146,11 @@ void SelectionInfo::draw() {
 			}
 
 			// Tampilkan info untuk selected polygons
-			if (!app->selectedPolygonIndices.empty()) {
-				ImGui::Text("Selected Polygons: %d", app->selectedPolygonIndices.size());
+			if (app->selectionManager.hasSelectedPolygon()) {
+				ImGui::Text("Selected Polygons: %d", app->selectionManager.getSelectedPolygonCount());
 
-				for (auto it = app->selectedPolygonIndices.begin(); it != app->selectedPolygonIndices.end(); ++it) {
+				const std::set<int>& indices = app->selectionManager.getSelectedPolygonIndices();
+				for (auto it = indices.begin(); it != indices.end(); ++it) {
 					int polyIndex = *it;
 					if (polyIndex >= 0 && polyIndex < app->polygonShapes.size()) {
 						PolygonShape& poly = app->polygonShapes[polyIndex];
@@ -158,7 +163,7 @@ void SelectionInfo::draw() {
 						ImGui::Indent();
 
 						// Info: vertices count
-						int vertexCount = poly.getVertices().size();
+						int vertexCount = static_cast<int>(poly.getVertices().size());
 						ImGui::Text("vertices: %d", vertexCount);
 
 						// Info: color

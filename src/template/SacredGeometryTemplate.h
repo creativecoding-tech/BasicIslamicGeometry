@@ -88,7 +88,6 @@ public:
 
 	// Cartesian visibility preferences (public agar bisa diakses dari UI)
 	bool drawCartesian = true;  // Playground panel preference saat Draw
-	bool showCartesianInSacredGeometry = true;  // SacredGeometry panel preference (realtime)
 
 	// Circle visibility preferences (public agar bisa diakses dari UI)
 	bool drawCircles = true;  // Playground panel preference saat Draw
@@ -119,13 +118,14 @@ public:
 
 	// Template control methods - fully autonomous!
 	virtual void startSequentialDrawing();
-	virtual bool updateSequentialDrawing();  // Return true jika complete
+	virtual bool updateSequentialDrawing(float deltaTime = 0.016f);  // Return true jika complete
 	virtual void clearAllShapes();  // Benar-benar hapus semua shapes (shapes.clear())
 	virtual void drawParallel();  // Draw all shapes secara parallel (setup + show)
 	virtual void toggleLabels();
 	virtual void toggleDots();
 	virtual void setLineWidth(float width);
 	virtual void updateLineWidth(float width);  // Realtime update tanpa rebuild
+	virtual void enableAllDrawSettings();  // Enable semua draw settings (untuk SacredGeometry window)
 
 	// Optional: Template-specific settings
 	virtual bool hasCustomSettings() { return false; }

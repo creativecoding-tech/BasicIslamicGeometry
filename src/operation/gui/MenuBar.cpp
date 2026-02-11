@@ -17,7 +17,7 @@ void MenuBar::draw() {
                 app->saveWorkspaceAs();
             }
             ImGui::Separator();
-            if (ImGui::MenuItem("Exit", "ALT+F4")) {
+            if (ImGui::MenuItem("Exit", "END")) {
                 ofExit();
             }
             ImGui::EndMenu();
@@ -43,7 +43,13 @@ void MenuBar::draw() {
             if (ImGui::MenuItem("Delete Lines & Polygons", "CTRL+DEL")) {
                 app->clearCustomLinesAndPolygons();
             }
-            if (ImGui::MenuItem("Clean Canvas", "CTRL+SHIFT+DEL")) {
+            // Clean Canvas - Disable jika canvas kosong
+            bool isCanvasEmpty = (app->currentTemplate && app->currentTemplate->getShapes().empty()) &&
+                                app->customLines.empty() &&
+                                app->polygonShapes.empty();
+
+            if (ImGui::MenuItem("Clean Canvas", "CTRL+SHIFT+DEL", false, !isCanvasEmpty)) {
+                // cleanCanvas() sudah otomatis show confirmation popup
                 app->cleanCanvas();
             }
             ImGui::EndMenu();

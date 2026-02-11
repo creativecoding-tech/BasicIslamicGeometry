@@ -59,23 +59,23 @@ void BasicZelligeTemplate::setupCircles() {
 
 	// Circle A: Center (0,0) → distance=0
 	shapes.push_back(std::make_unique<CircleShape>(radius, "A", 0, 0));
-	circleIndices.push_back(shapes.size() - 1);  // Simpan index Circle A
+	circleIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Circle A
 
 	// Circle B: Kanan (0°) → distance=radius
 	shapes.push_back(std::make_unique<CircleShape>(radius, "B", 0, radius));
-	circleIndices.push_back(shapes.size() - 1);  // Simpan index Circle B
+	circleIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Circle B
 
 	// Circle C: Kiri (180°) → distance=radius
 	shapes.push_back(std::make_unique<CircleShape>(radius, "C", PI, radius));
-	circleIndices.push_back(shapes.size() - 1);  // Simpan index Circle C
+	circleIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Circle C
 
 	// Circle D: Atas (90°) → distance=radius
 	shapes.push_back(std::make_unique<CircleShape>(radius, "D", PI/2, radius));
-	circleIndices.push_back(shapes.size() - 1);  // Simpan index Circle D
+	circleIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Circle D
 
 	// Circle E: Bawah (270°) → distance=radius
 	shapes.push_back(std::make_unique<CircleShape>(radius, "E", -PI/2, radius));
-	circleIndices.push_back(shapes.size() - 1);  // Simpan index Circle E
+	circleIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Circle E
 }
 
 //--------------------------------------------------------------
@@ -90,19 +90,19 @@ void BasicZelligeTemplate::setupCrossLines() {
 
 	// CrossLine F
 	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(-radius, -radius), "F", "J", radius));
-	crossLineIndices.push_back(shapes.size() - 1);  // Simpan index CrossLine F
+	crossLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index CrossLine F
 
 	// CrossLine G
 	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(radius, -radius), "G", "K", radius));
-	crossLineIndices.push_back(shapes.size() - 1);  // Simpan index CrossLine G
+	crossLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index CrossLine G
 
 	// CrossLine H
 	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(-radius, radius), "H", "L", radius));
-	crossLineIndices.push_back(shapes.size() - 1);  // Simpan index CrossLine H
+	crossLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index CrossLine H
 
 	// CrossLine I
 	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(radius, radius), "I", "M", radius));
-	crossLineIndices.push_back(shapes.size() - 1);  // Simpan index CrossLine I
+	crossLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index CrossLine I
 }
 
 //--------------------------------------------------------------
@@ -118,28 +118,28 @@ void BasicZelligeTemplate::setupParallelograms() {
 	float distC_E_F = radius * sqrt(2) / 2;
 	vec2 intersecC_E_F = vec2(cos(angleC_E_F) * distC_E_F, sin(angleC_E_F) * distC_E_F);
 	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(-radius, 0), vec2(0, -radius), intersecC_E_F, "N", radius));
-	parallelogramIndices.push_back(shapes.size() - 1);  // Simpan index Parallelogram N
+	parallelogramIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Parallelogram N
 
 	// E→B memotong G: Northeast (120, -120)
 	float angleE_B_G = -PI / 4;  // -45 derajat (Northeast)
 	float distE_B_G = radius * sqrt(2) / 2;
 	vec2 intersecE_B_G = vec2(cos(angleE_B_G) * distE_B_G, sin(angleE_B_G) * distE_B_G);
 	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(0, -radius), vec2(radius, 0), intersecE_B_G, "O", radius));
-	parallelogramIndices.push_back(shapes.size() - 1);  // Simpan index Parallelogram O
+	parallelogramIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Parallelogram O
 
 	// B→D memotong I: Southeast (120, 120)
 	float angleB_D_I = PI / 4;  // 45 derajat (Southeast)
 	float distB_D_I = radius * sqrt(2) / 2;
 	vec2 intersecB_D_I = vec2(cos(angleB_D_I) * distB_D_I, sin(angleB_D_I) * distB_D_I);
 	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(radius, 0), vec2(0, radius), intersecB_D_I, "P", radius));
-	parallelogramIndices.push_back(shapes.size() - 1);  // Simpan index Parallelogram P
+	parallelogramIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Parallelogram P
 
 	// D→C memotong H: Southwest (-120, 120)
 	float angleD_C_H = 3 * PI / 4;  // 135 derajat (Southwest)
 	float distD_C_H = radius * sqrt(2) / 2;
 	vec2 intersecD_C_H = vec2(cos(angleD_C_H) * distD_C_H, sin(angleD_C_H) * distD_C_H);
 	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(0, radius), vec2(-radius, 0), intersecD_C_H, "Q", radius));
-	parallelogramIndices.push_back(shapes.size() - 1);  // Simpan index Parallelogram Q
+	parallelogramIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Parallelogram Q
 }
 
 //--------------------------------------------------------------
@@ -161,7 +161,7 @@ void BasicZelligeTemplate::setupRectangleLines() {
 	vec2 intersecS = vec2(radius * (1 - sqrt(2) / 2), posF.y);
 
 	shapes.push_back(std::make_unique<RectangleLine>(posF, posG, intersecR, intersecS, "R", "S", radius));
-	rectangleLineIndices.push_back(shapes.size() - 1);  // Simpan index RectangleLine RS
+	rectangleLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index RectangleLine RS
 
 	// RectangleLine G ke I
 	float angleI = PI / 4; //45°
@@ -174,7 +174,7 @@ void BasicZelligeTemplate::setupRectangleLines() {
 	vec2 intersecU = vec2(radius * sqrt(2) / 2, radius * (1 - sqrt(2) / 2));
 
 	shapes.push_back(std::make_unique<RectangleLine>(posG, posI, intersecT, intersecU, "T", "U", radius));
-	rectangleLineIndices.push_back(shapes.size() - 1);  // Simpan index RectangleLine TU
+	rectangleLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index RectangleLine TU
 
 	// RectangleLine I ke H
 	float angleH = 3 * PI / 4; //135°
@@ -182,13 +182,13 @@ void BasicZelligeTemplate::setupRectangleLines() {
 	vec2 intersecV = vec2(radius * (1 - sqrt(2) / 2), posH.y);
 	vec2 intersecW = vec2(-radius * (1 - sqrt(2) / 2), posH.y);
 	shapes.push_back(std::make_unique<RectangleLine>(posI, posH, intersecV, intersecW, "V", "W", radius));
-	rectangleLineIndices.push_back(shapes.size() - 1);  // Simpan index RectangleLine VW
+	rectangleLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index RectangleLine VW
 
 	// RectangleLine H ke F
 	vec2 intersecX = vec2(-radius * sqrt(2) / 2, radius * (1 - sqrt(2) / 2));
 	vec2 intersecY = vec2(-radius * sqrt(2) / 2, radius * (sqrt(2) / 2 - 1));
 	shapes.push_back(std::make_unique<RectangleLine>(posH, posF, intersecX, intersecY, "X", "Y", radius));
-	rectangleLineIndices.push_back(shapes.size() - 1);  // Simpan index RectangleLine XY
+	rectangleLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index RectangleLine XY
 }
 
 //--------------------------------------------------------------
@@ -207,54 +207,54 @@ void BasicZelligeTemplate::setupOctagramLines() {
 	vec2 posG = vec2(cos(angle0) * radius, sin(angle0) * radius);
 
 	shapes.push_back(std::make_unique<OctagramLine>(posE, posEnd, posG, "0", radius));
-	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 0
+	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 0
 
 	// OctagramLine 2: Dot G → -45° dari Circle B → pusat Circle B
 	vec2 posB = vec2(radius, 0);  // (240, 0)
 	vec2 posEnd1 = vec2(posB.x + cos(angle0) * radius, posB.y + sin(angle0) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posG, posEnd1, posB, "1", radius));
-	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 1
+	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 1
 
 	// OctagramLine 3: Circle B → 45° dari Circle B → Dot I
 	float angle2 = PI / 4;  // 45°
 	vec2 posEnd2 = vec2(posB.x + cos(angle2) * radius, posB.y + sin(angle2) * radius);
 	vec2 posI = vec2(cos(angle2) * radius, sin(angle2) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posB, posEnd2, posI, "2", radius));
-	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 2
+	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 2
 
 	// OctagramLine 4: Circle D → +45° dari Dot I → Circle D
 	vec2 posD = vec2(0, radius);
 	float angle3 = angle2;  // 45°
 	vec2 posEnd3 = vec2(posD.x + cos(angle3) * radius, posD.y + sin(angle3) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posI, posEnd3, posD, "3", radius));
-	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 3
+	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 3
 
 	// OctagramLine 5: Dot D → posEnd
 	float angle4 = 3 * angle2;  // 135°
 	vec2 posEnd4 = vec2(posD.x + cos(angle4) * radius, posD.y + sin(angle4) * radius);
 	vec2 posH = vec2(cos(angle4) * radius, sin(angle4) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posD, posEnd4, posH, "4", radius));
-	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 4
+	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 4
 
 	// OctagramLine 6: posH → posEnd5 → posC
 	vec2 posC = vec2(-radius, 0);
 	float angle5 = angle4;  // 135°
 	vec2 posEnd5 = vec2(posC.x + cos(angle5) * radius, posC.y + sin(angle5) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posH, posEnd5, posC, "5", radius));
-	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 5
+	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 5
 
 	// OctagramLine 7: posC → posEnd6 → posF
 	float angle6 = -angle5;  // -135°
 	vec2 posEnd6 = vec2(posC.x + cos(angle6) * radius, posC.y + sin(angle6) * radius);
 	vec2 posF = vec2(cos(angle6) * radius, sin(angle6) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posC, posEnd6, posF, "6", radius));
-	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 6
+	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 6
 
 	// OctagramLine 8: posF → posEnd7 → posE
 	float angle7 = angle6;  // -135°
 	vec2 posEnd7 = vec2(posE.x + cos(angle7) * radius, posE.y + sin(angle7) * radius);
 	shapes.push_back(std::make_unique<OctagramLine>(posF, posEnd7, posE, "7", radius));
-	octagramLineIndices.push_back(shapes.size() - 1);  // Simpan index OctagramLine 7
+	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 7
 }
 
 //--------------------------------------------------------------
@@ -356,7 +356,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 			// Radio button changed
 		}
 
-		if (ImGui::RadioButton("Fill", &polygonAnimationMode, 3)) {
+		if (ImGui::RadioButton("Wave Fill", &polygonAnimationMode, 3)) {
 			// Radio button changed
 		}
 	}
@@ -384,45 +384,89 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 								 "Please select a Draw Mode first!",
 								 "OK");
 		} else {
-			// Semua validasi OK! Lanjut load
+			// Semua validasi OK! Cek apakah canvas kosong
+			bool isCanvasEmpty = (app->currentTemplate && app->currentTemplate->getShapes().empty()) &&
+								app->customLines.empty() &&
+								app->polygonShapes.empty();
 
-			// CLEAN CANVAS DULU - hapus semua shapes, polygons, customLines
-			app->cleanCanvas();
+			if (isCanvasEmpty) {
+				// Canvas kosong, langsung load saja TANPA clean & TANPA confirmation
+				// Apply speed multiplier ke SEMUA (template shapes, polygons, customLines)
+				app->currentTemplate->applySpeedMultiplier();
+				app->fileManager.setAnimationSpeedMultiplier(app->currentTemplate->speedMultiplier);
 
-			// Sinkronisasi SacredGeometry state dengan Playground preference
-			app->currentTemplate->showCartesianInSacredGeometry = drawCartesian;
+				// Simpan polygon animation mode - convert int ke PolygonAnimationMode
+				PolygonAnimationMode polyMode;
+				switch (polygonAnimationMode) {
+					case 1:
+						polyMode = PolygonAnimationMode::FADE_IN;
+						break;
+					case 2:
+						polyMode = PolygonAnimationMode::WOBBLE;
+						break;
+					case 3:
+						polyMode = PolygonAnimationMode::WAVE_FILL;
+						break;
+					case 0:
+					default:
+						polyMode = PolygonAnimationMode::NO_ANIMATION;
+						break;
+				}
+				app->fileManager.setPolygonAnimationMode(polyMode);
 
-			// Apply speed multiplier ke SEMUA (template shapes, polygons, customLines)
-			app->currentTemplate->applySpeedMultiplier();
-			app->fileManager.setAnimationSpeedMultiplier(app->currentTemplate->speedMultiplier);
+				// Set flag untuk delay load dan update state
+				app->isWaitingForLoad = true;
+				app->loadDelayAccumulator = 0.0f;
+				app->pendingLoadMode = playMode;
+				app->currentState = ofApp::UpdateState::DELAYED_LOAD;
 
-			// Simpan polygon animation mode - convert int ke PolygonAnimationMode
-			// polygonAnimationMode: 0 = No Animation, 1 = FadeIn, 2 = Wobble, 3 = Fill
-			PolygonAnimationMode polyMode;
-			switch (polygonAnimationMode) {
-				case 1:
-					polyMode = PolygonAnimationMode::FADE_IN;
-					break;
-				case 2:
-					polyMode = PolygonAnimationMode::WOBBLE;
-					break;
-				case 3:
-					polyMode = PolygonAnimationMode::FILL;
-					break;
-				case 0:
-				default:
-					polyMode = PolygonAnimationMode::NO_ANIMATION;
-					break;
+				app->imguiVisible = false;  // Hide ImGui
+			} else {
+				// Canvas ADA isinya, tampilkan confirmation clean + load
+				app->confirmationPopup->show(
+					"Load Workspace",
+					"The canvas will be cleaned before loading.\n\nDo you want to continue?",
+					"Yes, Load",
+					"Cancel",
+					[this, app]() {
+						// Callback: User klik Yes, lanjut clean + load workspace
+
+						// CLEAN CANVAS DULU - pakai internal method (tanpa popup lagi)
+						app->cleanCanvasInternal();
+
+						// Apply speed multiplier ke SEMUA (template shapes, polygons, customLines)
+						app->currentTemplate->applySpeedMultiplier();
+						app->fileManager.setAnimationSpeedMultiplier(app->currentTemplate->speedMultiplier);
+
+						// Simpan polygon animation mode - convert int ke PolygonAnimationMode
+						PolygonAnimationMode polyMode;
+						switch (polygonAnimationMode) {
+							case 1:
+								polyMode = PolygonAnimationMode::FADE_IN;
+								break;
+							case 2:
+								polyMode = PolygonAnimationMode::WOBBLE;
+								break;
+							case 3:
+								polyMode = PolygonAnimationMode::WAVE_FILL;
+								break;
+							case 0:
+							default:
+								polyMode = PolygonAnimationMode::NO_ANIMATION;
+								break;
+						}
+						app->fileManager.setPolygonAnimationMode(polyMode);
+
+						// Set flag untuk delay load dan update state
+						app->isWaitingForLoad = true;
+						app->loadDelayAccumulator = 0.0f;  // Reset accumulator untuk mulai delay
+						app->pendingLoadMode = playMode;
+						app->currentState = ofApp::UpdateState::DELAYED_LOAD;
+
+						app->imguiVisible = false;  // Hide ImGui
+					}
+				);
 			}
-			app->fileManager.setPolygonAnimationMode(polyMode);
-
-			// Set flag untuk delay load dan update state
-			app->isWaitingForLoad = true;
-			app->loadDelayAccumulator = 0.0f;  // Reset accumulator untuk mulai delay
-			app->pendingLoadMode = playMode;
-			app->currentState = ofApp::UpdateState::DELAYED_LOAD;  // STRATEGY PATTERN: Set state ke DELAYED_LOAD
-
-			app->imguiVisible = false;  // Hide ImGui
 		}
 	}
 	ImGui::SameLine();
