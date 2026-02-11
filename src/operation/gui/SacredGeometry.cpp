@@ -43,7 +43,7 @@ void SacredGeometry::draw() {
         // Radius slider
         if (app->currentTemplate) {
             ImGui::SetNextItemWidth(150.0f);
-            ImGui::SliderFloat("Radius", &app->currentTemplate->radius, 50, 600);
+            ImGui::SliderFloat("Radius", &app->currentTemplate->radius, 25, 600);
         }
         // Line Width slider
         ImGui::SetNextItemWidth(150.0f);
