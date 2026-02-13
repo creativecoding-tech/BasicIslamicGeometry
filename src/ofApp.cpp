@@ -250,6 +250,8 @@ void ofApp::updateStaggeredTemplate() {
 void ofApp::updateStaggeredCustomLines() {
   // Cek mode step animation ⭐ NEW
   bool isBeforePolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
+  bool isWithPolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_WITH_POLYGON_DRAW);
+  bool isAfterPolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_AFTER_POLYGON_DRAW);
 
   // Static flag untuk tracking apakah wave animation sudah di-apply (hanya untuk BEFORE_POLYGON_DRAW)
   static bool waveAnimationApplied = false;
@@ -284,7 +286,7 @@ void ofApp::updateStaggeredCustomLines() {
   bool allComplete = true;
   bool allLoaded = (fileManager.getCurrentLoadIndex() >= fileManager.getTotalLoadedLines());
 
-  // KHUSUS UNTUK BEFORE POLYGON DRAW: Tunggu custom lines selesai dulu ⭐ NEW
+  // KHUSUS UNTUK BEFORE POLYGON DRAW ⭐ NEW
   if (isBeforePolygonDraw) {
     // Untuk BEFORE_POLYGON_DRAW, custom lines HARUS selesai dulu
     // Cek apakah semua custom lines sudah selesai progressive drawing
@@ -334,6 +336,50 @@ void ofApp::updateStaggeredCustomLines() {
     }
   }
 
+  // KHUSUS UNTUK WITH POLYGON DRAW ⭐ NEW
+  else if (isWithPolygonDraw) {
+    // Untuk WITH_POLYGON_DRAW, custom lines dan polygons BARENGAN
+    // Cek apakah semua custom lines sudah selesai progressive drawing
+    bool allProgressiveComplete = true;
+    for (const auto& line : customLines) {
+      if (line.getProgress() < 1.0f) {
+        allProgressiveComplete = false;
+        break;
+      }
+    }
+
+    // Jika semua custom lines sudah selesai progressive drawing
+    if (allProgressiveComplete) {
+      // ⭐ PENTING: Apply wave animation HANYA SEKALI (jika belum di-apply)
+      if (!waveAnimationApplied) {
+        // Cast ke BasicZelligeTemplate karena applyWaveAnimationToAllCustomLines() method di situ
+        if (currentTemplate) {
+          BasicZelligeTemplate* zelligeTemplate = dynamic_cast<BasicZelligeTemplate*>(currentTemplate);
+          if (zelligeTemplate) {
+            zelligeTemplate->applyWaveAnimationToAllCustomLines(this);
+          }
+        }
+        waveAnimationApplied = true;  // Tandai sudah di-apply
+      }
+
+      // ⭐ PENTING: TUNGGU sampai SEMUA custom lines di-load dari file
+      // Jangan pindah ke LOAD_POLYGONS terlalu cepat!
+      if (allComplete && allLoaded) {
+        loadStage = LOAD_POLYGONS;
+        waveAnimationApplied = false;  // Reset flag untuk next time
+      }
+    }
+  }
+
+  // KHUSUS UNTUK AFTER POLYGON DRAW
+  else if (isAfterPolygonDraw) {
+    // Untuk AFTER_POLYGON_DRAW, polygons dulu, baru wave animation
+    if (allComplete && allLoaded) {
+      loadStage = LOAD_POLYGONS;
+      waveAnimationApplied = false;  // Reset flag untuk mode lain
+    }
+  }
+
   // Pindah ke stage POLYGONS jika semua complete DAN semua sudah di-load
   // TAPI JANGAN untuk BEFORE_POLYGON_DRAW (karena transisinya sudah ditangani di atas)
   else if (allComplete && allLoaded) {
@@ -353,8 +399,14 @@ void ofApp::updateStaggeredPolygons() {
     syncColorPickerFromLoadedPolygons();
   }
 
-  // Update animation polygons yang BELUM complete saja
+  // ⭐ PENTING: Update custom lines JUGA agar wave animation tetap berjalan!
+  // Ini khusus untuk WITH_POLYGON_DRAW mode
   float deltaTime = ofGetLastFrameTime();
+  for (auto& line : customLines) {
+    line.update(deltaTime);  // Update progressive drawing + wave animation
+  }
+
+  // Update animation polygons yang BELUM complete saja
   for (auto& polygon : polygonShapes) {
     if (!polygon.isAnimationComplete()) {
       polygon.update(deltaTime);
