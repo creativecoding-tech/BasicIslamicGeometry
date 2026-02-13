@@ -190,6 +190,13 @@ public:
 	 */
 	void syncColorPickersFromSelection();
 
+	/**
+	 * Reset ALL color pickers to default blue (0, 0, 255)
+	 * - Resets customLineColor, polygonColor, userDotColor to DEFAULT_COLOR
+	 * - Does NOT affect existing objects (only new objects going forward)
+	 */
+	void resetAllColorPickers();
+
 private:
 	ofApp* app;  // Pointer to main app
 

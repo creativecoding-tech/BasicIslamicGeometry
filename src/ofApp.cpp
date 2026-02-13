@@ -1516,6 +1516,13 @@ void ofApp::cleanCanvasInternal() {
     if (currentTemplate) {
         currentTemplate->clearAllShapes();
     }
+
+    // Reset semua color pickers ke warna biru default
+    colorManager->resetAllColorPickers();
+
+    // Reset UserDot settings ke default
+    showUserDot = true;      // Checkbox Dot menjadi checked
+    userDotRadius = 8.0f;     // Slider radius ke default (8.0f)
 }
 
 //--------------------------------------------------------------
