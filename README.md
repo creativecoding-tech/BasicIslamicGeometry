@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--islamic--gs--playgroundhandle-orange)
+![Branch](https://img.shields.io/badge/Branch-sketch--islamic--gs--duplicatedot--track-orange)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -299,6 +299,13 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - **Duplicate Dot Below** - Duplicate dengan offset ke bawah (Y positif)
   - **Duplicate Dot Left** - Duplicate dengan offset ke kiri (X negatif)
   - **Duplicate Dot Right** - Duplicate dengan offset ke kanan (X positif)
+  - **Duplicate Dot Track** ⭐ NEW - Buat dot yang bisa bergerak沿着 customLine/DcustomLine:
+    - Dot dibuat di midpoint customLine/DcustomLine
+    - Link ke line via `trackLineIndex` untuk movement
+    - Mouse scroll untuk menggerakkan dot sepanjang line (0.0 - 1.0 progress)
+    - Mendukung bezier curves (bukan hanya garis lurus)
+    - **Boundary margin** - Dot tidak bisa mencapai ujung line (5% margin di setiap ujung) ⭐ NEW
+    - Connected lines otomatis update points ketika dot bergerak
 - **Context Menu Access** - Right-click pada original dot untuk show duplicate options
 - **Radius from Slider** - New userDot radius diambil langsung dari slider User Custom (0-8) ⭐ UPDATED
   - Tidak lagi dipengaruhi lineWidth template
@@ -306,9 +313,10 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Color from Picker** - New userDot color diambil dari color picker User Custom
 - **Lower Bound System** - Setiap userDot punya lower bound (dot parent position) untuk reference
 - **Scroll Control** - Mouse scroll untuk menggerakkan selected userDots:
+  - **Track dots** (highest priority) - Dots yang ter-link ke customLine/DcustomLine bergerak sepanjang line path
   - Horizontal dots (left/right) → Scroll gerakkan di sumbu X
   - Vertical dots (above/below) → Scroll gerakkan di sumbu Y
-  - Dengan boundary validation (tidak bisa melewati dot parent)
+  - Dengan boundary validation (tidak bisa melewati dot parent / ujung line)
 - **Color Copy/Paste** - Copy color dari selected userDot, paste ke userDots lain
 - **Undo/Redo Support** - CREATE_DOT action dengan radius preservation ⭐ UPDATED
   - Saat undo CREATE_DOT → Simpan radius dot yang dihapus
@@ -579,9 +587,11 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 **UserDot Controls:** ⭐ NEW
 | Input | Action |
 | --- | --- |
-| **Right-Click (Original Dot)** | Context menu untuk Duplicate Dot (Above/Below/Left/Right) |
+| **Right-Click (Original Dot)** | Context menu untuk Duplicate Dot (Above/Below/Left/Right/Track) |
 | **Right-Click (UserDot)** | Context menu untuk Copy/Paste Color |
-| **Mouse Scroll (Selected)** | Gerakkan selected userDot sesuai arah offset (without CTRL) |
+| **Right-Click (CustomLine/DcustomLine)** | Context menu untuk Duplicate Dot Track ⭐ NEW |
+| **Mouse Scroll (Track Dot)** | Gerakkan dot sepanjang customLine path (highest priority) ⭐ NEW |
+| **Mouse Scroll (Regular Dot)** | Gerakkan selected userDot sesuai arah offset (without CTRL) |
 | **Radius Slider** | Atur radius userDot (0-8) - applied ke selected userDots atau new userDots |
 | **Color Picker** | Atur warna userDot - applied ke selected userDots atau new userDots |
 
@@ -644,8 +654,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 # Clone repository ini
 git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 
-# Checkout branch sketch-islamic-gs-playgroundhandle
-git checkout sketch-islamic-gs-playgroundhandle
+# Checkout branch sketch-islamic-gs-duplicatedot-track
+git checkout sketch-islamic-gs-duplicatedot-track
 
 # Jalankan OpenFrameworks Project Generator
 # Buka: openFrameworks/apps/projectGenerator/projectGenerator.exe
@@ -1029,6 +1039,135 @@ void ofApp::updatePolygons() {
 - Masalah: Setelah sequential load complete, `isLoadParallelMode` = false, animations stop
 - Solusi: Selalu update polygons yang belum complete, regardless of mode
 
+### Duplicate Dot Track System ⭐ NEW
+
+**UserDot Track Mode** - Dots yang bergerak沿着 customLine/DcustomLine path dengan scroll wheel.
+
+**Creation Process (DuplicateManager::duplicateDotTrack):**
+```cpp
+// 1. Identify target line (hovered or selected)
+int lineIndex = app->contextMenu->getHoveredLineIndex();
+// Fallback to first selected line if no hovered line
+if (lineIndex < 0 && app->selectionManager.hasSelectedLine()) {
+    const std::set<int>& selectedIndices = app->selectionManager.getSelectedLineIndices();
+    if (!selectedIndices.empty()) {
+        lineIndex = *selectedIndices.begin();
+    }
+}
+
+// 2. Calculate midpoint for initial dot position
+const CustomLine& line = app->customLines[lineIndex];
+const vector<vec2>& points = line.getPoints();
+vec2 midpoint = (points[0] + points[1]) / 2.0f;
+
+// 3. Create DotShape with track mode enabled
+auto dotShape = std::make_unique<DotShape>(midpoint, "Dot", app->userDotRadius);
+dotShape->setTrackLineIndex(lineIndex);  // ⭐ Link dot to line!
+dotShape->setColor(app->colorManager->getUserDotColor());
+dotShape->setLowerBound(lowerBound);  // Boundary based on line orientation
+```
+
+**Movement Logic (InputManager::handleMouseScrolled):**
+```cpp
+// 1. Get current position on curve (0.0 - 1.0)
+float currentT = line.getClosestT(app->userDots[i]->getPosition());
+
+// 2. Get curve length for consistent scroll speed
+float curveLength = line.getApproxLength();
+
+// 3. Convert pixel scroll to delta t
+float scrollSpeed = 2.0f;
+float scrollAmount = io.MouseWheel * scrollSpeed;
+float deltaT = scrollAmount / curveLength;
+
+// 4. Update t with BOUNDARY MARGIN ⭐ FIXED
+// Track dots cannot reach the endpoints of the line
+float trackTMargin = 0.05f;  // 5% margin at each end
+float newT = ofClamp(currentT + deltaT, trackTMargin, 1.0f - trackTMargin);
+
+// 5. Get new position on curve (supports bezier!)
+vec2 newPos = line.getPointAt(newT);
+
+// 6. Update dot position
+app->userDots[i]->setPosition(newPos);
+
+// 7. Update connected customLines (if any)
+for (auto& customLine : app->customLines) {
+    vector<vec2> linePoints = customLine.getPoints();
+    for (size_t j = 0; j < linePoints.size(); j++) {
+        if (glm::length(linePoints[j] - currentPos) < 0.1f) {
+            linePoints[j] = newPos;  // Update connected point
+            customLine.setPoints(linePoints);
+        }
+    }
+}
+```
+
+**Curve Support (CustomLine):**
+```cpp
+// Get point at t (0.0 - 1.0) on quadratic bezier curve
+vec2 CustomLine::getPointAt(float t) const {
+    vec2 start = points[0];
+    vec2 end = points[1];
+
+    // Calculate control point based on curve parameter
+    vec2 mid = (start + end) / 2.0f;
+    vec2 dir = end - start;
+    vec2 perpendicular = vec2(-dir.y, dir.x);  // Rotate 90°
+    vec2 controlPoint = mid + perpendicular * curve;
+
+    // Quadratic bezier formula: (1-t)²·P0 + 2(1-t)t·P1 + t²·P2
+    return start * (1-t) * (1-t) +
+           controlPoint * 2 * (1-t) * t +
+           end * t * t;
+}
+
+// Find closest t value for a given point (for scroll tracking)
+float CustomLine::getClosestT(vec2 point) const {
+    // Sample curve at 100 points, find closest
+    int samples = 100;
+    float closestT = 0.0f;
+    float minDist = FLOAT_MAX;
+
+    for (int i = 0; i <= samples; i++) {
+        float t = (float)i / samples;
+        vec2 curvePoint = getPointAt(t);
+        float dist = glm::length(point - curvePoint);
+
+        if (dist < minDist) {
+            minDist = dist;
+            closestT = t;
+        }
+    }
+
+    return closestT;
+}
+
+// Approximate curve length for scroll speed calculation
+float CustomLine::getApproxLength() const {
+    // Sample curve and sum distances
+    int samples = 100;
+    float length = 0.0f;
+    vec2 prevPoint = getPointAt(0.0f);
+
+    for (int i = 1; i <= samples; i++) {
+        float t = (float)i / samples;
+        vec2 currPoint = getPointAt(t);
+        length += glm::length(currPoint - prevPoint);
+        prevPoint = currPoint;
+    }
+
+    return length;
+}
+```
+
+**Key Features:**
+- **Bezier Support** - Dots follow curved lines, not just straight lines
+- **Boundary Margin** - 5% margin prevents dots from reaching endpoints (configurable via `trackTMargin`)
+- **Connected Lines** - Other lines connected to the dot update automatically
+- **Scroll Priority** - Track dots have highest scroll priority (above regular dots, DcustomLines, curve adjustment)
+- **Lower Bound System** - Boundary set based on line orientation (horizontal/vertical dominant)
+
 ### Undo/Redo System Architecture
 
 ```cpp
@@ -1150,44 +1289,57 @@ BasicIslamicGeometry/
 ├── src/
 │   ├── main.cpp              # Entry point aplikasi (1920x1080, OpenGL 4.6)
 │   ├── ofApp.cpp/h           # Main application class (~3000+ lines)
+│   ├── managers/              # Manager classes untuk core functionality
+│   │   ├── ColorManager.cpp/h       # Color state & operations
+│   │   ├── DuplicateManager.cpp/h   # Dot/Line duplication operations (Track mode!) ⭐ ACTIVE
+│   │   ├── InputManager.cpp/h       # Mouse/keyboard input handling (~865 lines)
+│   │   └── SelectionManager.cpp/h   # Selection state management
 │   ├── shape/                # Shape implementations
-│   │   ├── AbstractShape.cpp/h         # Base class untuk semua shapes (no showing flag) ⭐ UPDATED
+│   │   ├── AbstractShape.cpp/h         # Base class untuk semua shapes (no showing flag)
 │   │   ├── CircleShape.cpp/h           # Circle dengan angle/distance positioning
 │   │   ├── CartesianAxes.cpp/h         # X-Y axes dengan scaling animation
 │   │   ├── CrossLine.cpp/h             # Diagonal lines dengan proportional scaling
 │   │   ├── ParallelogramLine.cpp/h     # Connecting lines dengan intersections
 │   │   ├── RectangleLine.cpp/h         # Rectangle dengan 2 intersection dots
 │   │   ├── OctagramLine.cpp/h          # 2-phase animation lines
-│   │   ├── CustomLine.cpp/h            # User-created bezier lines
+│   │   ├── CustomLine.cpp/h            # User-created bezier lines (Track support) ⭐ UPDATED
 │   │   ├── PolygonShape.cpp/h          # Fill-only polygons dengan animations
-│   │   ├── DotShape.cpp/h              # Single dot shapes
+│   │   ├── DotShape.cpp/h              # Single dot shapes (Track mode) ⭐ UPDATED
 │   │   └── DotInfo.h                   # Common struct untuk dot information
 │   ├── anim/                 # Animation system
 │   │   ├── AbstractAnimation.cpp/h    # Base class untuk animations
 │   │   ├── FadeInAnimation.cpp/h      # Alpha fade effect dengan deltaTime
 │   │   ├── WobbleAnimation.cpp/h      # Oscillation effect dengan deltaTime
-│   │   └── FillAnimation.cpp/h        # Water fill effect dengan deltaTime
+│   │   ├── FillAnimation.cpp/h        # Water fill effect dengan deltaTime
+│   │   ├── WobbleFillAnimation.cpp/h  # Wobble + fill combo ⭐ NEW
+│   │   └── GradientAnimation.cpp/h    # Gradient flow effect ⭐ NEW
 │   ├── template/             # Template system
 │   │   ├── SacredGeometryTemplate.cpp/h  # Abstract template base
 │   │   ├── TemplateRegistry.cpp/h        # Singleton registry
 │   │   └── templates/
 │   │       └── BasicZelligeTemplate.cpp/h # Moroccan pattern (26 shapes)
-│   └── operation/            # Operations layer
-│       ├── FileManager.cpp/h       # .nay save/load dengan speed sync
-│       ├── FileOperationManager.cpp/h # File operations wrapper ⭐ NEW
-│       └── gui/                    # ImGui components
-│           ├── AbstractGuiComponent.cpp/h # GUI base
-│           ├── MenuBar.cpp/h            # File/Edit/View menus
-│           ├── SacredGeometry.cpp/h     # Template control panel (Transform UI) ⭐ UPDATED
-│           ├── Playground.cpp/h         # Playback panel (Draw Settings UI) ⭐ UPDATED
-│           ├── UserCustom.cpp/h         # User control panel
-│           ├── ContextMenu.cpp/h        # Right-click context menu
-│           ├── SuccessPopup.cpp/h       # Success dialog
-│           ├── ErrorPopup.cpp/h         # Error dialog
-│           ├── SelectionInfo.cpp/h      # Selected objects info window ⭐ NEW
-│           └── ObjectTooltip.cpp/h      # Object tooltips manager ⭐ NEW
-├── bin/                      # Compiled executable
+│   ├── operation/            # Operations layer
+│   │   ├── FileManager.cpp/h       # .nay save/load dengan speed sync
+│   │   ├── FileOperationManager.cpp/h # File operations wrapper
+│   │   └── gui/                    # ImGui components
+│   │       ├── AbstractGuiComponent.cpp/h # GUI base
+│   │       ├── MenuBar.cpp/h            # File/Edit/View menus
+│   │       ├── SacredGeometry.cpp/h     # Template control panel (Transform UI)
+│   │       ├── Playground.cpp/h         # Playback panel (Draw Settings UI)
+│   │       ├── UserCustom.cpp/h         # User control panel
+│   │       ├── ContextMenu.cpp/h        # Right-click context menu
+│   │       ├── SuccessPopup.cpp/h       # Success dialog
+│   │       ├── ErrorPopup.cpp/h         # Error dialog
+│   │       ├── ConfirmationPopup.cpp/h  # Confirmation dialog
+│   │       ├── SelectionInfo.cpp/h      # Selected objects info window
+│   │       └── ObjectTooltip.cpp/h      # Object tooltips manager
+│   ├── undo/                # Undo/Redo system
+│   │   └── UndoAction.h             # Undo/Redo action definitions
+│   └── utils/               # Utility functions
+│       └── GeometryUtils.cpp/h       # Geometry helper functions
+├── bin/                      # Compiled executable & data
 │   └── data/                 # Saved workspaces (.nay files)
+├── imgui/                    # ImGui library integration
 ├── README.md                 # Comprehensive documentation (this file)
 └── BasicIslamicGeometry.sln  # Visual Studio solution
 ```
@@ -1195,21 +1347,23 @@ BasicIslamicGeometry/
 **Total Files**: 70+ source files (.cpp + .h)
 
 **Architecture Highlights:**
+- **Manager Pattern**: Centralized managers (Color, Duplicate, Input, Selection) untuk clean separation of concerns
 - **Template System**: SacredGeometryTemplate base class untuk extensibility
 - **Template Registry**: Singleton pattern untuk managing patterns
 - **GUI System**: Modular ImGui components dengan AbstractGuiComponent
 - **Shape Hierarchy**: Semua shapes inherit dari AbstractShape (no show/hide)
-- **Animation System**: AbstractAnimation base untuk reusable animations dengan deltaTime
+- **Animation System**: AbstractAnimation base untuk reusable animations dengan deltaTime (FadeIn, Wobble, Fill, WobbleFill, Gradient)
 - **Speed Control**: Centralized speed multiplier system untuk semua animations
-- **GLSL Rendering**: Conditional GPU/CPU rendering untuk polygons berdasarkan `loadedFromFile` ⭐ NEW
-- **FileOperationManager**: Wrapper pattern untuk file operations (mirip ColorManager) ⭐ NEW
-- **Conditional UI**: CollapsingHeader hanya muncul jika file punya data ⭐ NEW
-- **Skip Load**: CustomLines load bisa di-skip via checkbox ⭐ NEW
+- **GLSL Rendering**: Conditional GPU/CPU rendering untuk polygons berdasarkan `loadedFromFile`
+- **FileOperationManager**: Wrapper pattern untuk file operations (mirip ColorManager)
+- **Conditional UI**: CollapsingHeader hanya muncul jika file punya data
+- **Skip Load**: CustomLines load bisa di-skip via checkbox
 - **Object Tooltip System**: Custom OF rendering untuk selected objects info
-- **UserDot System**: Flexible dot placement dengan radius dari slider
+- **UserDot System**: Flexible dot placement dengan 5 mode (Above, Below, Left, Right, Track) ⭐ NEW
+- **Track Mode**: Dots bergerak沿 customLine/DcustomLine dengan boundary margin ⭐ NEW
 - **Color Management**: Smart sync antara objects dan color pickers
 - **Undo/Redo**: 100-step history dengan comprehensive state tracking (termasuk CREATE_DOT radius)
-- **File Operations**: FileOperationManager dengan direct file save dan speed sync ⭐ UPDATED
+- **File Operations**: FileOperationManager dengan direct file save dan speed sync
 - **Window Management**: Independent window visibility controls
 - **Transform System**: Canvas transform dengan inverse transform untuk mouse input
 
@@ -1230,8 +1384,9 @@ Project ini adalah bagian dari eksplorasi **Creative Coding** dan pembelajaran:
 - 📋 Selection info display untuk better UX
 - 💡 Object tooltips untuk enhanced user experience
 - ✨ UserDot system untuk flexible dot placement
-- 🎭 GLSL shaders untuk advanced polygon rendering ⭐ NEW
-- 🗂️ File operation manager pattern untuk clean architecture ⭐ NEW
+- 🎭 GLSL shaders untuk advanced polygon rendering
+- 🗂️ File operation manager pattern untuk clean architecture
+- 🎯 Track mode system untuk interactive dots沿 curves ⭐ NEW
 
 ---
 
@@ -1251,19 +1406,51 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **sketch-islamic-gs-playgroundhandle**
+## 📝 Current Status: **sketch-islamic-gs-duplicatedot-track**
 
-Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, speed control global, transform canvas, draw only concept, object tooltips, userDot system, GLSL rendering, dan file operation manager.
+Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, speed control global, transform canvas, draw only concept, object tooltips, userDot system (termasuk track mode), GLSL rendering, dan file operation manager.
+
+### Fitur yang Sedang Dikembangkan: **Duplicate Dot Track** ⭐ IN DEVELOPMENT
+
+Fitur terbaru yang sedang dalam pengembangan aktif:
+
+- **UserDot Track Mode** - Dots yang bisa bergerak沿着 customLine/DcustomLine path:
+  - Dibuat dari context menu customLine/DcustomLine (right-click)
+  - Link ke line via `trackLineIndex` (DotShape.h)
+  - Mouse scroll untuk movement sepanjang line (t: 0.0 - 1.0)
+  - Mendukung bezier curves (CustomLine::getPointAt, getClosestT, getApproxLength)
+  - **Boundary Margin System** - Dot tidak bisa mencapai ujung line (5% margin di setiap ujung) ⭐ FIXED
+  - Connected lines otomatis update points ketika dot bergerak
+  - Priority system: Track dots > Regular dots > DcustomLine movement
+
+- **Modified Files**:
+  - `DuplicateManager.cpp/h` - `duplicateDotTrack()` method implementation
+  - `InputManager.cpp` - Scroll handling untuk track dots dengan boundary margin (line 412-414)
+  - `ofApp.cpp/h` - Integrasi fitur track mode
+  - `ContextMenu.cpp` - Menu untuk trigger duplicate dot track
+  - `CustomLine.cpp/h` - Helper methods untuk curved line support
+  - `DotShape.h` - Track mode properties (`trackLineIndex`, `hasTrackMode()`)
+
+- **Implementation Details**:
+  ```cpp
+  // InputManager.cpp line 412-414 (FIXED)
+  float trackTMargin = 0.05f;  // 5% margin di setiap ujung
+  float newT = ofClamp(currentT + deltaT, trackTMargin, 1.0f - trackTMargin);
+  ```
 
 ### ✨ Key Features (Latest Updates)
 
-✅ **FileOperationManager** - Wrapper class untuk semua file operations (save, open, load) ⭐ NEW
-✅ **Conditional CollapsingHeader** - Custom Line/Polygon hanya muncul jika file punya data ⭐ NEW
-✅ **Draw Custom Lines Checkbox** - Kontrol apakah customLines diload/digambar ⭐ NEW
-✅ **Skip CustomLines Load** - Parallel dan sequential load skip customLines jika unchecked ⭐ NEW
-✅ **GLSL Polygon Rendering** - Conditional rendering berdasarkan `loadedFromFile` flag ⭐ NEW
-✅ **Polygon Animation Bug Fixes** - Fixed update logic untuk complete animations ⭐ NEW
-✅ **Draw Order Bug Fix** - Fixed staggered load setup untuk proper draw order ⭐ NEW
+✅ **Duplicate Dot Track** - UserDot yang bergerak沿着 customLine/DcustomLine dengan scroll ⭐ IN DEVELOPMENT
+✅ **Track Mode Boundary Margin** - Dot tidak bisa mencapai ujung line (5% margin di setiap ujung) ⭐ FIXED
+✅ **Bezier Curve Support** - Track dots mengikuti garis melengkung (bukan hanya lurus) ⭐ NEW
+✅ **Connected Lines Update** - Lines yang terhubung ke track dot otomatis update ⭐ NEW
+✅ **FileOperationManager** - Wrapper class untuk semua file operations (save, open, load)
+✅ **Conditional CollapsingHeader** - Custom Line/Polygon hanya muncul jika file punya data
+✅ **Draw Custom Lines Checkbox** - Kontrol apakah customLines diload/digambar
+✅ **Skip CustomLines Load** - Parallel dan sequential load skip customLines jika unchecked
+✅ **GLSL Polygon Rendering** - Conditional rendering berdasarkan `loadedFromFile` flag
+✅ **Polygon Animation Bug Fixes** - Fixed update logic untuk complete animations
+✅ **Draw Order Bug Fix** - Fixed staggered load setup untuk proper draw order
 ✅ **Draw Only Concept** - Hanya shapes yang dicentang yang dibuat (tidak ada show/hide)
 ✅ **No More Showing Flag** - AbstractShape tidak punya `showing` flag
 ✅ **Forward Only Animation** - Shapes selalu forward animation (0 → maxProgress)
@@ -1283,7 +1470,7 @@ Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk memb
 ✅ **Axis Lock System** - Control pergerakan DcustomLine (NONE, LOCK_X, LOCK_Y, LOCK_BOTH)
 ✅ **Context Menu System** - Per-line dan bulk operation untuk DcustomLine lock/unlock
 ✅ **Scroll Control** - Mouse scroll untuk menggerakkan DcustomLine sesuai axis lock
-✅ **WobbleAnimation Fix** - Fixed polygons not wobbling dengan shader wobble.vert/frag ⭐ NEW
+✅ **WobbleAnimation Fix** - Fixed polygons not wobbling dengan shader wobble.vert/frag
 
 ### 🧹 Clean Canvas Reset System ⭐ NEW
 - **Complete Reset on Clean Canvas** - Saat Clean Canvas dipanggil (SacredGeometry / Edit menu):
