@@ -258,6 +258,40 @@ void PolygonShape::drawGLSL() const {
 
 			globalPolygonShader.end();
 		}
+		// Cek WobbleAnimation (Wobble biasa, tanpa fill)
+		else if (auto* wobbleAnim = dynamic_cast<WobbleAnimation*>(animation.get())) {
+			// Ambil wobble offset untuk vertex manipulation
+			glm::vec2 wobbleOffset = wobbleAnim->getWobbleOffset();
+
+			// GLOBAL shader untuk wobble (shared untuk semua polygon)
+			static ofShader globalWobbleShader;
+			static bool globalWobbleShaderLoaded = false;
+
+			// Load shader sekali saja
+			if (!globalWobbleShaderLoaded) {
+				globalWobbleShader.load("shaders/wobble.vert", "shaders/wobble.frag");
+				globalWobbleShaderLoaded = true;
+			}
+
+			// Render dengan shader wobble
+			globalWobbleShader.begin();
+			globalWobbleShader.setUniform4f("fillColor",
+				fillColor.r / 255.0f,
+				fillColor.g / 255.0f,
+				fillColor.b / 255.0f,
+				fillColor.a / 255.0f);
+			globalWobbleShader.setUniform2f("uWobbleOffset", wobbleOffset.x, wobbleOffset.y);
+			globalWobbleShader.setUniform1f("uWobbleAmount", 1.0f);  // Full wobble effect
+
+			// Draw polygon dengan ofBeginShape (untuk support tessellated curve)
+			ofBeginShape();
+			for (const auto& v : vertices) {
+				ofVertex(v.x, v.y);
+			}
+			ofEndShape(true);
+
+			globalWobbleShader.end();
+		}
 		// Cek FillAnimation (Wave Fill)
 		else if (auto* fillAnim = dynamic_cast<FillAnimation*>(animation.get())) {
 			// Multi-pass rendering dengan per-polygon FBO
