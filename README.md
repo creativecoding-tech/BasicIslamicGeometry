@@ -150,7 +150,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 ### Draw Button Behavior (Playground)
 - **Clean First, Then Draw** - Saat tombol Draw (Arrow ←) di Playground diklik:
-  1. **Clean Canvas** - Hapus semua shapes, polygons, customLines, userDots
+  1. **Clean Canvas** - Hapus semua shapes, polygons, customLines, userDots + **reset settings** (L/P/D colors → blue, Dot → visible, Radius → 8.0f) ⭐ UPDATED
   2. **Apply Speed** - Sync speed multiplier ke FileManager untuk polygons & customLines
   3. **Set Animation Mode** - FadeIn/Wobble/Fill/None sesuai radio button
   4. **Load Workspace** - Load dari file .nay dengan animation (Parallel/Sequential mode)
@@ -417,7 +417,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Template Name Display** | Menampilkan nama template yang sedang aktif (Basic Zellige) |
 | **Draw Template - Parallel** | Setup & show semua shapes secara parallel (barengan) |
 | **Draw Template - Sequential** | Setup & start sequential drawing animation (shapes muncul berurutan) |
-| **Clean Canvas Button** | Clear semua polygons, custom lines, dan **hapus** template shapes |
+| **Clean Canvas Button** | Clear semua polygons, custom lines, dan **hapus** template shapes + **reset settings** (L/P/D colors → blue, Dot checkbox → checked, Radius → 8.0f) ⭐ UPDATED |
 | **Radius Slider** | Adjust template radius (50 - 600) secara realtime - semua shapes update posisinya secara proporsional |
 | **Speed Slider** | Adjust global speed multiplier (0.1 - 1.5x) untuk semua animations |
 | **Line Width Slider** | Adjust ketebalan garis (0 - 4px) untuk semua shapes |
@@ -509,7 +509,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Delete All Custom Lines** | Hapus semua custom lines saja | - |
 | **Delete All Polygons** | Hapus semua polygons saja | - |
 | **Delete Lines & Polygons** | Hapus semua custom lines dan polygons | **CTRL+DEL** |
-| **Clean Canvas** | Clear semua dan **hapus** template shapes | **CTRL+SHIFT+DEL** |
+| **Clean Canvas** | Clear semua, **hapus** template shapes, + **reset settings** (L/P/D colors → blue, Dot → visible, Radius → 8.0f) ⭐ UPDATED | **CTRL+SHIFT+DEL** |
 
 **MenuBar (View Menu):** ⭐ UPDATED
 | Menu Item | Action |
@@ -966,20 +966,40 @@ void PolygonShape::draw() const {
 
 **GLSL Rendering (Loaded Polygons):**
 
-1. **Basic Rendering (No Animation/FadeIn/Wobble):**
+1. **Basic Rendering (No Animation/FadeIn):**
    - Vertex shader untuk tessellated curve support
    - Fragment shader untuk solid color rendering
    - Alpha fade untuk FadeIn animation
 
-2. **Wave Fill Rendering (FillAnimation):**
+2. **Wobble Rendering (WobbleAnimation):** ⭐ NEW
+   - Vertex shader (wobble.vert) untuk wobble displacement
+   - Fragment shader (wobble.frag) untuk solid color
+   - Vertex offset berdasarkan getWobbleOffset() dari WobbleAnimation
+   - Smooth oscillation effect pada polygon vertices
+
+3. **Wave Fill Rendering (FillAnimation):**
    - Multi-pass rendering dengan FBO (mask + quad)
    - Mask FBO untuk polygon shape
    - Wave shader untuk water fill effect
+   - Auto-switch to No Animation setelah complete (fix jagged edges bug) ⭐ UPDATED
 
-3. **Animation Integration:**
+4. **Wobble Fill Rendering (WobbleFillAnimation):**
+   - Multi-pass rendering dengan FBO (mask + quad)
+   - Mask FBO untuk polygon shape
+   - Wobble + fill shader untuk kombinasi goyang + gradual fill
+   - Auto-switch to No Animation setelah complete
+
+5. **Gradient Rendering (GradientAnimation):**
+   - Multi-pass rendering dengan FBO (mask + quad)
+   - Mask FBO untuk polygon shape
+   - Gradient shader untuk smooth color flow effect
+   - Finite duration animation (auto-stop setelah selesai)
+   - Auto-switch to No Animation setelah complete
+
+6. **Animation Integration:**
    - Delta time untuk smooth animations
    - Progress-based rendering (0.0 → 1.0)
-   - Wave parameters: amplitude, frequency, water level
+   - Complete check untuk auto-switch ke No Animation (FadeIn, Fill, WobbleFill, Gradient, Wobble) ⭐ UPDATED
 
 **Update Strategy:**
 ```cpp
@@ -1115,7 +1135,7 @@ for (int i = 0; i < numPolygons; i++) {
 
 **Load Process (via Tombol Draw di Playground):**
 
-1. **Clean Canvas** - Hapus semua shapes, polygons, customLines, userDots
+1. **Clean Canvas** - Hapus semua shapes, polygons, customLines, userDots + **reset settings** (L/P/D colors → blue, Dot → visible, Radius → 8.0f) ⭐ UPDATED
 2. **Apply Settings** - Speed multiplier, polygon animation mode
 3. **Load & Animate** - Baca file .nay dan animate sesuai mode yang dipilih:
    - **Parallel Per Group**: Template → CustomLines → Polygons animate simultaneously per group
@@ -1263,8 +1283,27 @@ Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk memb
 ✅ **Axis Lock System** - Control pergerakan DcustomLine (NONE, LOCK_X, LOCK_Y, LOCK_BOTH)
 ✅ **Context Menu System** - Per-line dan bulk operation untuk DcustomLine lock/unlock
 ✅ **Scroll Control** - Mouse scroll untuk menggerakkan DcustomLine sesuai axis lock
+✅ **WobbleAnimation Fix** - Fixed polygons not wobbling dengan shader wobble.vert/frag ⭐ NEW
+
+### 🧹 Clean Canvas Reset System ⭐ NEW
+- **Complete Reset on Clean Canvas** - Saat Clean Canvas dipanggil (SacredGeometry / Edit menu):
+  - **Color Pickers Reset** - L, P, D color pickers kembali ke warna biru default (0, 0, 255)
+  - **Dot Visibility Reset** - Checkbox Dot di UserCustom menjadi checked (showUserDot = true)
+  - **Radius Slider Reset** - Slider radius kembali ke default value (8.0f)
+- **Consistent Default State** - Memastikan setiap kali canvas dibersihkan, settings kembali ke default
+- **Better UX** - User tidak perlu manual reset settings setelah clean canvas
 
 ### 🐛 Bug Fixes (Latest Updates)
+
+✅ **WobbleAnimation Bug** - Fixed polygons not wobbling/oscillating ⭐ NEW:
+  - Problem: `PolygonShape::drawGLSL()` tidak ada rendering logic untuk WobbleAnimation
+  - Result: Polygon tetap statis, tidak bergoyang meski Wobble dipilih
+  - Fix: Tambahkan WobbleAnimation handling dengan shader wobble.vert/frag untuk vertex displacement
+
+✅ **Wave Fill Animation Bug** - Fixed jagged edges after animation completes ⭐ NEW:
+  - Problem: FillAnimation tidak dihapus setelah complete, shader wave tetap dipanggil
+  - Result: Pinggiran polygon menjadi bergerigi (jagged edges) setelah wave fill selesai
+  - Fix: Tambahkan logic untuk hapus FillAnimation dan switch ke No Animation setelah complete (sama seperti WobbleFillAnimation/GradientAnimation)
 
 ✅ **Polygon Animation Bug** - Fixed polygons stopping mid-animation ⭐ NEW:
   - Problem: `updatePolygons()` hanya update saat `isLoadParallelMode() == true`
@@ -1280,11 +1319,6 @@ Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk memb
   - Problem: Update logic stopping before animation complete
   - Result: Last polygon tidak terwarnai dengan benar
   - Fix: Check `isAnimationComplete()` before updating
-
-✅ **Wave Fill Animation Bug** - Fixed water stopping mid-way ⭐ NEW:
-  - Problem: Same root cause as other animation bugs
-  - Result: Wave berhenti sebelum mewarnai semua area
-  - Fix: Same fix - update sampai complete
 
 ---
 
