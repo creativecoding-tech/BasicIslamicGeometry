@@ -10,10 +10,12 @@ using glm::vec2;
 
 // Enum untuk Polygon Animation Mode
 enum class PolygonAnimationMode {
-    NO_ANIMATION,  // 0
-    FADE_IN,       // 1
-    WOBBLE,        // 2
-    WAVE_FILL      // 3
+    NO_ANIMATION,  // 0 - Tidak ada animasi
+    FADE_IN,       // 1 - Alpha blending fade-in (0 → targetAlpha)
+    WOBBLE,        // 2 - Polygon shape bergerak/bergoyang (vertices offset)
+    WAVE_FILL,     // 3 - Water fill effect dari bawah ke atas dengan wave horizontal
+    WOBBLE_FILL,   // 4 - Wobble effect pada warna fill (polygon statis, warna yang wobble)
+    GRADIENT       // 5 - Gradient flow effect pada warna fill (polygon statis, pulsing/breathing)
 };
 
 class FileManager {

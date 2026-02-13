@@ -2,6 +2,8 @@
 #include "../anim/FadeInAnimation.h"
 #include "../anim/WobbleAnimation.h"
 #include "../anim/FillAnimation.h"
+#include "../anim/WobbleFillAnimation.h"
+#include "../anim/GradientAnimation.h"
 
 //--------------------------------------------------------------
 //--------------------------------------------------------------
@@ -997,6 +999,17 @@ PolygonShape FileManager::createPolygonWithAnimation(const std::vector<vec2>& ve
       {
         auto fill = std::make_unique<FillAnimation>(20.0f, 4.0f, 0.12f * animationSpeedMultiplier);  // Delta time calibrated (0.002f * 60 FPS)
         return PolygonShape(vertices, color, index, std::move(fill));
+      }
+    case PolygonAnimationMode::WOBBLE_FILL:
+      {
+        // wobbleAmount=30.0, wobbleSpeed=5.0, wobbleFrequency=1.8, targetFillLevel=1.0 (100%), fillSpeed=0.3
+        auto wobbleFill = std::make_unique<WobbleFillAnimation>(30.0f, 5.0f * animationSpeedMultiplier, 1.8f, 1.0f, 0.3f * animationSpeedMultiplier);
+        return PolygonShape(vertices, color, index, std::move(wobbleFill));
+      }
+    case PolygonAnimationMode::GRADIENT:
+      {
+        auto gradient = std::make_unique<GradientAnimation>(2.0f, 5.0f);
+        return PolygonShape(vertices, color, index, std::move(gradient));
       }
     case PolygonAnimationMode::NO_ANIMATION:
     default:

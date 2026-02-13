@@ -2,6 +2,8 @@
 #include "../anim/FadeInAnimation.h"
 #include "../anim/WobbleAnimation.h"
 #include "../anim/FillAnimation.h"
+#include "../anim/WobbleFillAnimation.h"
+#include "../anim/GradientAnimation.h"
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape()
@@ -115,6 +117,13 @@ void PolygonShape::update(float deltaTime) {
 			// Hitung current water Y (naik dari bawah ke atas)
 			float waterLevel = fillAnim->getWaterLevel();
 			currentWaterY = maxY - (maxY - minY) * waterLevel;
+		}
+
+		// Jika WobbleFillAnimation complete, hapus animation dan switch ke No Animation
+		if (auto* wobbleFillAnim = dynamic_cast<WobbleFillAnimation*>(animation.get())) {
+			if (wobbleFillAnim->isComplete()) {
+				animation = nullptr;  // Switch ke No Animation
+			}
 		}
 	}
 }
@@ -235,28 +244,6 @@ void PolygonShape::drawGLSL() const {
 
 			globalPolygonShader.end();
 		}
-		// Cek WobbleAnimation
-		else if (auto* wobbleAnim = dynamic_cast<WobbleAnimation*>(animation.get())) {
-			// Gambar polygon dengan wobble effect pada vertices
-			glm::vec2 offset = wobbleAnim->getWobbleOffset();
-
-			// Render dengan shader + ofBeginShape (untuk support tessellated curve)
-			globalPolygonShader.begin();
-			globalPolygonShader.setUniform4f("color",
-				fillColor.r / 255.0f,
-				fillColor.g / 255.0f,
-				fillColor.b / 255.0f,
-				fillColor.a / 255.0f);
-
-			// Draw polygon dengan ofBeginShape (bukan ofMesh) untuk tessellated curve
-			ofBeginShape();
-			for (const auto& v : vertices) {
-				ofVertex(v.x + offset.x, v.y + offset.y);
-			}
-			ofEndShape(true);
-
-			globalPolygonShader.end();
-		}
 		// Cek FillAnimation (Wave Fill)
 		else if (auto* fillAnim = dynamic_cast<FillAnimation*>(animation.get())) {
 			// Multi-pass rendering dengan per-polygon FBO
@@ -353,6 +340,177 @@ void PolygonShape::drawGLSL() const {
 			quad.draw();
 
 			globalFillShader.end();
+		}
+		// Cek WobbleFillAnimation (Wobble Fill - polygon bergerak-goyang + gradual fill)
+		else if (auto* wobbleFillAnim = dynamic_cast<WobbleFillAnimation*>(animation.get())) {
+			// 2-pass rendering dengan mask + wobble + gradual fill
+
+			// Hitung bounding box
+			float minX = vertices[0].x, maxX = vertices[0].x;
+			float minY = vertices[0].y, maxY = vertices[0].y;
+			for (const auto& v : vertices) {
+				if (v.x < minX) minX = v.x;
+				if (v.x > maxX) maxX = v.x;
+				if (v.y < minY) minY = v.y;
+				if (v.y > maxY) maxY = v.y;
+			}
+			float width = maxX - minX;
+			float height = maxY - minY;
+
+			// Ambil wobble offset (animation sudah diupdate di method update())
+			glm::vec2 wobbleOffset = wobbleFillAnim->getWobbleOffset();
+
+			// GLOBAL shader untuk wobble fill
+			static ofShader globalWobbleFillShader;
+			static bool globalWobbleShaderLoaded = false;
+
+			if (!globalWobbleShaderLoaded) {
+				globalWobbleFillShader.load("shaders/fillShader.vert", "shaders/wobbleFill.frag");
+				globalWobbleShaderLoaded = true;
+			}
+
+			// Allocate FBO untuk polygon ini
+			int fboWidth = (int)std::round(width);
+			int fboHeight = (int)std::round(height);
+
+			if (!fboAllocated || lastFboWidth != fboWidth || lastFboHeight != fboHeight) {
+				maskFbo.allocate(fboWidth, fboHeight);
+				fboAllocated = true;
+				lastFboWidth = fboWidth;
+				lastFboHeight = fboHeight;
+			}
+
+			// Pass 1: Render polygon STATIS sebagai mask ke FBO (offset ke 0,0)
+			maskFbo.begin();
+			ofClear(0, 0, 0, 0);
+			ofFill();
+			ofSetColor(255);
+			ofPushMatrix();
+			ofTranslate(-minX, -minY);
+			ofBeginShape();
+			for (auto& v : vertices) {
+				ofVertex(v.x, v.y);
+			}
+			ofEndShape(true);
+			ofPopMatrix();
+			maskFbo.end();
+
+			// Pass 2: Draw quad dengan shader untuk wobble + gradual fill
+			ofMesh quad;
+			quad.addVertex(ofVec3f(minX, minY, 0));
+			quad.addVertex(ofVec3f(maxX, minY, 0));
+			quad.addVertex(ofVec3f(maxX, maxY, 0));
+			quad.addVertex(ofVec3f(minX, maxY, 0));
+
+			quad.addTexCoord(ofVec2f(0, 0));
+			quad.addTexCoord(ofVec2f(1, 0));
+			quad.addTexCoord(ofVec2f(1, 1));
+			quad.addTexCoord(ofVec2f(0, 1));
+
+			quad.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
+
+			// Draw quad dengan shader
+			globalWobbleFillShader.begin();
+			globalWobbleFillShader.setUniformTexture("maskTexture", maskFbo.getTexture(), 0);
+			globalWobbleFillShader.setUniform4f("fillColor",
+				fillColor.r / 255.0f,
+				fillColor.g / 255.0f,
+				fillColor.b / 255.0f,
+				fillColor.a / 255.0f);
+			globalWobbleFillShader.setUniform1f("fillLevel", wobbleFillAnim->getFillLevel());
+			globalWobbleFillShader.setUniform1f("minY", minY);
+			globalWobbleFillShader.setUniform1f("maxY", maxY);
+			globalWobbleFillShader.setUniform2f("uMaskSize", maskFbo.getWidth(), maskFbo.getHeight());
+			globalWobbleFillShader.setUniform2f("uWobbleOffset", wobbleOffset.x, wobbleOffset.y);
+
+			quad.draw();
+
+			globalWobbleFillShader.end();
+		}
+		// Cek GradientAnimation (Gradient flow - polygon statis, warna gradient yang bergerak)
+		else if (auto* gradientAnim = dynamic_cast<GradientAnimation*>(animation.get())) {
+			// Multi-pass rendering dengan per-polygon FBO
+
+			// Hitung bounding box X dan Y (minX/maxX/minY/maxY)
+			float minX = vertices[0].x, maxX = vertices[0].x;
+			float minY = vertices[0].y, maxY = vertices[0].y;
+			for (const auto& v : vertices) {
+				if (v.x < minX) minX = v.x;
+				if (v.x > maxX) maxX = v.x;
+				if (v.y < minY) minY = v.y;
+				if (v.y > maxY) maxY = v.y;
+			}
+			float width = maxX - minX;
+			float height = maxY - minY;
+
+			// GLOBAL shader untuk gradient
+			static ofShader globalGradientShader;
+			static bool globalGradientShaderLoaded = false;
+
+			// Load shader sekali saja
+			if (!globalGradientShaderLoaded) {
+				globalGradientShader.load("shaders/gradient.vert", "shaders/gradient.frag");
+				globalGradientShaderLoaded = true;
+			}
+
+			// Allocate FBO untuk polygon ini (instance member)
+			int fboWidth = (int)std::round(width);
+			int fboHeight = (int)std::round(height);
+
+			if (!fboAllocated || lastFboWidth != fboWidth || lastFboHeight != fboHeight) {
+				maskFbo.allocate(fboWidth, fboHeight);
+				fboAllocated = true;
+				lastFboWidth = fboWidth;
+				lastFboHeight = fboHeight;
+			}
+
+			// Pass 1: Render polygon mask ke FBO (offset ke 0,0)
+			maskFbo.begin();
+			ofClear(0, 0, 0, 0);
+			ofFill();
+			ofSetColor(255);
+			ofPushMatrix();
+			ofTranslate(-minX, -minY);
+			ofBeginShape();
+			for (auto& v : vertices) {
+				ofVertex(v.x, v.y);
+			}
+			ofEndShape(true);
+			ofPopMatrix();
+			maskFbo.end();
+
+			// Pass 2: Draw quad dengan gradient shader
+			ofMesh quad;
+			quad.addVertex(ofVec3f(minX, minY, 0));
+			quad.addVertex(ofVec3f(maxX, minY, 0));
+			quad.addVertex(ofVec3f(maxX, maxY, 0));
+			quad.addVertex(ofVec3f(minX, maxY, 0));
+
+			quad.addTexCoord(ofVec2f(0, 0));
+			quad.addTexCoord(ofVec2f(1, 0));
+			quad.addTexCoord(ofVec2f(1, 1));
+			quad.addTexCoord(ofVec2f(0, 1));
+
+			quad.setMode(OF_PRIMITIVE_TRIANGLE_FAN);
+
+			// Draw quad dengan shader
+			globalGradientShader.begin();
+			globalGradientShader.setUniformTexture("maskTexture", maskFbo.getTexture(), 0);
+			globalGradientShader.setUniform4f("fillColor",
+				fillColor.r / 255.0f,
+				fillColor.g / 255.0f,
+				fillColor.b / 255.0f,
+				fillColor.a / 255.0f);
+			globalGradientShader.setUniform1f("time", ofGetElapsedTimef());
+			globalGradientShader.setUniform1f("gradientSpeed", gradientAnim->getSpeed());
+			globalGradientShader.setUniform1f("gradientFrequency", gradientAnim->getFrequency());
+			globalGradientShader.setUniform2f("uMaskSize", maskFbo.getWidth(), maskFbo.getHeight());
+			globalGradientShader.setUniform2f("uBoundingBoxMin", minX, minY);
+			globalGradientShader.setUniform2f("uBoundingBoxMax", maxX, maxY);
+
+			quad.draw();
+
+			globalGradientShader.end();
 		}
 		// Unknown animation type - fallback ke no animation
 		else {
