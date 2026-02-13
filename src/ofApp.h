@@ -121,6 +121,15 @@ class ofApp : public ofBaseApp{
 	float lineWaveSpeed = 2.0f;
 	float lineWaveDuration = 5.0f;  // Durasi wave animation (0 - 60 detik) ⭐ NEW
 
+	// CustomLine Step Animation Controls ⭐ NEW
+	enum LineStepAnimationMode {
+		STEP_BEFORE_POLYGON_DRAW,   // Sebelum draw polygon
+		STEP_WITH_POLYGON_DRAW,     // Bareng dengan polygon draw (paralel)
+		STEP_AFTER_POLYGON_DRAW     // Setelah polygon digambar (sequential)
+	};
+
+	LineStepAnimationMode lineStepAnimationMode = LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW;
+
 		// Undo System (Max 100 steps)
 		std::vector<UndoAction> undoStack;
 		std::vector<UndoAction> redoStack;  // Redo stack

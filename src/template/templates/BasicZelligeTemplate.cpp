@@ -390,7 +390,6 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 				ImGui::RadioButton("No Animation Line", reinterpret_cast<int*>(&app->lineAnimationMode), 0);
 				ImGui::RadioButton("Wave Animation Line", reinterpret_cast<int*>(&app->lineAnimationMode), 1);
 				ImGui::Separator();
-
 				// Sliders untuk Wave Animation (hanya muncul jika Wave Animation dipilih)
 			if (app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
 					ImGui::Text("Wave Settings");
@@ -401,6 +400,16 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 				}
 				ImGui::Separator();
 			}
+
+			// Step Animation Line UI (hanya muncul jika selain No Animation dipilih) ⭐ NEW
+			if (app->lineAnimationMode != ofApp::LineAnimationMode::NO_ANIMATION) {
+				ImGui::Text("Step Animation Line");
+				ImGui::RadioButton("Before Polygon Draw", reinterpret_cast<int*>(&app->lineStepAnimationMode), 0);
+				ImGui::RadioButton("With Polygon Draw", reinterpret_cast<int*>(&app->lineStepAnimationMode), 1);
+				ImGui::RadioButton("After Polygon Draw", reinterpret_cast<int*>(&app->lineStepAnimationMode), 2);
+				ImGui::Separator();
+			}
+
 		}
 	}
 
