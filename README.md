@@ -189,7 +189,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Opened File Display
   - Mode Draw: Parallel Per Group / Sequential Per Group radio buttons
   - **Draw Settings**: Cartesian, Circles, CrossLines, Parallelograms, RectangleLines, OctagramLines checkboxes ⭐ UPDATED
-  - Polygon Animate: No Animation / FadeIn / Wobble / Fill radio buttons
+  - Polygon Animate: No Animation / FadeIn / Wobble / Fill / Wobble Fill / Gradient radio buttons
   - Speed Control Slider (0.1 - 1.5) ⭐ NEW
   - **Draw Arrow Button (←)** - Load dan animate workspace
 - **UserCustom Panel** - User control panel dengan:
@@ -231,6 +231,17 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - **FadeInAnimation** - Alpha blending fade-in (0 → targetAlpha) dengan deltaTime
   - **WobbleAnimation** - Oscillation effect dengan amplitude dan frequency dengan deltaTime
   - **FillAnimation** - Directional fill (bottom to top) dengan wave effect dan deltaTime
+  - **WobbleFillAnimation** - Kombinasi wobble + gradual fill dengan deltaTime ⭐ NEW
+    - Polygon bergerak-goyang (wobble) SEKALIGUS di-fill secara gradual
+    - Parameters: wobbleAmount, wobbleSpeed, wobbleFrequency, targetFillLevel, fillSpeed
+    - getWobbleOffset() - Vertex offset untuk goyangan
+    - getFillLevel() - Current fill level (0.0 - 1.0)
+  - **GradientAnimation** - Smooth gradient flow effect dengan finite duration ⭐ NEW
+    - Smooth gradient flow effect pada warna fill polygon
+    - Finite animation: berhenti setelah duration (default 5 detik)
+    - Parameters: speed, frequency, duration
+    - getFrequency() - Spatial frequency gradient pattern
+    - getDuration() - Durasi animation (detik)
   - **Configurable Speed** - Animation speed dapat di-adjust via speed slider
 
 ### Custom Lines & Polygons
@@ -438,6 +449,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 |  - **FadeIn** | Alpha blending fade-in effect |
 |  - **Wobble** | Oscillation/goyang effect |
 |  - **Fill** | Water fill effect dari bawah ke atas |
+|  - **Wobble Fill** | Kombinasi wobble + gradual fill ⭐ NEW |
+|  - **Gradient** | Smooth gradient flow effect ⭐ NEW |
 | **Draw Settings** ⭐ UPDATED | Shapes yang DIBUAT saat Draw diklik: |
 |  - **Cartesian** Checkbox | Cartesian axes dibuat jika dicentang |
 |  - **Circles** Checkbox | Circle shapes dibuat jika dicentang |
@@ -927,6 +940,8 @@ class FileManager {
 | Polygons (FadeIn) | 0.003f | 0.18f | × 60 |
 | Polygons (Wobble) | 0.03f | 1.8f | × 60 |
 | Polygons (Fill) | 0.002f | 0.12f | × 60 |
+| Polygons (Wobble Fill) | - | 0.3f | × 18 (estimated) ⭐ NEW |
+| Polygons (Gradient) | - | 2.0f | × 4 ⭐ NEW |
 
 ### GLSL Polygon Rendering System ⭐ NEW
 
