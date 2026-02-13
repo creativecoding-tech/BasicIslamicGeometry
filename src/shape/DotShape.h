@@ -33,10 +33,16 @@ public:
     void setColor(ofColor c) { color = c; }
     ofColor getColor() const { return color; }
 
+    // Setter untuk track mode (Duplicate Dot Track dari customLine)
+    void setTrackLineIndex(int index) { trackLineIndex = index; }
+    int getTrackLineIndex() const { return trackLineIndex; }
+    bool hasTrackMode() const { return trackLineIndex >= 0; }
+
 private:
     glm::vec2 position;      // Position dot
     float radius;           // Radius dot (ukuran dot)
     ofColor color = ofColor(0, 0, 255);  // Warna dot (default biru)
     glm::vec2 lowerBound;    // Batas bawah (tidak boleh melewati ini)
     std::string label;       // Label untuk dot
+    int trackLineIndex = -1;   // Index customLine yang di-track (-1 = tidak track)
 };

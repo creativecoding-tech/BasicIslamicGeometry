@@ -1651,6 +1651,11 @@ void ofApp::duplicateDotRight() {
 }
 
 //--------------------------------------------------------------
+void ofApp::duplicateDotTrack() {
+	duplicateManager->duplicateDotTrack();
+}
+
+//--------------------------------------------------------------
 void ofApp::duplicateLineR180() {
 	duplicateManager->duplicateLineR180();
 }

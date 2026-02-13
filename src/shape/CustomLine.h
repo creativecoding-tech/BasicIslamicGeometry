@@ -61,6 +61,11 @@ public:
 	// Animation update
 	void updateProgress(float deltaTime = 0.016f);
 
+	// Helper for curve tracking
+	vec2 getPointAt(float t) const;        // Get point at t (0.0 - 1.0)
+	float getClosestT(vec2 point) const;   // Get closest t for a point
+	float getApproxLength() const;         // Get approximate length of the line/curve
+
 private:
 	vector<vec2> points;   // 2 titik: start dan end
 	ofColor color;

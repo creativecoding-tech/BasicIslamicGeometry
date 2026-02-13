@@ -235,6 +235,7 @@ class ofApp : public ofBaseApp{
 		void duplicateDotBelow();  // Duplicate dot yang di-hover dengan offset ke bawah
 		void duplicateDotLeft();  // Duplicate dot yang di-hover dengan offset ke kiri
 		void duplicateDotRight();  // Duplicate dot yang di-hover dengan offset ke kanan
+		void duplicateDotTrack();  // Duplicate dot dengan track mode dari customLine (bergerak sepanjang garis) ⭐ NEW
 		void duplicateLineR180();  // Duplicate selected lines dengan rotate 180° di global center
 		void drawUserDots();  // Draw user-created dots dan label
 
