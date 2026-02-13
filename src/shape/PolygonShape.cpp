@@ -119,6 +119,13 @@ void PolygonShape::update(float deltaTime) {
 			currentWaterY = maxY - (maxY - minY) * waterLevel;
 		}
 
+		// Jika FillAnimation complete, hapus animation dan switch ke No Animation
+		if (auto* fillAnim = dynamic_cast<FillAnimation*>(animation.get())) {
+			if (fillAnim->isComplete()) {
+				animation = nullptr;  // Switch ke No Animation
+			}
+		}
+
 		// Jika WobbleFillAnimation complete, hapus animation dan switch ke No Animation
 		if (auto* wobbleFillAnim = dynamic_cast<WobbleFillAnimation*>(animation.get())) {
 			if (wobbleFillAnim->isComplete()) {
