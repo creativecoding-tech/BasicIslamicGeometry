@@ -278,7 +278,18 @@ void FileOperationManager::loadWorkspaceSeq() {
 			shape->showDot();
 		else
 			shape->hideDot();
+
+		// Set sequential mode ke SEMUA shapes (penting untuk OctagramLine 2-phase animation!)
+		shape->setSequentialMode(true);
+		// Reset progress untuk sequential drawing
+		shape->progress = 0;
 	}
+
+	// START SEQUENTIAL MODE untuk template shapes!
+	// Set sequential mode flag di template
+	app->currentTemplate->sequentialMode = true;
+	app->currentTemplate->currentShapeIndex = 0;
+	app->currentTemplate->sequentialCompleted = false;
 
 	// Reset dots cache agar di-rebuild
 	app->dotsCacheDirty = true;
@@ -288,9 +299,12 @@ void FileOperationManager::loadWorkspaceSeq() {
 	app->canvasRotation = 0.0f;
 	app->canvasZoom = 1.0f;
 
-	// Sequential load akan mengupdate customLines dan polygons secara bertahap di update()
-	// Update state ke SEQUENTIAL_DRAWING untuk enable sequential animation
-	app->currentState = ofApp::UpdateState::SEQUENTIAL_DRAWING;
+	// Sequential load akan mengupdate template, customLines, dan polygons secara bertahap
+	// Gunakan STAGGERED_LOAD state dengan isSequentialShapeLoad = true
+	app->loadStage = ofApp::LOAD_TEMPLATE;
+	app->isStaggeredLoad = true;
+	app->isSequentialShapeLoad = true;  // SEQUENTIAL mode (CTRL+SHIFT+O)
+	app->currentState = ofApp::UpdateState::STAGGERED_LOAD;  // STRATEGY PATTERN: Set state ke STAGGERED_LOAD
 }
 
 //--------------------------------------------------------------
