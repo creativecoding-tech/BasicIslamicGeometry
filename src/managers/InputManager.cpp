@@ -408,8 +408,10 @@ void InputManager::handleMouseScrolled(int x, int y, float scrollX,
                 // 3. Konversi pixel scroll ke perubahan t
                 float deltaT = scrollAmount / curveLength;
 
-                // 4. Update t dan clamp
-                float newT = ofClamp(currentT + deltaT, 0.0f, 1.0f);
+                // 4. Update t dan clamp (dengan margin agar tidak sampai ujung line)
+                // Track dot tidak boleh mencapai ujung customLine/DcustomLine
+                float trackTMargin = 0.05f;  // 5% margin di setiap ujung
+                float newT = ofClamp(currentT + deltaT, trackTMargin, 1.0f - trackTMargin);
 
                 // 5. Dapatkan posisi baru di kurva
                 vec2 newPos = line.getPointAt(newT);
