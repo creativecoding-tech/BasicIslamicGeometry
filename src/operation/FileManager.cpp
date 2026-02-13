@@ -1008,7 +1008,8 @@ PolygonShape FileManager::createPolygonWithAnimation(const std::vector<vec2>& ve
       }
     case PolygonAnimationMode::GRADIENT:
       {
-        auto gradient = std::make_unique<GradientAnimation>(2.0f, 5.0f);
+        // speed=2.0, frequency=5.0, duration=5.0 detik
+        auto gradient = std::make_unique<GradientAnimation>(2.0f * animationSpeedMultiplier, 5.0f, 5.0f);
         return PolygonShape(vertices, color, index, std::move(gradient));
       }
     case PolygonAnimationMode::NO_ANIMATION:

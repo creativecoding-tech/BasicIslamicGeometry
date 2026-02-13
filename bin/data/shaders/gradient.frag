@@ -25,18 +25,19 @@ void main() {
     // Normalized position (0-1)
     vec2 normalizedPos = vTexCoord;
 
-    // Pulsing gradient effect - breathing/brightness flow
-    float pulse = sin(time * gradientSpeed + normalizedPos.x * gradientFrequency + normalizedPos.y * gradientFrequency);
+    // Gradient wave effect - variasi warna berdasarkan posisi dan waktu
+    float gradient = sin(time * gradientSpeed + normalizedPos.x * gradientFrequency + normalizedPos.y * gradientFrequency);
 
-    // Create smooth brightness variation
-    float brightness = 0.5 + pulse * 0.5;  // Range 0.0 to 1.0
+    // Normalize gradient dari [-1,1] ke [0,1]
+    float gradientNorm = (gradient + 1.0) * 0.5;  // Range 0.0 to 1.0
 
-    // Apply ke base color
-    vec4 finalColor = fillColor;
-    finalColor.r = clamp(finalColor.r * brightness, 0.0, 1.0);
-    finalColor.g = clamp(finalColor.g * brightness, 0.0, 1.0);
-    finalColor.b = clamp(finalColor.b * brightness, 0.0, 1.0);
-    finalColor.a = fillColor.a;
+    // Buat variasi warna dari fillColor ke PUTIH
+    vec4 baseColor = fillColor;                    // Warna asli
+    vec4 whiteColor = vec4(1.0, 1.0, 1.0, fillColor.a);  // Putih
 
-    outputColor = finalColor;
+    // Mix antara warna asli dan putih berdasarkan gradient
+    vec4 gradientColor = mix(baseColor, whiteColor, gradientNorm * 0.6);  // Max 60% ke putih
+
+    // Output color dengan alpha asli
+    outputColor = vec4(gradientColor.rgb, fillColor.a);
 }

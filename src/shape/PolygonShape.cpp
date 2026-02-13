@@ -125,6 +125,13 @@ void PolygonShape::update(float deltaTime) {
 				animation = nullptr;  // Switch ke No Animation
 			}
 		}
+
+		// Jika GradientAnimation complete, hapus animation dan switch ke No Animation
+		if (auto* gradientAnim = dynamic_cast<GradientAnimation*>(animation.get())) {
+			if (gradientAnim->isComplete()) {
+				animation = nullptr;  // Switch ke No Animation
+			}
+		}
 	}
 }
 
@@ -501,7 +508,7 @@ void PolygonShape::drawGLSL() const {
 				fillColor.g / 255.0f,
 				fillColor.b / 255.0f,
 				fillColor.a / 255.0f);
-			globalGradientShader.setUniform1f("time", ofGetElapsedTimef());
+			globalGradientShader.setUniform1f("time", gradientAnim->getTime());
 			globalGradientShader.setUniform1f("gradientSpeed", gradientAnim->getSpeed());
 			globalGradientShader.setUniform1f("gradientFrequency", gradientAnim->getFrequency());
 			globalGradientShader.setUniform2f("uMaskSize", maskFbo.getWidth(), maskFbo.getHeight());

@@ -1,16 +1,22 @@
 #include "GradientAnimation.h"
 
 //--------------------------------------------------------------
-GradientAnimation::GradientAnimation(float speed, float frequency)
-    : speed(speed), frequency(frequency), AbstractAnimation(1.0f) {
-    // Gradient animation selalu complete (no progress tracking)
-    progress = 1.0f;
+GradientAnimation::GradientAnimation(float speed, float frequency, float duration)
+    : speed(speed), frequency(frequency), duration(duration), time(0.0f), AbstractAnimation(duration) {
+    // Gradient animation finite: berjalan selama duration detik
+    progress = 0.0f;
 }
 
 //--------------------------------------------------------------
 void GradientAnimation::update(float deltaTime) {
-    // Gradient animation tidak punya progress
-    // Effect di-handle oleh shader menggunakan ofGetElapsedTimef()
+    // Accumulate time
+    time += deltaTime;
+
+    // Update progress berdasarkan duration
+    progress = time / duration;
+    if (progress > 1.0f) {
+        progress = 1.0f;
+    }
 }
 
 //--------------------------------------------------------------
@@ -34,6 +40,22 @@ void GradientAnimation::setFrequency(float frequency) {
 }
 
 //--------------------------------------------------------------
+float GradientAnimation::getDuration() const {
+    return duration;
+}
+
+//--------------------------------------------------------------
+void GradientAnimation::setDuration(float duration) {
+    this->duration = duration;
+}
+
+//--------------------------------------------------------------
+float GradientAnimation::getTime() const {
+    return time;
+}
+
+//--------------------------------------------------------------
 void GradientAnimation::reset() {
-    // Nothing to reset for gradient animation
+    time = 0.0f;
+    progress = 0.0f;
 }
