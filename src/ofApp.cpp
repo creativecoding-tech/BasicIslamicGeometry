@@ -374,7 +374,21 @@ void ofApp::updateStaggeredCustomLines() {
   // KHUSUS UNTUK AFTER POLYGON DRAW
   else if (isAfterPolygonDraw) {
     // Untuk AFTER_POLYGON_DRAW, polygons dulu, baru wave animation
-    if (allComplete && allLoaded) {
+    // ⭐ PENTING: JANGAN apply wave animation di sini!
+    // Cukup pindah ke LOAD_POLYGONS, wave animation akan di-apply SETELAH polygon selesai
+
+    // ⭐ PENTING: Untuk AFTER_POLYGON_DRAW, pastikan SEMUA custom lines selesai progressive drawing DULU
+    // Cek apakah semua custom lines sudah selesai progressive drawing
+    bool allProgressiveComplete = true;
+    for (const auto& line : customLines) {
+      if (line.getProgress() < 1.0f) {
+        allProgressiveComplete = false;
+        break;
+      }
+    }
+
+    // Hanya pindah ke LOAD_POLYGONS jika SEMUA custom lines sudah selesai progressive drawing
+    if (allProgressiveComplete && allLoaded) {
       loadStage = LOAD_POLYGONS;
       waveAnimationApplied = false;  // Reset flag untuk mode lain
     }
@@ -416,10 +430,12 @@ void ofApp::updateStaggeredPolygons() {
   // Cek apakah semua polygons sudah complete DAN sequential load sudah selesai
   bool allComplete = true;
   bool allLoaded = !fileManager.isLoadSequentialMode();
+  bool allPolygonsComplete = true;  // ⭐ NEW: Untuk AfterPolygonDraw mode
 
   for (const auto& polygon : polygonShapes) {
     if (!polygon.isAnimationComplete()) {
       allComplete = false;
+      allPolygonsComplete = false;  // ⭐ NEW: Polygon belum selesai
       break;
     }
   }
@@ -427,10 +443,14 @@ void ofApp::updateStaggeredPolygons() {
   // Selesai staggered load jika semua complete DAN semua sudah di-load
   if (allComplete && allLoaded) {
     // Apply wave animation ke customLines SETELAH semua selesai di-load ⭐ NEW
-    // TAPI HANYA untuk mode SELAIN BEFORE_POLYGON_DRAW (karena sudah di-apply sebelumnya)
+    // Cek mode step animation
     bool isBeforePolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
+    bool isAfterPolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_AFTER_POLYGON_DRAW);
+    bool isWithPolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_WITH_POLYGON_DRAW);
 
-    if (!isBeforePolygonDraw) {
+    // Apply wave animation untuk mode WithPolygonDraw dan AfterPolygonDraw
+    // Tapi untuk AfterPolygonDraw, tunggu polygon animation selesai dulu!
+    if (isWithPolygonDraw || (isAfterPolygonDraw && allPolygonsComplete)) {
       // Cast ke BasicZelligeTemplate karena applyWaveAnimationToAllCustomLines() method di situ
       if (currentTemplate) {
         BasicZelligeTemplate* zelligeTemplate = dynamic_cast<BasicZelligeTemplate*>(currentTemplate);
