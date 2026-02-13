@@ -251,12 +251,47 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Multi-Select System** - CTRL+Klik untuk toggle selection multiple garis
 - **CustomLine Labels** - Saat selected, muncul label dari getLabel() (customLine0, DcustomLine0, dst)
 - **Curve Label** - Display nilai curve saat garis di-select
-- **Draw Custom Lines Checkbox** - Checkbox "Draw Custom Lines" mengontrol apakah customLines digambar saat Draw ⭐ NEW:
+- **Draw Custom Lines Checkbox** - Checkbox "Draw Custom Lines" mengontrol apakah customLines digambar saat Draw:
   - ✓ Dicentang = CustomLines diload dan digambar
   - ✗ Tidak dicentang = CustomLines TIDAK diload (di-skip saat load)
-- **Skip CustomLines Load** - Parallel vs Sequential load behavior ⭐ NEW:
+- **Skip CustomLines Load** - Parallel vs Sequential load behavior:
   - **Parallel load**: CustomLines diload, lalu di-clear jika flag false
   - **Sequential load**: CustomLines TIDAK ditambahkan ke buffer jika flag false
+
+### CustomLine Animation Controls ⭐ NEW
+- **Line Animation Mode** - Control animasi untuk custom lines yang diload dari file .nay:
+  - **No Animation** - Custom lines digambar tanpa animasi wave (progressive drawing saja)
+  - **Wave Animation** - Custom lines digambar dengan efek wave/gelombang yang halus
+- **Wave Animation Settings** - Parameter untuk wave effect (hanya muncul jika Wave Animation dipilih):
+  - **Amplitude (px)** - Tinggi gelombang dalam pixels (2.0 - 5.0 px)
+  - **Frequency** - Kekerapan gelombang (1.0 - 3.0 Hz)
+  - **Duration (sec)** - Durasi wave animation sebelum auto-stop (0.0 - 60.0 detik)
+    - 0.0 detik = Infinite loop (wave tidak berhenti otomatis)
+    - > 0.0 detik = Wave berhenti setelah durasi habis
+- **Step Animation Line** - Mengatur TIMING kapan wave animation dijalankan terhadap polygon animation:
+  - **Before Polygon Draw** - Wave animation BERJALAN dan SELESAI sebelum polygons digambar:
+    1. Custom lines selesai progressive drawing (0% → 100%)
+    2. Wave animation diaplikasikan ke semua custom lines
+    3. Wave animation berjalan selama durasi yang ditentukan
+    4. Setelah durasi habis, wave animation dihapus
+    5. Polygons baru mulai digambar dan beranimasi
+  - **With Polygon Draw** - Wave animation dan polygon animation BERJALAN BARENGAN:
+    1. Custom lines selesai progressive drawing
+    2. Wave animation diaplikasikan ke semua custom lines
+    3. Polygons mulai digambar dan beranimasi
+    4. Wave animation terus berjalan selama polygons beranimasi
+    5. Kedua animasi selesai secara independent
+  - **After Polygon Draw** - Wave animation dijalankan SETELAH polygon animation selesai:
+    1. Custom lines selesai progressive drawing
+    2. Polygons mulai digambar dan beranimasi
+    3. Setelah SEMUA polygons selesai beranimasi
+    4. Wave animation diaplikasikan ke semua custom lines
+    5. Wave animation berjalan selama durasi yang ditentukan
+- **Staggered Load Integration** - Step Animation Line bekerja dengan staggered load system (Parallel Per Group mode):
+  - **LOAD_TEMPLATE stage**: Template shapes digambar terlebih dahulu
+  - **LOAD_CUSTOMLINES stage**: Custom lines diload dan di-animasikan sesuai mode
+  - **LOAD_POLYGONS stage**: Polygons diload dan di-animasikan sesuai mode
+  - **LOAD_DONE stage**: Semua animasi selesai, wave animation dihapus (jika ada durasi)
 - **PolygonShape System** - Class untuk polygon fill-only tanpa outline (hanya warna)
 - **Create Polygon (CTRL+G)** - Buat polygon dari selected customLines (otomatis deteksi closed loop)
 - **Polygon Color Preset** - 9 warna preset untuk polygon (merah, hijau, biru, kuning, magenta, cyan, orange, ungu, abu-abu)
@@ -450,7 +485,18 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 |  - **Sequential Per Group** | Groups animate satu per satu dengan delay |
 | **Custom Line CollapsingHeader** | ⭐ NEW Hanya muncul jika file punya customLines: |
 |  - **Draw Custom Lines Checkbox** | CustomLines diload/digambar jika dicentang |
-|  - **Custom Line Appearance** | CustomLine controls (color, curve, etc) |
+|  - **Custom Line Appearance** | CustomLine controls (color, curve, etc) ⭐ UPDATED: |
+|  - **Animation Mode** | Pilihan animasi untuk custom lines: |
+|  - **No Animation Line** | CustomLines digambar tanpa animasi wave |
+|  - **Wave Animation Line** | CustomLines digambar dengan efek wave/gelombang ⭐ NEW |
+|  - **Wave Settings** (Wave Animation only) | Slider untuk parameter wave: |
+|  - **Amplitude (px)** | Tinggi gelombang dalam pixels (2.0 - 5.0 px) ⭐ NEW |
+|  - **Frequency** | Kekerapan gelombang (1.0 - 3.0 Hz) ⭐ NEW |
+|  - **Duration (sec)** | Durasi wave animation (0.0 - 60.0 detik, 0 = infinite) ⭐ NEW |
+|  - **Step Animation Line** (Wave only) | Timing kapan wave animation berjalan: ⭐ NEW |
+|  - **Before Polygon Draw** | Wave selesai sebelum polygons digambar |
+|  - **With Polygon Draw** | Wave berjalan bareng polygon animation |
+|  - **After Polygon Draw** | Wave berjalan setelah polygon selesai |
 | **Polygon CollapsingHeader** | ⭐ NEW Hanya muncul jika file punya polygons: |
 |  - **Polygon Animate** | Pilihan animation mode untuk polygons: |
 |  - **No Animation** | Polygons langsung muncul tanpa animasi |
@@ -1440,6 +1486,13 @@ Fitur terbaru yang sedang dalam pengembangan aktif:
 
 ### ✨ Key Features (Latest Updates)
 
+✅ **Custom Line Animation System** - Wave animation untuk custom lines dengan timing control ⭐ NEW
+✅ **Line Animation Mode** - Pilihan animasi untuk custom lines: No Animation / Wave Animation ⭐ NEW
+✅ **Wave Animation Settings** - Amplitude, Frequency, Duration controls untuk wave effect ⭐ NEW
+✅ **Step Animation Line** - Timing control kapan wave animation berjalan terhadap polygons: ⭐ NEW
+  - **Before Polygon Draw** - Wave selesai sebelum polygons digambar
+  - **With Polygon Draw** - Wave berjalan bareng polygon animation
+  - **After Polygon Draw** - Wave berjalan setelah polygon selesai
 ✅ **Duplicate Dot Track** - UserDot yang bergerak沿着 customLine/DcustomLine dengan scroll ⭐ IN DEVELOPMENT
 ✅ **Track Mode Boundary Margin** - Dot tidak bisa mencapai ujung line (5% margin di setiap ujung) ⭐ FIXED
 ✅ **Bezier Curve Support** - Track dots mengikuti garis melengkung (bukan hanya lurus) ⭐ NEW
