@@ -1,4 +1,5 @@
 #include "CustomLine.h"
+#include "../anim/WaveLineAnimation.h"
 
 //--------------------------------------------------------------
 CustomLine::CustomLine()
@@ -7,7 +8,9 @@ CustomLine::CustomLine()
       ,
       selected(false), color(ofColor(0, 0, 255)) // Default biru
       ,
-      label(""), isDuplicate(false), axisLock(AxisLock::NONE) {}
+      label(""), isDuplicate(false), axisLock(AxisLock::NONE), animation(nullptr),
+      loadedFromFile(false), animationTimer(0.0f), animationAutoStopDuration(5.0f),
+      animationTimerInitialized(false) {}
 
 //--------------------------------------------------------------
 CustomLine::CustomLine(vector<vec2> points, ofColor color, float lineWidth,
@@ -16,7 +19,30 @@ CustomLine::CustomLine(vector<vec2> points, ofColor color, float lineWidth,
       progress(1.0f), speed(1.2f) // Delta time calibrated (0.02f * 60 FPS)
       ,
       selected(false), label(label), isDuplicate(false),
-      axisLock(AxisLock::NONE) {}
+      axisLock(AxisLock::NONE), animation(nullptr), loadedFromFile(false),
+      animationTimer(0.0f), animationAutoStopDuration(5.0f), animationTimerInitialized(false) {}
+
+//--------------------------------------------------------------
+CustomLine& CustomLine::operator=(const CustomLine& other) {
+  if (this != &other) {
+    points = other.points;
+    color = other.color;
+    lineWidth = other.lineWidth;
+    curve = other.curve;
+    progress = other.progress;
+    speed = other.speed;
+    selected = other.selected;
+    label = other.label;
+    isDuplicate = other.isDuplicate;
+    axisLock = other.axisLock;
+    loadedFromFile = other.loadedFromFile;
+    animation = nullptr;  // Animation tidak dicopy (reset ke nullptr) ⭐ NEW
+    animationTimer = 0.0f;  // Reset timer ⭐ NEW
+    animationAutoStopDuration = 5.0f;  // Default durasi ⭐ NEW
+    animationTimerInitialized = false;  // Reset flag ⭐ NEW
+  }
+  return *this;
+}
 
 //--------------------------------------------------------------
 void CustomLine::draw() const {
@@ -45,6 +71,11 @@ void CustomLine::drawStraightLine(vec2 start, vec2 end) const {
   float totalAngle = atan2(end.y - start.y, end.x - start.x);
   float totalDistance = sqrt(pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
 
+  // Hitung direction vector untuk wave offset ⭐ NEW
+  vec2 direction = end - start;
+  float dirLength = glm::length(direction);
+  vec2 normalizedDir = dirLength > 0 ? direction / dirLength : vec2(0, 0);
+
   float totalSegments = 100.0f;
   ofPolyline polyline;
   int segmentsToDraw = static_cast<int>(totalSegments * progress);
@@ -56,7 +87,17 @@ void CustomLine::drawStraightLine(vec2 start, vec2 end) const {
     float x = start.x + cos(totalAngle) * currentDist;
     float y = start.y + sin(totalAngle) * currentDist;
 
-    polyline.addVertex(x, y);
+    // Apply wave offset jika ada WaveLineAnimation ⭐ NEW
+    vec2 pos = vec2(x, y);
+    if (animation) {
+      // Cek apakah WaveLineAnimation (pakai const_cast karena draw() const method)
+      if (auto* waveAnim = dynamic_cast<WaveLineAnimation*>(animation.get())) {
+        vec2 waveOffset = waveAnim->getWaveOffset(t, normalizedDir);
+        pos += waveOffset;
+      }
+    }
+
+    polyline.addVertex(pos.x, pos.y);
   }
 
   if (!polyline.getVertices().empty()) {
@@ -69,6 +110,11 @@ void CustomLine::drawCurvedLine(vec2 start, vec2 end) const {
   // Gambar bezier curve dengan quadratic bezier
   vec2 controlPoint = calculateControlPoint(start, end);
 
+  // Hitung direction vector untuk wave offset ⭐ NEW
+  vec2 direction = end - start;
+  float dirLength = glm::length(direction);
+  vec2 normalizedDir = dirLength > 0 ? direction / dirLength : vec2(0, 0);
+
   ofPolyline bezierPoly;
   int segments = 100;
   int segmentsToDraw = static_cast<int>(segments * progress);
@@ -79,7 +125,18 @@ void CustomLine::drawCurvedLine(vec2 start, vec2 end) const {
     // untuk curva yang smooth
     vec2 point = start * (1 - t) * (1 - t) + controlPoint * 2 * (1 - t) * t +
                  end * t * t;
-    bezierPoly.addVertex(point.x, point.y);
+
+    // Apply wave offset jika ada WaveLineAnimation ⭐ NEW
+    vec2 pos = point;
+    if (animation) {
+      // Cek apakah WaveLineAnimation (pakai const_cast karena draw() const method)
+      if (auto* waveAnim = dynamic_cast<WaveLineAnimation*>(animation.get())) {
+        vec2 waveOffset = waveAnim->getWaveOffset(t, normalizedDir);
+        pos += waveOffset;
+      }
+    }
+
+    bezierPoly.addVertex(pos.x, pos.y);
   }
 
   if (!bezierPoly.getVertices().empty()) {
@@ -127,6 +184,16 @@ void CustomLine::setProgress(float progress) { this->progress = progress; }
 void CustomLine::setSpeed(float speed) { this->speed = speed; }
 
 //--------------------------------------------------------------
+void CustomLine::setAnimation(std::shared_ptr<AbstractAnimation> anim, float duration) {
+	animation = anim;
+	animationTimer = 0.0f;  // Reset timer setiap kali animation di-set ⭐ NEW
+	animationTimerInitialized = false;  // Reset flag agar bisa di-reset lagi di update() ⭐ NEW
+
+	// Simpan durasi auto-stop untuk animasi (dipakai di update()) ⭐ NEW
+	animationAutoStopDuration = duration;
+}
+
+//--------------------------------------------------------------
 void CustomLine::setLabel(const std::string &label) { this->label = label; }
 
 //--------------------------------------------------------------
@@ -140,6 +207,57 @@ void CustomLine::updateProgress(float deltaTime) {
       progress = 1.0f;
     }
   }
+}
+
+//--------------------------------------------------------------
+void CustomLine::update(float deltaTime) {
+  // Simpan progress sebelum update untuk deteksi transisi 0.99 -> 1.0
+  float prevProgress = progress;
+
+  // Update drawing animation (progressive drawing)
+  updateProgress(deltaTime);
+
+  // Deteksi ketika progressive drawing BARU saja selesai (transisi dari < 1.0 ke >= 1.0)
+  bool justFinishedDrawing = (prevProgress < 1.0f && progress >= 1.0f);
+
+  // Update animation HANYA setelah progressive drawing selesai (progress >= 1.0) ⭐ NEW
+  // Ini berlaku untuk SEMUA custom lines (baik dari file .nay maupun manual)
+  if (animation && progress >= 1.0f) {
+    // Reset timer untuk 2 kondisi:
+    // 1. BARU saja selesai progressive drawing
+    // 2. Animation BARU saja di-set dan progress sudah >= 1.0f (dari file .nay)
+    if (!animationTimerInitialized) {
+      animationTimer = 0.0f;
+      animationTimerInitialized = true;  // Tandai bahwa sudah di-reset
+    }
+
+    // Update animation
+    animation->update(deltaTime);
+
+    // Update timer untuk auto-stop setelah durasi tercapai ⭐ NEW
+    animationTimer += deltaTime;
+    if (animationTimer >= animationAutoStopDuration) {
+      // Durasi selesai, hapus animation (kembali ke bentuk lurus)
+      animation = nullptr;
+      animationTimer = 0.0f;  // Reset timer
+      animationTimerInitialized = false;  // Reset flag
+    }
+  } else {
+    // Reset flag jika tidak ada animation atau progress belum selesai
+    if (!animation) {
+      animationTimerInitialized = false;
+    }
+  }
+}
+
+//--------------------------------------------------------------
+bool CustomLine::hasAnimation() const {
+  return animation != nullptr;
+}
+
+//--------------------------------------------------------------
+std::shared_ptr<AbstractAnimation> CustomLine::getAnimation() const {
+  return animation;
 }
 
 //--------------------------------------------------------------

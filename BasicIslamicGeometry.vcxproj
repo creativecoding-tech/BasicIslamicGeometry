@@ -260,6 +260,7 @@
     <ClCompile Include="src\anim\FillAnimation.cpp" />
     <ClCompile Include="src\anim\WobbleFillAnimation.cpp" />
     <ClCompile Include="src\anim\GradientAnimation.cpp" />
+    <ClCompile Include="src\anim\WaveLineAnimation.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp" />
     <ClCompile Include="src\imgui\imgui_draw.cpp" />
     <ClCompile Include="src\imgui\imgui_widgets.cpp" />
@@ -308,6 +309,7 @@
     <ClInclude Include="src\anim\FillAnimation.h" />
     <ClInclude Include="src\anim\WobbleFillAnimation.h" />
     <ClInclude Include="src\anim\GradientAnimation.h" />
+    <ClInclude Include="src\anim\WaveLineAnimation.h" />
     <ClInclude Include="src\imgui\imgui.h" />
     <ClInclude Include="src\imgui\imgui_internal.h" />
     <ClInclude Include="src\imgui\imconfig.h" />

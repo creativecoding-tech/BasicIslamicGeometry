@@ -5,6 +5,7 @@
 #include "../../shape/ParallelogramLine.h"
 #include "../../shape/RectangleLine.h"
 #include "../../shape/OctagramLine.h"
+#include "../../anim/WaveLineAnimation.h"
 #include "../../operation/FileManager.h"
 #include "../../imgui/imgui.h"
 #include "../../ofApp.h"
@@ -258,6 +259,38 @@ void BasicZelligeTemplate::setupOctagramLines() {
 }
 
 //--------------------------------------------------------------
+void BasicZelligeTemplate::applyWaveAnimationToAllCustomLines(class ofApp* app) {
+	// Apply wave animation settings ke SEMUA customLines
+	for (auto& line : app->customLines) {
+		if (app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
+			// Mode Wave: Cek apakah sudah punya WaveLineAnimation
+			if (auto* existingWaveAnim = dynamic_cast<WaveLineAnimation*>(line.getAnimation().get())) {
+				// Sudah punya WaveLineAnimation, cukup update parameter-nya
+				existingWaveAnim->setAmplitude(app->lineWaveAmplitude);
+				existingWaveAnim->setFrequency(app->lineWaveFrequency);
+				// Speed tetap menggunakan default
+			} else {
+				// Belum punya atau bukan WaveLineAnimation, buat baru
+				auto waveAnim = std::make_shared<WaveLineAnimation>(
+					app->lineWaveAmplitude,
+					app->lineWaveFrequency,
+					app->lineWaveSpeed
+				);
+				// Set animation dengan durasi dari slider ⭐ NEW
+				line.setAnimation(waveAnim, app->lineWaveDuration);
+			}
+		} else {
+			// Mode No Animation: Hapus animation
+			line.setAnimation(nullptr);
+		}
+
+		// Pastikan loadedFromFile = false untuk manual customLines
+		line.setLoadedFromFile(false);
+	}
+}
+
+
+//--------------------------------------------------------------
 bool BasicZelligeTemplate::hasCustomSettings() {
 	return false;
 }
@@ -349,8 +382,24 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 
 			// Custom Line Appearance section - hanya muncul jika checkbox dicheck
 			if (app->shouldDrawCustomLines) {
-				ImGui::Text("Custom Line Appearance");
-				// TODO: Add custom line controls here
+				ImGui::Text("Custom Line Animation");
+
+				// Radio buttons untuk Line Animation Mode ⭐ NEW
+				ImGui::Text("Animation Mode");
+				ImGui::SameLine();
+				ImGui::RadioButton("No Animation Line", reinterpret_cast<int*>(&app->lineAnimationMode), 0);
+				ImGui::RadioButton("Wave Animation Line", reinterpret_cast<int*>(&app->lineAnimationMode), 1);
+				ImGui::Separator();
+
+				// Sliders untuk Wave Animation (hanya muncul jika Wave Animation dipilih)
+			if (app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
+					ImGui::Text("Wave Settings");
+					ImGui::SliderFloat("Amplitude (px)", &app->lineWaveAmplitude, 2.0f, 5.0f);
+					ImGui::SliderFloat("Frequency", &app->lineWaveFrequency, 1.0f, 3.0f);
+					ImGui::SliderFloat("Duration (sec)", &app->lineWaveDuration, 0.0f, 60.0f, "%.1f");  // Slider durasi 0-60 detik ⭐ NEW
+					ImGui::Separator();
+				}
+				ImGui::Separator();
 			}
 		}
 	}
@@ -362,27 +411,27 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 		if (ImGui::CollapsingHeader("Polygon", ImGuiTreeNodeFlags_DefaultOpen)) {
 			// Polygon Appearance section
 			ImGui::Text("Polygon Appearance");
-			if (ImGui::RadioButton("No Animation", &polygonAnimationMode, 0)) {
+			if (ImGui::RadioButton("No Animation Polygon", &polygonAnimationMode, 0)) {
 				// Radio button changed
 			}
 			ImGui::SameLine();
-			if (ImGui::RadioButton("FadeIn", &polygonAnimationMode, 1)) {
+			if (ImGui::RadioButton("FadeIn Polygon", &polygonAnimationMode, 1)) {
 				// Radio button changed
 			}
 			ImGui::SameLine();
-			if (ImGui::RadioButton("Wobble", &polygonAnimationMode, 2)) {
+			if (ImGui::RadioButton("Wobble Polygon", &polygonAnimationMode, 2)) {
 				// Radio button changed
 			}
 
-			if (ImGui::RadioButton("Wave Fill", &polygonAnimationMode, 3)) {
+			if (ImGui::RadioButton("Wave Fill Polygon", &polygonAnimationMode, 3)) {
 				// Radio button changed
 			}
 			ImGui::SameLine();
-			if (ImGui::RadioButton("Wobble Fill", &polygonAnimationMode, 4)) {
+			if (ImGui::RadioButton("Wobble Fill Polygon", &polygonAnimationMode, 4)) {
 				// Radio button changed
 			}
 			ImGui::SameLine();
-			if (ImGui::RadioButton("Gradient", &polygonAnimationMode, 5)) {
+			if (ImGui::RadioButton("Gradient Polygon", &polygonAnimationMode, 5)) {
 				// Radio button changed
 			}
 		}
@@ -391,7 +440,11 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
 	ImGui::Separator();
 	ImGui::Text("Speed Control");
 	ImGui::SetNextItemWidth(150.0f);
-	ImGui::SliderFloat("Speed", &app->currentTemplate->speedMultiplier, 0.1f, 1.5f, "%.2f");
+	if (ImGui::SliderFloat("Speed", &app->currentTemplate->speedMultiplier, 0.1f, 1.5f, "%.2f")) {
+		// Slider Speed mengkontrol BUKAN CUMA speedMultiplier, tapi juga lineWaveSpeed untuk wave animation ⭐ NEW
+		// Rumus: lineWaveSpeed = speedMultiplier * 2.0 (range: 0.2 - 3.0)
+		app->lineWaveSpeed = app->currentTemplate->speedMultiplier * 2.0f;
+	}
 	// Slider hanya menyimpan nilai, efek diterapkan saat tombol Draw diklik
 	ImGui::Separator();
 

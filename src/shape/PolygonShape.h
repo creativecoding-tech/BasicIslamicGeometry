@@ -16,7 +16,7 @@ public:
 	PolygonShape();
 	PolygonShape(vector<vec2> verts, ofColor color);
 	PolygonShape(vector<vec2> verts, ofColor color, int index);  // Dengan index untuk label
-	PolygonShape(vector<vec2> verts, ofColor color, int index, std::unique_ptr<AbstractAnimation> anim);  // Dengan animation (untuk load dari file)
+	PolygonShape(vector<vec2> verts, ofColor color, int index, std::shared_ptr<AbstractAnimation> anim);  // Dengan animation (untuk load dari file)
 
 	// Copy constructor (animation tidak dicopy)
 	PolygonShape(const PolygonShape& other);
@@ -65,7 +65,7 @@ private:
 	bool selected;
 	int index;  // Index polygon untuk label
 	bool loadedFromFile = false;  // Flag: true jika diload dari file .nay
-	std::unique_ptr<AbstractAnimation> animation;  // Animation system (optional)
+	std::shared_ptr<AbstractAnimation> animation;  // Animation system (optional) ⭐ CHANGED TO shared_ptr
 
 	// Fill state (dihitung di update(), dipakai di draw())
 	mutable float minY;                      // Y minimum (atas)

@@ -109,6 +109,18 @@ class ofApp : public ofBaseApp{
 		float userDotRadius = 8.0f;  // Radius untuk userDot/duplicate dot
 		bool isCtrlPressed = false;
 
+	// CustomLine Wave Animation Controls
+	enum LineAnimationMode {
+		NO_ANIMATION,
+		WAVE
+	};
+
+	LineAnimationMode lineAnimationMode = LineAnimationMode::NO_ANIMATION;
+	float lineWaveAmplitude = 3.0f;
+	float lineWaveFrequency = 2.0f;
+	float lineWaveSpeed = 2.0f;
+	float lineWaveDuration = 5.0f;  // Durasi wave animation (0 - 60 detik) ⭐ NEW
+
 		// Undo System (Max 100 steps)
 		std::vector<UndoAction> undoStack;
 		std::vector<UndoAction> redoStack;  // Redo stack

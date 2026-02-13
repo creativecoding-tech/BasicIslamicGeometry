@@ -24,7 +24,7 @@ PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int idx)
 	  lastFboWidth(0), lastFboHeight(0) {}
 
 //--------------------------------------------------------------
-PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index, std::unique_ptr<AbstractAnimation> anim)
+PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index, std::shared_ptr<AbstractAnimation> anim)
 	: vertices(verts), fillColor(color), selected(false), index(index), animation(std::move(anim)),
 	  minY(0.0f), maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
 	  lastFboWidth(0), lastFboHeight(0) {}

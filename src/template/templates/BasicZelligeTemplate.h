@@ -30,6 +30,9 @@ public:
 	bool hasCustomSettings() override;
 	void showSettingsUI() override;
 
+	// Wave Animation Helper ⭐ NEW
+	void applyWaveAnimationToAllCustomLines(class ofApp* app);
+
 	// Template-specific playback UI
 	bool hasPlaybackSettings() override;
 	void showPlaybackUI(class ofApp* app) override;

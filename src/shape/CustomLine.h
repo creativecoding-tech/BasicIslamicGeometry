@@ -1,6 +1,9 @@
 #pragma once
 
 #include "ofMain.h"
+#include <memory>
+#include "../anim/AbstractAnimation.h"
+#include "../anim/WaveLineAnimation.h"
 using glm::vec2;
 
 /**
@@ -23,6 +26,9 @@ public:
 	// Constructor
 	CustomLine();
 	CustomLine(vector<vec2> points, ofColor color, float lineWidth, std::string label = "");
+
+	// Copy assignment operator (animation tidak dicopy) ⭐ NEW
+	CustomLine& operator=(const CustomLine& other);
 
 	// Main drawing method
 	void draw() const;
@@ -60,6 +66,14 @@ public:
 
 	// Animation update
 	void updateProgress(float deltaTime = 0.016f);
+	void update(float deltaTime = 0.016f);  // Update animation (wave) ⭐ NEW
+	bool hasAnimation() const;  // Cek apakah punya animation ⭐ NEW
+	std::shared_ptr<AbstractAnimation> getAnimation() const;  // Getter untuk animation ⭐ NEW
+	void setAnimation(std::shared_ptr<AbstractAnimation> anim, float duration = 5.0f);  // Set animation dengan durasi ⭐ CHANGED
+
+	// Load state ⭐ NEW
+	void setLoadedFromFile(bool loaded) { loadedFromFile = loaded; }
+	bool isLoadedFromFile() const { return loadedFromFile; }
 
 	// Helper for curve tracking
 	vec2 getPointAt(float t) const;        // Get point at t (0.0 - 1.0)
@@ -77,6 +91,11 @@ private:
 	std::string label;    // Label untuk customLine (cth: "customLine0", "DcustomLine0")
 	bool isDuplicate;     // True jika ini duplicate line (hasil dari duplicateLineR180)
 	AxisLock axisLock;    // Axis lock untuk DcustomLine (NONE, LOCK_X, LOCK_Y)
+	std::shared_ptr<AbstractAnimation> animation;  // Animation system (WaveLineAnimation, dll) ⭐ CHANGED TO shared_ptr
+	bool loadedFromFile = false;  // Flag: true jika diload dari file .nay
+	float animationTimer = 0.0f;  // Timer untuk tracking durasi animasi (generik, bukan cuma wave) ⭐ NEW
+	float animationAutoStopDuration = 5.0f;  // Durasi auto-stop untuk animasi (0 = infinite) ⭐ NEW
+	bool animationTimerInitialized = false;  // Flag untuk mencegah double-reset timer ⭐ NEW
 
 	// Helper methods
 	void drawStraightLine(vec2 start, vec2 end) const;

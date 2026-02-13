@@ -312,6 +312,15 @@ void ofApp::updateStaggeredPolygons() {
 
   // Selesai staggered load jika semua complete DAN semua sudah di-load
   if (allComplete && allLoaded) {
+    // Apply wave animation ke customLines SETELAH semua selesai di-load ⭐ NEW
+    // Cast ke BasicZelligeTemplate karena applyWaveAnimationToAllCustomLines() method di situ
+    if (currentTemplate) {
+      BasicZelligeTemplate* zelligeTemplate = dynamic_cast<BasicZelligeTemplate*>(currentTemplate);
+      if (zelligeTemplate) {
+        zelligeTemplate->applyWaveAnimationToAllCustomLines(this);
+      }
+    }
+
     loadStage = LOAD_DONE;
     fileManager.cancelSequentialLoad();
   }
@@ -350,7 +359,7 @@ void ofApp::updateCustomLines() {
   fileManager.updateSequentialLoad(customLines, polygonShapes);
   float deltaTime = ofGetLastFrameTime();
   for (auto& line : customLines) {
-    line.updateProgress(deltaTime);
+    line.update(deltaTime);  // Update drawing + wave animation (if loaded from .nay) ⭐ NEW
   }
 }
 
