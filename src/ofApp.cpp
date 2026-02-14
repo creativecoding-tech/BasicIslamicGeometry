@@ -1,13 +1,12 @@
 #include "ofApp.h"
+#include "operation/FileOperationManager.h"
+#include "operation/gui/SacredGeometry.h"
+#include "operation/gui/UserCustom.h"
 #include "shape/AbstractShape.h"
 #include "shape/DotShape.h"
 #include "template/templates/BasicZelligeTemplate.h"
-#include "operation/gui/SacredGeometry.h"
-#include "operation/gui/UserCustom.h"
-#include "operation/FileOperationManager.h"
 #include "utils/GeometryUtils.h"
 #include <vector>
-
 
 //--------------------------------------------------------------
 void ofApp::setup() {
@@ -17,7 +16,7 @@ void ofApp::setup() {
   ofSetBackgroundAuto(false);
   ofEnableAntiAliasing();
   ofEnableSmoothing();
-  ofDisableArbTex();  // Required for FBO texture sampling in FillAnimation
+  ofDisableArbTex(); // Required for FBO texture sampling in FillAnimation
 
   // Load font untuk custom line labels
   fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
@@ -45,7 +44,7 @@ void ofApp::setup() {
   // Initialize FileOperationManager (after ofApp is fully constructed)
   fileOperationManager = std::make_unique<FileOperationManager>(this);
 
-  //define ImGUI
+  // define ImGUI
   setupImGui();
 }
 
@@ -66,7 +65,7 @@ void ofApp::setupTemplateSystem() {
 void ofApp::switchTemplate(const std::string &templateName) {
   // Get template dari registry
   TemplateRegistry &registry = TemplateRegistry::getInstance();
-  SacredGeometryTemplate* oldTemplate = currentTemplate;
+  SacredGeometryTemplate *oldTemplate = currentTemplate;
   currentTemplate = registry.getTemplate(templateName);
 
   // Null check - template tidak ditemukan
@@ -77,7 +76,8 @@ void ofApp::switchTemplate(const std::string &templateName) {
 
   // Keep previous radius setting if available
   if (oldTemplate) {
-      currentTemplate->radius = oldTemplate->radius;  // Copy radius dari template lama
+    currentTemplate->radius =
+        oldTemplate->radius; // Copy radius dari template lama
   }
 
   // Setup shapes SAH radius di-set (REQUIRED!)
@@ -91,21 +91,21 @@ void ofApp::switchTemplate(const std::string &templateName) {
 void ofApp::update() {
   // STRATEGY PATTERN: Delegate update ke method yang sesuai berdasarkan state
   switch (currentState) {
-    case UpdateState::NORMAL:
-      updateNormal();
-      break;
+  case UpdateState::NORMAL:
+    updateNormal();
+    break;
 
-    case UpdateState::SEQUENTIAL_DRAWING:
-      updateSequentialDrawing();
-      break;
+  case UpdateState::SEQUENTIAL_DRAWING:
+    updateSequentialDrawing();
+    break;
 
-    case UpdateState::DELAYED_LOAD:
-      updateDelayedLoad();
-      break;
+  case UpdateState::DELAYED_LOAD:
+    updateDelayedLoad();
+    break;
 
-    case UpdateState::STAGGERED_LOAD:
-      updateStaggeredLoad();
-      break;
+  case UpdateState::STAGGERED_LOAD:
+    updateStaggeredLoad();
+    break;
   }
 }
 
@@ -133,7 +133,7 @@ void ofApp::updateNormal() {
   updatePolygons();
 
   // Update user-created dots
-  for (auto& dot : userDots) {
+  for (auto &dot : userDots) {
     if (dot) {
       dot->update();
     }
@@ -148,7 +148,7 @@ void ofApp::updateSequentialDrawing() {
     bool complete = currentTemplate->updateSequentialDrawing(deltaTime);
     if (complete) {
       dotsCacheDirty = true;
-      currentState = UpdateState::NORMAL;  // Kembali ke normal setelah selesai
+      currentState = UpdateState::NORMAL; // Kembali ke normal setelah selesai
     }
   }
 }
@@ -177,31 +177,31 @@ void ofApp::updateDelayedLoad() {
     isWaitingForLoad = false;
     pendingLoadMode = -1;
     loadDelayAccumulator = 0.0f;
-    currentState = UpdateState::STAGGERED_LOAD;  // Lanjut ke staggered load
+    currentState = UpdateState::STAGGERED_LOAD; // Lanjut ke staggered load
   }
 }
 
 //--------------------------------------------------------------
 void ofApp::updateStaggeredLoad() {
   switch (loadStage) {
-    case LOAD_TEMPLATE:
-      updateStaggeredTemplate();
-      break;
+  case LOAD_TEMPLATE:
+    updateStaggeredTemplate();
+    break;
 
-    case LOAD_CUSTOMLINES:
-      updateStaggeredCustomLines();
-      break;
+  case LOAD_CUSTOMLINES:
+    updateStaggeredCustomLines();
+    break;
 
-    case LOAD_POLYGONS:
-      updateStaggeredPolygons();
-      break;
+  case LOAD_POLYGONS:
+    updateStaggeredPolygons();
+    break;
 
-    case LOAD_DONE:
-      // Selesai, kembali ke normal
-      isStaggeredLoad = false;
-      isSequentialShapeLoad = false;
-      currentState = UpdateState::NORMAL;
-      break;
+  case LOAD_DONE:
+    // Selesai, kembali ke normal
+    isStaggeredLoad = false;
+    isSequentialShapeLoad = false;
+    currentState = UpdateState::NORMAL;
+    break;
   }
 }
 
@@ -214,7 +214,7 @@ void ofApp::updateStaggeredTemplate() {
 
   if (isSequentialShapeLoad) {
     // SEQUENTIAL MODE: Update satu per satu
-    const auto& shapes = currentTemplate->getShapes();
+    const auto &shapes = currentTemplate->getShapes();
     if (currentTemplateIndex < shapes.size()) {
       shapes[currentTemplateIndex]->update();
 
@@ -231,8 +231,8 @@ void ofApp::updateStaggeredTemplate() {
 
     // Cek apakah semua complete
     bool allComplete = true;
-    const auto& shapes = currentTemplate->getShapes();
-    for (auto& shape : shapes) {
+    const auto &shapes = currentTemplate->getShapes();
+    for (auto &shape : shapes) {
       if (!shape->isComplete()) {
         allComplete = false;
         break;
@@ -249,11 +249,15 @@ void ofApp::updateStaggeredTemplate() {
 //--------------------------------------------------------------
 void ofApp::updateStaggeredCustomLines() {
   // Cek mode step animation ⭐ NEW
-  bool isBeforePolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
-  bool isWithPolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_WITH_POLYGON_DRAW);
-  bool isAfterPolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_AFTER_POLYGON_DRAW);
+  bool isBeforePolygonDraw = (lineStepAnimationMode ==
+                              LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
+  bool isWithPolygonDraw =
+      (lineStepAnimationMode == LineStepAnimationMode::STEP_WITH_POLYGON_DRAW);
+  bool isAfterPolygonDraw =
+      (lineStepAnimationMode == LineStepAnimationMode::STEP_AFTER_POLYGON_DRAW);
 
-  // Static flag untuk tracking apakah wave animation sudah di-apply (hanya untuk BEFORE_POLYGON_DRAW)
+  // Static flag untuk tracking apakah wave animation sudah di-apply (hanya
+  // untuk BEFORE_POLYGON_DRAW)
   static bool waveAnimationApplied = false;
 
   // Static timer untuk tracking durasi wave animation ⭐ NEW
@@ -261,11 +265,13 @@ void ofApp::updateStaggeredCustomLines() {
 
   // Sequential load: updateSequentialLoad akan menambah customLines bertahap
   size_t previousSize = customLines.size();
-  size_t previousPolygonSize = polygonShapes.size();  // Simpan ukuran polygons sebelum load
+  size_t previousPolygonSize =
+      polygonShapes.size(); // Simpan ukuran polygons sebelum load
 
   fileManager.updateSequentialLoad(customLines, polygonShapes);
 
-  // UNTUK BEFORE_POLYGON_DRAW: Hapus polygons yang baru ditambah agar tidak muncul di screen
+  // UNTUK BEFORE_POLYGON_DRAW: Hapus polygons yang baru ditambah agar tidak
+  // muncul di screen
   if (isBeforePolygonDraw && polygonShapes.size() > previousPolygonSize) {
     // Hapus polygons yang baru ditambah (resize ke ukuran sebelumnya)
     polygonShapes.resize(previousPolygonSize);
@@ -278,20 +284,22 @@ void ofApp::updateStaggeredCustomLines() {
 
   // Update semua customLines yang sudah ada (progressive drawing + animation)
   float deltaTime = ofGetLastFrameTime();
-  for (auto& line : customLines) {
-    line.update(deltaTime);  // ⭐ PENTING: Panggil update(), bukan updateProgress()!
+  for (auto &line : customLines) {
+    line.update(
+        deltaTime); // ⭐ PENTING: Panggil update(), bukan updateProgress()!
   }
 
   // Cek apakah semua customLines sudah complete DAN semua sudah di-load
   bool allComplete = true;
-  bool allLoaded = (fileManager.getCurrentLoadIndex() >= fileManager.getTotalLoadedLines());
+  bool allLoaded =
+      (fileManager.getCurrentLoadIndex() >= fileManager.getTotalLoadedLines());
 
   // KHUSUS UNTUK BEFORE POLYGON DRAW ⭐ NEW
   if (isBeforePolygonDraw) {
     // Untuk BEFORE_POLYGON_DRAW, custom lines HARUS selesai dulu
     // Cek apakah semua custom lines sudah selesai progressive drawing
     bool allProgressiveComplete = true;
-    for (const auto& line : customLines) {
+    for (const auto &line : customLines) {
       if (line.getProgress() < 1.0f) {
         allProgressiveComplete = false;
         break;
@@ -302,15 +310,17 @@ void ofApp::updateStaggeredCustomLines() {
     if (allProgressiveComplete) {
       // ⭐ PENTING: Apply wave animation HANYA SEKALI (jika belum di-apply)
       if (!waveAnimationApplied) {
-        // Cast ke BasicZelligeTemplate karena applyWaveAnimationToAllCustomLines() method di situ
+        // Cast ke BasicZelligeTemplate karena
+        // applyWaveAnimationToAllCustomLines() method di situ
         if (currentTemplate) {
-          BasicZelligeTemplate* zelligeTemplate = dynamic_cast<BasicZelligeTemplate*>(currentTemplate);
+          BasicZelligeTemplate *zelligeTemplate =
+              dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
           if (zelligeTemplate) {
             zelligeTemplate->applyWaveAnimationToAllCustomLines(this);
           }
         }
-        waveAnimationApplied = true;  // Tandai sudah di-apply
-        waveAnimationTimer = 0.0f;  // Reset timer
+        waveAnimationApplied = true; // Tandai sudah di-apply
+        waveAnimationTimer = 0.0f;   // Reset timer
       }
 
       // ⭐ PENTING: Update timer wave animation setiap frame
@@ -320,14 +330,14 @@ void ofApp::updateStaggeredCustomLines() {
       // Untuk infinite loop wave animation, kita TUNGGU DURASI habis!
       if (waveAnimationTimer >= lineWaveDuration) {
         // Durasi wave animation sudah habis, paksa hapus semua wave animation
-        for (auto& line : customLines) {
-          line.setAnimation(nullptr);  // Hapus wave animation
+        for (auto &line : customLines) {
+          line.setAnimation(nullptr); // Hapus wave animation
         }
 
         // Pindah ke polygon
         loadStage = LOAD_POLYGONS;
-        waveAnimationApplied = false;  // Reset flag untuk next time
-        waveAnimationTimer = 0.0f;  // Reset timer
+        waveAnimationApplied = false; // Reset flag untuk next time
+        waveAnimationTimer = 0.0f;    // Reset timer
 
         // ⭐ PENTING: Load polygons sekarang karena sebelumnya kita hapus
         // Panggil updateSequentialLoad lagi untuk load polygons
@@ -341,7 +351,7 @@ void ofApp::updateStaggeredCustomLines() {
     // Untuk WITH_POLYGON_DRAW, custom lines dan polygons BARENGAN
     // Cek apakah semua custom lines sudah selesai progressive drawing
     bool allProgressiveComplete = true;
-    for (const auto& line : customLines) {
+    for (const auto &line : customLines) {
       if (line.getProgress() < 1.0f) {
         allProgressiveComplete = false;
         break;
@@ -352,21 +362,23 @@ void ofApp::updateStaggeredCustomLines() {
     if (allProgressiveComplete) {
       // ⭐ PENTING: Apply wave animation HANYA SEKALI (jika belum di-apply)
       if (!waveAnimationApplied) {
-        // Cast ke BasicZelligeTemplate karena applyWaveAnimationToAllCustomLines() method di situ
+        // Cast ke BasicZelligeTemplate karena
+        // applyWaveAnimationToAllCustomLines() method di situ
         if (currentTemplate) {
-          BasicZelligeTemplate* zelligeTemplate = dynamic_cast<BasicZelligeTemplate*>(currentTemplate);
+          BasicZelligeTemplate *zelligeTemplate =
+              dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
           if (zelligeTemplate) {
             zelligeTemplate->applyWaveAnimationToAllCustomLines(this);
           }
         }
-        waveAnimationApplied = true;  // Tandai sudah di-apply
+        waveAnimationApplied = true; // Tandai sudah di-apply
       }
 
       // ⭐ PENTING: TUNGGU sampai SEMUA custom lines di-load dari file
       // Jangan pindah ke LOAD_POLYGONS terlalu cepat!
       if (allComplete && allLoaded) {
         loadStage = LOAD_POLYGONS;
-        waveAnimationApplied = false;  // Reset flag untuk next time
+        waveAnimationApplied = false; // Reset flag untuk next time
       }
     }
   }
@@ -375,30 +387,34 @@ void ofApp::updateStaggeredCustomLines() {
   else if (isAfterPolygonDraw) {
     // Untuk AFTER_POLYGON_DRAW, polygons dulu, baru wave animation
     // ⭐ PENTING: JANGAN apply wave animation di sini!
-    // Cukup pindah ke LOAD_POLYGONS, wave animation akan di-apply SETELAH polygon selesai
+    // Cukup pindah ke LOAD_POLYGONS, wave animation akan di-apply SETELAH
+    // polygon selesai
 
-    // ⭐ PENTING: Untuk AFTER_POLYGON_DRAW, pastikan SEMUA custom lines selesai progressive drawing DULU
-    // Cek apakah semua custom lines sudah selesai progressive drawing
+    // ⭐ PENTING: Untuk AFTER_POLYGON_DRAW, pastikan SEMUA custom lines selesai
+    // progressive drawing DULU Cek apakah semua custom lines sudah selesai
+    // progressive drawing
     bool allProgressiveComplete = true;
-    for (const auto& line : customLines) {
+    for (const auto &line : customLines) {
       if (line.getProgress() < 1.0f) {
         allProgressiveComplete = false;
         break;
       }
     }
 
-    // Hanya pindah ke LOAD_POLYGONS jika SEMUA custom lines sudah selesai progressive drawing
+    // Hanya pindah ke LOAD_POLYGONS jika SEMUA custom lines sudah selesai
+    // progressive drawing
     if (allProgressiveComplete && allLoaded) {
       loadStage = LOAD_POLYGONS;
-      waveAnimationApplied = false;  // Reset flag untuk mode lain
+      waveAnimationApplied = false; // Reset flag untuk mode lain
     }
   }
 
   // Pindah ke stage POLYGONS jika semua complete DAN semua sudah di-load
-  // TAPI JANGAN untuk BEFORE_POLYGON_DRAW (karena transisinya sudah ditangani di atas)
+  // TAPI JANGAN untuk BEFORE_POLYGON_DRAW (karena transisinya sudah ditangani
+  // di atas)
   else if (allComplete && allLoaded) {
     loadStage = LOAD_POLYGONS;
-    waveAnimationApplied = false;  // Reset flag untuk mode lain
+    waveAnimationApplied = false; // Reset flag untuk mode lain
   }
 }
 
@@ -416,12 +432,12 @@ void ofApp::updateStaggeredPolygons() {
   // ⭐ PENTING: Update custom lines JUGA agar wave animation tetap berjalan!
   // Ini khusus untuk WITH_POLYGON_DRAW mode
   float deltaTime = ofGetLastFrameTime();
-  for (auto& line : customLines) {
-    line.update(deltaTime);  // Update progressive drawing + wave animation
+  for (auto &line : customLines) {
+    line.update(deltaTime); // Update progressive drawing + wave animation
   }
 
   // Update animation polygons yang BELUM complete saja
-  for (auto& polygon : polygonShapes) {
+  for (auto &polygon : polygonShapes) {
     if (!polygon.isAnimationComplete()) {
       polygon.update(deltaTime);
     }
@@ -430,12 +446,12 @@ void ofApp::updateStaggeredPolygons() {
   // Cek apakah semua polygons sudah complete DAN sequential load sudah selesai
   bool allComplete = true;
   bool allLoaded = !fileManager.isLoadSequentialMode();
-  bool allPolygonsComplete = true;  // ⭐ NEW: Untuk AfterPolygonDraw mode
+  bool allPolygonsComplete = true; // ⭐ NEW: Untuk AfterPolygonDraw mode
 
-  for (const auto& polygon : polygonShapes) {
+  for (const auto &polygon : polygonShapes) {
     if (!polygon.isAnimationComplete()) {
       allComplete = false;
-      allPolygonsComplete = false;  // ⭐ NEW: Polygon belum selesai
+      allPolygonsComplete = false; // ⭐ NEW: Polygon belum selesai
       break;
     }
   }
@@ -444,16 +460,22 @@ void ofApp::updateStaggeredPolygons() {
   if (allComplete && allLoaded) {
     // Apply wave animation ke customLines SETELAH semua selesai di-load ⭐ NEW
     // Cek mode step animation
-    bool isBeforePolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
-    bool isAfterPolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_AFTER_POLYGON_DRAW);
-    bool isWithPolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_WITH_POLYGON_DRAW);
+    bool isBeforePolygonDraw =
+        (lineStepAnimationMode ==
+         LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
+    bool isAfterPolygonDraw = (lineStepAnimationMode ==
+                               LineStepAnimationMode::STEP_AFTER_POLYGON_DRAW);
+    bool isWithPolygonDraw = (lineStepAnimationMode ==
+                              LineStepAnimationMode::STEP_WITH_POLYGON_DRAW);
 
     // Apply wave animation untuk mode WithPolygonDraw dan AfterPolygonDraw
     // Tapi untuk AfterPolygonDraw, tunggu polygon animation selesai dulu!
     if (isWithPolygonDraw || (isAfterPolygonDraw && allPolygonsComplete)) {
-      // Cast ke BasicZelligeTemplate karena applyWaveAnimationToAllCustomLines() method di situ
+      // Cast ke BasicZelligeTemplate karena
+      // applyWaveAnimationToAllCustomLines() method di situ
       if (currentTemplate) {
-        BasicZelligeTemplate* zelligeTemplate = dynamic_cast<BasicZelligeTemplate*>(currentTemplate);
+        BasicZelligeTemplate *zelligeTemplate =
+            dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
         if (zelligeTemplate) {
           zelligeTemplate->applyWaveAnimationToAllCustomLines(this);
         }
@@ -483,8 +505,8 @@ void ofApp::updateScaling() {
   }
 
   // Update radius di setiap shape individual
-  const auto& shapes = currentTemplate->getShapes();
-  for (auto& shape : shapes) {
+  const auto &shapes = currentTemplate->getShapes();
+  for (auto &shape : shapes) {
     shape->setRadius(currentTemplate->radius);
   }
 
@@ -497,8 +519,9 @@ void ofApp::updateScaling() {
 void ofApp::updateCustomLines() {
   fileManager.updateSequentialLoad(customLines, polygonShapes);
   float deltaTime = ofGetLastFrameTime();
-  for (auto& line : customLines) {
-    line.update(deltaTime);  // Update drawing + wave animation (if loaded from .nay) ⭐ NEW
+  for (auto &line : customLines) {
+    line.update(deltaTime); // Update drawing + wave animation (if loaded from
+                            // .nay) ⭐ NEW
   }
 }
 
@@ -506,22 +529,24 @@ void ofApp::updateCustomLines() {
 void ofApp::updatePolygons() {
   float deltaTime = ofGetLastFrameTime();
 
-  // JANGAN update polygons jika sedang staggered load dan belum di stage POLYGONS
-  // KHUSUS untuk BEFORE_POLYGON_DRAW mode - tunggu animasi custom lines selesai dulu
-  bool isBeforePolygonDraw = (lineStepAnimationMode == LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
+  // JANGAN update polygons jika sedang staggered load dan belum di stage
+  // POLYGONS KHUSUS untuk BEFORE_POLYGON_DRAW mode - tunggu animasi custom
+  // lines selesai dulu
+  bool isBeforePolygonDraw = (lineStepAnimationMode ==
+                              LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
   bool shouldUpdatePolygons = true;
 
   if (isStaggeredLoad && loadStage != LOAD_POLYGONS && loadStage != LOAD_DONE) {
     // Cek apakah mode BEFORE_POLYGON_DRAW
     if (isBeforePolygonDraw) {
-      shouldUpdatePolygons = false;  // Jangan update polygons
+      shouldUpdatePolygons = false; // Jangan update polygons
     }
   }
 
   // Hanya update polygons jika diperbolehkan
   if (shouldUpdatePolygons) {
     // Update polygons yang BELUM complete (bebas apa pun modenya)
-    for (auto& polygon : polygonShapes) {
+    for (auto &polygon : polygonShapes) {
       if (!polygon.isAnimationComplete()) {
         polygon.update(deltaTime);
       }
@@ -557,7 +582,6 @@ void ofApp::draw() {
     currentTemplate->draw();
   }
 
-  
   drawUserDots();
 
   // Draw custom lines dan UI elements
@@ -566,8 +590,9 @@ void ofApp::draw() {
   // Reset transform
   ofPopMatrix();
 
-  //ImGUI (always render if context menu, popups, or visible)
-  if (imguiVisible || contextMenu->isVisible() || successPopup->isVisible() || errorPopup->isVisible() || confirmationPopup->isVisible()) {
+  // ImGUI (always render if context menu, popups, or visible)
+  if (imguiVisible || contextMenu->isVisible() || successPopup->isVisible() ||
+      errorPopup->isVisible() || confirmationPopup->isVisible()) {
     drawImGui();
   }
 }
@@ -585,7 +610,7 @@ void ofApp::drawCustomLinesAndUI() {
   // TAPI jangan draw kalau sedang staggered load dan belum di stage POLYGONS
   bool shouldDrawPolygons = true;
   if (isStaggeredLoad && loadStage != LOAD_POLYGONS && loadStage != LOAD_DONE) {
-    shouldDrawPolygons = false;  // Jangan draw polygons
+    shouldDrawPolygons = false; // Jangan draw polygons
   }
 
   if (shouldDrawPolygons) {
@@ -594,7 +619,6 @@ void ofApp::drawCustomLinesAndUI() {
       polygonShapes[i].draw();
     }
   }
-
 
   // Draw preview polyline (sedang drag)
   if (drawState == DRAGGING && currentPolylinePoints.size() > 1) {
@@ -614,7 +638,8 @@ void ofApp::drawCustomLinesAndUI() {
 
   // Draw dot highlights (hover state) - HANYA ketika TIDAK sedang drag DAN dots
   // visible
-  if (drawState != DRAGGING && (!currentTemplate || currentTemplate->dotsVisible)) {
+  if (drawState != DRAGGING &&
+      (!currentTemplate || currentTemplate->dotsVisible)) {
     vector<DotInfo> dots = getAllDots();
     for (auto &dot : dots) {
       if (isMouseOverDot(mousePos, dot.position)) {
@@ -629,9 +654,7 @@ void ofApp::drawCustomLinesAndUI() {
 }
 
 //--------------------------------------------------------------
-void ofApp::keyPressed(int key) {
-	inputManager->handleKeyPressed(key);
-}
+void ofApp::keyPressed(int key) { inputManager->handleKeyPressed(key); }
 
 //--------------------------------------------------------------
 // Interactive Line Creation Helpers
@@ -641,7 +664,7 @@ void ofApp::updateDotsCache() {
   // Iterate semua template shapes dan collect dots secara polymorphic
   // Setiap shape bertanggung jawab untuk menambahkan dots-nya sendiri
   if (currentTemplate) {
-    const auto& shapes = currentTemplate->getShapes();
+    const auto &shapes = currentTemplate->getShapes();
     for (auto &shape : shapes) {
       if (shape) {
         shape->addDotsToCache(cachedDots);
@@ -650,9 +673,11 @@ void ofApp::updateDotsCache() {
   }
 
   // Tambahkan user-created dots ke cache untuk hover detection
-  for (auto& dot : userDots) {
-    if (dot) {
-      dot->addDotsToCache(cachedDots);
+  if (showUserDot) {
+    for (auto &dot : userDots) {
+      if (dot) {
+        dot->addDotsToCache(cachedDots);
+      }
     }
   }
 
@@ -671,447 +696,457 @@ const vector<DotInfo> &ofApp::getAllDots() {
 
 //--------------------------------------------------------------
 bool ofApp::isMouseOverDot(vec2 mousePos, vec2 dotPos) {
-	// Delegate to GeometryUtils
-	return GeometryUtils::isMouseOverDot(mousePos, dotPos, threshold);
+  // Delegate to GeometryUtils
+  return GeometryUtils::isMouseOverDot(mousePos, dotPos, threshold);
 }
 
 bool ofApp::lineExists(vec2 from, vec2 to) {
-	// Delegate to GeometryUtils
-	return GeometryUtils::lineExists(from, to, customLines);
+  // Delegate to GeometryUtils
+  return GeometryUtils::lineExists(from, to, customLines);
 }
 
 //--------------------------------------------------------------
 bool ofApp::isMouseOverLine(vec2 mousePos, vec2 lineStart, vec2 lineEnd,
                             float lineWidth) {
-	// Delegate to GeometryUtils
-	return GeometryUtils::isMouseOverLine(mousePos, lineStart, lineEnd, lineWidth);
+  // Delegate to GeometryUtils
+  return GeometryUtils::isMouseOverLine(mousePos, lineStart, lineEnd,
+                                        lineWidth);
 }
 
 //--------------------------------------------------------------
 float ofApp::distanceToLine(vec2 point, vec2 lineStart, vec2 lineEnd,
                             float curve) {
-	// Delegate to GeometryUtils
-	return GeometryUtils::distanceToLine(point, lineStart, lineEnd, curve);
+  // Delegate to GeometryUtils
+  return GeometryUtils::distanceToLine(point, lineStart, lineEnd, curve);
 }
 
 //--------------------------------------------------------------
 int ofApp::getLineIndexAtPosition(vec2 pos) {
-	// Delegate to GeometryUtils
-	return GeometryUtils::getLineIndexAtPosition(pos, customLines, mouseLineWidth);
+  // Delegate to GeometryUtils
+  return GeometryUtils::getLineIndexAtPosition(pos, customLines,
+                                               mouseLineWidth);
 }
 
 //--------------------------------------------------------------
 void ofApp::pushUndoAction(UndoAction action) {
-	// Saat action baru, clear redo stack (redo tidak valid lagi)
-	clearRedoStack();
+  // Saat action baru, clear redo stack (redo tidak valid lagi)
+  clearRedoStack();
 
-	// Add ke stack, jika sudah full, hapus yang paling lama
-	if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
-		undoStack.erase(undoStack.begin());  // Hapus yang paling lama (front)
-	}
-	undoStack.push_back(action);
+  // Add ke stack, jika sudah full, hapus yang paling lama
+  if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+    undoStack.erase(undoStack.begin()); // Hapus yang paling lama (front)
+  }
+  undoStack.push_back(action);
 }
 
 //--------------------------------------------------------------
-void ofApp::clearUndoStack() {
-	undoStack.clear();
-}
+void ofApp::clearUndoStack() { undoStack.clear(); }
 
 //--------------------------------------------------------------
-void ofApp::clearRedoStack() {
-	redoStack.clear();
-}
+void ofApp::clearRedoStack() { redoStack.clear(); }
 
 //--------------------------------------------------------------
 void ofApp::undo() {
-	if (undoStack.empty()) {
-		return;  // Tidak ada apa-apa untuk di-undo
-	}
+  if (undoStack.empty()) {
+    return; // Tidak ada apa-apa untuk di-undo
+  }
 
-	// Ambil action terakhir
-	UndoAction action = undoStack.back();
-	undoStack.pop_back();
+  // Ambil action terakhir
+  UndoAction action = undoStack.back();
+  undoStack.pop_back();
 
-	// Siapkan redo action (perlu modifikasi untuk CHANGE actions)
-	UndoAction redoAction = action;
+  // Siapkan redo action (perlu modifikasi untuk CHANGE actions)
+  UndoAction redoAction = action;
 
-	// Handle berdasarkan tipe action
-	switch (action.type) {
-		case CREATE_LINE:
-		{
-			// Undo create line = hapus line terakhir
-			if (!customLines.empty()) {
-				// SIMPAN line yang akan dihapus ke redoAction SEBELUM pop_back
-				redoAction.deletedLine = customLines.back();
-				redoAction.deletedLineIndex = static_cast<int>(customLines.size()) - 1;
+  // Handle berdasarkan tipe action
+  switch (action.type) {
+  case CREATE_LINE: {
+    // Undo create line = hapus line terakhir
+    if (!customLines.empty()) {
+      // SIMPAN line yang akan dihapus ke redoAction SEBELUM pop_back
+      redoAction.deletedLine = customLines.back();
+      redoAction.deletedLineIndex = static_cast<int>(customLines.size()) - 1;
 
-				customLines.pop_back();
+      customLines.pop_back();
 
-				// Clear selection jika index yang dipilih tidak valid lagi
-				if (selectionManager.hasSelectedLine()) {
-					// Cek apakah ada selected index yang out of bounds
-					bool hasInvalidIndex = false;
-					for (int index : selectionManager.getSelectedLineIndices()) {
-						if (index >= customLines.size()) {
-							hasInvalidIndex = true;
-							break;
-						}
-					}
-					if (hasInvalidIndex) {
-						selectionManager.clearLineSelection();
-					}
-				}
-			}
-			// Push ke redo stack
-			redoStack.push_back(redoAction);
-			break;
-		}
+      // Clear selection jika index yang dipilih tidak valid lagi
+      if (selectionManager.hasSelectedLine()) {
+        // Cek apakah ada selected index yang out of bounds
+        bool hasInvalidIndex = false;
+        for (int index : selectionManager.getSelectedLineIndices()) {
+          if (index >= customLines.size()) {
+            hasInvalidIndex = true;
+            break;
+          }
+        }
+        if (hasInvalidIndex) {
+          selectionManager.clearLineSelection();
+        }
+      }
+    }
+    // Push ke redo stack
+    redoStack.push_back(redoAction);
+    break;
+  }
 
-		case CREATE_POLYGON:
-		{
-			// Undo create polygon = hapus polygon terakhir
-			if (!polygonShapes.empty()) {
-				// SIMPAN polygon yang akan dihapus ke redoAction SEBELUM pop_back
-				redoAction.deletedPolygon = polygonShapes.back();
-				redoAction.deletedPolygonIndex = static_cast<int>(polygonShapes.size()) - 1;
+  case CREATE_POLYGON: {
+    // Undo create polygon = hapus polygon terakhir
+    if (!polygonShapes.empty()) {
+      // SIMPAN polygon yang akan dihapus ke redoAction SEBELUM pop_back
+      redoAction.deletedPolygon = polygonShapes.back();
+      redoAction.deletedPolygonIndex =
+          static_cast<int>(polygonShapes.size()) - 1;
 
-				polygonShapes.pop_back();
-				selectionManager.clearPolygonSelection();
-			}
-			// Push ke redo stack
-			redoStack.push_back(redoAction);
-			break;
-		}
+      polygonShapes.pop_back();
+      selectionManager.clearPolygonSelection();
+    }
+    // Push ke redo stack
+    redoStack.push_back(redoAction);
+    break;
+  }
 
-		case CREATE_DOT:
-		{
-			// Undo create dot = hapus dot terakhir
-			if (!userDots.empty()) {
-				// SIMPAN position dan radius dot yang akan dihapus ke redoAction SEBELUM pop_back
-				redoAction.deletedDotPos = userDots.back()->getPosition();
-				redoAction.deletedDotRadius = userDots.back()->getRadius();
+  case CREATE_DOT: {
+    // Undo create dot = hapus dot terakhir
+    if (!userDots.empty()) {
+      // SIMPAN position dan radius dot yang akan dihapus ke redoAction SEBELUM
+      // pop_back
+      redoAction.deletedDotPos = userDots.back()->getPosition();
+      redoAction.deletedDotRadius = userDots.back()->getRadius();
 
-				// Hapus dot terakhir
-				userDots.pop_back();
-			}
-			// Push ke redo stack
-			redoStack.push_back(redoAction);
-			break;
-		}
+      // Hapus dot terakhir
+      userDots.pop_back();
+    }
+    // Push ke redo stack
+    redoStack.push_back(redoAction);
+    break;
+  }
 
-		case CHANGE_COLOR_LINE:
-		{
-			// Capture current colors dulu (sebelum restore) untuk redo
-			std::vector<ofColor> currentColors;
-			for (size_t i = 0; i < action.colorIndices.size(); i++) {
-				int idx = static_cast<int>(action.colorIndices[i]);
-				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
-					currentColors.push_back(customLines[idx].getColor());
-				}
-			}
+  case CHANGE_COLOR_LINE: {
+    // Capture current colors dulu (sebelum restore) untuk redo
+    std::vector<ofColor> currentColors;
+    for (size_t i = 0; i < action.colorIndices.size(); i++) {
+      int idx = static_cast<int>(action.colorIndices[i]);
+      if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+        currentColors.push_back(customLines[idx].getColor());
+      }
+    }
 
-			// Restore old colors
-			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
-				int idx = static_cast<int>(action.colorIndices[i]);
-				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
-					customLines[idx].setColor(action.oldColors[i]);
-				}
-			}
+    // Restore old colors
+    for (size_t i = 0;
+         i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
+      int idx = static_cast<int>(action.colorIndices[i]);
+      if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+        customLines[idx].setColor(action.oldColors[i]);
+      }
+    }
 
-			// Setup redo action: redo akan apply new color (current colors)
-			redoAction.oldColors = currentColors;
-			redoStack.push_back(redoAction);
-			break;
-		}
+    // Setup redo action: redo akan apply new color (current colors)
+    redoAction.oldColors = currentColors;
+    redoStack.push_back(redoAction);
+    break;
+  }
 
-		case CHANGE_COLOR_POLYGON:
-		{
-			// Capture current color dulu (sebelum restore) untuk redo
-			ofColor currentColor;
-			if (!action.colorIndices.empty() && action.colorIndices[0] >= 0 && action.colorIndices[0] < static_cast<int>(polygonShapes.size())) {
-				currentColor = polygonShapes[action.colorIndices[0]].getColor();
-			}
+  case CHANGE_COLOR_POLYGON: {
+    // Capture current color dulu (sebelum restore) untuk redo
+    ofColor currentColor;
+    if (!action.colorIndices.empty() && action.colorIndices[0] >= 0 &&
+        action.colorIndices[0] < static_cast<int>(polygonShapes.size())) {
+      currentColor = polygonShapes[action.colorIndices[0]].getColor();
+    }
 
-			// Restore old color
-			if (!action.colorIndices.empty() && !action.oldColors.empty()) {
-				int idx = action.colorIndices[0];
-				if (idx >= 0 && idx < static_cast<int>(polygonShapes.size())) {
-					polygonShapes[idx].setColor(action.oldColors[0]);
-				}
-			}
+    // Restore old color
+    if (!action.colorIndices.empty() && !action.oldColors.empty()) {
+      int idx = action.colorIndices[0];
+      if (idx >= 0 && idx < static_cast<int>(polygonShapes.size())) {
+        polygonShapes[idx].setColor(action.oldColors[0]);
+      }
+    }
 
-			// Setup redo action: redo akan apply new color (current color)
-			if (!redoAction.oldColors.empty()) {
-				redoAction.oldColors[0] = currentColor;
-			}
-			redoStack.push_back(redoAction);
-			break;
-		}
+    // Setup redo action: redo akan apply new color (current color)
+    if (!redoAction.oldColors.empty()) {
+      redoAction.oldColors[0] = currentColor;
+    }
+    redoStack.push_back(redoAction);
+    break;
+  }
 
-		case CHANGE_COLOR_DOT:
-		{
-			// Capture current colors dulu (sebelum restore) untuk redo
-			std::vector<ofColor> currentColors;
-			for (size_t i = 0; i < action.colorIndices.size(); i++) {
-				int idx = static_cast<int>(action.colorIndices[i]);
-				if (idx >= 0 && idx < static_cast<int>(userDots.size()) && userDots[idx]) {
-					currentColors.push_back(userDots[idx]->getColor());
-				}
-			}
+  case CHANGE_COLOR_DOT: {
+    // Capture current colors dulu (sebelum restore) untuk redo
+    std::vector<ofColor> currentColors;
+    for (size_t i = 0; i < action.colorIndices.size(); i++) {
+      int idx = static_cast<int>(action.colorIndices[i]);
+      if (idx >= 0 && idx < static_cast<int>(userDots.size()) &&
+          userDots[idx]) {
+        currentColors.push_back(userDots[idx]->getColor());
+      }
+    }
 
-			// Restore old colors
-			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
-				int idx = static_cast<int>(action.colorIndices[i]);
-				if (idx >= 0 && idx < static_cast<int>(userDots.size()) && userDots[idx]) {
-					userDots[idx]->setColor(action.oldColors[i]);
-				}
-			}
+    // Restore old colors
+    for (size_t i = 0;
+         i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
+      int idx = static_cast<int>(action.colorIndices[i]);
+      if (idx >= 0 && idx < static_cast<int>(userDots.size()) &&
+          userDots[idx]) {
+        userDots[idx]->setColor(action.oldColors[i]);
+      }
+    }
 
-			// Setup redo action: redo akan apply new color (current colors)
-			redoAction.oldColors = currentColors;
-			redoStack.push_back(redoAction);
-			break;
-		}
+    // Setup redo action: redo akan apply new color (current colors)
+    redoAction.oldColors = currentColors;
+    redoStack.push_back(redoAction);
+    break;
+  }
 
-		case DELETE_LINE:
-			// Restore line yang dihapus
-			if (action.deletedLineIndex >= 0 && action.deletedLineIndex <= static_cast<int>(customLines.size())) {
-				customLines.insert(customLines.begin() + action.deletedLineIndex, action.deletedLine);
-			}
-			// Push ke redo stack
-			redoStack.push_back(redoAction);
-			break;
+  case DELETE_LINE:
+    // Restore line yang dihapus
+    if (action.deletedLineIndex >= 0 &&
+        action.deletedLineIndex <= static_cast<int>(customLines.size())) {
+      customLines.insert(customLines.begin() + action.deletedLineIndex,
+                         action.deletedLine);
+    }
+    // Push ke redo stack
+    redoStack.push_back(redoAction);
+    break;
 
-		case DELETE_POLYGON:
-			// Restore polygon yang dihapus
-			if (action.deletedPolygonIndex >= 0 && action.deletedPolygonIndex <= static_cast<int>(polygonShapes.size())) {
-				polygonShapes.insert(polygonShapes.begin() + action.deletedPolygonIndex, action.deletedPolygon);
-			}
-			// Push ke redo stack
-			redoStack.push_back(redoAction);
-			break;
+  case DELETE_POLYGON:
+    // Restore polygon yang dihapus
+    if (action.deletedPolygonIndex >= 0 &&
+        action.deletedPolygonIndex <= static_cast<int>(polygonShapes.size())) {
+      polygonShapes.insert(polygonShapes.begin() + action.deletedPolygonIndex,
+                           action.deletedPolygon);
+    }
+    // Push ke redo stack
+    redoStack.push_back(redoAction);
+    break;
 
-		case DELETE_DOT:
-		{
-			// Restore userDot yang dihapus
-			if (action.deletedDotIndex >= 0 && action.deletedDotIndex <= static_cast<int>(userDots.size())) {
-				auto dotShape = std::make_unique<DotShape>(action.deletedDotPos, "Dot", action.deletedDotRadius);
-				dotShape->progress = 1.0f;
-				dotShape->setLowerBound(action.deletedDotLowerBound);
-				userDots.insert(userDots.begin() + action.deletedDotIndex, std::move(dotShape));
-			}
-			// Push ke redo stack
-			redoStack.push_back(redoAction);
-			break;
-		}
+  case DELETE_DOT: {
+    // Restore userDot yang dihapus
+    if (action.deletedDotIndex >= 0 &&
+        action.deletedDotIndex <= static_cast<int>(userDots.size())) {
+      auto dotShape = std::make_unique<DotShape>(action.deletedDotPos, "Dot",
+                                                 action.deletedDotRadius);
+      dotShape->progress = 1.0f;
+      dotShape->setLowerBound(action.deletedDotLowerBound);
+      userDots.insert(userDots.begin() + action.deletedDotIndex,
+                      std::move(dotShape));
+    }
+    // Push ke redo stack
+    redoStack.push_back(redoAction);
+    break;
+  }
 
-		case CHANGE_CURVE:
-		{
-			// Capture current curves dulu (sebelum restore) untuk redo
-			std::vector<float> currentCurves;
-			for (size_t i = 0; i < action.curveLineIndices.size(); i++) {
-				int idx = static_cast<int>(action.curveLineIndices[i]);
-				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
-					currentCurves.push_back(customLines[idx].getCurve());
-				}
-			}
+  case CHANGE_CURVE: {
+    // Capture current curves dulu (sebelum restore) untuk redo
+    std::vector<float> currentCurves;
+    for (size_t i = 0; i < action.curveLineIndices.size(); i++) {
+      int idx = static_cast<int>(action.curveLineIndices[i]);
+      if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+        currentCurves.push_back(customLines[idx].getCurve());
+      }
+    }
 
-			// Restore old curves
-			for (size_t i = 0; i < action.curveLineIndices.size() && i < action.oldCurves.size(); i++) {
-				int idx = static_cast<int>(action.curveLineIndices[i]);
-				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
-					customLines[idx].setCurve(action.oldCurves[i]);
-				}
-			}
+    // Restore old curves
+    for (size_t i = 0;
+         i < action.curveLineIndices.size() && i < action.oldCurves.size();
+         i++) {
+      int idx = static_cast<int>(action.curveLineIndices[i]);
+      if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+        customLines[idx].setCurve(action.oldCurves[i]);
+      }
+    }
 
-			// Setup redo action: redo akan apply new curve (current curves)
-			redoAction.oldCurves = currentCurves;
-			redoStack.push_back(redoAction);
-			break;
-		}
-	}
+    // Setup redo action: redo akan apply new curve (current curves)
+    redoAction.oldCurves = currentCurves;
+    redoStack.push_back(redoAction);
+    break;
+  }
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::redo() {
-	if (redoStack.empty()) {
-		return;  // Tidak ada apa-apa untuk di-redo
-	}
+  if (redoStack.empty()) {
+    return; // Tidak ada apa-apa untuk di-redo
+  }
 
-	// Ambil redo action terakhir
-	UndoAction action = redoStack.back();
-	redoStack.pop_back();
+  // Ambil redo action terakhir
+  UndoAction action = redoStack.back();
+  redoStack.pop_back();
 
-	// Handle berdasarkan tipe action
-	switch (action.type) {
-		case CREATE_LINE:
-			// Redo create line = create line lagi
-			customLines.push_back(action.deletedLine);
-			// Push langsung ke undo stack (TANPA clearRedoStack)
-			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
-				undoStack.erase(undoStack.begin());
-			}
-			undoStack.push_back(action);
-			break;
+  // Handle berdasarkan tipe action
+  switch (action.type) {
+  case CREATE_LINE:
+    // Redo create line = create line lagi
+    customLines.push_back(action.deletedLine);
+    // Push langsung ke undo stack (TANPA clearRedoStack)
+    if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+      undoStack.erase(undoStack.begin());
+    }
+    undoStack.push_back(action);
+    break;
 
-		case CREATE_POLYGON:
-			// Redo create polygon = create polygon lagi
-			polygonShapes.push_back(action.deletedPolygon);
-			// Push langsung ke undo stack
-			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
-				undoStack.erase(undoStack.begin());
-			}
-			undoStack.push_back(action);
-			break;
+  case CREATE_POLYGON:
+    // Redo create polygon = create polygon lagi
+    polygonShapes.push_back(action.deletedPolygon);
+    // Push langsung ke undo stack
+    if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+      undoStack.erase(undoStack.begin());
+    }
+    undoStack.push_back(action);
+    break;
 
-		case CREATE_DOT:
-			// Redo create dot = buat dot baru dari position dan radius yang tersimpan
-			{
-				auto dotShape = std::make_unique<DotShape>(action.deletedDotPos, "Dot", action.deletedDotRadius);
-				dotShape->progress = 1.0f;
-				userDots.push_back(std::move(dotShape));
-			}
-			// Push langsung ke undo stack
-			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
-				undoStack.erase(undoStack.begin());
-			}
-			undoStack.push_back(action);
-			break;
+  case CREATE_DOT:
+    // Redo create dot = buat dot baru dari position dan radius yang tersimpan
+    {
+      auto dotShape = std::make_unique<DotShape>(action.deletedDotPos, "Dot",
+                                                 action.deletedDotRadius);
+      dotShape->progress = 1.0f;
+      userDots.push_back(std::move(dotShape));
+    }
+    // Push langsung ke undo stack
+    if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+      undoStack.erase(undoStack.begin());
+    }
+    undoStack.push_back(action);
+    break;
 
-		case CHANGE_COLOR_LINE:
-		{
-			// Capture current colors dulu untuk membuat undo action baru
-			UndoAction newUndoAction;
-			newUndoAction.type = CHANGE_COLOR_LINE;
-			newUndoAction.colorIndices = action.colorIndices;
-			newUndoAction.newColor = action.newColor;
+  case CHANGE_COLOR_LINE: {
+    // Capture current colors dulu untuk membuat undo action baru
+    UndoAction newUndoAction;
+    newUndoAction.type = CHANGE_COLOR_LINE;
+    newUndoAction.colorIndices = action.colorIndices;
+    newUndoAction.newColor = action.newColor;
 
-			// Apply redo colors (apply newColor) dan simpan current colors
-			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
-				int idx = action.colorIndices[i];
-				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
-					newUndoAction.oldColors.push_back(customLines[idx].getColor());
-					customLines[idx].setColor(action.newColor);  // Apply NEW color (redo)
-				}
-			}
-			// Push langsung ke undo stack
-			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
-				undoStack.erase(undoStack.begin());
-			}
-			undoStack.push_back(newUndoAction);
-			break;
-		}
+    // Apply redo colors (apply newColor) dan simpan current colors
+    for (size_t i = 0;
+         i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
+      int idx = action.colorIndices[i];
+      if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+        newUndoAction.oldColors.push_back(customLines[idx].getColor());
+        customLines[idx].setColor(action.newColor); // Apply NEW color (redo)
+      }
+    }
+    // Push langsung ke undo stack
+    if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+      undoStack.erase(undoStack.begin());
+    }
+    undoStack.push_back(newUndoAction);
+    break;
+  }
 
-		case CHANGE_COLOR_POLYGON:
-		{
-			// Capture current color
-			UndoAction newUndoActionPoly;
-			newUndoActionPoly.type = CHANGE_COLOR_POLYGON;
-			newUndoActionPoly.newColor = action.newColor;
+  case CHANGE_COLOR_POLYGON: {
+    // Capture current color
+    UndoAction newUndoActionPoly;
+    newUndoActionPoly.type = CHANGE_COLOR_POLYGON;
+    newUndoActionPoly.newColor = action.newColor;
 
-			if (!action.colorIndices.empty()) {
-				int idx = action.colorIndices[0];
-				if (idx >= 0 && idx < static_cast<int>(polygonShapes.size())) {
-					newUndoActionPoly.colorIndices = action.colorIndices;
-					newUndoActionPoly.oldColors.push_back(polygonShapes[idx].getColor());
-					polygonShapes[idx].setColor(action.newColor);  // Apply NEW color (redo)
-				}
-			}
-			// Push langsung ke undo stack
-			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
-				undoStack.erase(undoStack.begin());
-			}
-			undoStack.push_back(newUndoActionPoly);
-			break;
-		}
+    if (!action.colorIndices.empty()) {
+      int idx = action.colorIndices[0];
+      if (idx >= 0 && idx < static_cast<int>(polygonShapes.size())) {
+        newUndoActionPoly.colorIndices = action.colorIndices;
+        newUndoActionPoly.oldColors.push_back(polygonShapes[idx].getColor());
+        polygonShapes[idx].setColor(action.newColor); // Apply NEW color (redo)
+      }
+    }
+    // Push langsung ke undo stack
+    if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+      undoStack.erase(undoStack.begin());
+    }
+    undoStack.push_back(newUndoActionPoly);
+    break;
+  }
 
-		case CHANGE_COLOR_DOT:
-		{
-			// Capture current colors dulu untuk membuat undo action baru
-			UndoAction newUndoAction;
-			newUndoAction.type = CHANGE_COLOR_DOT;
-			newUndoAction.colorIndices = action.colorIndices;
-			newUndoAction.newColor = action.newColor;
+  case CHANGE_COLOR_DOT: {
+    // Capture current colors dulu untuk membuat undo action baru
+    UndoAction newUndoAction;
+    newUndoAction.type = CHANGE_COLOR_DOT;
+    newUndoAction.colorIndices = action.colorIndices;
+    newUndoAction.newColor = action.newColor;
 
-			// Apply redo colors (apply newColor) dan simpan current colors
-			for (size_t i = 0; i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
-				int idx = action.colorIndices[i];
-				if (idx >= 0 && idx < static_cast<int>(userDots.size()) && userDots[idx]) {
-					newUndoAction.oldColors.push_back(userDots[idx]->getColor());
-					userDots[idx]->setColor(action.newColor);  // Apply NEW color (redo)
-				}
-			}
-			// Push langsung ke undo stack
-			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
-				undoStack.erase(undoStack.begin());
-			}
-			undoStack.push_back(newUndoAction);
-			break;
-		}
+    // Apply redo colors (apply newColor) dan simpan current colors
+    for (size_t i = 0;
+         i < action.colorIndices.size() && i < action.oldColors.size(); i++) {
+      int idx = action.colorIndices[i];
+      if (idx >= 0 && idx < static_cast<int>(userDots.size()) &&
+          userDots[idx]) {
+        newUndoAction.oldColors.push_back(userDots[idx]->getColor());
+        userDots[idx]->setColor(action.newColor); // Apply NEW color (redo)
+      }
+    }
+    // Push langsung ke undo stack
+    if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+      undoStack.erase(undoStack.begin());
+    }
+    undoStack.push_back(newUndoAction);
+    break;
+  }
 
-		case DELETE_LINE:
-			// Redo = delete line lagi
-			if (action.deletedLineIndex >= 0 && action.deletedLineIndex < static_cast<int>(customLines.size())) {
-				customLines.erase(customLines.begin() + action.deletedLineIndex);
-			}
-			// Push langsung ke undo stack
-			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
-				undoStack.erase(undoStack.begin());
-			}
-			undoStack.push_back(action);
-			break;
+  case DELETE_LINE:
+    // Redo = delete line lagi
+    if (action.deletedLineIndex >= 0 &&
+        action.deletedLineIndex < static_cast<int>(customLines.size())) {
+      customLines.erase(customLines.begin() + action.deletedLineIndex);
+    }
+    // Push langsung ke undo stack
+    if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+      undoStack.erase(undoStack.begin());
+    }
+    undoStack.push_back(action);
+    break;
 
-		case DELETE_POLYGON:
-			// Redo = delete polygon lagi
-			if (action.deletedPolygonIndex >= 0 && action.deletedPolygonIndex < static_cast<int>(polygonShapes.size())) {
-				polygonShapes.erase(polygonShapes.begin() + action.deletedPolygonIndex);
-			}
-			selectionManager.clearPolygonSelection();
-			// Push langsung ke undo stack
-			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
-				undoStack.erase(undoStack.begin());
-			}
-			undoStack.push_back(action);
-			break;
+  case DELETE_POLYGON:
+    // Redo = delete polygon lagi
+    if (action.deletedPolygonIndex >= 0 &&
+        action.deletedPolygonIndex < static_cast<int>(polygonShapes.size())) {
+      polygonShapes.erase(polygonShapes.begin() + action.deletedPolygonIndex);
+    }
+    selectionManager.clearPolygonSelection();
+    // Push langsung ke undo stack
+    if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+      undoStack.erase(undoStack.begin());
+    }
+    undoStack.push_back(action);
+    break;
 
-		case DELETE_DOT:
-			// Redo = delete userDot lagi
-			if (action.deletedDotIndex >= 0 && action.deletedDotIndex < static_cast<int>(userDots.size())) {
-				userDots.erase(userDots.begin() + action.deletedDotIndex);
-			}
-			selectionManager.clearUserDotSelection();
-			// Push langsung ke undo stack
-			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
-				undoStack.erase(undoStack.begin());
-			}
-			undoStack.push_back(action);
-			break;
+  case DELETE_DOT:
+    // Redo = delete userDot lagi
+    if (action.deletedDotIndex >= 0 &&
+        action.deletedDotIndex < static_cast<int>(userDots.size())) {
+      userDots.erase(userDots.begin() + action.deletedDotIndex);
+    }
+    selectionManager.clearUserDotSelection();
+    // Push langsung ke undo stack
+    if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+      undoStack.erase(undoStack.begin());
+    }
+    undoStack.push_back(action);
+    break;
 
-		case CHANGE_CURVE:
-		{
-			// Capture current curves dan apply redo curves
-			UndoAction newUndoActionCurve;
-			newUndoActionCurve.type = CHANGE_CURVE;
-			newUndoActionCurve.curveLineIndices = action.curveLineIndices;
-			newUndoActionCurve.newCurve = action.newCurve;
+  case CHANGE_CURVE: {
+    // Capture current curves dan apply redo curves
+    UndoAction newUndoActionCurve;
+    newUndoActionCurve.type = CHANGE_CURVE;
+    newUndoActionCurve.curveLineIndices = action.curveLineIndices;
+    newUndoActionCurve.newCurve = action.newCurve;
 
-			for (size_t i = 0; i < action.curveLineIndices.size() && i < action.oldCurves.size(); i++) {
-				int idx = action.curveLineIndices[i];
-				if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
-					newUndoActionCurve.oldCurves.push_back(customLines[idx].getCurve());
-					customLines[idx].setCurve(action.oldCurves[i]);
-				}
-			}
-			// Push langsung ke undo stack
-			if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
-				undoStack.erase(undoStack.begin());
-			}
-			undoStack.push_back(newUndoActionCurve);
-			break;
-		}
-	}
+    for (size_t i = 0;
+         i < action.curveLineIndices.size() && i < action.oldCurves.size();
+         i++) {
+      int idx = action.curveLineIndices[i];
+      if (idx >= 0 && idx < static_cast<int>(customLines.size())) {
+        newUndoActionCurve.oldCurves.push_back(customLines[idx].getCurve());
+        customLines[idx].setCurve(action.oldCurves[i]);
+      }
+    }
+    // Push langsung ke undo stack
+    if (undoStack.size() >= UndoStack::MAX_UNDO_STEPS) {
+      undoStack.erase(undoStack.begin());
+    }
+    undoStack.push_back(newUndoActionCurve);
+    break;
+  }
+  }
 }
-
 
 //--------------------------------------------------------------
 void ofApp::createInvisiblePolygonFromSelected() {
@@ -1121,19 +1156,20 @@ void ofApp::createInvisiblePolygonFromSelected() {
   // 1. Collect all selected lines dengan data endpoint-nya
   struct LineData {
     int index;
-    vec2 start;  // Start point (points[0])
-    vec2 end;    // End point (points[1])
-    vector<vec2> sampledPoints;  // Full sampled points untuk curve
+    vec2 start;                 // Start point (points[0])
+    vec2 end;                   // End point (points[1])
+    vector<vec2> sampledPoints; // Full sampled points untuk curve
   };
   vector<LineData> lines;
 
   // Copy indices ke local vector untuk menghindari iterator invalidation
-  std::vector<int> selectedLineIndices(selectionManager.getSelectedLineIndices().begin(),
-                                       selectionManager.getSelectedLineIndices().end());
+  std::vector<int> selectedLineIndices(
+      selectionManager.getSelectedLineIndices().begin(),
+      selectionManager.getSelectedLineIndices().end());
   for (int lineIndex : selectedLineIndices) {
     if (lineIndex >= 0 && lineIndex < customLines.size()) {
-      const CustomLine& line = customLines[lineIndex];
-      const vector<vec2>& points = line.getPoints();
+      const CustomLine &line = customLines[lineIndex];
+      const vector<vec2> &points = line.getPoints();
 
       if (points.size() >= 2) {
         LineData lineData;
@@ -1147,7 +1183,7 @@ void ofApp::createInvisiblePolygonFromSelected() {
   }
 
   if (lines.size() < 1) {
-    return;  // Tidak ada valid lines
+    return; // Tidak ada valid lines
   }
 
   // 2. Susun lines supaya connected secara berurutan
@@ -1172,7 +1208,8 @@ void ofApp::createInvisiblePolygonFromSelected() {
       } else if (glm::length(lines[i].end - currentEnd) < 1.0f) {
         // Found! End point cocok (butuh reverse)
         LineData reversed = lines[i];
-        std::reverse(reversed.sampledPoints.begin(), reversed.sampledPoints.end());
+        std::reverse(reversed.sampledPoints.begin(),
+                     reversed.sampledPoints.end());
         std::swap(reversed.start, reversed.end);
         orderedLines.push_back(reversed);
         lines.erase(lines.begin() + i);
@@ -1181,7 +1218,8 @@ void ofApp::createInvisiblePolygonFromSelected() {
       }
     }
 
-    // Kalau tidak ketemu yang cocok, coba cari dari awal (untuk handle kasus khusus)
+    // Kalau tidak ketemu yang cocok, coba cari dari awal (untuk handle kasus
+    // khusus)
     if (!found) {
       // Coba connect dari start point line pertama
       vec2 currentStart = orderedLines.front().start;
@@ -1189,14 +1227,16 @@ void ofApp::createInvisiblePolygonFromSelected() {
         if (glm::length(lines[i].end - currentStart) < 1.0f) {
           // Found! End point cocok dengan start point pertama (insert di depan)
           LineData reversed = lines[i];
-          std::reverse(reversed.sampledPoints.begin(), reversed.sampledPoints.end());
+          std::reverse(reversed.sampledPoints.begin(),
+                       reversed.sampledPoints.end());
           std::swap(reversed.start, reversed.end);
           orderedLines.insert(orderedLines.begin(), reversed);
           lines.erase(lines.begin() + i);
           found = true;
           break;
         } else if (glm::length(lines[i].start - currentStart) < 1.0f) {
-          // Found! Start point cocok dengan start point pertama (insert di depan, no reverse)
+          // Found! Start point cocok dengan start point pertama (insert di
+          // depan, no reverse)
           orderedLines.insert(orderedLines.begin(), lines[i]);
           lines.erase(lines.begin() + i);
           found = true;
@@ -1207,15 +1247,16 @@ void ofApp::createInvisiblePolygonFromSelected() {
 
     // Kalau masih tidak ketemu, break untuk avoid infinite loop
     if (!found) {
-      ofLog(OF_LOG_WARNING) << "createInvisiblePolygon - Cannot connect all lines, path is broken";
+      ofLog(OF_LOG_WARNING) << "createInvisiblePolygon - Cannot connect all "
+                               "lines, path is broken";
       break;
     }
   }
 
   // 3. Extract semua titik dari ordered lines
   vector<vec2> allPoints;
-  for (const LineData& lineData : orderedLines) {
-    for (const vec2& p : lineData.sampledPoints) {
+  for (const LineData &lineData : orderedLines) {
+    for (const vec2 &p : lineData.sampledPoints) {
       allPoints.push_back(p);
     }
   }
@@ -1225,8 +1266,7 @@ void ofApp::createInvisiblePolygonFromSelected() {
     return;
   }
 
-  int polygonIndex =
-      static_cast<int>(polygonShapes.size());
+  int polygonIndex = static_cast<int>(polygonShapes.size());
   PolygonShape newPolygon(allPoints, colorManager->getPolygonColor(),
                           polygonIndex);
   polygonShapes.push_back(newPolygon);
@@ -1247,31 +1287,27 @@ void ofApp::createInvisiblePolygonFromSelected() {
 //--------------------------------------------------------------
 // Mouse Event Handlers
 void ofApp::mousePressed(int x, int y, int button) {
-	inputManager->handleMousePressed(x, y, button);
+  inputManager->handleMousePressed(x, y, button);
 }
 
 void ofApp::mouseDragged(int x, int y, int button) {
-	inputManager->handleMouseDragged(x, y, button);
+  inputManager->handleMouseDragged(x, y, button);
 }
 
 void ofApp::mouseReleased(int x, int y, int button) {
-	inputManager->handleMouseReleased(x, y, button);
+  inputManager->handleMouseReleased(x, y, button);
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
-	inputManager->handleMouseScrolled(x, y, scrollX, scrollY);
+  inputManager->handleMouseScrolled(x, y, scrollX, scrollY);
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y) {
-	inputManager->handleMouseMoved(x, y);
-}
+void ofApp::mouseMoved(int x, int y) { inputManager->handleMouseMoved(x, y); }
 
 //--------------------------------------------------------------
-void ofApp::keyReleased(int key) {
-	inputManager->handleKeyReleased(key);
-}
+void ofApp::keyReleased(int key) { inputManager->handleKeyReleased(key); }
 
 //--------------------------------------------------------------
 void ofApp::mouseEntered(int x, int y) {}
@@ -1282,7 +1318,8 @@ void ofApp::dragEvent(ofDragInfo dragInfo) {}
 
 //--------------------------------------------------------------
 void ofApp::startSequentialDrawing() {
-  if (!currentTemplate) return;
+  if (!currentTemplate)
+    return;
 
   // Delegate ke template
   currentTemplate->startSequentialDrawing();
@@ -1300,7 +1337,8 @@ void ofApp::startSequentialDrawing() {
 
 //--------------------------------------------------------------
 void ofApp::toggleLabels() {
-  if (!currentTemplate) return;
+  if (!currentTemplate)
+    return;
 
   // NOTE: ImGui Checkbox SUDAH mengubah nilai labelsVisible
   // Jadi JANGAN toggle lagi, langsung apply saja
@@ -1309,7 +1347,8 @@ void ofApp::toggleLabels() {
 
 //--------------------------------------------------------------
 void ofApp::toggleDots() {
-  if (!currentTemplate) return;
+  if (!currentTemplate)
+    return;
 
   // NOTE: ImGui Checkbox SUDAH mengubah nilai dotsVisible
   // Jadi JANGAN toggle lagi, langsung apply saja
@@ -1317,709 +1356,699 @@ void ofApp::toggleDots() {
 }
 
 //--------------------------------------------------------------
-// (hideAllShapes, showAllShapes, dan setCartesianAxesVisibility sudah dihapus - tidak diperlukan lagi dengan Draw Only concept)
+// (hideAllShapes, showAllShapes, dan setCartesianAxesVisibility sudah dihapus -
+// tidak diperlukan lagi dengan Draw Only concept)
 //--------------------------------------------------------------
 void ofApp::updateLineWidth() {
-    if (!currentTemplate) return;
+  if (!currentTemplate)
+    return;
 
-    // Delegate ke template - pakai nilai yang sudah ada di template
-    currentTemplate->updateLineWidth(currentTemplate->lineWidth);
+  // Delegate ke template - pakai nilai yang sudah ada di template
+  currentTemplate->updateLineWidth(currentTemplate->lineWidth);
 }
 
 //--------------------------------------------------------------
 void ofApp::updateCustomLineColor(ofColor color) {
-	// Delegate ke ColorManager
-	colorManager->updateCustomLineColor(color);
+  // Delegate ke ColorManager
+  colorManager->updateCustomLineColor(color);
 }
 
 //--------------------------------------------------------------
 void ofApp::resetAllCustomLineColor() {
-	// Delegate ke ColorManager
-	colorManager->resetAllCustomLineColor();
+  // Delegate ke ColorManager
+  colorManager->resetAllCustomLineColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::resetSelectedCustomLineColor() {
-	// Delegate ke ColorManager
-	colorManager->resetSelectedCustomLineColor();
+  // Delegate ke ColorManager
+  colorManager->resetSelectedCustomLineColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::updatePolygonColor(ofColor color) {
-	// Delegate ke ColorManager
-	colorManager->updatePolygonColor(color);
+  // Delegate ke ColorManager
+  colorManager->updatePolygonColor(color);
 }
 
 //--------------------------------------------------------------
 void ofApp::resetAllPolygonColor() {
-	// Delegate ke ColorManager
-	colorManager->resetAllPolygonColor();
+  // Delegate ke ColorManager
+  colorManager->resetAllPolygonColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::resetSelectedPolygonColor() {
-	// Delegate ke ColorManager
-	colorManager->resetSelectedPolygonColor();
+  // Delegate ke ColorManager
+  colorManager->resetSelectedPolygonColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::updatePolygonAlpha(uint8_t alpha) {
-	// Delegate ke ColorManager
-	colorManager->updatePolygonAlpha(alpha);
+  // Delegate ke ColorManager
+  colorManager->updatePolygonAlpha(alpha);
 }
 
 //--------------------------------------------------------------
 void ofApp::updateUserDotRadius(float radius) {
-	// Update variabel global
-	userDotRadius = radius;
+  // Update variabel global
+  userDotRadius = radius;
 
-	// Jika ada userDot yang terseleksi, update hanya yang terseleksi
-	if (selectionManager.hasSelectedUserDot()) {
-		const std::set<int>& indices = selectionManager.getSelectedUserDotIndices();
-		for (int index : indices) {
-			if (index >= 0 && index < userDots.size()) {
-				if (userDots[index]) {
-					userDots[index]->setRadius(radius);
-				}
-			}
-		}
-	} else {
-		// Jika tidak ada yang terseleksi, update semua userDots
-		for (auto& dot : userDots) {
-			if (dot) {
-				dot->setRadius(radius);
-			}
-		}
-	}
+  // Jika ada userDot yang terseleksi, update hanya yang terseleksi
+  if (selectionManager.hasSelectedUserDot()) {
+    const std::set<int> &indices = selectionManager.getSelectedUserDotIndices();
+    for (int index : indices) {
+      if (index >= 0 && index < userDots.size()) {
+        if (userDots[index]) {
+          userDots[index]->setRadius(radius);
+        }
+      }
+    }
+  } else {
+    // Jika tidak ada yang terseleksi, update semua userDots
+    for (auto &dot : userDots) {
+      if (dot) {
+        dot->setRadius(radius);
+      }
+    }
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::updateUserDotColor(ofColor color) {
-	// Delegate ke ColorManager
-	colorManager->updateUserDotColor(color);
+  // Delegate ke ColorManager
+  colorManager->updateUserDotColor(color);
 }
 
 //--------------------------------------------------------------
 void ofApp::copyDotColor() {
-	// Delegate ke ColorManager
-	colorManager->copyDotColor();
+  // Delegate ke ColorManager
+  colorManager->copyDotColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::copyPolygonColor() {
-	// Delegate ke ColorManager
-	colorManager->copyPolygonColor();
+  // Delegate ke ColorManager
+  colorManager->copyPolygonColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::copyLineColor() {
-	// Delegate ke ColorManager
-	colorManager->copyLineColor();
+  // Delegate ke ColorManager
+  colorManager->copyLineColor();
 }
 
 //--------------------------------------------------------------
 void ofApp::pasteColorToDot() {
-	// Delegate ke ColorManager
-	colorManager->pasteColorToDot();
+  // Delegate ke ColorManager
+  colorManager->pasteColorToDot();
 }
 
 //--------------------------------------------------------------
 void ofApp::pasteColorToPolygon() {
-	// Delegate ke ColorManager
-	colorManager->pasteColorToPolygon();
+  // Delegate ke ColorManager
+  colorManager->pasteColorToPolygon();
 }
 
 //--------------------------------------------------------------
 void ofApp::pasteColorToLine() {
-	// Delegate ke ColorManager
-	colorManager->pasteColorToLine();
+  // Delegate ke ColorManager
+  colorManager->pasteColorToLine();
 }
 
 //--------------------------------------------------------------
 void ofApp::syncColorPickerFromLoadedLines() {
-	// Ambil warna dari customLine pertama yang diload (jika ada)
-	if (!customLines.empty()) {
-		ofColor loadedColor = customLines[0].getColor();
+  // Ambil warna dari customLine pertama yang diload (jika ada)
+  if (!customLines.empty()) {
+    ofColor loadedColor = customLines[0].getColor();
 
-		// Update global color (ColorManager will sync internally when needed)
-		// colorManager->customLineColor = loadedColor;
+    // Update global color (ColorManager will sync internally when needed)
+    // colorManager->customLineColor = loadedColor;
 
-		// Update UserCustom color picker UI
-		for (auto& gui : guiComponents) {
-			// Cari UserCustom component
-			UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
-			if (userCustom) {
-				userCustom->updateColorFromApp();
-				break; // Found, no need to continue
-			}
-		}
-	}
+    // Update UserCustom color picker UI
+    for (auto &gui : guiComponents) {
+      // Cari UserCustom component
+      UserCustom *userCustom = dynamic_cast<UserCustom *>(gui.get());
+      if (userCustom) {
+        userCustom->updateColorFromApp();
+        break; // Found, no need to continue
+      }
+    }
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::syncColorPickerFromLoadedPolygons() {
-	// Ambil warna dari polygon pertama yang diload (jika ada)
-	if (!polygonShapes.empty()) {
-		ofColor loadedColor = polygonShapes[0].getColor();
+  // Ambil warna dari polygon pertama yang diload (jika ada)
+  if (!polygonShapes.empty()) {
+    ofColor loadedColor = polygonShapes[0].getColor();
 
-		// Update global color (ColorManager will sync internally when needed)
-		// colorManager->polygonColor = loadedColor;
+    // Update global color (ColorManager will sync internally when needed)
+    // colorManager->polygonColor = loadedColor;
 
-		// Update UserCustom color picker UI
-		for (auto& gui : guiComponents) {
-			// Cari UserCustom component
-			UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
-			if (userCustom) {
-				userCustom->updatePolygonColorFromApp();
-				break; // Found, no need to continue
-			}
-		}
-	}
+    // Update UserCustom color picker UI
+    for (auto &gui : guiComponents) {
+      // Cari UserCustom component
+      UserCustom *userCustom = dynamic_cast<UserCustom *>(gui.get());
+      if (userCustom) {
+        userCustom->updatePolygonColorFromApp();
+        break; // Found, no need to continue
+      }
+    }
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::syncUserDotFromLoaded() {
-	// Ambil radius dan warna dari userDot pertama yang diload (jika ada)
-	if (!userDots.empty() && userDots[0]) {
-		float loadedRadius = userDots[0]->getRadius();
-		ofColor loadedColor = userDots[0]->getColor();
+  // Ambil radius dan warna dari userDot pertama yang diload (jika ada)
+  if (!userDots.empty() && userDots[0]) {
+    float loadedRadius = userDots[0]->getRadius();
+    ofColor loadedColor = userDots[0]->getColor();
 
-		// Update global radius dan color
-		userDotRadius = loadedRadius;
-		// colorManager->userDotColor = loadedColor;  // ColorManager will sync internally
+    // Update global radius dan color
+    userDotRadius = loadedRadius;
+    // colorManager->userDotColor = loadedColor;  // ColorManager will sync
+    // internally
 
-		// Update UserCustom color picker UI
-		for (auto& gui : guiComponents) {
-			// Cari UserCustom component
-			UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
-			if (userCustom) {
-				userCustom->updateUserDotColorFromApp();
-				break; // Found, no need to continue
-			}
-		}
-	}
+    // Update UserCustom color picker UI
+    for (auto &gui : guiComponents) {
+      // Cari UserCustom component
+      UserCustom *userCustom = dynamic_cast<UserCustom *>(gui.get());
+      if (userCustom) {
+        userCustom->updateUserDotColorFromApp();
+        break; // Found, no need to continue
+      }
+    }
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::syncColorFromSelectedObjects() {
-	// Delegate ke ColorManager
-	colorManager->syncColorPickersFromSelection();
+  // Delegate ke ColorManager
+  colorManager->syncColorPickersFromSelection();
 
-	// Update SEMUA color picker UI
-	for (auto& gui : guiComponents) {
-		UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
-		if (userCustom) {
-			userCustom->updateUserDotColorFromApp();  // Update userDot color picker
-			userCustom->updateColorFromApp();         // Update customLine color picker
-			userCustom->updatePolygonColorFromApp();  // Update polygon color picker
-			break;
-		}
-	}
+  // Update SEMUA color picker UI
+  for (auto &gui : guiComponents) {
+    UserCustom *userCustom = dynamic_cast<UserCustom *>(gui.get());
+    if (userCustom) {
+      userCustom->updateUserDotColorFromApp(); // Update userDot color picker
+      userCustom->updateColorFromApp();        // Update customLine color picker
+      userCustom->updatePolygonColorFromApp(); // Update polygon color picker
+      break;
+    }
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::clearCustomLinesAndPolygons() {
-	// Jangan hapus jika sedang sequential load
-	if (fileManager.isLoadSequentialMode()) {
-		return; // Aborted, sedang loading
-	}
+  // Jangan hapus jika sedang sequential load
+  if (fileManager.isLoadSequentialMode()) {
+    return; // Aborted, sedang loading
+  }
 
-	// Jangan hapus jika sedang parallel load dan masih ada polygon animasi
-	if (fileManager.isLoadParallelMode()) {
-		// Cek apakah masih ada polygon yang sedang animasi
-		for (const auto &polygon : polygonShapes) {
-			if (polygon.hasAnimation()) {
-				return; // Masih ada polygon yang animasi, tunggu kelar
-			}
-		}
-	}
+  // Jangan hapus jika sedang parallel load dan masih ada polygon animasi
+  if (fileManager.isLoadParallelMode()) {
+    // Cek apakah masih ada polygon yang sedang animasi
+    for (const auto &polygon : polygonShapes) {
+      if (polygon.hasAnimation()) {
+        return; // Masih ada polygon yang animasi, tunggu kelar
+      }
+    }
+  }
 
-	// Hapus semua polygons - delegate ke deleteAllPolygons()
-	deleteAllPolygons();
+  // Hapus semua polygons - delegate ke deleteAllPolygons()
+  deleteAllPolygons();
 
-	// Hapus semua custom lines - delegate ke deleteAllCustomLines()
-	deleteAllCustomLines();
+  // Hapus semua custom lines - delegate ke deleteAllCustomLines()
+  deleteAllCustomLines();
 }
 
 //--------------------------------------------------------------
 void ofApp::deleteAllCustomLines() {
-	// Jangan hapus jika sedang sequential load
-	if (fileManager.isLoadSequentialMode()) {
-		return;
-	}
+  // Jangan hapus jika sedang sequential load
+  if (fileManager.isLoadSequentialMode()) {
+    return;
+  }
 
-	// Hapus semua custom lines
-	if (!fileManager.isLoadParallelMode()) {
-		FileManager::clearCustomLines(customLines);
-	}
-	selectionManager.clearLineSelection();
+  // Hapus semua custom lines
+  if (!fileManager.isLoadParallelMode()) {
+    FileManager::clearCustomLines(customLines);
+  }
+  selectionManager.clearLineSelection();
 }
 
 //--------------------------------------------------------------
 void ofApp::deleteAllPolygons() {
-	// Jangan hapus jika sedang sequential load
-	if (fileManager.isLoadSequentialMode()) {
-		return;
-	}
+  // Jangan hapus jika sedang sequential load
+  if (fileManager.isLoadSequentialMode()) {
+    return;
+  }
 
-	// Hapus semua polygons
-	if (!polygonShapes.empty()) {
-		polygonShapes.clear();
-		selectionManager.clearPolygonSelection();
-	}
+  // Hapus semua polygons
+  if (!polygonShapes.empty()) {
+    polygonShapes.clear();
+    selectionManager.clearPolygonSelection();
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::deleteAllUserDots() {
-	// Hapus semua userDots (duplicat dots)
-	if (!userDots.empty()) {
-		userDots.clear();
-		selectionManager.clearUserDotSelection();
-	}
+  // Hapus semua userDots (duplicat dots)
+  if (!userDots.empty()) {
+    userDots.clear();
+    selectionManager.clearUserDotSelection();
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::deleteSelectedUserDot() {
-	// Cek apakah ada userDot yang terseleksi
-	if (!selectionManager.hasSelectedUserDot()) {
-		return;
-	}
+  // Cek apakah ada userDot yang terseleksi
+  if (!selectionManager.hasSelectedUserDot()) {
+    return;
+  }
 
-	// Hapus SEMUA userDots yang terselect (support multi-delete)
-	// Sort descending agar aman untuk erase
-	const std::set<int>& indices = selectionManager.getSelectedUserDotIndices();
-	vector<int> toDelete(indices.begin(), indices.end());
-	std::sort(toDelete.rbegin(), toDelete.rend()); // Descending
+  // Hapus SEMUA userDots yang terselect (support multi-delete)
+  // Sort descending agar aman untuk erase
+  const std::set<int> &indices = selectionManager.getSelectedUserDotIndices();
+  vector<int> toDelete(indices.begin(), indices.end());
+  std::sort(toDelete.rbegin(), toDelete.rend()); // Descending
 
-	// Push undo action untuk setiap dot yang dihapus (reverse order)
-	for (int index : toDelete) {
-		if (index >= 0 && index < userDots.size()) {
-			UndoAction undoAction;
-			undoAction.type = DELETE_DOT;
-			undoAction.deletedDotPos = userDots[index]->getPosition();
-			undoAction.deletedDotLowerBound = userDots[index]->getLowerBound();
-			undoAction.deletedDotRadius = userDots[index]->getRadius();
-			undoAction.deletedDotIndex = index;
-			pushUndoAction(undoAction);
-		}
-	}
+  // Push undo action untuk setiap dot yang dihapus (reverse order)
+  for (int index : toDelete) {
+    if (index >= 0 && index < userDots.size()) {
+      UndoAction undoAction;
+      undoAction.type = DELETE_DOT;
+      undoAction.deletedDotPos = userDots[index]->getPosition();
+      undoAction.deletedDotLowerBound = userDots[index]->getLowerBound();
+      undoAction.deletedDotRadius = userDots[index]->getRadius();
+      undoAction.deletedDotIndex = index;
+      pushUndoAction(undoAction);
+    }
+  }
 
-	// Hapus dots
-	for (int index : toDelete) {
-		if (index >= 0 && index < userDots.size()) {
-			userDots.erase(userDots.begin() + index);
-		}
-	}
-	selectionManager.clearUserDotSelection();
+  // Hapus dots
+  for (int index : toDelete) {
+    if (index >= 0 && index < userDots.size()) {
+      userDots.erase(userDots.begin() + index);
+    }
+  }
+  selectionManager.clearUserDotSelection();
 }
 
 //--------------------------------------------------------------
 void ofApp::deleteSelectedPolygons() {
-	// Cek apakah ada polygon yang terseleksi
-	if (!selectionManager.hasSelectedPolygon()) {
-		return;
-	}
+  // Cek apakah ada polygon yang terseleksi
+  if (!selectionManager.hasSelectedPolygon()) {
+    return;
+  }
 
-	// Hapus SEMUA polygons yang terselect (support multi-delete)
-	// Sort descending agar aman untuk erase
-	vector<int> toDelete(selectionManager.getSelectedPolygonIndices().begin(),
-						 selectionManager.getSelectedPolygonIndices().end());
-	std::sort(toDelete.rbegin(), toDelete.rend()); // Descending
+  // Hapus SEMUA polygons yang terselect (support multi-delete)
+  // Sort descending agar aman untuk erase
+  vector<int> toDelete(selectionManager.getSelectedPolygonIndices().begin(),
+                       selectionManager.getSelectedPolygonIndices().end());
+  std::sort(toDelete.rbegin(), toDelete.rend()); // Descending
 
-	// Push undo action untuk setiap polygon yang dihapus (reverse order)
-	for (int index : toDelete) {
-		if (index >= 0 && index < polygonShapes.size()) {
-			UndoAction undoAction;
-			undoAction.type = DELETE_POLYGON;
-			undoAction.deletedPolygon = polygonShapes[index];
-			undoAction.deletedPolygonIndex = index;
-			pushUndoAction(undoAction);
-		}
-	}
+  // Push undo action untuk setiap polygon yang dihapus (reverse order)
+  for (int index : toDelete) {
+    if (index >= 0 && index < polygonShapes.size()) {
+      UndoAction undoAction;
+      undoAction.type = DELETE_POLYGON;
+      undoAction.deletedPolygon = polygonShapes[index];
+      undoAction.deletedPolygonIndex = index;
+      pushUndoAction(undoAction);
+    }
+  }
 
-	// Hapus polygons
-	for (int index : toDelete) {
-		if (index >= 0 && index < polygonShapes.size()) {
-			polygonShapes.erase(polygonShapes.begin() + index);
-		}
-	}
-	selectionManager.clearPolygonSelection();
+  // Hapus polygons
+  for (int index : toDelete) {
+    if (index >= 0 && index < polygonShapes.size()) {
+      polygonShapes.erase(polygonShapes.begin() + index);
+    }
+  }
+  selectionManager.clearPolygonSelection();
 }
 
 //--------------------------------------------------------------
 void ofApp::cleanCanvas() {
-	// Tampilkan confirmation popup dulu
-	// Callback akan memanggil cleanCanvasInternal() saat user klik Yes
-	confirmationPopup->show(
-		"Clean Canvas",
-		"Are you sure you want to clean the canvas?\n\nEverything on the canvas will be deleted.",
-		"Yes, Clean",
-		"Cancel",
-		[this]() {
-			// User klik Yes, execute clean
-			cleanCanvasInternal();
-		}
-	);
+  // Tampilkan confirmation popup dulu
+  // Callback akan memanggil cleanCanvasInternal() saat user klik Yes
+  confirmationPopup->show(
+      "Clean Canvas",
+      "Are you sure you want to clean the canvas?\n\nEverything on the canvas "
+      "will be deleted.",
+      "Yes, Clean", "Cancel", [this]() {
+        // User klik Yes, execute clean
+        cleanCanvasInternal();
+      });
 }
 
 //--------------------------------------------------------------
 void ofApp::cleanCanvasInternal() {
-    // Skip kalau sedang load sequential
-    if (fileManager.isLoadSequentialMode()) {
-        return;
-    }
+  // Skip kalau sedang load sequential
+  if (fileManager.isLoadSequentialMode()) {
+    return;
+  }
 
-    // Hapus semua polygons dan custom lines
-    clearCustomLinesAndPolygons();
+  // Hapus semua polygons dan custom lines
+  clearCustomLinesAndPolygons();
 
-    // Hapus semua userDots
-    userDots.clear();
-    selectionManager.clearUserDotSelection();
+  // Hapus semua userDots
+  userDots.clear();
+  selectionManager.clearUserDotSelection();
 
-    // Benar-benar HAPUS semua template shapes - delegate ke template
-    if (currentTemplate) {
-        currentTemplate->clearAllShapes();
-    }
+  // Benar-benar HAPUS semua template shapes - delegate ke template
+  if (currentTemplate) {
+    currentTemplate->clearAllShapes();
+  }
 
-    // Reset semua color pickers ke warna biru default
-    colorManager->resetAllColorPickers();
+  // Reset semua color pickers ke warna biru default
+  colorManager->resetAllColorPickers();
 
-    // Reset UserDot settings ke default
-    showUserDot = true;      // Checkbox Dot menjadi checked
-    userDotRadius = 8.0f;     // Slider radius ke default (8.0f)
+  // Reset UserDot settings ke default
+  showUserDot = true;   // Checkbox Dot menjadi checked
+  userDotRadius = 8.0f; // Slider radius ke default (8.0f)
 }
 
 //--------------------------------------------------------------
 void ofApp::resetTransform() {
-	// Reset canvas transform ke default values
-	canvasTranslation = vec2(0, 0);
-	canvasRotation = 0.0f;
-	canvasZoom = 1.0f;
+  // Reset canvas transform ke default values
+  canvasTranslation = vec2(0, 0);
+  canvasRotation = 0.0f;
+  canvasZoom = 1.0f;
 }
 
 //--------------------------------------------------------------
 void ofApp::toggleSacredGeometryWindow() {
-    if (!imguiVisible || !showSacredGeometry) {
-        // Show SacredGeometry window
-        imguiVisible = true;
-        showSacredGeometry = true;
-        // Jangan hide Playground, biarkan user punya banyak windows terbuka
+  if (!imguiVisible || !showSacredGeometry) {
+    // Show SacredGeometry window
+    imguiVisible = true;
+    showSacredGeometry = true;
+    // Jangan hide Playground, biarkan user punya banyak windows terbuka
 
-        // Set windowOpen flag di SacredGeometry
-        for (auto& gui : guiComponents) {
-            SacredGeometry* sacredGeo = dynamic_cast<SacredGeometry*>(gui.get());
-            if (sacredGeo) {
-                sacredGeo->showWindow();
-                break;
-            }
-        }
-    } else {
-        // SacredGeometry already visible, focus it
-        for (auto& gui : guiComponents) {
-            SacredGeometry* sacredGeo = dynamic_cast<SacredGeometry*>(gui.get());
-            if (sacredGeo) {
-                sacredGeo->focusWindow();
-                break;
-            }
-        }
+    // Set windowOpen flag di SacredGeometry
+    for (auto &gui : guiComponents) {
+      SacredGeometry *sacredGeo = dynamic_cast<SacredGeometry *>(gui.get());
+      if (sacredGeo) {
+        sacredGeo->showWindow();
+        break;
+      }
     }
+  } else {
+    // SacredGeometry already visible, focus it
+    for (auto &gui : guiComponents) {
+      SacredGeometry *sacredGeo = dynamic_cast<SacredGeometry *>(gui.get());
+      if (sacredGeo) {
+        sacredGeo->focusWindow();
+        break;
+      }
+    }
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::togglePlaygroundWindow() {
-    if (!imguiVisible || !showPlayground) {
-        // Show Playground window
-        imguiVisible = true;
-        showPlayground = true;
-        // Jangan hide SacredGeometry, biarkan user punya banyak windows terbuka
+  if (!imguiVisible || !showPlayground) {
+    // Show Playground window
+    imguiVisible = true;
+    showPlayground = true;
+    // Jangan hide SacredGeometry, biarkan user punya banyak windows terbuka
 
-        // Set windowOpen flag di Playground
-        for (auto& gui : guiComponents) {
-            Playground* playground = dynamic_cast<Playground*>(gui.get());
-            if (playground) {
-                playground->showWindow();
-                break;
-            }
-        }
-    } else {
-        // Playground already visible, focus it
-        for (auto& gui : guiComponents) {
-            Playground* playground = dynamic_cast<Playground*>(gui.get());
-            if (playground) {
-                playground->focusWindow();
-                break;
-            }
-        }
+    // Set windowOpen flag di Playground
+    for (auto &gui : guiComponents) {
+      Playground *playground = dynamic_cast<Playground *>(gui.get());
+      if (playground) {
+        playground->showWindow();
+        break;
+      }
     }
+  } else {
+    // Playground already visible, focus it
+    for (auto &gui : guiComponents) {
+      Playground *playground = dynamic_cast<Playground *>(gui.get());
+      if (playground) {
+        playground->focusWindow();
+        break;
+      }
+    }
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::toggleUserCustomWindow() {
-    if (!imguiVisible || !showUserCustom) {
-        // Show UserCustom window
-        imguiVisible = true;
-        showUserCustom = true;
-        // Jangan hide SacredGeometry dan Playground, biarkan user punya banyak windows terbuka
+  if (!imguiVisible || !showUserCustom) {
+    // Show UserCustom window
+    imguiVisible = true;
+    showUserCustom = true;
+    // Jangan hide SacredGeometry dan Playground, biarkan user punya banyak
+    // windows terbuka
 
-        // Set windowOpen flag di UserCustom
-        for (auto& gui : guiComponents) {
-            UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
-            if (userCustom) {
-                userCustom->showWindow();
-                break;
-            }
-        }
-    } else {
-        // UserCustom already visible, focus it
-        for (auto& gui : guiComponents) {
-            UserCustom* userCustom = dynamic_cast<UserCustom*>(gui.get());
-            if (userCustom) {
-                userCustom->focusWindow();
-                break;
-            }
-        }
+    // Set windowOpen flag di UserCustom
+    for (auto &gui : guiComponents) {
+      UserCustom *userCustom = dynamic_cast<UserCustom *>(gui.get());
+      if (userCustom) {
+        userCustom->showWindow();
+        break;
+      }
     }
+  } else {
+    // UserCustom already visible, focus it
+    for (auto &gui : guiComponents) {
+      UserCustom *userCustom = dynamic_cast<UserCustom *>(gui.get());
+      if (userCustom) {
+        userCustom->focusWindow();
+        break;
+      }
+    }
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::toggleSelectionInfoWindow() {
-	if (!imguiVisible || !showSelectionInfo) {
-		// Show SelectionInfo window
-		imguiVisible = true;
-		showSelectionInfo = true;
-		selectionInfo->showWindow();
-	} else {
-		// SelectionInfo already visible, focus it
-		selectionInfo->focusWindow();
-	}
+  if (!imguiVisible || !showSelectionInfo) {
+    // Show SelectionInfo window
+    imguiVisible = true;
+    showSelectionInfo = true;
+    selectionInfo->showWindow();
+  } else {
+    // SelectionInfo already visible, focus it
+    selectionInfo->focusWindow();
+  }
 }
 
 //--------------------------------------------------------------
-void ofApp::duplicateDotAbove() {
-	duplicateManager->duplicateDotAbove();
-}
+void ofApp::duplicateDotAbove() { duplicateManager->duplicateDotAbove(); }
 
 //--------------------------------------------------------------
-void ofApp::duplicateDotBelow() {
-	duplicateManager->duplicateDotBelow();
-}
+void ofApp::duplicateDotBelow() { duplicateManager->duplicateDotBelow(); }
 
 //--------------------------------------------------------------
-void ofApp::duplicateDotLeft() {
-	duplicateManager->duplicateDotLeft();
-}
+void ofApp::duplicateDotLeft() { duplicateManager->duplicateDotLeft(); }
 
 //--------------------------------------------------------------
-void ofApp::duplicateDotRight() {
-	duplicateManager->duplicateDotRight();
-}
+void ofApp::duplicateDotRight() { duplicateManager->duplicateDotRight(); }
 
 //--------------------------------------------------------------
-void ofApp::duplicateDotTrack() {
-	duplicateManager->duplicateDotTrack();
-}
+void ofApp::duplicateDotTrack() { duplicateManager->duplicateDotTrack(); }
 
 //--------------------------------------------------------------
-void ofApp::duplicateLineR180() {
-	duplicateManager->duplicateLineR180();
-}
+void ofApp::duplicateLineR180() { duplicateManager->duplicateLineR180(); }
 
 //--------------------------------------------------------------
 void ofApp::drawUserDots() {
 
-    // Hanya draw userDot jika showUserDot == true
-    if (showUserDot) {
-        for (auto& dot : userDots) {
-            if (dot) {
-                dot->draw();
-            }
-        }
+  // Hanya draw userDot jika showUserDot == true
+  if (showUserDot) {
+    for (auto &dot : userDots) {
+      if (dot) {
+        dot->draw();
+      }
     }
+  }
 
-    // Label sudah dihapus, diganti dengan ImGui tooltip di ObjectTooltip
+  // Label sudah dihapus, diganti dengan ImGui tooltip di ObjectTooltip
 }
 
 //--------------------------------------------------------------
 void ofApp::scaleCustomLinesAndPolygons(float oldRadius, float newRadius) {
-	// Hitung rasio scaling
-	float scaleRatio = newRadius / oldRadius;
+  // Hitung rasio scaling
+  float scaleRatio = newRadius / oldRadius;
 
-	// Hindari scaling jika ratio ~1 (untuk performance dan presisi)
-	if (std::abs(scaleRatio - 1.0f) < 0.0001f) {
-		return;
-	}
+  // Hindari scaling jika ratio ~1 (untuk performance dan presisi)
+  if (std::abs(scaleRatio - 1.0f) < 0.0001f) {
+    return;
+  }
 
-	// Scale semua customLines
-	for (auto& line : customLines) {
-		vector<vec2> points = line.getPoints();
-		for (auto& point : points) {
-			point = point * scaleRatio;  // Scale setiap titik
-		}
-		line.setPoints(points);
+  // Scale semua customLines
+  for (auto &line : customLines) {
+    vector<vec2> points = line.getPoints();
+    for (auto &point : points) {
+      point = point * scaleRatio; // Scale setiap titik
+    }
+    line.setPoints(points);
 
-		// Scale juga curve parameter agar kelengkungan proporsional
-		float oldCurve = line.getCurve();
-		float newCurve = oldCurve * scaleRatio;
-		line.setCurve(newCurve);
-	}
+    // Scale juga curve parameter agar kelengkungan proporsional
+    float oldCurve = line.getCurve();
+    float newCurve = oldCurve * scaleRatio;
+    line.setCurve(newCurve);
+  }
 
-	// Scale semua polygons
-	for (auto& polygon : polygonShapes) {
-		vector<vec2> vertices = polygon.getVertices();
-		for (auto& vertex : vertices) {
-			vertex = vertex * scaleRatio;  // Scale setiap vertex
-		}
-		polygon.setVertices(vertices);
-	}
+  // Scale semua polygons
+  for (auto &polygon : polygonShapes) {
+    vector<vec2> vertices = polygon.getVertices();
+    for (auto &vertex : vertices) {
+      vertex = vertex * scaleRatio; // Scale setiap vertex
+    }
+    polygon.setVertices(vertices);
+  }
 
-	// Scale semua userDots (duplikat dots)
-	for (auto& dot : userDots) {
-		if (dot) {
-			// Scale posisi userDot
-			vec2 currentPos = dot->getPosition();
-			vec2 newPos = currentPos * scaleRatio;
-			dot->setPosition(newPos);
+  // Scale semua userDots (duplikat dots)
+  for (auto &dot : userDots) {
+    if (dot) {
+      // Scale posisi userDot
+      vec2 currentPos = dot->getPosition();
+      vec2 newPos = currentPos * scaleRatio;
+      dot->setPosition(newPos);
 
-			// Scale juga lowerBound (posisi parent dot)
-			vec2 currentLowerBound = dot->getLowerBound();
-			vec2 newLowerBound = currentLowerBound * scaleRatio;
-			dot->setLowerBound(newLowerBound);
-		}
-	}
+      // Scale juga lowerBound (posisi parent dot)
+      vec2 currentLowerBound = dot->getLowerBound();
+      vec2 newLowerBound = currentLowerBound * scaleRatio;
+      dot->setLowerBound(newLowerBound);
+    }
+  }
 }
 
 //--------------------------------------------------------------
 bool ofApp::isCanvasEmpty() {
-	// Cek apakah ada template shapes
-	if (currentTemplate && !currentTemplate->getShapes().empty()) {
-		return false;  // Ada template shapes, canvas tidak kosong
-	}
+  // Cek apakah ada template shapes
+  if (currentTemplate && !currentTemplate->getShapes().empty()) {
+    return false; // Ada template shapes, canvas tidak kosong
+  }
 
-	// Cek customLines
-	if (!customLines.empty()) {
-		return false;  // Ada customLines, canvas tidak kosong
-	}
+  // Cek customLines
+  if (!customLines.empty()) {
+    return false; // Ada customLines, canvas tidak kosong
+  }
 
-	// Cek polygons
-	if (!polygonShapes.empty()) {
-		return false;  // Ada polygons, canvas tidak kosong
-	}
+  // Cek polygons
+  if (!polygonShapes.empty()) {
+    return false; // Ada polygons, canvas tidak kosong
+  }
 
-	return true;  // Canvas benar-bener kosong
+  return true; // Canvas benar-bener kosong
 }
 
 //--------------------------------------------------------------
 vec2 ofApp::screenToWorld(vec2 screenPos) {
-	// Delegate to GeometryUtils
-	return GeometryUtils::screenToWorld(screenPos, canvasTranslation, canvasZoom, canvasRotation);
+  // Delegate to GeometryUtils
+  return GeometryUtils::screenToWorld(screenPos, canvasTranslation, canvasZoom,
+                                      canvasRotation);
 }
 
 //--------------------------------------------------------------
 void ofApp::exit() {
   // Cleanup jika ada
 
-    //ImGUI
-    exitImGui();
+  // ImGUI
+  exitImGui();
 }
 
 void ofApp::setupImGui() {
-    IMGUI_CHECKVERSION(); //cek versi imgui.h and imgui.cpp harus sama
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    ImGui::StyleColorsDark();
-    ImGui_ImplOpenGL3_Init();
-    HWND hwnd = ofGetWin32Window();
-    ImGui_ImplWin32_Init(hwnd);
+  IMGUI_CHECKVERSION(); // cek versi imgui.h and imgui.cpp harus sama
+  ImGui::CreateContext();
+  ImGuiIO &io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  ImGui::StyleColorsDark();
+  ImGui_ImplOpenGL3_Init();
+  HWND hwnd = ofGetWin32Window();
+  ImGui_ImplWin32_Init(hwnd);
 
-    // Initialize GUI Components
-    guiComponents.push_back(std::make_unique<MenuBar>(this));
-    guiComponents.push_back(std::make_unique<SacredGeometry>(this));
-    guiComponents.push_back(std::make_unique<Playground>(this));
-    guiComponents.push_back(std::make_unique<UserCustom>(this));
+  // Initialize GUI Components
+  guiComponents.push_back(std::make_unique<MenuBar>(this));
+  guiComponents.push_back(std::make_unique<SacredGeometry>(this));
+  guiComponents.push_back(std::make_unique<Playground>(this));
+  guiComponents.push_back(std::make_unique<UserCustom>(this));
 
-    // Initialize Context Menu (bukan bagian dari guiComponents karena draw-nya khusus)
-    contextMenu = std::make_unique<ContextMenu>(this);
+  // Initialize Context Menu (bukan bagian dari guiComponents karena draw-nya
+  // khusus)
+  contextMenu = std::make_unique<ContextMenu>(this);
 
-    // Initialize popup (not in guiComponents, drawn separately)
-    successPopup = std::make_unique<SuccessPopup>(this);
-    errorPopup = std::make_unique<ErrorPopup>(this);
-    confirmationPopup = std::make_unique<ConfirmationPopup>(this);
+  // Initialize popup (not in guiComponents, drawn separately)
+  successPopup = std::make_unique<SuccessPopup>(this);
+  errorPopup = std::make_unique<ErrorPopup>(this);
+  confirmationPopup = std::make_unique<ConfirmationPopup>(this);
 
-    // Initialize Selection Info window
-    selectionInfo = std::make_unique<SelectionInfo>(this);
+  // Initialize Selection Info window
+  selectionInfo = std::make_unique<SelectionInfo>(this);
 
-    // Initialize Object Tooltip manager
-    objectTooltip = std::make_unique<ObjectTooltip>(this);
+  // Initialize Object Tooltip manager
+  objectTooltip = std::make_unique<ObjectTooltip>(this);
 }
-
 
 //--------------------------------------------------------------
 void ofApp::drawImGui() {
-    // Skip ImGui render jika window minimized (DisplaySize = 0,0)
-    int width = ofGetWidth();
-    int height = ofGetHeight();
+  // Skip ImGui render jika window minimized (DisplaySize = 0,0)
+  int width = ofGetWidth();
+  int height = ofGetHeight();
 
-    if (width <= 0 || height <= 0) {
-        return;  // Skip ImGui render jika window minimized
-    }
+  if (width <= 0 || height <= 0) {
+    return; // Skip ImGui render jika window minimized
+  }
 
-    // Update display size BEFORE NewFrame! (WAJIB!)
-    ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(width, height);
+  // Update display size BEFORE NewFrame! (WAJIB!)
+  ImGuiIO &io = ImGui::GetIO();
+  io.DisplaySize = ImVec2(width, height);
 
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui::NewFrame();
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui::NewFrame();
 
-    // Draw GUI components
-    // MenuBar (component 0) selalu draw jika imguiVisible
-    if (imguiVisible && !guiComponents.empty()) {
-        guiComponents[0]->draw();  // MenuBar
-    }
+  // Draw GUI components
+  // MenuBar (component 0) selalu draw jika imguiVisible
+  if (imguiVisible && !guiComponents.empty()) {
+    guiComponents[0]->draw(); // MenuBar
+  }
 
-    // SacredGeometry (component 1)
-    if (imguiVisible && showSacredGeometry && guiComponents.size() > 1) {
-        guiComponents[1]->draw();  // SacredGeometry
-    }
+  // SacredGeometry (component 1)
+  if (imguiVisible && showSacredGeometry && guiComponents.size() > 1) {
+    guiComponents[1]->draw(); // SacredGeometry
+  }
 
-    // Playground (component 2)
-    if (imguiVisible && showPlayground && guiComponents.size() > 2) {
-        guiComponents[2]->draw();  // Playground
-    }
+  // Playground (component 2)
+  if (imguiVisible && showPlayground && guiComponents.size() > 2) {
+    guiComponents[2]->draw(); // Playground
+  }
 
-    // UserCustom (component 3)
-    if (imguiVisible && showUserCustom && guiComponents.size() > 3) {
-        guiComponents[3]->draw();  // UserCustom
-    }
+  // UserCustom (component 3)
+  if (imguiVisible && showUserCustom && guiComponents.size() > 3) {
+    guiComponents[3]->draw(); // UserCustom
+  }
 
-    // Draw popup dialogs
-    successPopup->draw();
-    errorPopup->draw();
-    confirmationPopup->draw();
+  // Draw popup dialogs
+  successPopup->draw();
+  errorPopup->draw();
+  confirmationPopup->draw();
 
-    // Draw Selection Info window
-    if (imguiVisible && showSelectionInfo) {
-        selectionInfo->draw();
-    }
+  // Draw Selection Info window
+  if (imguiVisible && showSelectionInfo) {
+    selectionInfo->draw();
+  }
 
-    // Draw tooltips (SELALU render, tidak tergantung imguiVisible)
-    objectTooltip->draw();
+  // Draw tooltips (SELALU render, tidak tergantung imguiVisible)
+  objectTooltip->draw();
 
-    // Draw context menu (SELALU render terlepas dari imguiVisible)
-    contextMenu->draw();
+  // Draw context menu (SELALU render terlepas dari imguiVisible)
+  contextMenu->draw();
 
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+  ImGui::Render();
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 void ofApp::exitImGui() {
-    //Shutdown OpenGL3 Backend
-    ImGui_ImplOpenGL3_Shutdown();
+  // Shutdown OpenGL3 Backend
+  ImGui_ImplOpenGL3_Shutdown();
 
-    //Shutdown Win32 Backend
-    ImGui_ImplWin32_Shutdown();
+  // Shutdown Win32 Backend
+  ImGui_ImplWin32_Shutdown();
 
-    //Destroy ImGui Context
-    ImGui::DestroyContext();
+  // Destroy ImGui Context
+  ImGui::DestroyContext();
 }
-

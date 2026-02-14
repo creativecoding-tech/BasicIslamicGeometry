@@ -2,184 +2,232 @@
 #include "../../ofApp.h"
 #include <vector>
 
-SelectionInfo::SelectionInfo(ofApp* app) : app(app) {
-}
+SelectionInfo::SelectionInfo(ofApp *app) : app(app) {}
 
 //--------------------------------------------------------------
-SelectionInfo::~SelectionInfo() {
-}
+SelectionInfo::~SelectionInfo() {}
 
 //--------------------------------------------------------------
-void SelectionInfo::focusWindow() {
-	focusRequested = true;
-}
+void SelectionInfo::focusWindow() { focusRequested = true; }
 
 //--------------------------------------------------------------
-void SelectionInfo::showWindow() {
-	windowOpen = true;
-}
+void SelectionInfo::showWindow() { windowOpen = true; }
 
 //--------------------------------------------------------------
 void SelectionInfo::draw() {
-	ImGui::SetNextWindowSize(ImVec2(350, 300), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(350, 300), ImGuiCond_FirstUseEver);
 
-	// Center window di screen
-	float screenWidth = ofGetWidth();
-	float screenHeight = ofGetHeight();
-	float windowWidth = 350.0f;
-	float windowHeight = 300.0f;
-	ImGui::SetNextWindowPos(ImVec2((screenWidth - windowWidth) / 2.0f, (screenHeight - windowHeight) / 2.0f), ImGuiCond_FirstUseEver);
+  // Center window di screen
+  float screenWidth = ofGetWidth();
+  float screenHeight = ofGetHeight();
+  float windowWidth = 350.0f;
+  float windowHeight = 300.0f;
+  ImGui::SetNextWindowPos(ImVec2((screenWidth - windowWidth) / 2.0f,
+                                 (screenHeight - windowHeight) / 2.0f),
+                          ImGuiCond_FirstUseEver);
 
-	// Focus window jika di-request
-	if (focusRequested) {
-		ImGui::SetNextWindowFocus();
-		focusRequested = false;
-	}
+  // Focus window jika di-request
+  if (focusRequested) {
+    ImGui::SetNextWindowFocus();
+    focusRequested = false;
+  }
 
-	// Begin window dengan close button (windowOpen flag)
-	if (ImGui::Begin("Selection Info", &windowOpen, ImGuiWindowFlags_None)) {
-		// Cek apakah ada selection
-		bool hasSelection = (app->selectionManager.hasSelectedUserDot() ||
-							app->selectionManager.hasSelectedLine() ||
-							app->selectionManager.hasSelectedPolygon());
+  // Begin window dengan close button (windowOpen flag)
+  if (ImGui::Begin("Selection Info", &windowOpen, ImGuiWindowFlags_None)) {
+    // Cek apakah ada selection
+    bool hasSelection = (app->selectionManager.hasSelectedUserDot() ||
+                         app->selectionManager.hasSelectedLine() ||
+                         app->selectionManager.hasSelectedPolygon());
 
-		if (!hasSelection) {
-			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "No objects selected");
-		} else {
-			// Tampilkan info untuk selected dots
-			if (app->selectionManager.hasSelectedUserDot()) {
-				ImGui::Text("Selected Dots: %d", app->selectionManager.getSelectedUserDotCount());
+    if (!hasSelection) {
+      ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "No objects selected");
+    } else {
+      // Tampilkan info untuk selected dots
+      if (app->selectionManager.hasSelectedUserDot()) {
+        ImGui::Text("Selected Dots: %d",
+                    app->selectionManager.getSelectedUserDotCount());
 
-				const std::set<int>& indices = app->selectionManager.getSelectedUserDotIndices();
-				for (auto it = indices.begin(); it != indices.end(); ++it) {
-					int dotIndex = *it;
-					if (dotIndex >= 0 && dotIndex < app->userDots.size()) {
-						auto& dot = app->userDots[dotIndex];
-						if (dot) {
-							float radius = dot->getRadius();
-							ofColor color = dot->getColor();
-							vec2 dotPos = dot->getPosition();
-							vec2 lowerBound = dot->getLowerBound();
+        const std::set<int> &indices =
+            app->selectionManager.getSelectedUserDotIndices();
+        for (auto it = indices.begin(); it != indices.end(); ++it) {
+          int dotIndex = *it;
+          if (dotIndex >= 0 && dotIndex < app->userDots.size()) {
+            auto &dot = app->userDots[dotIndex];
+            if (dot) {
+              float radius = dot->getRadius();
+              ofColor color = dot->getColor();
+              vec2 dotPos = dot->getPosition();
+              vec2 lowerBound = dot->getLowerBound();
 
-							// Header: dot[index]
-							ImGui::Bullet();
-							ImGui::Text("dot[%d]", dotIndex);
+              // Header: dot[index]
+              ImGui::Bullet();
+              ImGui::Text("dot[%d]", dotIndex);
 
-							// Indent properties
-							ImGui::Indent();
+              // Indent properties
+              ImGui::Indent();
 
-							// Info: radius
-							ImGui::Text("radius: %.1f", radius);
+              // Info: radius
+              ImGui::Text("radius: %.1f", radius);
 
-							// Info: color
-							ImGui::Text("color: rgba(%d, %d, %d, %d)",
-								color.r, color.g, color.b, color.a);
+              // Info: color
+              ImGui::Text("color: rgba(%d, %d, %d, %d)", color.r, color.g,
+                          color.b, color.a);
 
-							// Info: offset (horizontal atau vertical)
-							if (dotPos.x != lowerBound.x) {
-								// Horizontal offset
-								float offsetX = dotPos.x - lowerBound.x;
-								ImGui::Text("offset = %.1f", offsetX);
-							} else {
-								// Vertical offset
-								float offsetY = dotPos.y - lowerBound.y;
-								ImGui::Text("offset = %.1f", offsetY);
-							}
+              // Info: offset (horizontal atau vertical)
+              if (dotPos.x != lowerBound.x) {
+                // Horizontal offset
+                float offsetX = dotPos.x - lowerBound.x;
+                ImGui::Text("offset = %.1f", offsetX);
+              } else {
+                // Vertical offset
+                float offsetY = dotPos.y - lowerBound.y;
+                ImGui::Text("offset = %.1f", offsetY);
+              }
 
-							// Unindent
-							ImGui::Unindent();
-						}
-					}
-				}
-				ImGui::Separator();
-			}
+              // Unindent
+              ImGui::Unindent();
+            }
+          }
+        }
+        ImGui::Separator();
+      }
 
-			// Tampilkan info untuk selected lines
-			if (app->selectionManager.hasSelectedLine()) {
-				ImGui::Text("Selected Lines: %d", app->selectionManager.getSelectedLineCount());
+      // Tampilkan info untuk selected lines
+      if (app->selectionManager.hasSelectedLine()) {
+        ImGui::Text("Selected Lines: %d",
+                    app->selectionManager.getSelectedLineCount());
 
-				// Copy indices ke local vector untuk menghindari iterator invalidation
-				std::vector<int> selectedLineIndices(app->selectionManager.getSelectedLineIndices().begin(),
-				                                     app->selectionManager.getSelectedLineIndices().end());
-				for (int lineIndex : selectedLineIndices) {
-					if (lineIndex >= 0 && lineIndex < app->customLines.size()) {
-						CustomLine& line = app->customLines[lineIndex];
+        // Copy indices ke local vector untuk menghindari iterator invalidation
+        std::vector<int> selectedLineIndices(
+            app->selectionManager.getSelectedLineIndices().begin(),
+            app->selectionManager.getSelectedLineIndices().end());
+        for (int lineIndex : selectedLineIndices) {
+          if (lineIndex >= 0 && lineIndex < app->customLines.size()) {
+            CustomLine &line = app->customLines[lineIndex];
 
-						// Header: customLine[index] atau DcustomLine[index]
-						ImGui::Bullet();
-						if (line.getIsDuplicate()) {
-							ImGui::Text("DcustomLine[%d]", lineIndex);
-						} else {
-							ImGui::Text("customLine[%d]", lineIndex);
-						}
+            // Header: customLine[index] atau DcustomLine[index]
+            ImGui::Bullet();
+            if (line.getIsDuplicate()) {
+              ImGui::Text("DcustomLine[%d]", lineIndex);
+            } else {
+              ImGui::Text("customLine[%d]", lineIndex);
+            }
 
-						// Indent properties
-						ImGui::Indent();
+            // Indent properties
+            ImGui::Indent();
 
-						// Info: curve
-						float curve = line.getCurve();
-						ImGui::Text("curve: %.1f", curve);
+            // Info: curve
+            float curve = line.getCurve();
+            ImGui::Text("curve: %.1f", curve);
 
-						// Info: color
-						ofColor color = line.getColor();
-						ImGui::Text("color: rgba(%d, %d, %d, %d)",
-							color.r, color.g, color.b, color.a);
+            // Info: color
+            ofColor color = line.getColor();
+            ImGui::Text("color: rgba(%d, %d, %d, %d)", color.r, color.g,
+                        color.b, color.a);
 
-						// Info: lock (hanya untuk DcustomLine)
-						if (line.getIsDuplicate()) {
-							AxisLock lockState = line.getAxisLock();
-							const char* lockStr = "";
-							switch (lockState) {
-								case AxisLock::NONE: lockStr = "NONE"; break;
-								case AxisLock::LOCK_X: lockStr = "LOCK_X"; break;
-								case AxisLock::LOCK_Y: lockStr = "LOCK_Y"; break;
-								case AxisLock::LOCK_BOTH: lockStr = "LOCK_BOTH"; break;
-							}
-							ImGui::Text("lock: %s", lockStr);
-						}
+            // Info: lock (hanya untuk DcustomLine)
+            if (line.getIsDuplicate()) {
+              AxisLock lockState = line.getAxisLock();
+              const char *lockStr = "";
+              switch (lockState) {
+              case AxisLock::NONE:
+                lockStr = "NONE";
+                break;
+              case AxisLock::LOCK_X:
+                lockStr = "LOCK_X";
+                break;
+              case AxisLock::LOCK_Y:
+                lockStr = "LOCK_Y";
+                break;
+              case AxisLock::LOCK_BOTH:
+                lockStr = "LOCK_BOTH";
+                break;
+              }
+              ImGui::Text("lock: %s", lockStr);
+            }
 
-						// Unindent
-						ImGui::Unindent();
-					}
-				}
-				ImGui::Separator();
-			}
+            // Unindent
+            ImGui::Unindent();
+          }
+        }
+        ImGui::Separator();
 
-			// Tampilkan info untuk selected polygons
-			if (app->selectionManager.hasSelectedPolygon()) {
-				ImGui::Text("Selected Polygons: %d", app->selectionManager.getSelectedPolygonCount());
+        // NEW: Jika ada tepat 2 garis yang dipilih, tampilkan jarak antar
+        // keduanya
+        if (app->selectionManager.getSelectedLineCount() == 2) {
+          // Copy indices ke local vector untuk menghindari iterator
+          // invalidation
+          // (Meskipun di sini kita cuma baca, tapi konsisten dengan method
+          // lain)
+          std::vector<int> indices(
+              app->selectionManager.getSelectedLineIndices().begin(),
+              app->selectionManager.getSelectedLineIndices().end());
 
-				const std::set<int>& indices = app->selectionManager.getSelectedPolygonIndices();
-				for (auto it = indices.begin(); it != indices.end(); ++it) {
-					int polyIndex = *it;
-					if (polyIndex >= 0 && polyIndex < app->polygonShapes.size()) {
-						PolygonShape& poly = app->polygonShapes[polyIndex];
+          if (indices.size() >= 2) {
+            int idx1 = indices[0];
+            int idx2 = indices[1];
 
-						// Header: polygon[index]
-						ImGui::Bullet();
-						ImGui::Text("polygon[%d]", poly.getIndex());
+            if (idx1 >= 0 && idx1 < app->customLines.size() && idx2 >= 0 &&
+                idx2 < app->customLines.size()) {
 
-						// Indent properties
-						ImGui::Indent();
+              const CustomLine &line1 = app->customLines[idx1];
+              const CustomLine &line2 = app->customLines[idx2];
+              const vector<vec2> &points1 = line1.getPoints();
+              const vector<vec2> &points2 = line2.getPoints();
 
-						// Info: vertices count
-						int vertexCount = static_cast<int>(poly.getVertices().size());
-						ImGui::Text("vertices: %d", vertexCount);
+              if (points1.size() >= 2 && points2.size() >= 2) {
+                // Hitung titik tengah dari line 1 (t = 0.5)
+                vec2 midPoint1 = line1.getPointAt(0.5f);
 
-						// Info: color
-						ofColor color = poly.getColor();
-						ImGui::Text("color: rgba(%d, %d, %d, %d)",
-							color.r, color.g, color.b, color.a);
+                // Hitung jarak dari midpoint line 1 ke line 2
+                // Menggunakan GeometryUtils::distanceToLine helper
+                float dist = GeometryUtils::distanceToLine(
+                    midPoint1, points2[0], points2[1], line2.getCurve());
 
-						// Unindent
-						ImGui::Unindent();
-					}
-				}
-			}
-		}
-	}
-	ImGui::End();
+                ImGui::Text("Distance (Offset): %.1f", dist);
+              }
+            }
+          }
+        }
+      }
 
-	// Sync window open state ke app
-	app->showSelectionInfo = windowOpen;
+      // Tampilkan info untuk selected polygons
+      if (app->selectionManager.hasSelectedPolygon()) {
+        ImGui::Text("Selected Polygons: %d",
+                    app->selectionManager.getSelectedPolygonCount());
+
+        const std::set<int> &indices =
+            app->selectionManager.getSelectedPolygonIndices();
+        for (auto it = indices.begin(); it != indices.end(); ++it) {
+          int polyIndex = *it;
+          if (polyIndex >= 0 && polyIndex < app->polygonShapes.size()) {
+            PolygonShape &poly = app->polygonShapes[polyIndex];
+
+            // Header: polygon[index]
+            ImGui::Bullet();
+            ImGui::Text("polygon[%d]", poly.getIndex());
+
+            // Indent properties
+            ImGui::Indent();
+
+            // Info: vertices count
+            int vertexCount = static_cast<int>(poly.getVertices().size());
+            ImGui::Text("vertices: %d", vertexCount);
+
+            // Info: color
+            ofColor color = poly.getColor();
+            ImGui::Text("color: rgba(%d, %d, %d, %d)", color.r, color.g,
+                        color.b, color.a);
+
+            // Unindent
+            ImGui::Unindent();
+          }
+        }
+      }
+    }
+  }
+  ImGui::End();
+
+  // Sync window open state ke app
+  app->showSelectionInfo = windowOpen;
 }

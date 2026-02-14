@@ -57,19 +57,22 @@ void InputManager::handleMousePressed(int x, int y, int button) {
     }
 
     // CEK 1.5: Klik kanan pada USERDOT (duplicate dot) yang terseleksi
-    for (int i = 0; i < app->userDots.size(); i++) {
-      if (app->userDots[i]) {
-        vec2 dotPos = app->userDots[i]->getPosition();
-        float dist = glm::length(adjustedMousePos - dotPos);
-        if (dist < 15.0f) {
-          // Hanya tampilkan context menu jika userDot terseleksi
-          if (app->selectionManager.isUserDotSelected(i)) {
-            app->contextMenu->setHoveredDotPos(dotPos);
-            app->contextMenu->setIsUserDotContext(
-                true); // Flag bahwa ini dari userDot
-            app->contextMenu->showWindow(ContextMenu::DOT_CONTEXT, vec2(x, y));
-            app->imguiVisible = true;
-            return;
+    if (app->showUserDot) {
+      for (int i = 0; i < app->userDots.size(); i++) {
+        if (app->userDots[i]) {
+          vec2 dotPos = app->userDots[i]->getPosition();
+          float dist = glm::length(adjustedMousePos - dotPos);
+          if (dist < 15.0f) {
+            // Hanya tampilkan context menu jika userDot terseleksi
+            if (app->selectionManager.isUserDotSelected(i)) {
+              app->contextMenu->setHoveredDotPos(dotPos);
+              app->contextMenu->setIsUserDotContext(
+                  true); // Flag bahwa ini dari userDot
+              app->contextMenu->showWindow(ContextMenu::DOT_CONTEXT,
+                                           vec2(x, y));
+              app->imguiVisible = true;
+              return;
+            }
           }
         }
       }
@@ -121,16 +124,18 @@ void InputManager::handleMousePressed(int x, int y, int button) {
                                      app->canvasZoom, app->canvasRotation);
 
     // CEK USER DOTS DULU (priority tertinggi)
-    for (int i = 0; i < app->userDots.size(); i++) {
-      if (app->userDots[i]) {
-        vec2 dotPos = app->userDots[i]->getPosition();
-        float dist = glm::length(adjustedMousePos - dotPos);
-        if (dist < 15.0f) {
-          // Toggle selection userDot
-          app->selectionManager.toggleUserDotSelection(i);
-          app->syncColorFromSelectedObjects(); // Sync global color dari
-                                               // selected object
-          return;                              // Jangan lanjut ke logic lain
+    if (app->showUserDot) {
+      for (int i = 0; i < app->userDots.size(); i++) {
+        if (app->userDots[i]) {
+          vec2 dotPos = app->userDots[i]->getPosition();
+          float dist = glm::length(adjustedMousePos - dotPos);
+          if (dist < 15.0f) {
+            // Toggle selection userDot
+            app->selectionManager.toggleUserDotSelection(i);
+            app->syncColorFromSelectedObjects(); // Sync global color dari
+                                                 // selected object
+            return;                              // Jangan lanjut ke logic lain
+          }
         }
       }
     }
@@ -171,20 +176,22 @@ void InputManager::handleMousePressed(int x, int y, int button) {
 
     // CEK USER DOTS (normal click tanpa CTRL)
     bool clickedOnUserDot = false;
-    for (int i = 0; i < app->userDots.size(); i++) {
-      if (app->userDots[i]) {
-        vec2 dotPos = app->userDots[i]->getPosition();
-        // Gunakan threshold yang lebih besar untuk userDot (15px) agar mudah
-        // diklik
-        float dist = glm::length(adjustedMousePos - dotPos);
-        if (dist < 15.0f) {
-          // Single select (hapus yang lama, select yang baru)
-          app->selectionManager.clearUserDotSelection();
-          app->selectionManager.selectUserDot(i);
-          clickedOnUserDot = true;
-          app->syncColorFromSelectedObjects(); // Sync global color dari
-                                               // selected userDot
-          // JANGAN return, biarkan lanjut ke line creation
+    if (app->showUserDot) {
+      for (int i = 0; i < app->userDots.size(); i++) {
+        if (app->userDots[i]) {
+          vec2 dotPos = app->userDots[i]->getPosition();
+          // Gunakan threshold yang lebih besar untuk userDot (15px) agar mudah
+          // diklik
+          float dist = glm::length(adjustedMousePos - dotPos);
+          if (dist < 15.0f) {
+            // Single select (hapus yang lama, select yang baru)
+            app->selectionManager.clearUserDotSelection();
+            app->selectionManager.selectUserDot(i);
+            clickedOnUserDot = true;
+            app->syncColorFromSelectedObjects(); // Sync global color dari
+                                                 // selected userDot
+            // JANGAN return, biarkan lanjut ke line creation
+          }
         }
       }
     }
@@ -367,73 +374,79 @@ void InputManager::handleMouseScrolled(int x, int y, float scrollX,
 
   // Handle scroll untuk tracked dot (Duplicate Dot Track dari customLine)
   // Priority: tracked dot > regular userDot
-  for (int i = 0; i < app->userDots.size(); i++) {
-    if (i >= 0 && i < app->userDots.size()) {
-      if (app->userDots[i] && app->userDots[i]->hasTrackMode()) {
-        // Check if this dot is selected
-        if (app->selectionManager.isUserDotSelected(i)) {
-          int trackLineIndex = app->userDots[i]->getTrackLineIndex();
+  if (app->showUserDot) {
+    for (int i = 0; i < app->userDots.size(); i++) {
+      if (i >= 0 && i < app->userDots.size()) {
+        if (app->userDots[i] && app->userDots[i]->hasTrackMode()) {
+          // Check if this dot is selected
+          if (app->selectionManager.isUserDotSelected(i)) {
+            int trackLineIndex = app->userDots[i]->getTrackLineIndex();
 
-          // Validasi trackLineIndex
-          if (trackLineIndex >= 0 && trackLineIndex < app->customLines.size()) {
-            const CustomLine &line = app->customLines[trackLineIndex];
-            const vector<vec2> &points = line.getPoints();
+            // Validasi trackLineIndex
+            if (trackLineIndex >= 0 &&
+                trackLineIndex < app->customLines.size()) {
+              const CustomLine &line = app->customLines[trackLineIndex];
+              const vector<vec2> &points = line.getPoints();
 
-            if (points.size() >= 2) {
-              vec2 startPos = points[0];
-              vec2 endPos = points[1];
-              vec2 currentPos = app->userDots[i]->getPosition();
+              if (points.size() >= 2) {
+                vec2 startPos = points[0];
+                vec2 endPos = points[1];
+                vec2 currentPos = app->userDots[i]->getPosition();
 
-              // NEW LOGIC: Support Curved Lines
-              // 1. Dapatkan posisi t saat ini di kurva (0.0 - 1.0)
-              float currentT =
-                  line.getClosestT(app->userDots[i]->getPosition());
+                // NEW LOGIC: Support Curved Lines
+                // 1. Dapatkan posisi t saat ini di kurva (0.0 - 1.0)
+                float currentT =
+                    line.getClosestT(app->userDots[i]->getPosition());
 
-              // 2. Dapatkan panjang kurva untuk kalkulasi kecepatan scroll yang
-              // konsisten
-              float curveLength = line.getApproxLength();
+                // 2. Dapatkan panjang kurva untuk kalkulasi kecepatan scroll
+                // yang konsisten
+                float curveLength = line.getApproxLength();
 
-              // Scroll speed
-              float scrollSpeed = 2.0f;
-              float scrollAmount = 0.0f;
+                // Scroll speed
+                float scrollSpeed = 2.0f;
+                float scrollAmount = 0.0f;
 
-              ImGuiIO &io = ImGui::GetIO();
-              float wheelY = io.MouseWheel;
+                ImGuiIO &io = ImGui::GetIO();
+                float wheelY = io.MouseWheel;
 
-              if (wheelY != 0.0f) {
-                scrollAmount = wheelY * scrollSpeed;
-              }
+                if (wheelY != 0.0f) {
+                  scrollAmount = wheelY * scrollSpeed;
+                }
 
-              if (curveLength > 0.0f) {
-                // 3. Konversi pixel scroll ke perubahan t
-                float deltaT = scrollAmount / curveLength;
+                if (curveLength > 0.0f) {
+                  // 3. Konversi pixel scroll ke perubahan t
+                  float deltaT = scrollAmount / curveLength;
 
-                // 4. Update t dan clamp (dengan margin agar tidak sampai ujung line)
-                // Track dot tidak boleh mencapai ujung customLine/DcustomLine
-                float trackTMargin = 0.05f;  // 5% margin di setiap ujung
-                float newT = ofClamp(currentT + deltaT, trackTMargin, 1.0f - trackTMargin);
+                  // 4. Update t dan clamp (dengan margin agar tidak sampai
+                  // ujung line) Track dot tidak boleh mencapai ujung
+                  // customLine/DcustomLine
+                  float trackTMargin = 0.05f; // 5% margin di setiap ujung
+                  float newT = ofClamp(currentT + deltaT, trackTMargin,
+                                       1.0f - trackTMargin);
 
-                // 5. Dapatkan posisi baru di kurva
-                vec2 newPos = line.getPointAt(newT);
+                  // 5. Dapatkan posisi baru di kurva
+                  vec2 newPos = line.getPointAt(newT);
 
-                // Update posisi dot
-                app->userDots[i]->setPosition(newPos);
+                  // Update posisi dot
+                  app->userDots[i]->setPosition(newPos);
 
-                // Update connected customLines (jika ada)
-                for (auto &customLine : app->customLines) {
-                  vector<vec2> linePoints = customLine.getPoints();
-                  bool lineUpdated = false;
+                  // Update connected customLines (jika ada)
+                  for (auto &customLine : app->customLines) {
+                    vector<vec2> linePoints = customLine.getPoints();
+                    bool lineUpdated = false;
 
-                  for (size_t j = 0; j < linePoints.size(); j++) {
-                    // Jika point sama dengan posisi lama, update ke posisi baru
-                    if (glm::length(linePoints[j] - currentPos) < 0.1f) {
-                      linePoints[j] = newPos;
-                      lineUpdated = true;
+                    for (size_t j = 0; j < linePoints.size(); j++) {
+                      // Jika point sama dengan posisi lama, update ke posisi
+                      // baru
+                      if (glm::length(linePoints[j] - currentPos) < 0.1f) {
+                        linePoints[j] = newPos;
+                        lineUpdated = true;
+                      }
                     }
-                  }
 
-                  if (lineUpdated) {
-                    customLine.setPoints(linePoints);
+                    if (lineUpdated) {
+                      customLine.setPoints(linePoints);
+                    }
                   }
                 }
               }
@@ -445,7 +458,7 @@ void InputManager::handleMouseScrolled(int x, int y, float scrollX,
   }
 
   // Handle scroll userDot (vertical untuk above/below, horizontal untuk left)
-  if (app->selectionManager.hasSelectedUserDot()) {
+  if (app->showUserDot && app->selectionManager.hasSelectedUserDot()) {
     float scrollSpeed = 2.0f; // Kecepatan scroll (lebih presise)
 
     // Scroll semua selected dots
