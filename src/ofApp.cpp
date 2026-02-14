@@ -289,11 +289,14 @@ void ofApp::updateStaggeredCustomLines() {
   // allLinesLoaded sudah didefinisikan di atas (line 285 kira-kira)
 
   // Logic Step Animation:
-  if (lineStepAnimationMode == STEP_WITH_POLYGON_DRAW ||
-      lineStepAnimationMode == STEP_AFTER_POLYGON_DRAW) {
-    // Untuk With/After Polygon Draw, DISBURSE (matikan) animation selama proses
-    // loading lines Animation baru aktif setelah SEMUA lines selesai loading
-    // (siap masuk fase polygon)
+  if (lineStepAnimationMode == STEP_AFTER_POLYGON_DRAW) {
+    // Untuk After Polygon Draw, animation MATI total selama fase load lines
+    // Animation baru nyala setelah POLYGONS selesai (di handle di
+    // updateStaggeredPolygons)
+    shouldAnimate = false;
+  } else if (lineStepAnimationMode == STEP_WITH_POLYGON_DRAW) {
+    // Untuk With Polygon Draw, animation mati SELAMA load lines
+    // Animation nyala setelah SEMUA lines loaded (siap masuk fase polygon)
     if (!allLinesLoaded) {
       shouldAnimate = false;
     }
