@@ -265,21 +265,35 @@ void ofApp::updateStaggeredCustomLines() {
 
   // Sequential load: updateSequentialLoad akan menambah customLines bertahap
   size_t previousSize = customLines.size();
-  size_t previousPolygonSize =
-      polygonShapes.size(); // Simpan ukuran polygons sebelum load
 
-  fileManager.updateSequentialLoad(customLines, polygonShapes);
+  // ⭐ PENTING: Jangan load polygon jika sedang menunggu animasi (Before
+  // Polygon Draw) Stop panggil updateSequentialLoad jika semua lines sudah
+  // loaded tapi kita masih di stage LOAD_CUSTOMLINES
+  bool allLinesLoaded =
+      (fileManager.getCurrentLoadIndex() >= fileManager.getTotalLoadedLines());
 
-  // UNTUK BEFORE_POLYGON_DRAW: Hapus polygons yang baru ditambah agar tidak
-  // muncul di screen
-  if (isBeforePolygonDraw && polygonShapes.size() > previousPolygonSize) {
-    // Hapus polygons yang baru ditambah (resize ke ukuran sebelumnya)
-    polygonShapes.resize(previousPolygonSize);
+  if (!allLinesLoaded || !isBeforePolygonDraw) {
+    fileManager.updateSequentialLoad(customLines, polygonShapes);
   }
+
+  // NOTE: Tidak perlu lagi menghapus polygon yang "terlanjur" diload karena
+  // kita cegah di atas
 
   // Sync ColorPicker saat customLines pertama kali muncul (sequential load)
   if (previousSize == 0 && !customLines.empty()) {
     syncColorPickerFromLoadedLines();
+  }
+
+  // ⭐ PENTING: Apply/Update wave animation SETIAP FRAME agar:
+  // 1. Line yang baru di-load langsung dapat animation
+  // 2. Line yang sudah selesai drawing (progress >= 1.0) langsung animasi
+  // 3. Slider changes (speed/amplitude/frequency) langsung berefek real-time
+  if (currentTemplate) {
+    BasicZelligeTemplate *zelligeTemplate =
+        dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
+    if (zelligeTemplate) {
+      zelligeTemplate->applyWaveAnimationToAllCustomLines(this);
+    }
   }
 
   // Update semua customLines yang sudah ada (progressive drawing + animation)
@@ -308,18 +322,9 @@ void ofApp::updateStaggeredCustomLines() {
 
     // Jika semua custom lines sudah selesai progressive drawing
     if (allProgressiveComplete) {
-      // ⭐ PENTING: Apply wave animation HANYA SEKALI (jika belum di-apply)
+      // Initializer flag untuk timer (pengganti waveAnimationApplied yang dulu)
       if (!waveAnimationApplied) {
-        // Cast ke BasicZelligeTemplate karena
-        // applyWaveAnimationToAllCustomLines() method di situ
-        if (currentTemplate) {
-          BasicZelligeTemplate *zelligeTemplate =
-              dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
-          if (zelligeTemplate) {
-            zelligeTemplate->applyWaveAnimationToAllCustomLines(this);
-          }
-        }
-        waveAnimationApplied = true; // Tandai sudah di-apply
+        waveAnimationApplied = true; // Tandai timer start
         waveAnimationTimer = 0.0f;   // Reset timer
       }
 
@@ -328,7 +333,8 @@ void ofApp::updateStaggeredCustomLines() {
 
       // ⭐ PENTING: Cek apakah durasi wave animation sudah habis
       // Untuk infinite loop wave animation, kita TUNGGU DURASI habis!
-      if (waveAnimationTimer >= lineWaveDuration) {
+      // Jika duration 0, anggap infinite (JANGAN auto-stop/skip)
+      if (lineWaveDuration > 0.0f && waveAnimationTimer >= lineWaveDuration) {
         // Durasi wave animation sudah habis, paksa hapus semua wave animation
         for (auto &line : customLines) {
           line.setAnimation(nullptr); // Hapus wave animation

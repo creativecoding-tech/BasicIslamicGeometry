@@ -1,576 +1,651 @@
 #include "BasicZelligeTemplate.h"
-#include "../../shape/CircleShape.h"
-#include "../../shape/CartesianAxes.h"
-#include "../../shape/CrossLine.h"
-#include "../../shape/ParallelogramLine.h"
-#include "../../shape/RectangleLine.h"
-#include "../../shape/OctagramLine.h"
 #include "../../anim/WaveLineAnimation.h"
-#include "../../operation/FileManager.h"
 #include "../../imgui/imgui.h"
 #include "../../ofApp.h"
+#include "../../operation/FileManager.h"
+#include "../../shape/CartesianAxes.h"
+#include "../../shape/CircleShape.h"
+#include "../../shape/CrossLine.h"
+#include "../../shape/OctagramLine.h"
+#include "../../shape/ParallelogramLine.h"
+#include "../../shape/RectangleLine.h"
+
 
 using glm::vec2;
 
 //--------------------------------------------------------------
-std::string BasicZelligeTemplate::getName() {
-	return "Basic Zellige";
-}
+std::string BasicZelligeTemplate::getName() { return "Basic Zellige"; }
 
 //--------------------------------------------------------------
 std::string BasicZelligeTemplate::getDescription() {
-	return "Moroccan Islamic Geometric Pattern - Basic Zellige mosaic with 8-fold symmetry";
+  return "Moroccan Islamic Geometric Pattern - Basic Zellige mosaic with "
+         "8-fold symmetry";
 }
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupShapes() {
-	// Setup shapes berdasarkan checkbox preference dari Playground (Draw Only concept)
-	// Hanya shapes yang dicentang yang akan dibuat
-	// Note: 'shapes' adalah protected member dari SacredGeometryTemplate
+  // Setup shapes berdasarkan checkbox preference dari Playground (Draw Only
+  // concept) Hanya shapes yang dicentang yang akan dibuat Note: 'shapes' adalah
+  // protected member dari SacredGeometryTemplate
 
-	if (drawCartesian) {
-		setupCartesianAxes();
-	}
+  if (drawCartesian) {
+    setupCartesianAxes();
+  }
 
-	if (drawCircles) {
-		setupCircles();
-	}
+  if (drawCircles) {
+    setupCircles();
+  }
 
-	if (drawCrossLines) {
-		setupCrossLines();
-	}
+  if (drawCrossLines) {
+    setupCrossLines();
+  }
 
-	if (drawParallelograms) {
-		setupParallelograms();
-	}
+  if (drawParallelograms) {
+    setupParallelograms();
+  }
 
-	if (drawRectangleLines) {
-		setupRectangleLines();
-	}
+  if (drawRectangleLines) {
+    setupRectangleLines();
+  }
 
-	if (drawOctagramLines) {
-		setupOctagramLines();
-	}
+  if (drawOctagramLines) {
+    setupOctagramLines();
+  }
 }
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupCircles() {
-	// Clear daftar circles dulu
-	circleIndices.clear();
+  // Clear daftar circles dulu
+  circleIndices.clear();
 
-	// Circle A: Center (0,0) → distance=0
-	shapes.push_back(std::make_unique<CircleShape>(radius, "A", 0, 0));
-	circleIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Circle A
+  // Circle A: Center (0,0) → distance=0
+  shapes.push_back(std::make_unique<CircleShape>(radius, "A", 0, 0));
+  circleIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index Circle A
 
-	// Circle B: Kanan (0°) → distance=radius
-	shapes.push_back(std::make_unique<CircleShape>(radius, "B", 0, radius));
-	circleIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Circle B
+  // Circle B: Kanan (0°) → distance=radius
+  shapes.push_back(std::make_unique<CircleShape>(radius, "B", 0, radius));
+  circleIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index Circle B
 
-	// Circle C: Kiri (180°) → distance=radius
-	shapes.push_back(std::make_unique<CircleShape>(radius, "C", PI, radius));
-	circleIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Circle C
+  // Circle C: Kiri (180°) → distance=radius
+  shapes.push_back(std::make_unique<CircleShape>(radius, "C", PI, radius));
+  circleIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index Circle C
 
-	// Circle D: Atas (90°) → distance=radius
-	shapes.push_back(std::make_unique<CircleShape>(radius, "D", PI/2, radius));
-	circleIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Circle D
+  // Circle D: Atas (90°) → distance=radius
+  shapes.push_back(std::make_unique<CircleShape>(radius, "D", PI / 2, radius));
+  circleIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index Circle D
 
-	// Circle E: Bawah (270°) → distance=radius
-	shapes.push_back(std::make_unique<CircleShape>(radius, "E", -PI/2, radius));
-	circleIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Circle E
+  // Circle E: Bawah (270°) → distance=radius
+  shapes.push_back(std::make_unique<CircleShape>(radius, "E", -PI / 2, radius));
+  circleIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index Circle E
 }
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupCartesianAxes() {
-	shapes.push_back(std::make_unique<CartesianAxes>(radius));
+  shapes.push_back(std::make_unique<CartesianAxes>(radius));
 }
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupCrossLines() {
-	// Clear daftar crosslines dulu
-	crossLineIndices.clear();
+  // Clear daftar crosslines dulu
+  crossLineIndices.clear();
 
-	// CrossLine F
-	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(-radius, -radius), "F", "J", radius));
-	crossLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index CrossLine F
+  // CrossLine F
+  shapes.push_back(std::make_unique<CrossLine>(
+      vec2(0, 0), vec2(-radius, -radius), "F", "J", radius));
+  crossLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index CrossLine F
 
-	// CrossLine G
-	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(radius, -radius), "G", "K", radius));
-	crossLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index CrossLine G
+  // CrossLine G
+  shapes.push_back(std::make_unique<CrossLine>(
+      vec2(0, 0), vec2(radius, -radius), "G", "K", radius));
+  crossLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index CrossLine G
 
-	// CrossLine H
-	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(-radius, radius), "H", "L", radius));
-	crossLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index CrossLine H
+  // CrossLine H
+  shapes.push_back(std::make_unique<CrossLine>(
+      vec2(0, 0), vec2(-radius, radius), "H", "L", radius));
+  crossLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index CrossLine H
 
-	// CrossLine I
-	shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(radius, radius), "I", "M", radius));
-	crossLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index CrossLine I
+  // CrossLine I
+  shapes.push_back(std::make_unique<CrossLine>(vec2(0, 0), vec2(radius, radius),
+                                               "I", "M", radius));
+  crossLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index CrossLine I
 }
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupParallelograms() {
-	// Clear daftar parallelograms dulu
-	parallelogramIndices.clear();
+  // Clear daftar parallelograms dulu
+  parallelogramIndices.clear();
 
-	// Parallelogram dengan Polar Thinking
-	// Intersection point dihitung menggunakan trigonometri: x = cos(angle) * distance, y = sin(angle) * distance
+  // Parallelogram dengan Polar Thinking
+  // Intersection point dihitung menggunakan trigonometri: x = cos(angle) *
+  // distance, y = sin(angle) * distance
 
-	// C→E memotong F: Northwest (-120, -120)
-	float angleC_E_F = -3 * PI / 4;  // -135 derajat (Northwest)
-	float distC_E_F = radius * sqrt(2) / 2;
-	vec2 intersecC_E_F = vec2(cos(angleC_E_F) * distC_E_F, sin(angleC_E_F) * distC_E_F);
-	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(-radius, 0), vec2(0, -radius), intersecC_E_F, "N", radius));
-	parallelogramIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Parallelogram N
+  // C→E memotong F: Northwest (-120, -120)
+  float angleC_E_F = -3 * PI / 4; // -135 derajat (Northwest)
+  float distC_E_F = radius * sqrt(2) / 2;
+  vec2 intersecC_E_F =
+      vec2(cos(angleC_E_F) * distC_E_F, sin(angleC_E_F) * distC_E_F);
+  shapes.push_back(std::make_unique<ParallelogramLine>(
+      vec2(-radius, 0), vec2(0, -radius), intersecC_E_F, "N", radius));
+  parallelogramIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index Parallelogram N
 
-	// E→B memotong G: Northeast (120, -120)
-	float angleE_B_G = -PI / 4;  // -45 derajat (Northeast)
-	float distE_B_G = radius * sqrt(2) / 2;
-	vec2 intersecE_B_G = vec2(cos(angleE_B_G) * distE_B_G, sin(angleE_B_G) * distE_B_G);
-	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(0, -radius), vec2(radius, 0), intersecE_B_G, "O", radius));
-	parallelogramIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Parallelogram O
+  // E→B memotong G: Northeast (120, -120)
+  float angleE_B_G = -PI / 4; // -45 derajat (Northeast)
+  float distE_B_G = radius * sqrt(2) / 2;
+  vec2 intersecE_B_G =
+      vec2(cos(angleE_B_G) * distE_B_G, sin(angleE_B_G) * distE_B_G);
+  shapes.push_back(std::make_unique<ParallelogramLine>(
+      vec2(0, -radius), vec2(radius, 0), intersecE_B_G, "O", radius));
+  parallelogramIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index Parallelogram O
 
-	// B→D memotong I: Southeast (120, 120)
-	float angleB_D_I = PI / 4;  // 45 derajat (Southeast)
-	float distB_D_I = radius * sqrt(2) / 2;
-	vec2 intersecB_D_I = vec2(cos(angleB_D_I) * distB_D_I, sin(angleB_D_I) * distB_D_I);
-	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(radius, 0), vec2(0, radius), intersecB_D_I, "P", radius));
-	parallelogramIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Parallelogram P
+  // B→D memotong I: Southeast (120, 120)
+  float angleB_D_I = PI / 4; // 45 derajat (Southeast)
+  float distB_D_I = radius * sqrt(2) / 2;
+  vec2 intersecB_D_I =
+      vec2(cos(angleB_D_I) * distB_D_I, sin(angleB_D_I) * distB_D_I);
+  shapes.push_back(std::make_unique<ParallelogramLine>(
+      vec2(radius, 0), vec2(0, radius), intersecB_D_I, "P", radius));
+  parallelogramIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index Parallelogram P
 
-	// D→C memotong H: Southwest (-120, 120)
-	float angleD_C_H = 3 * PI / 4;  // 135 derajat (Southwest)
-	float distD_C_H = radius * sqrt(2) / 2;
-	vec2 intersecD_C_H = vec2(cos(angleD_C_H) * distD_C_H, sin(angleD_C_H) * distD_C_H);
-	shapes.push_back(std::make_unique<ParallelogramLine>(vec2(0, radius), vec2(-radius, 0), intersecD_C_H, "Q", radius));
-	parallelogramIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index Parallelogram Q
+  // D→C memotong H: Southwest (-120, 120)
+  float angleD_C_H = 3 * PI / 4; // 135 derajat (Southwest)
+  float distD_C_H = radius * sqrt(2) / 2;
+  vec2 intersecD_C_H =
+      vec2(cos(angleD_C_H) * distD_C_H, sin(angleD_C_H) * distD_C_H);
+  shapes.push_back(std::make_unique<ParallelogramLine>(
+      vec2(0, radius), vec2(-radius, 0), intersecD_C_H, "Q", radius));
+  parallelogramIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index Parallelogram Q
 }
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupRectangleLines() {
-	// Clear daftar rectangleLines dulu
-	rectangleLineIndices.clear();
+  // Clear daftar rectangleLines dulu
+  rectangleLineIndices.clear();
 
-	// RectangleLine dari F ke G dengan intersection points
-	float angleF = -3 * PI / 4;  // -135°
-	vec2 posF = vec2(cos(angleF) * radius, sin(angleF) * radius);
+  // RectangleLine dari F ke G dengan intersection points
+  float angleF = -3 * PI / 4; // -135°
+  vec2 posF = vec2(cos(angleF) * radius, sin(angleF) * radius);
 
-	float angleG = -PI / 4;  // -45°
-	vec2 posG = vec2(cos(angleG) * radius, sin(angleG) * radius);
+  float angleG = -PI / 4; // -45°
+  vec2 posG = vec2(cos(angleG) * radius, sin(angleG) * radius);
 
-	// Hitung intersection F→G ∩ C→E (Dot R)
-	vec2 intersecR = vec2(-radius * (1 - sqrt(2) / 2), posF.y);
+  // Hitung intersection F→G ∩ C→E (Dot R)
+  vec2 intersecR = vec2(-radius * (1 - sqrt(2) / 2), posF.y);
 
-	// Hitung intersection F→G ∩ B→E (Dot S)
-	vec2 intersecS = vec2(radius * (1 - sqrt(2) / 2), posF.y);
+  // Hitung intersection F→G ∩ B→E (Dot S)
+  vec2 intersecS = vec2(radius * (1 - sqrt(2) / 2), posF.y);
 
-	shapes.push_back(std::make_unique<RectangleLine>(posF, posG, intersecR, intersecS, "R", "S", radius));
-	rectangleLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index RectangleLine RS
+  shapes.push_back(std::make_unique<RectangleLine>(
+      posF, posG, intersecR, intersecS, "R", "S", radius));
+  rectangleLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index RectangleLine RS
 
-	// RectangleLine G ke I
-	float angleI = PI / 4; //45°
-	vec2 posI = vec2(cos(angleI) * radius, sin(angleI) * radius);
+  // RectangleLine G ke I
+  float angleI = PI / 4; // 45°
+  vec2 posI = vec2(cos(angleI) * radius, sin(angleI) * radius);
 
-	// Hitung intersection G→I ∩ B→E (Dot T)
-	vec2 intersecT = vec2(radius * sqrt(2) / 2, radius * (sqrt(2) / 2 - 1));
+  // Hitung intersection G→I ∩ B→E (Dot T)
+  vec2 intersecT = vec2(radius * sqrt(2) / 2, radius * (sqrt(2) / 2 - 1));
 
-	// Hitung intersection G→I ∩ B→D (Dot U)
-	vec2 intersecU = vec2(radius * sqrt(2) / 2, radius * (1 - sqrt(2) / 2));
+  // Hitung intersection G→I ∩ B→D (Dot U)
+  vec2 intersecU = vec2(radius * sqrt(2) / 2, radius * (1 - sqrt(2) / 2));
 
-	shapes.push_back(std::make_unique<RectangleLine>(posG, posI, intersecT, intersecU, "T", "U", radius));
-	rectangleLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index RectangleLine TU
+  shapes.push_back(std::make_unique<RectangleLine>(
+      posG, posI, intersecT, intersecU, "T", "U", radius));
+  rectangleLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index RectangleLine TU
 
-	// RectangleLine I ke H
-	float angleH = 3 * PI / 4; //135°
-	vec2 posH = vec2(cos(angleH) * radius, sin(angleH) * radius);
-	vec2 intersecV = vec2(radius * (1 - sqrt(2) / 2), posH.y);
-	vec2 intersecW = vec2(-radius * (1 - sqrt(2) / 2), posH.y);
-	shapes.push_back(std::make_unique<RectangleLine>(posI, posH, intersecV, intersecW, "V", "W", radius));
-	rectangleLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index RectangleLine VW
+  // RectangleLine I ke H
+  float angleH = 3 * PI / 4; // 135°
+  vec2 posH = vec2(cos(angleH) * radius, sin(angleH) * radius);
+  vec2 intersecV = vec2(radius * (1 - sqrt(2) / 2), posH.y);
+  vec2 intersecW = vec2(-radius * (1 - sqrt(2) / 2), posH.y);
+  shapes.push_back(std::make_unique<RectangleLine>(
+      posI, posH, intersecV, intersecW, "V", "W", radius));
+  rectangleLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index RectangleLine VW
 
-	// RectangleLine H ke F
-	vec2 intersecX = vec2(-radius * sqrt(2) / 2, radius * (1 - sqrt(2) / 2));
-	vec2 intersecY = vec2(-radius * sqrt(2) / 2, radius * (sqrt(2) / 2 - 1));
-	shapes.push_back(std::make_unique<RectangleLine>(posH, posF, intersecX, intersecY, "X", "Y", radius));
-	rectangleLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index RectangleLine XY
+  // RectangleLine H ke F
+  vec2 intersecX = vec2(-radius * sqrt(2) / 2, radius * (1 - sqrt(2) / 2));
+  vec2 intersecY = vec2(-radius * sqrt(2) / 2, radius * (sqrt(2) / 2 - 1));
+  shapes.push_back(std::make_unique<RectangleLine>(
+      posH, posF, intersecX, intersecY, "X", "Y", radius));
+  rectangleLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index RectangleLine XY
 }
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::setupOctagramLines() {
-	// Clear daftar octagramLines dulu
-	octagramLineIndices.clear();
+  // Clear daftar octagramLines dulu
+  octagramLineIndices.clear();
 
-	// Posisi Circle E
-	vec2 posE = vec2(0, -radius);
+  // Posisi Circle E
+  vec2 posE = vec2(0, -radius);
 
-	// Posisi di -45° dari Circle E dengan distance r = 240
-	float angle0 = -PI / 4;  // -45°
-	vec2 posEnd = vec2(posE.x + cos(angle0) * radius, posE.y + sin(angle0) * radius);
+  // Posisi di -45° dari Circle E dengan distance r = 240
+  float angle0 = -PI / 4; // -45°
+  vec2 posEnd =
+      vec2(posE.x + cos(angle0) * radius, posE.y + sin(angle0) * radius);
 
-	// Posisi Dot G (di -45° dari center)
-	vec2 posG = vec2(cos(angle0) * radius, sin(angle0) * radius);
+  // Posisi Dot G (di -45° dari center)
+  vec2 posG = vec2(cos(angle0) * radius, sin(angle0) * radius);
 
-	shapes.push_back(std::make_unique<OctagramLine>(posE, posEnd, posG, "0", radius));
-	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 0
+  shapes.push_back(
+      std::make_unique<OctagramLine>(posE, posEnd, posG, "0", radius));
+  octagramLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index OctagramLine 0
 
-	// OctagramLine 2: Dot G → -45° dari Circle B → pusat Circle B
-	vec2 posB = vec2(radius, 0);  // (240, 0)
-	vec2 posEnd1 = vec2(posB.x + cos(angle0) * radius, posB.y + sin(angle0) * radius);
-	shapes.push_back(std::make_unique<OctagramLine>(posG, posEnd1, posB, "1", radius));
-	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 1
+  // OctagramLine 2: Dot G → -45° dari Circle B → pusat Circle B
+  vec2 posB = vec2(radius, 0); // (240, 0)
+  vec2 posEnd1 =
+      vec2(posB.x + cos(angle0) * radius, posB.y + sin(angle0) * radius);
+  shapes.push_back(
+      std::make_unique<OctagramLine>(posG, posEnd1, posB, "1", radius));
+  octagramLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index OctagramLine 1
 
-	// OctagramLine 3: Circle B → 45° dari Circle B → Dot I
-	float angle2 = PI / 4;  // 45°
-	vec2 posEnd2 = vec2(posB.x + cos(angle2) * radius, posB.y + sin(angle2) * radius);
-	vec2 posI = vec2(cos(angle2) * radius, sin(angle2) * radius);
-	shapes.push_back(std::make_unique<OctagramLine>(posB, posEnd2, posI, "2", radius));
-	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 2
+  // OctagramLine 3: Circle B → 45° dari Circle B → Dot I
+  float angle2 = PI / 4; // 45°
+  vec2 posEnd2 =
+      vec2(posB.x + cos(angle2) * radius, posB.y + sin(angle2) * radius);
+  vec2 posI = vec2(cos(angle2) * radius, sin(angle2) * radius);
+  shapes.push_back(
+      std::make_unique<OctagramLine>(posB, posEnd2, posI, "2", radius));
+  octagramLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index OctagramLine 2
 
-	// OctagramLine 4: Circle D → +45° dari Dot I → Circle D
-	vec2 posD = vec2(0, radius);
-	float angle3 = angle2;  // 45°
-	vec2 posEnd3 = vec2(posD.x + cos(angle3) * radius, posD.y + sin(angle3) * radius);
-	shapes.push_back(std::make_unique<OctagramLine>(posI, posEnd3, posD, "3", radius));
-	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 3
+  // OctagramLine 4: Circle D → +45° dari Dot I → Circle D
+  vec2 posD = vec2(0, radius);
+  float angle3 = angle2; // 45°
+  vec2 posEnd3 =
+      vec2(posD.x + cos(angle3) * radius, posD.y + sin(angle3) * radius);
+  shapes.push_back(
+      std::make_unique<OctagramLine>(posI, posEnd3, posD, "3", radius));
+  octagramLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index OctagramLine 3
 
-	// OctagramLine 5: Dot D → posEnd
-	float angle4 = 3 * angle2;  // 135°
-	vec2 posEnd4 = vec2(posD.x + cos(angle4) * radius, posD.y + sin(angle4) * radius);
-	vec2 posH = vec2(cos(angle4) * radius, sin(angle4) * radius);
-	shapes.push_back(std::make_unique<OctagramLine>(posD, posEnd4, posH, "4", radius));
-	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 4
+  // OctagramLine 5: Dot D → posEnd
+  float angle4 = 3 * angle2; // 135°
+  vec2 posEnd4 =
+      vec2(posD.x + cos(angle4) * radius, posD.y + sin(angle4) * radius);
+  vec2 posH = vec2(cos(angle4) * radius, sin(angle4) * radius);
+  shapes.push_back(
+      std::make_unique<OctagramLine>(posD, posEnd4, posH, "4", radius));
+  octagramLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index OctagramLine 4
 
-	// OctagramLine 6: posH → posEnd5 → posC
-	vec2 posC = vec2(-radius, 0);
-	float angle5 = angle4;  // 135°
-	vec2 posEnd5 = vec2(posC.x + cos(angle5) * radius, posC.y + sin(angle5) * radius);
-	shapes.push_back(std::make_unique<OctagramLine>(posH, posEnd5, posC, "5", radius));
-	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 5
+  // OctagramLine 6: posH → posEnd5 → posC
+  vec2 posC = vec2(-radius, 0);
+  float angle5 = angle4; // 135°
+  vec2 posEnd5 =
+      vec2(posC.x + cos(angle5) * radius, posC.y + sin(angle5) * radius);
+  shapes.push_back(
+      std::make_unique<OctagramLine>(posH, posEnd5, posC, "5", radius));
+  octagramLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index OctagramLine 5
 
-	// OctagramLine 7: posC → posEnd6 → posF
-	float angle6 = -angle5;  // -135°
-	vec2 posEnd6 = vec2(posC.x + cos(angle6) * radius, posC.y + sin(angle6) * radius);
-	vec2 posF = vec2(cos(angle6) * radius, sin(angle6) * radius);
-	shapes.push_back(std::make_unique<OctagramLine>(posC, posEnd6, posF, "6", radius));
-	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 6
+  // OctagramLine 7: posC → posEnd6 → posF
+  float angle6 = -angle5; // -135°
+  vec2 posEnd6 =
+      vec2(posC.x + cos(angle6) * radius, posC.y + sin(angle6) * radius);
+  vec2 posF = vec2(cos(angle6) * radius, sin(angle6) * radius);
+  shapes.push_back(
+      std::make_unique<OctagramLine>(posC, posEnd6, posF, "6", radius));
+  octagramLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index OctagramLine 6
 
-	// OctagramLine 8: posF → posEnd7 → posE
-	float angle7 = angle6;  // -135°
-	vec2 posEnd7 = vec2(posE.x + cos(angle7) * radius, posE.y + sin(angle7) * radius);
-	shapes.push_back(std::make_unique<OctagramLine>(posF, posEnd7, posE, "7", radius));
-	octagramLineIndices.push_back(static_cast<int>(shapes.size() - 1));  // Simpan index OctagramLine 7
+  // OctagramLine 8: posF → posEnd7 → posE
+  float angle7 = angle6; // -135°
+  vec2 posEnd7 =
+      vec2(posE.x + cos(angle7) * radius, posE.y + sin(angle7) * radius);
+  shapes.push_back(
+      std::make_unique<OctagramLine>(posF, posEnd7, posE, "7", radius));
+  octagramLineIndices.push_back(
+      static_cast<int>(shapes.size() - 1)); // Simpan index OctagramLine 7
 }
 
 //--------------------------------------------------------------
-void BasicZelligeTemplate::applyWaveAnimationToAllCustomLines(class ofApp* app) {
-	// Apply wave animation settings ke SEMUA customLines
-	for (auto& line : app->customLines) {
-		if (app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
-			// Mode Wave: Cek apakah sudah punya WaveLineAnimation
-			if (auto* existingWaveAnim = dynamic_cast<WaveLineAnimation*>(line.getAnimation().get())) {
-				// Sudah punya WaveLineAnimation, cukup update parameter-nya
-				existingWaveAnim->setAmplitude(app->lineWaveAmplitude);
-				existingWaveAnim->setFrequency(app->lineWaveFrequency);
-				// Speed tetap menggunakan default
-			} else {
-				// Belum punya atau bukan WaveLineAnimation, buat baru
-				auto waveAnim = std::make_shared<WaveLineAnimation>(
-					app->lineWaveAmplitude,
-					app->lineWaveFrequency,
-					app->lineWaveSpeed
-				);
-				// Set animation dengan durasi dari slider ⭐ NEW
-				line.setAnimation(waveAnim, app->lineWaveDuration);
-			}
-		} else {
-			// Mode No Animation: Hapus animation
-			line.setAnimation(nullptr);
-		}
+void BasicZelligeTemplate::applyWaveAnimationToAllCustomLines(
+    class ofApp *app) {
+  // Apply wave animation settings ke SEMUA customLines
+  for (auto &line : app->customLines) {
+    if (app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
+      // Mode Wave: Cek apakah sudah punya WaveLineAnimation
+      if (auto *existingWaveAnim =
+              dynamic_cast<WaveLineAnimation *>(line.getAnimation().get())) {
+        // Sudah punya WaveLineAnimation, cukup update parameter-nya
+        existingWaveAnim->setAmplitude(app->lineWaveAmplitude);
+        existingWaveAnim->setFrequency(app->lineWaveFrequency);
+        existingWaveAnim->setSpeed(
+            app->lineWaveSpeed); // Update speed juga from slider ⭐ NEW
+      } else {
+        // Belum punya atau bukan WaveLineAnimation, buat baru
+        auto waveAnim = std::make_shared<WaveLineAnimation>(
+            app->lineWaveAmplitude, app->lineWaveFrequency, app->lineWaveSpeed);
+        // Set animation dengan durasi dari slider ⭐ NEW
+        line.setAnimation(waveAnim, app->lineWaveDuration);
+      }
+    } else {
+      // Mode No Animation: Hapus animation
+      line.setAnimation(nullptr);
+    }
 
-		// Pastikan loadedFromFile = false untuk manual customLines
-		line.setLoadedFromFile(false);
-	}
+    // Pastikan loadedFromFile = false untuk manual customLines
+    line.setLoadedFromFile(false);
+  }
 }
-
 
 //--------------------------------------------------------------
-bool BasicZelligeTemplate::hasCustomSettings() {
-	return false;
-}
+bool BasicZelligeTemplate::hasCustomSettings() { return false; }
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::showSettingsUI() {
-	ImGui::Text("Zellige Pattern Controls");
+  ImGui::Text("Zellige Pattern Controls");
 
-	static bool showCircles = true;
-	static bool showCrossLines = true;
-	static bool showParallelograms = true;
-	static bool showRectangleLines = true;
-	static bool showOctagramLines = true;
+  static bool showCircles = true;
+  static bool showCrossLines = true;
+  static bool showParallelograms = true;
+  static bool showRectangleLines = true;
+  static bool showOctagramLines = true;
 
-	if (ImGui::Checkbox("Show Circles (A-E)", &showCircles)) {
-		// TODO: Toggle circle shapes visibility
-	}
-	if (ImGui::Checkbox("Show Cross Lines (F-I)", &showCrossLines)) {
-		// TODO: Toggle cross lines visibility
-	}
-	if (ImGui::Checkbox("Show Parallelograms (N-Q)", &showParallelograms)) {
-		// TODO: Toggle parallelogram lines visibility
-	}
-	if (ImGui::Checkbox("Show Rectangle Lines", &showRectangleLines)) {
-		// TODO: Toggle rectangle lines visibility
-	}
-	if (ImGui::Checkbox("Show Octagram Lines (0-7)", &showOctagramLines)) {
-		// TODO: Toggle octagram lines visibility
-	}
+  if (ImGui::Checkbox("Show Circles (A-E)", &showCircles)) {
+    // TODO: Toggle circle shapes visibility
+  }
+  if (ImGui::Checkbox("Show Cross Lines (F-I)", &showCrossLines)) {
+    // TODO: Toggle cross lines visibility
+  }
+  if (ImGui::Checkbox("Show Parallelograms (N-Q)", &showParallelograms)) {
+    // TODO: Toggle parallelogram lines visibility
+  }
+  if (ImGui::Checkbox("Show Rectangle Lines", &showRectangleLines)) {
+    // TODO: Toggle rectangle lines visibility
+  }
+  if (ImGui::Checkbox("Show Octagram Lines (0-7)", &showOctagramLines)) {
+    // TODO: Toggle octagram lines visibility
+  }
 
-	ImGui::Separator();
+  ImGui::Separator();
 
-	static int octagramPoints = 8;
-	ImGui::SetNextItemWidth(150.0f);
-	if (ImGui::SliderInt("Octagram Points", &octagramPoints, 4, 12)) {
-		// TODO: Rebuild octagram with new point count
-	}
+  static int octagramPoints = 8;
+  ImGui::SetNextItemWidth(150.0f);
+  if (ImGui::SliderInt("Octagram Points", &octagramPoints, 4, 12)) {
+    // TODO: Rebuild octagram with new point count
+  }
 }
 
 //--------------------------------------------------------------
 bool BasicZelligeTemplate::hasPlaybackSettings() {
-	return showPlaybackSettings;
+  return showPlaybackSettings;
 }
 
 //--------------------------------------------------------------
-void BasicZelligeTemplate::showPlaybackUI(ofApp* app) {
-	ImGui::Text("Mode Draw");
+void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
+  ImGui::Text("Mode Draw");
 
-	if (ImGui::RadioButton("Parallel Per Group", &playMode, 0)) {
-		// Radio button changed
-	}
-	ImGui::SetNextItemWidth(150.0f);
-	if (ImGui::RadioButton("Sequential Per Group", &playMode, 1)) {
-		// Radio button changed
-	}
-	ImGui::Separator();
-	ImGui::Text("Draw Settings");
-	if (ImGui::Checkbox("Cartesian", &drawCartesian)) {
-		// Checkbox simpan preferensi untuk saat Draw diklik
-	}
-	ImGui::SameLine();
-	if (ImGui::Checkbox("Circles", &drawCircles)) {
-		// Checkbox simpan preferensi untuk saat Draw diklik
-	}
-	ImGui::SameLine();
-	if (ImGui::Checkbox("CrossLines", &drawCrossLines)) {
-		// Checkbox simpan preferensi untuk saat Draw diklik
-	}
-	if (ImGui::Checkbox("Parallelograms", &drawParallelograms)) {
-		// Checkbox simpan preferensi untuk saat Draw diklik
-	}
-	ImGui::SameLine();
-	if (ImGui::Checkbox("RectangleLines", &drawRectangleLines)) {
-		// Checkbox simpan preferensi untuk saat Draw diklik
-	}
-	if (ImGui::Checkbox("OctagramLines", &drawOctagramLines)) {
-		// Checkbox simpan preferensi untuk saat Draw diklik
-	}
+  if (ImGui::RadioButton("Parallel Per Group", &playMode, 0)) {
+    // Radio button changed
+  }
+  ImGui::SetNextItemWidth(150.0f);
+  if (ImGui::RadioButton("Sequential Per Group", &playMode, 1)) {
+    // Radio button changed
+  }
+  ImGui::Separator();
+  ImGui::Text("Draw Settings");
+  if (ImGui::Checkbox("Cartesian", &drawCartesian)) {
+    // Checkbox simpan preferensi untuk saat Draw diklik
+  }
+  ImGui::SameLine();
+  if (ImGui::Checkbox("Circles", &drawCircles)) {
+    // Checkbox simpan preferensi untuk saat Draw diklik
+  }
+  ImGui::SameLine();
+  if (ImGui::Checkbox("CrossLines", &drawCrossLines)) {
+    // Checkbox simpan preferensi untuk saat Draw diklik
+  }
+  if (ImGui::Checkbox("Parallelograms", &drawParallelograms)) {
+    // Checkbox simpan preferensi untuk saat Draw diklik
+  }
+  ImGui::SameLine();
+  if (ImGui::Checkbox("RectangleLines", &drawRectangleLines)) {
+    // Checkbox simpan preferensi untuk saat Draw diklik
+  }
+  if (ImGui::Checkbox("OctagramLines", &drawOctagramLines)) {
+    // Checkbox simpan preferensi untuk saat Draw diklik
+  }
 
-	ImGui::Separator();
+  ImGui::Separator();
 
-	// Custom Line CollapsingHeader - hanya muncul jika ada customLine dari file .nay
-	bool hasCustomLinesInFile = app->loadedFileCustomLinesCount > 0;
+  // Custom Line CollapsingHeader - hanya muncul jika ada customLine dari file
+  // .nay
+  bool hasCustomLinesInFile = app->loadedFileCustomLinesCount > 0;
 
-	if (hasCustomLinesInFile) {
-		if (ImGui::CollapsingHeader("Custom Line", ImGuiTreeNodeFlags_DefaultOpen)) {
-			// Draw Custom Lines checkbox - update flag di ofApp
-			ImGui::Checkbox("Draw Custom Lines", &app->shouldDrawCustomLines);
+  if (hasCustomLinesInFile) {
+    if (ImGui::CollapsingHeader("Custom Line",
+                                ImGuiTreeNodeFlags_DefaultOpen)) {
+      // Draw Custom Lines checkbox - update flag di ofApp
+      ImGui::Checkbox("Draw Custom Lines", &app->shouldDrawCustomLines);
 
-			// Custom Line Appearance section - hanya muncul jika checkbox dicheck
-			if (app->shouldDrawCustomLines) {
-				ImGui::Text("Custom Line Animation");
+      // Custom Line Appearance section - hanya muncul jika checkbox dicheck
+      if (app->shouldDrawCustomLines) {
+        ImGui::Text("Custom Line Animation");
 
-				// Radio buttons untuk Line Animation Mode ⭐ NEW
-				ImGui::Text("Animation Mode");
-				ImGui::SameLine();
-				ImGui::RadioButton("No Animation Line", reinterpret_cast<int*>(&app->lineAnimationMode), 0);
-				ImGui::RadioButton("Wave Animation Line", reinterpret_cast<int*>(&app->lineAnimationMode), 1);
-				ImGui::Separator();
-				// Sliders untuk Wave Animation (hanya muncul jika Wave Animation dipilih)
-			if (app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
-					ImGui::Text("Wave Settings");
-					ImGui::SliderFloat("Amplitude (px)", &app->lineWaveAmplitude, 2.0f, 5.0f);
-					ImGui::SliderFloat("Frequency", &app->lineWaveFrequency, 1.0f, 3.0f);
-					ImGui::SliderFloat("Duration (sec)", &app->lineWaveDuration, 0.0f, 60.0f, "%.1f");  // Slider durasi 0-60 detik ⭐ NEW
-					ImGui::Separator();
-				}
-				ImGui::Separator();
-			}
+        // Radio buttons untuk Line Animation Mode ⭐ NEW
+        ImGui::Text("Animation Mode");
+        ImGui::SameLine();
+        ImGui::RadioButton("No Animation Line",
+                           reinterpret_cast<int *>(&app->lineAnimationMode), 0);
+        ImGui::RadioButton("Wave Animation Line",
+                           reinterpret_cast<int *>(&app->lineAnimationMode), 1);
+        ImGui::Separator();
+        // Sliders untuk Wave Animation (hanya muncul jika Wave Animation
+        // dipilih)
+        if (app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
+          ImGui::Text("Wave Settings");
+          ImGui::SliderFloat("Amplitude (px)", &app->lineWaveAmplitude, 2.0f,
+                             5.0f);
+          ImGui::SliderFloat("Frequency", &app->lineWaveFrequency, 1.0f, 3.0f);
+          ImGui::SliderFloat("Duration (sec)", &app->lineWaveDuration, 0.0f,
+                             60.0f, "%.1f"); // Slider durasi 0-60 detik ⭐ NEW
+          ImGui::Separator();
+        }
+        ImGui::Separator();
+      }
 
-			// Step Animation Line UI (hanya muncul jika selain No Animation dipilih) ⭐ NEW
-			if (app->lineAnimationMode != ofApp::LineAnimationMode::NO_ANIMATION) {
-				ImGui::Text("Step Animation Line");
-				ImGui::RadioButton("Before Polygon Draw", reinterpret_cast<int*>(&app->lineStepAnimationMode), 0);
-				ImGui::RadioButton("With Polygon Draw", reinterpret_cast<int*>(&app->lineStepAnimationMode), 1);
-				ImGui::RadioButton("After Polygon Draw", reinterpret_cast<int*>(&app->lineStepAnimationMode), 2);
-				ImGui::Separator();
-			}
+      // Step Animation Line UI (hanya muncul jika selain No Animation dipilih)
+      // ⭐ NEW
+      if (app->lineAnimationMode != ofApp::LineAnimationMode::NO_ANIMATION) {
+        ImGui::Text("Step Animation Line");
+        ImGui::RadioButton("Before Polygon Draw",
+                           reinterpret_cast<int *>(&app->lineStepAnimationMode),
+                           0);
+        ImGui::RadioButton("With Polygon Draw",
+                           reinterpret_cast<int *>(&app->lineStepAnimationMode),
+                           1);
+        ImGui::RadioButton("After Polygon Draw",
+                           reinterpret_cast<int *>(&app->lineStepAnimationMode),
+                           2);
+        ImGui::Separator();
+      }
+    }
+  }
 
-		}
-	}
+  // Polygon CollapsingHeader - hanya muncul jika ada polygon dari file .nay
+  bool hasPolygonsInFile = app->loadedFilePolygonCount > 0;
 
-	// Polygon CollapsingHeader - hanya muncul jika ada polygon dari file .nay
-	bool hasPolygonsInFile = app->loadedFilePolygonCount > 0;
+  if (hasPolygonsInFile) {
+    if (ImGui::CollapsingHeader("Polygon", ImGuiTreeNodeFlags_DefaultOpen)) {
+      // Polygon Appearance section
+      ImGui::Text("Polygon Appearance");
+      if (ImGui::RadioButton("No Animation Polygon", &polygonAnimationMode,
+                             0)) {
+        // Radio button changed
+      }
+      ImGui::SameLine();
+      if (ImGui::RadioButton("FadeIn Polygon", &polygonAnimationMode, 1)) {
+        // Radio button changed
+      }
+      ImGui::SameLine();
+      if (ImGui::RadioButton("Wobble Polygon", &polygonAnimationMode, 2)) {
+        // Radio button changed
+      }
 
-	if (hasPolygonsInFile) {
-		if (ImGui::CollapsingHeader("Polygon", ImGuiTreeNodeFlags_DefaultOpen)) {
-			// Polygon Appearance section
-			ImGui::Text("Polygon Appearance");
-			if (ImGui::RadioButton("No Animation Polygon", &polygonAnimationMode, 0)) {
-				// Radio button changed
-			}
-			ImGui::SameLine();
-			if (ImGui::RadioButton("FadeIn Polygon", &polygonAnimationMode, 1)) {
-				// Radio button changed
-			}
-			ImGui::SameLine();
-			if (ImGui::RadioButton("Wobble Polygon", &polygonAnimationMode, 2)) {
-				// Radio button changed
-			}
+      if (ImGui::RadioButton("Wave Fill Polygon", &polygonAnimationMode, 3)) {
+        // Radio button changed
+      }
+      ImGui::SameLine();
+      if (ImGui::RadioButton("Wobble Fill Polygon", &polygonAnimationMode, 4)) {
+        // Radio button changed
+      }
+      ImGui::SameLine();
+      if (ImGui::RadioButton("Gradient Polygon", &polygonAnimationMode, 5)) {
+        // Radio button changed
+      }
+    }
+  }
 
-			if (ImGui::RadioButton("Wave Fill Polygon", &polygonAnimationMode, 3)) {
-				// Radio button changed
-			}
-			ImGui::SameLine();
-			if (ImGui::RadioButton("Wobble Fill Polygon", &polygonAnimationMode, 4)) {
-				// Radio button changed
-			}
-			ImGui::SameLine();
-			if (ImGui::RadioButton("Gradient Polygon", &polygonAnimationMode, 5)) {
-				// Radio button changed
-			}
-		}
-	}
+  ImGui::Separator();
+  ImGui::Text("Speed Control");
+  ImGui::SetNextItemWidth(150.0f);
+  if (ImGui::SliderFloat("Speed", &app->currentTemplate->speedMultiplier, 0.1f,
+                         1.5f, "%.2f")) {
+    // Slider Speed mengkontrol BUKAN CUMA speedMultiplier, tapi juga
+    // lineWaveSpeed untuk wave animation ⭐ NEW Rumus: lineWaveSpeed =
+    // speedMultiplier * 2.0 (range: 0.2 - 3.0)
+    app->lineWaveSpeed = app->currentTemplate->speedMultiplier * 2.0f;
+  }
+  // Slider hanya menyimpan nilai, efek diterapkan saat tombol Draw diklik
+  ImGui::Separator();
 
-	ImGui::Separator();
-	ImGui::Text("Speed Control");
-	ImGui::SetNextItemWidth(150.0f);
-	if (ImGui::SliderFloat("Speed", &app->currentTemplate->speedMultiplier, 0.1f, 1.5f, "%.2f")) {
-		// Slider Speed mengkontrol BUKAN CUMA speedMultiplier, tapi juga lineWaveSpeed untuk wave animation ⭐ NEW
-		// Rumus: lineWaveSpeed = speedMultiplier * 2.0 (range: 0.2 - 3.0)
-		app->lineWaveSpeed = app->currentTemplate->speedMultiplier * 2.0f;
-	}
-	// Slider hanya menyimpan nilai, efek diterapkan saat tombol Draw diklik
-	ImGui::Separator();
+  float buttonWidth =
+      ImGui::CalcTextSize("Draw").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+  float windowWidth = ImGui::GetContentRegionAvail().x;
+  ImGui::SetCursorPosX((windowWidth - buttonWidth) / 2.0f);
+  // Play arrow button
+  if (ImGui::ArrowButton("Draw", ImGuiDir_Left)) {
+    // Cek apakah sudah ada file yang di-open
+    if (app->lastSavedPath.empty()) {
+      // Belum ada file, munculkan error popup
+      app->errorPopup->show(
+          "No File Selected",
+          "Please open a .nay file first before clicking Play!", "OK");
+    } else if (playMode != 0 && playMode != 1) {
+      // Belum pilih mode, munculkan error popup
+      app->errorPopup->show("No Mode Selected",
+                            "Please select a Draw Mode first!", "OK");
+    } else {
+      // Semua validasi OK! Cek apakah canvas kosong
+      bool isCanvasEmpty =
+          (app->currentTemplate && app->currentTemplate->getShapes().empty()) &&
+          app->customLines.empty() && app->polygonShapes.empty();
 
-	float buttonWidth = ImGui::CalcTextSize("Draw").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-	float windowWidth = ImGui::GetContentRegionAvail().x;
-	ImGui::SetCursorPosX((windowWidth - buttonWidth) / 2.0f);
-	// Play arrow button
-	if (ImGui::ArrowButton("Draw", ImGuiDir_Left)) {
-		// Cek apakah sudah ada file yang di-open
-		if (app->lastSavedPath.empty()) {
-			// Belum ada file, munculkan error popup
-			app->errorPopup->show("No File Selected",
-								 "Please open a .nay file first before clicking Play!",
-								 "OK");
-		} else if (playMode != 0 && playMode != 1) {
-			// Belum pilih mode, munculkan error popup
-			app->errorPopup->show("No Mode Selected",
-								 "Please select a Draw Mode first!",
-								 "OK");
-		} else {
-			// Semua validasi OK! Cek apakah canvas kosong
-			bool isCanvasEmpty = (app->currentTemplate && app->currentTemplate->getShapes().empty()) &&
-								app->customLines.empty() &&
-								app->polygonShapes.empty();
+      if (isCanvasEmpty) {
+        // Canvas kosong, langsung load saja TANPA clean & TANPA confirmation
+        // Apply speed multiplier ke SEMUA (template shapes, polygons,
+        // customLines)
+        app->currentTemplate->applySpeedMultiplier();
+        app->fileManager.setAnimationSpeedMultiplier(
+            app->currentTemplate->speedMultiplier);
 
-			if (isCanvasEmpty) {
-				// Canvas kosong, langsung load saja TANPA clean & TANPA confirmation
-				// Apply speed multiplier ke SEMUA (template shapes, polygons, customLines)
-				app->currentTemplate->applySpeedMultiplier();
-				app->fileManager.setAnimationSpeedMultiplier(app->currentTemplate->speedMultiplier);
+        // Simpan polygon animation mode - convert int ke PolygonAnimationMode
+        PolygonAnimationMode polyMode;
+        switch (polygonAnimationMode) {
+        case 1:
+          polyMode = PolygonAnimationMode::FADE_IN;
+          break;
+        case 2:
+          polyMode = PolygonAnimationMode::WOBBLE;
+          break;
+        case 3:
+          polyMode = PolygonAnimationMode::WAVE_FILL;
+          break;
+        case 4:
+          polyMode = PolygonAnimationMode::WOBBLE_FILL;
+          break;
+        case 5:
+          polyMode = PolygonAnimationMode::GRADIENT;
+          break;
+        case 0:
+        default:
+          polyMode = PolygonAnimationMode::NO_ANIMATION;
+          break;
+        }
+        app->fileManager.setPolygonAnimationMode(polyMode);
 
-				// Simpan polygon animation mode - convert int ke PolygonAnimationMode
-				PolygonAnimationMode polyMode;
-				switch (polygonAnimationMode) {
-					case 1:
-						polyMode = PolygonAnimationMode::FADE_IN;
-						break;
-					case 2:
-						polyMode = PolygonAnimationMode::WOBBLE;
-						break;
-					case 3:
-						polyMode = PolygonAnimationMode::WAVE_FILL;
-						break;
-					case 4:
-						polyMode = PolygonAnimationMode::WOBBLE_FILL;
-						break;
-					case 5:
-						polyMode = PolygonAnimationMode::GRADIENT;
-						break;
-					case 0:
-					default:
-						polyMode = PolygonAnimationMode::NO_ANIMATION;
-						break;
-				}
-				app->fileManager.setPolygonAnimationMode(polyMode);
+        // Set flag untuk delay load dan update state
+        app->isWaitingForLoad = true;
+        app->loadDelayAccumulator = 0.0f;
+        app->pendingLoadMode = playMode;
+        app->currentState = ofApp::UpdateState::DELAYED_LOAD;
 
-				// Set flag untuk delay load dan update state
-				app->isWaitingForLoad = true;
-				app->loadDelayAccumulator = 0.0f;
-				app->pendingLoadMode = playMode;
-				app->currentState = ofApp::UpdateState::DELAYED_LOAD;
+        app->imguiVisible = false; // Hide ImGui
+      } else {
+        // Canvas ADA isinya, tampilkan confirmation clean + load
+        app->confirmationPopup->show(
+            "Load Workspace",
+            "The canvas will be cleaned before loading.\n\nDo you want to "
+            "continue?",
+            "Yes, Load", "Cancel", [this, app]() {
+              // Callback: User klik Yes, lanjut clean + load workspace
 
-				app->imguiVisible = false;  // Hide ImGui
-			} else {
-				// Canvas ADA isinya, tampilkan confirmation clean + load
-				app->confirmationPopup->show(
-					"Load Workspace",
-					"The canvas will be cleaned before loading.\n\nDo you want to continue?",
-					"Yes, Load",
-					"Cancel",
-					[this, app]() {
-						// Callback: User klik Yes, lanjut clean + load workspace
+              // CLEAN CANVAS DULU - pakai internal method (tanpa popup lagi)
+              app->cleanCanvasInternal();
 
-						// CLEAN CANVAS DULU - pakai internal method (tanpa popup lagi)
-						app->cleanCanvasInternal();
+              // Apply speed multiplier ke SEMUA (template shapes, polygons,
+              // customLines)
+              app->currentTemplate->applySpeedMultiplier();
+              app->fileManager.setAnimationSpeedMultiplier(
+                  app->currentTemplate->speedMultiplier);
 
-						// Apply speed multiplier ke SEMUA (template shapes, polygons, customLines)
-						app->currentTemplate->applySpeedMultiplier();
-						app->fileManager.setAnimationSpeedMultiplier(app->currentTemplate->speedMultiplier);
+              // Simpan polygon animation mode - convert int ke
+              // PolygonAnimationMode
+              PolygonAnimationMode polyMode;
+              switch (polygonAnimationMode) {
+              case 1:
+                polyMode = PolygonAnimationMode::FADE_IN;
+                break;
+              case 2:
+                polyMode = PolygonAnimationMode::WOBBLE;
+                break;
+              case 3:
+                polyMode = PolygonAnimationMode::WAVE_FILL;
+                break;
+              case 4:
+                polyMode = PolygonAnimationMode::WOBBLE_FILL;
+                break;
+              case 5:
+                polyMode = PolygonAnimationMode::GRADIENT;
+                break;
+              case 0:
+              default:
+                polyMode = PolygonAnimationMode::NO_ANIMATION;
+                break;
+              }
+              app->fileManager.setPolygonAnimationMode(polyMode);
 
-						// Simpan polygon animation mode - convert int ke PolygonAnimationMode
-						PolygonAnimationMode polyMode;
-						switch (polygonAnimationMode) {
-							case 1:
-								polyMode = PolygonAnimationMode::FADE_IN;
-								break;
-							case 2:
-								polyMode = PolygonAnimationMode::WOBBLE;
-								break;
-							case 3:
-								polyMode = PolygonAnimationMode::WAVE_FILL;
-								break;
-							case 4:
-								polyMode = PolygonAnimationMode::WOBBLE_FILL;
-								break;
-							case 5:
-								polyMode = PolygonAnimationMode::GRADIENT;
-								break;
-							case 0:
-							default:
-								polyMode = PolygonAnimationMode::NO_ANIMATION;
-								break;
-						}
-						app->fileManager.setPolygonAnimationMode(polyMode);
+              // Set flag untuk delay load dan update state
+              app->isWaitingForLoad = true;
+              app->loadDelayAccumulator =
+                  0.0f; // Reset accumulator untuk mulai delay
+              app->pendingLoadMode = playMode;
+              app->currentState = ofApp::UpdateState::DELAYED_LOAD;
 
-						// Set flag untuk delay load dan update state
-						app->isWaitingForLoad = true;
-						app->loadDelayAccumulator = 0.0f;  // Reset accumulator untuk mulai delay
-						app->pendingLoadMode = playMode;
-						app->currentState = ofApp::UpdateState::DELAYED_LOAD;
-
-						app->imguiVisible = false;  // Hide ImGui
-					}
-				);
-			}
-		}
-	}
-	ImGui::SameLine();
-	ImGui::Text("Draw");
+              app->imguiVisible = false; // Hide ImGui
+            });
+      }
+    }
+  }
+  ImGui::SameLine();
+  ImGui::Text("Draw");
 }
