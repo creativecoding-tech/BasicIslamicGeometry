@@ -20,49 +20,48 @@
  */
 class BasicZelligeTemplate : public SacredGeometryTemplate {
 public:
-	std::string getName() override;
-	std::string getDescription() override;
+  std::string getName() override;
+  std::string getDescription() override;
 
-	// Setup shapes ke internal vector (inherited from SacredGeometryTemplate)
-	void setupShapes() override;
+  // Setup shapes ke internal vector (inherited from SacredGeometryTemplate)
+  void setupShapes() override;
 
-	// Template-specific UI
-	bool hasCustomSettings() override;
-	void showSettingsUI() override;
+  // Template-specific UI
+  bool hasCustomSettings() override;
+  void showSettingsUI() override;
 
-	// Wave Animation Helper ⭐ NEW
-	void applyWaveAnimationToAllCustomLines(class ofApp* app);
+  // Wave Animation Helper ⭐ NEW
+  void applyWaveAnimationToAllCustomLines(class ofApp *app,
+                                          bool enableAnimation = true);
 
-	// Template-specific playback UI
-	bool hasPlaybackSettings() override;
-	void showPlaybackUI(class ofApp* app) override;
+  // Template-specific playback UI
+  bool hasPlaybackSettings() override;
+  void showPlaybackUI(class ofApp *app) override;
 
-	// radius diambil dari SacredGeometryTemplate::radius (protected)
-	// Tidak perlu radius sendiri lagi
+  // radius diambil dari SacredGeometryTemplate::radius (protected)
+  // Tidak perlu radius sendiri lagi
 
 private:
-	// Setup methods populate this->shapes (inherited protected member)
-	void setupCircles();
-	void setupCartesianAxes();
-	void setupCrossLines();
-	void setupParallelograms();
-	void setupRectangleLines();
-	void setupOctagramLines();
+  // Setup methods populate this->shapes (inherited protected member)
+  void setupCircles();
+  void setupCartesianAxes();
+  void setupCrossLines();
+  void setupParallelograms();
+  void setupRectangleLines();
+  void setupOctagramLines();
 
-	// Playback state
-	int playMode = -1;  // -1 = belum pilih, 0 = Parallel, 1 = Sequential
-	int polygonAnimationMode = 0;  // 0=None, 1=FadeIn, 2=Wobble, 3=Fill
-	bool showPlaybackSettings = false;  // Control visibility of playback UI
+  // Playback state
+  int playMode = -1; // -1 = belum pilih, 0 = Parallel, 1 = Sequential
+  int polygonAnimationMode = 0;      // 0=None, 1=FadeIn, 2=Wobble, 3=Fill
+  bool showPlaybackSettings = false; // Control visibility of playback UI
 
 public:
-	// Reset draw mode ke belum memilih
-	void resetDrawMode() {
-		playMode = -1;
-		showPlaybackSettings = false;
-	}
+  // Reset draw mode ke belum memilih
+  void resetDrawMode() {
+    playMode = -1;
+    showPlaybackSettings = false;
+  }
 
-	// Enable playback settings (dipanggil saat file dibuka)
-	void enablePlaybackSettings() {
-		showPlaybackSettings = true;
-	}
+  // Enable playback settings (dipanggil saat file dibuka)
+  void enablePlaybackSettings() { showPlaybackSettings = true; }
 };

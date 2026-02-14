@@ -10,7 +10,6 @@
 #include "../../shape/ParallelogramLine.h"
 #include "../../shape/RectangleLine.h"
 
-
 using glm::vec2;
 
 //--------------------------------------------------------------
@@ -318,10 +317,11 @@ void BasicZelligeTemplate::setupOctagramLines() {
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::applyWaveAnimationToAllCustomLines(
-    class ofApp *app) {
+    class ofApp *app, bool enableAnimation) {
   // Apply wave animation settings ke SEMUA customLines
   for (auto &line : app->customLines) {
-    if (app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
+    if (enableAnimation &&
+        app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
       // Mode Wave: Cek apakah sudah punya WaveLineAnimation
       if (auto *existingWaveAnim =
               dynamic_cast<WaveLineAnimation *>(line.getAnimation().get())) {
@@ -338,7 +338,7 @@ void BasicZelligeTemplate::applyWaveAnimationToAllCustomLines(
         line.setAnimation(waveAnim, app->lineWaveDuration);
       }
     } else {
-      // Mode No Animation: Hapus animation
+      // Mode No Animation (atau enableAnimation false): Hapus animation
       line.setAnimation(nullptr);
     }
 

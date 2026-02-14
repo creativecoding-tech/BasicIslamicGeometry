@@ -284,15 +284,28 @@ void ofApp::updateStaggeredCustomLines() {
     syncColorPickerFromLoadedLines();
   }
 
-  // ⭐ PENTING: Apply/Update wave animation SETIAP FRAME agar:
-  // 1. Line yang baru di-load langsung dapat animation
-  // 2. Line yang sudah selesai drawing (progress >= 1.0) langsung animasi
-  // 3. Slider changes (speed/amplitude/frequency) langsung berefek real-time
+  // ⭐ PENTING: Tentukan apakah animation boleh jalan saat ini
+  bool shouldAnimate = true;
+  // allLinesLoaded sudah didefinisikan di atas (line 285 kira-kira)
+
+  // Logic Step Animation:
+  if (lineStepAnimationMode == STEP_WITH_POLYGON_DRAW ||
+      lineStepAnimationMode == STEP_AFTER_POLYGON_DRAW) {
+    // Untuk With/After Polygon Draw, DISBURSE (matikan) animation selama proses
+    // loading lines Animation baru aktif setelah SEMUA lines selesai loading
+    // (siap masuk fase polygon)
+    if (!allLinesLoaded) {
+      shouldAnimate = false;
+    }
+  }
+
+  // ⭐ PENTING: Apply/Update wave animation SETIAP FRAME
   if (currentTemplate) {
     BasicZelligeTemplate *zelligeTemplate =
         dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
     if (zelligeTemplate) {
-      zelligeTemplate->applyWaveAnimationToAllCustomLines(this);
+      // Pass 'shouldAnimate' flag ke function
+      zelligeTemplate->applyWaveAnimationToAllCustomLines(this, shouldAnimate);
     }
   }
 
@@ -305,8 +318,13 @@ void ofApp::updateStaggeredCustomLines() {
 
   // Cek apakah semua customLines sudah complete DAN semua sudah di-load
   bool allComplete = true;
-  bool allLoaded =
-      (fileManager.getCurrentLoadIndex() >= fileManager.getTotalLoadedLines());
+  for (const auto &line : customLines) {
+    if (line.getProgress() < 1.0f) {
+      allComplete = false;
+      break;
+    }
+  }
+  // allLinesLoaded sebagai pengganti allLoaded
 
   // KHUSUS UNTUK BEFORE POLYGON DRAW ⭐ NEW
   if (isBeforePolygonDraw) {
@@ -382,7 +400,7 @@ void ofApp::updateStaggeredCustomLines() {
 
       // ⭐ PENTING: TUNGGU sampai SEMUA custom lines di-load dari file
       // Jangan pindah ke LOAD_POLYGONS terlalu cepat!
-      if (allComplete && allLoaded) {
+      if (allComplete && allLinesLoaded) {
         loadStage = LOAD_POLYGONS;
         waveAnimationApplied = false; // Reset flag untuk next time
       }
@@ -409,7 +427,7 @@ void ofApp::updateStaggeredCustomLines() {
 
     // Hanya pindah ke LOAD_POLYGONS jika SEMUA custom lines sudah selesai
     // progressive drawing
-    if (allProgressiveComplete && allLoaded) {
+    if (allProgressiveComplete && allLinesLoaded) {
       loadStage = LOAD_POLYGONS;
       waveAnimationApplied = false; // Reset flag untuk mode lain
     }
@@ -418,7 +436,7 @@ void ofApp::updateStaggeredCustomLines() {
   // Pindah ke stage POLYGONS jika semua complete DAN semua sudah di-load
   // TAPI JANGAN untuk BEFORE_POLYGON_DRAW (karena transisinya sudah ditangani
   // di atas)
-  else if (allComplete && allLoaded) {
+  else if (allComplete && allLinesLoaded) {
     loadStage = LOAD_POLYGONS;
     waveAnimationApplied = false; // Reset flag untuk mode lain
   }
