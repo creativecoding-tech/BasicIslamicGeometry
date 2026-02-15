@@ -290,8 +290,14 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Staggered Load Integration** - Step Animation Line bekerja dengan staggered load system (Parallel Per Group mode):
   - **LOAD_TEMPLATE stage**: Template shapes digambar terlebih dahulu
   - **LOAD_CUSTOMLINES stage**: Custom lines diload dan di-animasikan sesuai mode
+    - **With Polygon Draw**: Animasi dimulai SETELAH semua lines selesai digambar (parallel with polygons). ⭐ NEW
+    - **After Polygon Draw**: Animasi dipaksa berhenti selama loading phase (nunggu polygons selesai). ⭐ NEW
   - **LOAD_POLYGONS stage**: Polygons diload dan di-animasikan sesuai mode
   - **LOAD_DONE stage**: Semua animasi selesai, wave animation dihapus (jika ada durasi)
+- **Conditional UI Visibility** ⭐ NEW - Step Animation Line radio buttons (Before/With/After) hanya muncul jika file `.nay` mengandung polygons. Jika tidak ada polygons, sistem otomatis menggunakan mode `Before Polygon Draw` untuk memastikan animasi wave tetap berjalan.
+- **Playground Window Behavior** ⭐ NEW - Peningkatan pada close confirmation popup:
+  - **Yes, Close File**: Menutup window dan mengakhiri session file (lastSavedPath di-clear).
+  - **No, Keep File Open**: Menutup window tetapi tetap menjaga session file tetap aktif demi kenyamanan user.
 - **PolygonShape System** - Class untuk polygon fill-only tanpa outline (hanya warna)
 - **Create Polygon (CTRL+G)** - Buat polygon dari selected customLines (otomatis deteksi closed loop)
 - **Polygon Color Preset** - 9 warna preset untuk polygon (merah, hijau, biru, kuning, magenta, cyan, orange, ungu, abu-abu)
@@ -443,10 +449,10 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Component Pattern** - AbstractGuiComponent untuk reusable GUI components
 - **Factory Pattern** - Template dan polygon creation through registry
 - **State Pattern** - Drawing states (IDLE, DRAGGING) dan load states (LoadStage)
-- **Smart Pointer Management** - Menggunakan `std::unique_ptr` dan `std::shared_ptr` untuk resource management
+- **Smart Pointer Management** - Menggunakan `std::unique_ptr` dan `std::shared_ptr` secara eksplisit untuk resource management otomatis (RAII).
+- **No Memory Leaks** - Audit memori menunjukkan penggunaan RAII yang solid, virtual destructors pada base classes (AbstractAnimation), dan penanganan OpenGL resources yang aman di PolygonShape (mencegah VRAM leaks). ⭐ UPDATED
 - **Modular Design** - Terpisah dalam kategori: `shape/`, `anim/`, `operation/`, `template/`, `operation/gui/`
 - **Memory-safe Implementation** - Modern C++17 features dengan RAII, smart pointers, move semantics
-- **No Memory Leaks** - Comprehensive memory management dengan automatic cleanup
 
 ---
 
@@ -1559,6 +1565,12 @@ Fitur terbaru yang sedang dalam pengembangan aktif:
   - Problem: Update logic stopping before animation complete
   - Result: Last polygon tidak terwarnai dengan benar
   - Fix: Check `isAnimationComplete()` before updating
+
+✅ **After Polygon Draw Animation Timing** - Fixed wave animation starting too early ⭐ NEW:
+  - Problem: Wave animation berjalan bareng saat polygons sedang loading.
+  - Fix: Modifikasi `updateStaggeredCustomLines` untuk mematikan wave anim secara eksplisit selama tahap loading polygons.
+
+✅ **C2511 Build Error** - Fixed signature mismatch in BasicZelligeTemplate.cpp. ⭐ NEW
 
 ---
 
