@@ -49,6 +49,7 @@ void Playground::draw() {
       if (ImGui::Button("Close File")) {
         // Close file tanpa clean canvas
         app->fileOperationManager->closeFile();
+        windowOpen = false; // Close window otimatis
       }
     } else {
       ImGui::TextDisabled("(No file opened)");
