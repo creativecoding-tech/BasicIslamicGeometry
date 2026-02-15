@@ -463,20 +463,29 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         ImGui::Separator();
       }
 
-      // Step Animation Line UI (hanya muncul jika selain No Animation dipilih)
-      // ⭐ NEW
+      // Step Animation Line UI (hanya muncul jika selain No Animation dipilih
+      // DAN ada polygons) ⭐ NEW
       if (app->lineAnimationMode != ofApp::LineAnimationMode::NO_ANIMATION) {
-        ImGui::Text("Step Animation Line");
-        ImGui::RadioButton("Before Polygon Draw",
-                           reinterpret_cast<int *>(&app->lineStepAnimationMode),
-                           0);
-        ImGui::RadioButton("With Polygon Draw",
-                           reinterpret_cast<int *>(&app->lineStepAnimationMode),
-                           1);
-        ImGui::RadioButton("After Polygon Draw",
-                           reinterpret_cast<int *>(&app->lineStepAnimationMode),
-                           2);
-        ImGui::Separator();
+        // Cek apakah ada polygon dari file .nay
+        if (app->loadedFilePolygonCount > 0) {
+          ImGui::Text("Step Animation Line");
+          ImGui::RadioButton(
+              "Before Polygon Draw",
+              reinterpret_cast<int *>(&app->lineStepAnimationMode), 0);
+          ImGui::RadioButton(
+              "With Polygon Draw",
+              reinterpret_cast<int *>(&app->lineStepAnimationMode), 1);
+          ImGui::RadioButton(
+              "After Polygon Draw",
+              reinterpret_cast<int *>(&app->lineStepAnimationMode), 2);
+          ImGui::Separator();
+        } else {
+          // Jika TIDAK ada polygon, paksa mode ke STEP_BEFORE_POLYGON_DRAW
+          // (default safe) Agar animation tetap jalan tanpa nunggu polygon yang
+          // tidak akan pernah ada
+          app->lineStepAnimationMode =
+              ofApp::LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW;
+        }
       }
     }
   }
