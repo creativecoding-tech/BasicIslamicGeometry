@@ -405,26 +405,38 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
     }
     ImGui::Separator();
     ImGui::Text("Draw Settings");
-    if (ImGui::Checkbox("Cartesian", &drawCartesian)) {
-      // Checkbox simpan preferensi untuk saat Draw diklik
-    }
-    ImGui::SameLine();
-    if (ImGui::Checkbox("Circles", &drawCircles)) {
-      // Checkbox simpan preferensi untuk saat Draw diklik
-    }
-    ImGui::SameLine();
-    if (ImGui::Checkbox("CrossLines", &drawCrossLines)) {
-      // Checkbox simpan preferensi untuk saat Draw diklik
-    }
-    if (ImGui::Checkbox("Parallelograms", &drawParallelograms)) {
-      // Checkbox simpan preferensi untuk saat Draw diklik
-    }
-    ImGui::SameLine();
-    if (ImGui::Checkbox("RectangleLines", &drawRectangleLines)) {
-      // Checkbox simpan preferensi untuk saat Draw diklik
-    }
-    if (ImGui::Checkbox("OctagramLines", &drawOctagramLines)) {
-      // Checkbox simpan preferensi untuk saat Draw diklik
+    if (ImGui::BeginTable("DrawSettingsTable", 2, ImGuiTableFlags_None)) {
+      ImGui::TableSetupColumn("Col1", ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableSetupColumn("Col2", ImGuiTableColumnFlags_WidthStretch);
+
+      // Row 1
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      if (ImGui::Checkbox("Cartesian", &drawCartesian)) {
+      }
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::Checkbox("Circles", &drawCircles)) {
+      }
+
+      // Row 2
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      if (ImGui::Checkbox("CrossLines", &drawCrossLines)) {
+      }
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::Checkbox("Parallelograms", &drawParallelograms)) {
+      }
+
+      // Row 3
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      if (ImGui::Checkbox("RectangleLines", &drawRectangleLines)) {
+      }
+      ImGui::TableSetColumnIndex(1);
+      if (ImGui::Checkbox("OctagramLines", &drawOctagramLines)) {
+      }
+
+      ImGui::EndTable();
     }
   }
 
@@ -522,29 +534,40 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
     if (ImGui::CollapsingHeader("Polygon", ImGuiTreeNodeFlags_DefaultOpen)) {
       // Polygon Appearance section
       ImGui::Text("Polygon Appearance");
-      if (ImGui::RadioButton("No Animation Polygon", &polygonAnimationMode,
-                             0)) {
-        // Radio button changed
-      }
-      ImGui::SameLine();
-      if (ImGui::RadioButton("FadeIn Polygon", &polygonAnimationMode, 1)) {
-        // Radio button changed
-      }
-      ImGui::SameLine();
-      if (ImGui::RadioButton("Wobble Polygon", &polygonAnimationMode, 2)) {
-        // Radio button changed
-      }
+      if (ImGui::BeginTable("PolygonAnimTable", 2, ImGuiTableFlags_None)) {
+        ImGui::TableSetupColumn("Col1", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Col2", ImGuiTableColumnFlags_WidthStretch);
 
-      if (ImGui::RadioButton("Wave Fill Polygon", &polygonAnimationMode, 3)) {
-        // Radio button changed
-      }
-      ImGui::SameLine();
-      if (ImGui::RadioButton("Wobble Fill Polygon", &polygonAnimationMode, 4)) {
-        // Radio button changed
-      }
-      ImGui::SameLine();
-      if (ImGui::RadioButton("Gradient Polygon", &polygonAnimationMode, 5)) {
-        // Radio button changed
+        // Row 1
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        if (ImGui::RadioButton("No Animation Polygon", &polygonAnimationMode,
+                               0)) {
+        }
+        ImGui::TableSetColumnIndex(1);
+        if (ImGui::RadioButton("FadeIn Polygon", &polygonAnimationMode, 1)) {
+        }
+
+        // Row 2
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        if (ImGui::RadioButton("Wobble Polygon", &polygonAnimationMode, 2)) {
+        }
+        ImGui::TableSetColumnIndex(1);
+        if (ImGui::RadioButton("Wave Fill Polygon", &polygonAnimationMode, 3)) {
+        }
+
+        // Row 3
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        if (ImGui::RadioButton("Wobble Fill Polygon", &polygonAnimationMode,
+                               4)) {
+        }
+        ImGui::TableSetColumnIndex(1);
+        if (ImGui::RadioButton("Gradient Polygon", &polygonAnimationMode, 5)) {
+        }
+
+        ImGui::EndTable();
       }
     }
   }
