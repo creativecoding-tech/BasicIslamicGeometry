@@ -392,37 +392,40 @@ bool BasicZelligeTemplate::hasPlaybackSettings() {
 
 //--------------------------------------------------------------
 void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
-  ImGui::Text("Mode Draw");
+  // Template CollapsingHeader
+  if (ImGui::CollapsingHeader("Template", ImGuiTreeNodeFlags_DefaultOpen)) {
+    ImGui::Text("Mode Draw");
 
-  if (ImGui::RadioButton("Parallel Per Group", &playMode, 0)) {
-    // Radio button changed
-  }
-  ImGui::SetNextItemWidth(150.0f);
-  if (ImGui::RadioButton("Sequential Per Group", &playMode, 1)) {
-    // Radio button changed
-  }
-  ImGui::Separator();
-  ImGui::Text("Draw Settings");
-  if (ImGui::Checkbox("Cartesian", &drawCartesian)) {
-    // Checkbox simpan preferensi untuk saat Draw diklik
-  }
-  ImGui::SameLine();
-  if (ImGui::Checkbox("Circles", &drawCircles)) {
-    // Checkbox simpan preferensi untuk saat Draw diklik
-  }
-  ImGui::SameLine();
-  if (ImGui::Checkbox("CrossLines", &drawCrossLines)) {
-    // Checkbox simpan preferensi untuk saat Draw diklik
-  }
-  if (ImGui::Checkbox("Parallelograms", &drawParallelograms)) {
-    // Checkbox simpan preferensi untuk saat Draw diklik
-  }
-  ImGui::SameLine();
-  if (ImGui::Checkbox("RectangleLines", &drawRectangleLines)) {
-    // Checkbox simpan preferensi untuk saat Draw diklik
-  }
-  if (ImGui::Checkbox("OctagramLines", &drawOctagramLines)) {
-    // Checkbox simpan preferensi untuk saat Draw diklik
+    if (ImGui::RadioButton("Parallel Per Group", &playMode, 0)) {
+      // Radio button changed
+    }
+    ImGui::SetNextItemWidth(150.0f);
+    if (ImGui::RadioButton("Sequential Per Group", &playMode, 1)) {
+      // Radio button changed
+    }
+    ImGui::Separator();
+    ImGui::Text("Draw Settings");
+    if (ImGui::Checkbox("Cartesian", &drawCartesian)) {
+      // Checkbox simpan preferensi untuk saat Draw diklik
+    }
+    ImGui::SameLine();
+    if (ImGui::Checkbox("Circles", &drawCircles)) {
+      // Checkbox simpan preferensi untuk saat Draw diklik
+    }
+    ImGui::SameLine();
+    if (ImGui::Checkbox("CrossLines", &drawCrossLines)) {
+      // Checkbox simpan preferensi untuk saat Draw diklik
+    }
+    if (ImGui::Checkbox("Parallelograms", &drawParallelograms)) {
+      // Checkbox simpan preferensi untuk saat Draw diklik
+    }
+    ImGui::SameLine();
+    if (ImGui::Checkbox("RectangleLines", &drawRectangleLines)) {
+      // Checkbox simpan preferensi untuk saat Draw diklik
+    }
+    if (ImGui::Checkbox("OctagramLines", &drawOctagramLines)) {
+      // Checkbox simpan preferensi untuk saat Draw diklik
+    }
   }
 
   ImGui::Separator();
@@ -439,52 +442,74 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
 
       // Custom Line Appearance section - hanya muncul jika checkbox dicheck
       if (app->shouldDrawCustomLines) {
+        ImGui::Separator();
         ImGui::Text("Custom Line Animation");
 
-        // Radio buttons untuk Line Animation Mode ⭐ NEW
-        ImGui::Text("Animation Mode");
-        ImGui::SameLine();
-        ImGui::RadioButton("No Animation Line",
-                           reinterpret_cast<int *>(&app->lineAnimationMode), 0);
-        ImGui::RadioButton("Wave Animation Line",
-                           reinterpret_cast<int *>(&app->lineAnimationMode), 1);
-        ImGui::Separator();
-        // Sliders untuk Wave Animation (hanya muncul jika Wave Animation
-        // dipilih)
-        if (app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
-          ImGui::Text("Wave Settings");
-          ImGui::SliderFloat("Amplitude (px)", &app->lineWaveAmplitude, 2.0f,
-                             5.0f);
-          ImGui::SliderFloat("Frequency", &app->lineWaveFrequency, 1.0f, 3.0f);
-          ImGui::SliderFloat("Duration (sec)", &app->lineWaveDuration, 0.0f,
-                             60.0f, "%.1f"); // Slider durasi 0-60 detik ⭐ NEW
-          ImGui::Separator();
-        }
-        ImGui::Separator();
-      }
+        if (ImGui::BeginTable("CustomLineAnimTable", 2, ImGuiTableFlags_None)) {
+          // Column 1 setup
+          ImGui::TableSetupColumn("AnimationTypes",
+                                  ImGuiTableColumnFlags_WidthFixed, 180.0f);
+          ImGui::TableSetupColumn("WaveSettings",
+                                  ImGuiTableColumnFlags_WidthStretch);
 
-      // Step Animation Line UI (hanya muncul jika selain No Animation dipilih
-      // DAN ada polygons) ⭐ NEW
-      if (app->lineAnimationMode != ofApp::LineAnimationMode::NO_ANIMATION) {
-        // Cek apakah ada polygon dari file .nay
-        if (app->loadedFilePolygonCount > 0) {
-          ImGui::Text("Step Animation Line");
-          ImGui::RadioButton(
-              "Before Polygon Draw",
-              reinterpret_cast<int *>(&app->lineStepAnimationMode), 0);
-          ImGui::RadioButton(
-              "With Polygon Draw",
-              reinterpret_cast<int *>(&app->lineStepAnimationMode), 1);
-          ImGui::RadioButton(
-              "After Polygon Draw",
-              reinterpret_cast<int *>(&app->lineStepAnimationMode), 2);
-          ImGui::Separator();
-        } else {
-          // Jika TIDAK ada polygon, paksa mode ke STEP_BEFORE_POLYGON_DRAW
-          // (default safe) Agar animation tetap jalan tanpa nunggu polygon yang
-          // tidak akan pernah ada
-          app->lineStepAnimationMode =
-              ofApp::LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW;
+          // Row 1: No Animation
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::RadioButton("No Animation Line",
+                             reinterpret_cast<int *>(&app->lineAnimationMode),
+                             0);
+
+          // Row 2: Wave Animation
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::RadioButton("Wave Animation Line",
+                             reinterpret_cast<int *>(&app->lineAnimationMode),
+                             1);
+
+          // Column 2: Wave Settings (only if Wave is selected)
+          if (app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("Wave Settings");
+            ImGui::SetNextItemWidth(120.0f);
+            ImGui::SliderFloat("Amplitude (px)", &app->lineWaveAmplitude, 2.0f,
+                               5.0f);
+            ImGui::SetNextItemWidth(120.0f);
+            ImGui::SliderFloat("Frequency", &app->lineWaveFrequency, 1.0f,
+                               3.0f);
+            ImGui::SetNextItemWidth(120.0f);
+            ImGui::SliderFloat("Duration (sec)", &app->lineWaveDuration, 0.0f,
+                               60.0f,
+                               "%.1f"); // Slider durasi 0-60 detik ⭐ NEW
+          }
+
+          ImGui::EndTable();
+        }
+
+        ImGui::Separator();
+
+        // Step Animation Line UI (hanya muncul jika selain No Animation dipilih
+        // DAN ada polygons) ⭐ NEW
+        if (app->lineAnimationMode != ofApp::LineAnimationMode::NO_ANIMATION) {
+          // Cek apakah ada polygon dari file .nay
+          if (app->loadedFilePolygonCount > 0) {
+            ImGui::Text("Step Animation Line");
+            ImGui::RadioButton(
+                "Before Polygon Draw",
+                reinterpret_cast<int *>(&app->lineStepAnimationMode), 0);
+            ImGui::RadioButton(
+                "With Polygon Draw",
+                reinterpret_cast<int *>(&app->lineStepAnimationMode), 1);
+            ImGui::RadioButton(
+                "After Polygon Draw",
+                reinterpret_cast<int *>(&app->lineStepAnimationMode), 2);
+            ImGui::Separator();
+          } else {
+            // Jika TIDAK ada polygon, paksa mode ke STEP_BEFORE_POLYGON_DRAW
+            // (default safe) Agar animation tetap jalan tanpa nunggu polygon
+            // yang tidak akan pernah ada
+            app->lineStepAnimationMode =
+                ofApp::LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW;
+          }
         }
       }
     }
