@@ -166,6 +166,9 @@ void ofApp::updateDelayedLoad() {
   loadDelayAccumulator += deltaTime;
 
   if (loadDelayAccumulator >= loadDelayDuration) {
+    // Apply selected draw mode saat mulai drawing (sebelum load)
+    polygonDrawMode = nextPolygonDrawMode;
+
     // Timer selesai, panggil load method
     if (pendingLoadMode == 0) {
       fileOperationManager
@@ -251,6 +254,14 @@ void ofApp::updateStaggeredTemplate() {
 
 //--------------------------------------------------------------
 void ofApp::updateStaggeredCustomLines() {
+  // ⭐ NEW: Jika tidak ada Custom Lines (misal: di-uncheck), LANGSUNG skip ke
+  // Polygons Jangan menunggu timer animasi apapun!
+  if (customLines.empty()) {
+    loadStage = LOAD_POLYGONS;
+    currentPolygonIndex = 0; // Reset index untuk sequential polygon draw
+    return;
+  }
+
   // Cek mode step animation
   bool isBeforePolygonDraw = (lineStepAnimationMode ==
                               LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
@@ -1401,6 +1412,9 @@ void ofApp::dragEvent(ofDragInfo dragInfo) {}
 
 //--------------------------------------------------------------
 void ofApp::startSequentialDrawing() {
+  // Apply selected draw mode saat mulai drawing
+  polygonDrawMode = nextPolygonDrawMode;
+
   if (!currentTemplate)
     return;
 

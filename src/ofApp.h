@@ -139,6 +139,8 @@ public:
   // Polygon Draw Mode ⭐ NEW
   enum PolygonDrawMode { PG_DRAW_PARALLEL, PG_DRAW_SEQUENTIAL };
   PolygonDrawMode polygonDrawMode = PG_DRAW_PARALLEL;
+  PolygonDrawMode nextPolygonDrawMode =
+      PG_DRAW_PARALLEL;        // Buffer for UI selection
   int currentPolygonIndex = 0; // Untuk tracking sequential drawing polygons
 
   // Undo System (Max 100 steps)

@@ -257,72 +257,93 @@ void FileOperationManager::loadWorkspaceSeq() {
   // Set flag untuk customLines loading SEBELUM load
   app->fileManager.setShouldLoadCustomLines(app->shouldDrawCustomLines);
 
-  app->fileManager.loadAllSequential(
-      loadedTemplateName, loadedRadius, loadedLineWidth, loadedLabelsVisible,
-      loadedDotsVisible, app->customLines, app->polygonShapes, app->userDots,
-      app->showUserDot, app->lastSavedPath);
+  if (app->fileManager.loadAll(loadedTemplateName, loadedRadius,
+                               app->customLines, app->polygonShapes,
+                               app->userDots, loadedLineWidth,
+                               loadedLabelsVisible, loadedDotsVisible,
+                               app->showUserDot, app->lastSavedPath)) {
 
-  // Switch ke template yang di-load DULU
-  app->switchTemplate(loadedTemplateName);
+    // Switch ke template yang di-load DULU
+    app->switchTemplate(loadedTemplateName);
 
-  // Rebuild shapes dengan loaded radius yang benar!
-  app->currentTemplate->setRadius(loadedRadius);
+    // Rebuild shapes dengan loaded radius yang benar!
+    app->currentTemplate->setRadius(loadedRadius);
 
-  // Update tracking untuk scaling
-  app->previousRadius =
-      loadedRadius; // Reset tracking agar tidak scaling saat load
+    // Update tracking untuk scaling
+    app->previousRadius =
+        loadedRadius; // Reset tracking agar tidak scaling saat load
 
-  // Sync Settings ke template
-  app->currentTemplate->lineWidth = loadedLineWidth;
-  app->currentTemplate->labelsVisible = loadedLabelsVisible;
-  app->currentTemplate->dotsVisible = loadedDotsVisible;
+    // Sync Settings ke template
+    app->currentTemplate->lineWidth = loadedLineWidth;
+    app->currentTemplate->labelsVisible = loadedLabelsVisible;
+    app->currentTemplate->dotsVisible = loadedDotsVisible;
 
-  // Apply settings ke semua shapes yang baru di-load
-  const auto &shapes = app->currentTemplate->getShapes();
-  for (auto &shape : shapes) {
-    shape->setRadius(
-        app->currentTemplate->radius); // Update radius dengan loadedRadius!
-    shape->setLineWidth(app->currentTemplate->lineWidth);
+    // Apply settings ke semua shapes yang baru di-load
+    const auto &shapes = app->currentTemplate->getShapes();
+    for (auto &shape : shapes) {
+      shape->setRadius(
+          app->currentTemplate->radius); // Update radius dengan loadedRadius!
+      shape->setLineWidth(app->currentTemplate->lineWidth);
 
-    if (app->currentTemplate->labelsVisible)
-      shape->showLabel();
-    else
-      shape->hideLabel();
+      if (app->currentTemplate->labelsVisible)
+        shape->showLabel();
+      else
+        shape->hideLabel();
 
-    if (app->currentTemplate->dotsVisible)
-      shape->showDot();
-    else
-      shape->hideDot();
+      if (app->currentTemplate->dotsVisible)
+        shape->showDot();
+      else
+        shape->hideDot();
 
-    // Set sequential mode ke SEMUA shapes (penting untuk OctagramLine 2-phase
-    // animation!)
-    shape->setSequentialMode(true);
-    // Reset progress untuk sequential drawing
-    shape->progress = 0;
+      // Set sequential mode ke SEMUA shapes (penting untuk OctagramLine 2-phase
+      // animation!)
+      shape->setSequentialMode(true);
+      // Reset progress untuk sequential drawing
+      shape->progress = 0;
+    }
+
+    // Cek flag Draw Custom Lines - jika false, clear customLines yang baru
+    // diload (Sama seperti loadWorkspace)
+    if (!app->shouldDrawCustomLines) {
+      app->customLines.clear();
+      app->selectionManager.clearLineSelection();
+    }
+
+    // Enable parallel mode untuk customLines & polygons agar langsung ready
+    // untuk di-draw/animate sesuai mode masing-masing
+    app->fileManager.setLoadParallelMode(true);
+
+    // Sync ColorPicker
+    app->syncColorPickerFromLoadedLines();
+    app->syncColorPickerFromLoadedPolygons();
+    app->syncUserDotFromLoaded();
+
+    // START SEQUENTIAL MODE untuk template shapes!
+    // Set sequential mode flag di template
+    app->currentTemplate->sequentialMode = true;
+    app->currentTemplate->currentShapeIndex = 0;
+    app->currentTemplate->sequentialCompleted = false;
+
+    // Reset dots cache agar di-rebuild
+    app->dotsCacheDirty = true;
+
+    // Reset canvas transform
+    app->canvasTranslation = vec2(0, 0);
+    app->canvasRotation = 0.0f;
+    app->canvasZoom = 1.0f;
+
+    // Sequential load akan mengupdate template secara bertahap
+    // TAPI customLines dan polygons sudah loaded semua (siap animate)
+    app->loadStage = ofApp::LOAD_TEMPLATE;
+    app->isStaggeredLoad = true;
+    app->isSequentialShapeLoad = true; // SEQUENTIAL mode untuk Template
+    app->currentState =
+        ofApp::UpdateState::STAGGERED_LOAD; // STRATEGY PATTERN: Set state ke
+                                            // STAGGERED_LOAD
+  } else {
+    app->errorPopup->show("Failed to Load Workspace",
+                          "Invalid file format or corrupted data!", "OK");
   }
-
-  // START SEQUENTIAL MODE untuk template shapes!
-  // Set sequential mode flag di template
-  app->currentTemplate->sequentialMode = true;
-  app->currentTemplate->currentShapeIndex = 0;
-  app->currentTemplate->sequentialCompleted = false;
-
-  // Reset dots cache agar di-rebuild
-  app->dotsCacheDirty = true;
-
-  // Reset canvas transform
-  app->canvasTranslation = vec2(0, 0);
-  app->canvasRotation = 0.0f;
-  app->canvasZoom = 1.0f;
-
-  // Sequential load akan mengupdate template, customLines, dan polygons secara
-  // bertahap Gunakan STAGGERED_LOAD state dengan isSequentialShapeLoad = true
-  app->loadStage = ofApp::LOAD_TEMPLATE;
-  app->isStaggeredLoad = true;
-  app->isSequentialShapeLoad = true; // SEQUENTIAL mode (CTRL+SHIFT+O)
-  app->currentState =
-      ofApp::UpdateState::STAGGERED_LOAD; // STRATEGY PATTERN: Set state ke
-                                          // STAGGERED_LOAD
 }
 
 //--------------------------------------------------------------

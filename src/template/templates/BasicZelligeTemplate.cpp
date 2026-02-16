@@ -562,13 +562,13 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
       // ⭐ NEW: Mode Draw Polygon
       ImGui::Text("Mode Draw");
       if (ImGui::RadioButton("Parallel##PG",
-                             reinterpret_cast<int *>(&app->polygonDrawMode),
+                             reinterpret_cast<int *>(&app->nextPolygonDrawMode),
                              0)) {
         // PG_DRAW_PARALLEL
       }
       ImGui::SameLine();
       if (ImGui::RadioButton("Sequential##PG",
-                             reinterpret_cast<int *>(&app->polygonDrawMode),
+                             reinterpret_cast<int *>(&app->nextPolygonDrawMode),
                              1)) {
         // PG_DRAW_SEQUENTIAL
       }
