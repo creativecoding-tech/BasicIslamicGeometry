@@ -399,6 +399,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
     if (ImGui::RadioButton("Parallel", &playMode, 0)) {
       // Radio button changed
     }
+    ImGui::SameLine();
     ImGui::SetNextItemWidth(150.0f);
     if (ImGui::RadioButton("Sequential", &playMode, 1)) {
       // Radio button changed
@@ -440,8 +441,10 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
     }
 
     ImGui::Separator();
+    ImGui::AlignTextToFramePadding();
     ImGui::Text("Template Speed");
-    ImGui::SetNextItemWidth(150.0f);
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(80.0f);
     ImGui::SliderFloat("##TemplateSpeed",
                        &app->currentTemplate->templateSpeedMultiplier, 0.1f,
                        3.0f, "%.2f");
@@ -541,8 +544,10 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
           }
         }
 
+        ImGui::AlignTextToFramePadding();
         ImGui::Text("Custom Line Speed");
-        ImGui::SetNextItemWidth(150.0f);
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(80.0f);
         if (ImGui::SliderFloat("##CustomLineSpeed",
                                &app->currentTemplate->customLineSpeedMultiplier,
                                0.1f, 3.0f, "%.2f")) {
@@ -613,8 +618,10 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
       }
 
       ImGui::Separator();
+      ImGui::AlignTextToFramePadding();
       ImGui::Text("Polygon Speed");
-      ImGui::SetNextItemWidth(150.0f);
+      ImGui::SameLine();
+      ImGui::SetNextItemWidth(80.0f);
       ImGui::SliderFloat("##PolygonSpeed",
                          &app->currentTemplate->polygonSpeedMultiplier, 0.1f,
                          3.0f, "%.2f");
@@ -634,10 +641,6 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
       app->errorPopup->show(
           "No File Selected",
           "Please open a .nay file first before clicking Play!", "OK");
-    } else if (playMode != 0 && playMode != 1) {
-      // Belum pilih mode, munculkan error popup
-      app->errorPopup->show("No Mode Selected",
-                            "Please select a Draw Mode first!", "OK");
     } else {
       // Semua validasi OK! Cek apakah canvas kosong
       bool isCanvasEmpty =

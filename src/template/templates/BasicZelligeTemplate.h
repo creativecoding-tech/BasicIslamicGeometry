@@ -51,14 +51,14 @@ private:
   void setupOctagramLines();
 
   // Playback state
-  int playMode = -1; // -1 = belum pilih, 0 = Parallel, 1 = Sequential
+  int playMode = 0;                  // 0 = Parallel (DEFAULT), 1 = Sequential
   int polygonAnimationMode = 0;      // 0=None, 1=FadeIn, 2=Wobble, 3=Fill
   bool showPlaybackSettings = false; // Control visibility of playback UI
 
 public:
-  // Reset draw mode ke belum memilih
+  // Reset draw mode ke default (Parallel)
   void resetDrawMode() {
-    playMode = -1;
+    playMode = 0;
     showPlaybackSettings = false;
   }
 
