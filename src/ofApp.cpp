@@ -1946,13 +1946,13 @@ void ofApp::cleanCanvas() {
       "Are you sure you want to clean the canvas?\n\nEverything on the canvas "
       "will be deleted.",
       "Yes, Clean", "Cancel", [this]() {
-        // User klik Yes, execute clean
-        cleanCanvasInternal();
+        // User klik Yes, execute clean (Reset Speed = true)
+        cleanCanvasInternal(true);
       });
 }
 
 //--------------------------------------------------------------
-void ofApp::cleanCanvasInternal() {
+void ofApp::cleanCanvasInternal(bool resetSpeed) {
   // Skip kalau sedang load sequential
   if (fileManager.isLoadSequentialMode()) {
     return;
@@ -1968,6 +1968,10 @@ void ofApp::cleanCanvasInternal() {
   // Benar-benar HAPUS semua template shapes - delegate ke template
   if (currentTemplate) {
     currentTemplate->clearAllShapes();
+    if (resetSpeed) {
+      currentTemplate->templateSpeedMultiplier =
+          1.0f; // Reset speed ONLY if requested
+    }
   }
 
   // Reset semua color pickers ke warna biru default
