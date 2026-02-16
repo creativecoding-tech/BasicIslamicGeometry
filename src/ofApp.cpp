@@ -327,6 +327,12 @@ void ofApp::updateStaggeredCustomLines() {
             ->customLineSpeedMultiplier; // Use Custom Line specific speed
   }
   float baseSpeed = 1.2f; // Default speed from CustomLine.cpp
+
+  // Tune base speed for Parallel mode (slower because all lines draw at once)
+  if (customLineDrawMode == CL_DRAW_PARALLEL) {
+    baseSpeed = 0.4f; // ~3x slower base speed for Parallel
+  }
+
   float drawSpeed = baseSpeed * speedMultiplier;
 
   if (customLineDrawMode == CL_DRAW_PARALLEL) {
