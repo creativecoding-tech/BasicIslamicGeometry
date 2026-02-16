@@ -7,20 +7,24 @@ class ofApp;
 
 class FileOperationManager {
 public:
-    FileOperationManager(ofApp* app);
+  FileOperationManager(ofApp *app);
 
-    // File operations
-    void saveWorkspace();          // Save workspace to file
-    void saveWorkspaceAs();        // Save workspace to custom location
-    void openWorkspace();          // Open file dialog dengan validasi .nay
-    void loadWorkspace();          // Load workspace from file
-    void loadWorkspaceSeq();       // Load workspace seq from file
-    void closeFile();              // Close opened file (tanpa clean canvas)
+  // File operations
+  void saveWorkspace();    // Save workspace to file
+  void saveWorkspaceAs();  // Save workspace to custom location
+  void openWorkspace();    // Open file dialog dengan validasi .nay
+  void loadWorkspace();    // Load workspace from file
+  void loadWorkspaceSeq(); // Load workspace seq from file
+  void closeFile();        // Close opened file (tanpa clean canvas)
 
-    // Peek functions untuk CollapsingHeader
-    bool peekFileCustomLinesCount(const std::string& filepath, int& outCount);  // Cek jumlah customLines di file tanpa full load
-    bool peekFilePolygonCount(const std::string& filepath, int& outCount);      // Cek jumlah polygons di file tanpa full load
+  // Peek functions untuk CollapsingHeader
+  bool peekFileCustomLinesCount(
+      const std::string &filepath,
+      int &outCount); // Cek jumlah customLines di file tanpa full load
+  bool peekFilePolygonCount(
+      const std::string &filepath,
+      int &outCount); // Cek jumlah polygons di file tanpa full load
 
 private:
-    ofApp* app;
+  ofApp *app;
 };

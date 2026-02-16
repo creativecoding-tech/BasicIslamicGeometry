@@ -1,19 +1,20 @@
 #include "FileManager.h"
 #include "../anim/FadeInAnimation.h"
-#include "../anim/WobbleAnimation.h"
 #include "../anim/FillAnimation.h"
-#include "../anim/WobbleFillAnimation.h"
 #include "../anim/GradientAnimation.h"
+#include "../anim/WobbleAnimation.h"
+#include "../anim/WobbleFillAnimation.h"
+
 
 //--------------------------------------------------------------
 //--------------------------------------------------------------
-void FileManager::saveAll(const std::string &templateName, float globalRadius,
-                          const std::vector<CustomLine> &customLines,
-                          const std::vector<PolygonShape> &polygons,
-                          const std::vector<std::unique_ptr<DotShape>> &userDots,
-                          float currentLineWidth, bool labelsVisible,
-                          bool dotsVisible, bool showUserDot,
-                          const std::string &filepath) {
+void FileManager::saveAll(
+    const std::string &templateName, float globalRadius,
+    const std::vector<CustomLine> &customLines,
+    const std::vector<PolygonShape> &polygons,
+    const std::vector<std::unique_ptr<DotShape>> &userDots,
+    float currentLineWidth, bool labelsVisible, bool dotsVisible,
+    bool showUserDot, const std::string &filepath) {
   ofBuffer buffer;
 
   // ===== HEADER (64 bytes) =====
@@ -143,7 +144,7 @@ bool FileManager::loadAll(std::string &outTemplateName, float &outGlobalRadius,
     outLineWidth = 4.0f;
     outLabelsVisible = true;
     outDotsVisible = true;
-    outShowUserDot = true;  // Default true
+    outShowUserDot = true; // Default true
     offset += 20;
   } else if (version == 2) {
     // Version 2: Read from what was previously reserved
@@ -360,7 +361,9 @@ bool FileManager::loadCustomLinesNA(ofBuffer &buffer, size_t &offset,
 
     // Set progress ke 0.0 untuk parallel animation (semua barengan)
     line.setProgress(0.0f);
-    line.setSpeed(0.18f * animationSpeedMultiplier);  // Delta time calibrated (0.003f * 60 FPS)
+    line.setSpeed(
+        0.18f *
+        animationSpeedMultiplier); // Delta time calibrated (0.003f * 60 FPS)
 
     // Add ke vector
     customLines.push_back(line);
@@ -444,7 +447,7 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
 
     // Buat PolygonShape dengan atau tanpa animation tergantung mode
     PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
-    polygon.setLoadedFromFile(true);  // Flag sebagai loaded dari file .nay
+    polygon.setLoadedFromFile(true); // Flag sebagai loaded dari file .nay
     polygons.push_back(std::move(polygon));
   }
 
@@ -452,16 +455,17 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
 }
 
 //--------------------------------------------------------------
-void FileManager::saveUserDotsNA(ofBuffer &buffer,
-                                  const std::vector<std::unique_ptr<DotShape>> &userDots,
-                                  float radius) {
+void FileManager::saveUserDotsNA(
+    ofBuffer &buffer, const std::vector<std::unique_ptr<DotShape>> &userDots,
+    float radius) {
   // Write jumlah dot
   int numDots = static_cast<int>(userDots.size());
   buffer.append(reinterpret_cast<const char *>(&numDots), sizeof(int));
 
   // Write setiap dot dengan NORMALIZED positions
   for (const auto &dot : userDots) {
-    if (!dot) continue;
+    if (!dot)
+      continue;
 
     // Write position (NORMALIZED)
     vec2 pos = dot->getPosition();
@@ -471,7 +475,8 @@ void FileManager::saveUserDotsNA(ofBuffer &buffer,
     // Write lower bound (NORMALIZED)
     vec2 lowerBound = dot->getLowerBound();
     vec2 normalizedLowerBound = lowerBound / radius; // Normalize
-    buffer.append(reinterpret_cast<const char *>(&normalizedLowerBound), sizeof(vec2));
+    buffer.append(reinterpret_cast<const char *>(&normalizedLowerBound),
+                  sizeof(vec2));
 
     // Write radius
     float dotRadius = dot->getRadius();
@@ -484,9 +489,9 @@ void FileManager::saveUserDotsNA(ofBuffer &buffer,
 }
 
 //--------------------------------------------------------------
-bool FileManager::loadUserDotsNA(ofBuffer &buffer, size_t &offset,
-                                 std::vector<std::unique_ptr<DotShape>> &userDots,
-                                 float radius) {
+bool FileManager::loadUserDotsNA(
+    ofBuffer &buffer, size_t &offset,
+    std::vector<std::unique_ptr<DotShape>> &userDots, float radius) {
   char *data = buffer.getData();
   size_t bufferSize = buffer.size();
 
@@ -544,15 +549,16 @@ bool FileManager::loadUserDotsNA(ofBuffer &buffer, size_t &offset,
 FileManager::FileManager()
     : loadSequentialMode(false), loadParallelMode(false), currentLineIndex(0),
       loadSpeed(0.05f), loadAccumulator(0.0f), currentPolygonIndex(0),
-      polygonAnimationMode(PolygonAnimationMode::NO_ANIMATION), animationSpeedMultiplier(1.0f) {}
+      polygonAnimationMode(PolygonAnimationMode::NO_ANIMATION),
+      animationSpeedMultiplier(1.0f) {}
 
 //--------------------------------------------------------------
-void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlobalRadius,
-                                    float &outLineWidth, bool &outLabelsVisible, bool &outDotsVisible,
-                                    std::vector<CustomLine> &customLines, std::vector<PolygonShape> &polygons,
-                                    std::vector<std::unique_ptr<DotShape>> &userDots,
-                                    bool &outShowUserDot,
-                                    const std::string& filepath) {
+void FileManager::loadAllSequential(
+    std::string &outTemplateName, float &outGlobalRadius, float &outLineWidth,
+    bool &outLabelsVisible, bool &outDotsVisible,
+    std::vector<CustomLine> &customLines, std::vector<PolygonShape> &polygons,
+    std::vector<std::unique_ptr<DotShape>> &userDots, bool &outShowUserDot,
+    const std::string &filepath) {
   // Cek apakah file exists
   ofFile file(filepath);
   if (!file.exists()) {
@@ -611,7 +617,7 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
     outLineWidth = 4.0f;
     outLabelsVisible = true;
     outDotsVisible = true;
-    outShowUserDot = true;  // Default true
+    outShowUserDot = true; // Default true
     offset += 20;
   } else if (version == 2) {
     // Version 2: Read dari apa yang sebelumnya reserved
@@ -647,7 +653,8 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
 
   // Validasi: numLines harus sama dengan numLines2
   if (numLines != numLines2) {
-    ofLog() << "Warning: numLines mismatch (" << numLines << " vs " << numLines2 << ")";
+    ofLog() << "Warning: numLines mismatch (" << numLines << " vs " << numLines2
+            << ")";
   }
 
   // Load customLines jika vectors kosong
@@ -745,7 +752,9 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
 
       // Set initial animation state
       line.setProgress(0.0f);
-      line.setSpeed(1.8f * animationSpeedMultiplier);  // Delta time calibrated (0.03f * 60 FPS)
+      line.setSpeed(
+          1.8f *
+          animationSpeedMultiplier); // Delta time calibrated (0.03f * 60 FPS)
 
       // Add ke buffer HANYA jika shouldLoadCustomLines = true
       if (shouldLoadCustomLines) {
@@ -769,7 +778,8 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
 
   // Validasi: numPolygons harus sama dengan numPolygons2
   if (numPolygons != numPolygons2) {
-    ofLog() << "Warning: numPolygons mismatch (" << numPolygons << " vs " << numPolygons2 << ")";
+    ofLog() << "Warning: numPolygons mismatch (" << numPolygons << " vs "
+            << numPolygons2 << ")";
   }
 
   // Load polygons jika vectors kosong
@@ -808,7 +818,7 @@ void FileManager::loadAllSequential(std::string &outTemplateName, float &outGlob
 
       // Buat PolygonShape dengan atau tanpa animation tergantung mode
       PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
-      polygon.setLoadedFromFile(true);  // Flag sebagai loaded dari file .nay
+      polygon.setLoadedFromFile(true); // Flag sebagai loaded dari file .nay
       loadedPolygonsBuffer.push_back(std::move(polygon));
     }
   }
@@ -924,7 +934,8 @@ void FileManager::updateSequentialLoad(std::vector<CustomLine> &customLines,
         // Kalau tidak ada line lagi, add polygon
         else if (currentPolygonIndex <
                  static_cast<int>(loadedPolygonsBuffer.size())) {
-          polygons.push_back(std::move(loadedPolygonsBuffer[currentPolygonIndex]));
+          polygons.push_back(
+              std::move(loadedPolygonsBuffer[currentPolygonIndex]));
           currentPolygonIndex++;
           loadAccumulator = 0.0f;
         }
@@ -982,41 +993,43 @@ int FileManager::getTotalLoadedPolygons() const {
 }
 
 //--------------------------------------------------------------
-PolygonShape FileManager::createPolygonWithAnimation(const std::vector<vec2>& vertices, ofColor color, int index) {
+//--------------------------------------------------------------
+PolygonShape
+FileManager::createPolygonWithAnimation(const std::vector<vec2> &vertices,
+                                        ofColor color, int index) {
   // Buat PolygonShape dengan animation berdasarkan polygonAnimationMode
   switch (polygonAnimationMode) {
-    case PolygonAnimationMode::FADE_IN:
-      {
-        auto fadeIn = std::make_unique<FadeInAnimation>(color.a, 0.18f * animationSpeedMultiplier);  // Delta time calibrated (0.003f * 60 FPS)
-        return PolygonShape(vertices, color, index, std::move(fadeIn));
-      }
-    case PolygonAnimationMode::WOBBLE:
-      {
-        auto wobble = std::make_unique<WobbleAnimation>(30.0f, 5.0f, 1.8f * animationSpeedMultiplier);  // Delta time calibrated (0.03f * 60 FPS)
-        return PolygonShape(vertices, color, index, std::move(wobble));
-      }
-    case PolygonAnimationMode::WAVE_FILL:
-      {
-        auto fill = std::make_unique<FillAnimation>(20.0f, 4.0f, 0.12f * animationSpeedMultiplier);  // Delta time calibrated (0.002f * 60 FPS)
-        return PolygonShape(vertices, color, index, std::move(fill));
-      }
-    case PolygonAnimationMode::WOBBLE_FILL:
-      {
-        // wobbleAmount=30.0, wobbleSpeed=5.0, wobbleFrequency=1.8, targetFillLevel=1.0 (100%), fillSpeed=0.3
-        auto wobbleFill = std::make_unique<WobbleFillAnimation>(30.0f, 5.0f * animationSpeedMultiplier, 1.8f, 1.0f, 0.3f * animationSpeedMultiplier);
-        return PolygonShape(vertices, color, index, std::move(wobbleFill));
-      }
-    case PolygonAnimationMode::GRADIENT:
-      {
-        // speed=2.0, frequency=5.0, duration=5.0 detik
-        auto gradient = std::make_unique<GradientAnimation>(2.0f * animationSpeedMultiplier, 5.0f, 5.0f);
-        return PolygonShape(vertices, color, index, std::move(gradient));
-      }
-    case PolygonAnimationMode::NO_ANIMATION:
-    default:
-      {
-        return PolygonShape(vertices, color, index);
-      }
+  case PolygonAnimationMode::FADE_IN: {
+    auto fadeIn = std::make_unique<FadeInAnimation>(
+        color.a, 0.18f); // Delta time calibrated (0.003f * 60 FPS)
+    return PolygonShape(vertices, color, index, std::move(fadeIn));
+  }
+  case PolygonAnimationMode::WOBBLE: {
+    auto wobble = std::make_unique<WobbleAnimation>(
+        30.0f, 5.0f, 1.8f); // Delta time calibrated (0.03f * 60 FPS)
+    return PolygonShape(vertices, color, index, std::move(wobble));
+  }
+  case PolygonAnimationMode::WAVE_FILL: {
+    auto fill = std::make_unique<FillAnimation>(
+        20.0f, 4.0f, 0.12f); // Delta time calibrated (0.002f * 60 FPS)
+    return PolygonShape(vertices, color, index, std::move(fill));
+  }
+  case PolygonAnimationMode::WOBBLE_FILL: {
+    // wobbleAmount=30.0, wobbleSpeed=5.0, wobbleFrequency=1.8,
+    // targetFillLevel=1.0 (100%), fillSpeed=0.3
+    auto wobbleFill =
+        std::make_unique<WobbleFillAnimation>(30.0f, 5.0f, 1.8f, 1.0f, 0.3f);
+    return PolygonShape(vertices, color, index, std::move(wobbleFill));
+  }
+  case PolygonAnimationMode::GRADIENT: {
+    // speed=2.0, frequency=5.0, duration=5.0 detik
+    auto gradient = std::make_unique<GradientAnimation>(2.0f, 5.0f, 5.0f);
+    return PolygonShape(vertices, color, index, std::move(gradient));
+  }
+  case PolygonAnimationMode::NO_ANIMATION:
+  default: {
+    return PolygonShape(vertices, color, index);
+  }
   }
 }
 
@@ -1028,28 +1041,32 @@ float FileManager::getLoadSpeed() const { return loadSpeed; }
 
 //--------------------------------------------------------------
 void FileManager::setAnimationSpeedMultiplier(float multiplier) {
-    animationSpeedMultiplier = multiplier;
+  animationSpeedMultiplier = multiplier;
 }
 
 //--------------------------------------------------------------
 float FileManager::getAnimationSpeedMultiplier() const {
-    return animationSpeedMultiplier;
+  return animationSpeedMultiplier;
 }
 
 //--------------------------------------------------------------
-void FileManager::setPolygonAnimationMode(PolygonAnimationMode mode) { polygonAnimationMode = mode; }
+void FileManager::setPolygonAnimationMode(PolygonAnimationMode mode) {
+  polygonAnimationMode = mode;
+}
 
 //--------------------------------------------------------------
-PolygonAnimationMode FileManager::getPolygonAnimationMode() const { return polygonAnimationMode; }
+PolygonAnimationMode FileManager::getPolygonAnimationMode() const {
+  return polygonAnimationMode;
+}
 
 //--------------------------------------------------------------
 void FileManager::setShouldLoadCustomLines(bool shouldLoad) {
-	shouldLoadCustomLines = shouldLoad;
+  shouldLoadCustomLines = shouldLoad;
 }
 
 //--------------------------------------------------------------
 bool FileManager::getShouldLoadCustomLines() const {
-	return shouldLoadCustomLines;
+  return shouldLoadCustomLines;
 }
 
 //--------------------------------------------------------------

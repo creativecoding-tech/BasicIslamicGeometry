@@ -396,11 +396,11 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
   if (ImGui::CollapsingHeader("Template", ImGuiTreeNodeFlags_DefaultOpen)) {
     ImGui::Text("Mode Draw");
 
-    if (ImGui::RadioButton("Parallel Per Group", &playMode, 0)) {
+    if (ImGui::RadioButton("Parallel", &playMode, 0)) {
       // Radio button changed
     }
     ImGui::SetNextItemWidth(150.0f);
-    if (ImGui::RadioButton("Sequential Per Group", &playMode, 1)) {
+    if (ImGui::RadioButton("Sequential", &playMode, 1)) {
       // Radio button changed
     }
     ImGui::Separator();
@@ -438,6 +438,13 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
 
       ImGui::EndTable();
     }
+
+    ImGui::Separator();
+    ImGui::Text("Template Speed");
+    ImGui::SetNextItemWidth(150.0f);
+    ImGui::SliderFloat("##TemplateSpeed",
+                       &app->currentTemplate->templateSpeedMultiplier, 0.1f,
+                       3.0f, "%.2f");
   }
 
   ImGui::Separator();
@@ -454,6 +461,17 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
 
       // Custom Line Appearance section - hanya muncul jika checkbox dicheck
       if (app->shouldDrawCustomLines) {
+        // Mode Draw Custom Lines ⭐ NEW
+        ImGui::Text("Mode Draw");
+        if (ImGui::RadioButton(
+                "Parallel##CL",
+                reinterpret_cast<int *>(&app->customLineDrawMode), 0)) {
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton(
+                "Sequential##CL",
+                reinterpret_cast<int *>(&app->customLineDrawMode), 1)) {
+        }
         ImGui::Separator();
         ImGui::Text("Custom Line Animation");
 
@@ -519,9 +537,18 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
             // Jika TIDAK ada polygon, paksa mode ke STEP_BEFORE_POLYGON_DRAW
             // (default safe) Agar animation tetap jalan tanpa nunggu polygon
             // yang tidak akan pernah ada
-            app->lineStepAnimationMode =
-                ofApp::LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW;
+            ofApp::LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW;
           }
+        }
+
+        ImGui::Text("Custom Line Speed");
+        ImGui::SetNextItemWidth(150.0f);
+        if (ImGui::SliderFloat("##CustomLineSpeed",
+                               &app->currentTemplate->customLineSpeedMultiplier,
+                               0.1f, 3.0f, "%.2f")) {
+          // Update wave speed based on custom line speed
+          app->lineWaveSpeed =
+              app->currentTemplate->customLineSpeedMultiplier * 2.0f;
         }
       }
     }
@@ -532,6 +559,21 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
 
   if (hasPolygonsInFile) {
     if (ImGui::CollapsingHeader("Polygon", ImGuiTreeNodeFlags_DefaultOpen)) {
+      // ⭐ NEW: Mode Draw Polygon
+      ImGui::Text("Mode Draw");
+      if (ImGui::RadioButton("Parallel##PG",
+                             reinterpret_cast<int *>(&app->polygonDrawMode),
+                             0)) {
+        // PG_DRAW_PARALLEL
+      }
+      ImGui::SameLine();
+      if (ImGui::RadioButton("Sequential##PG",
+                             reinterpret_cast<int *>(&app->polygonDrawMode),
+                             1)) {
+        // PG_DRAW_SEQUENTIAL
+      }
+      ImGui::Separator();
+
       // Polygon Appearance section
       ImGui::Text("Polygon Appearance");
       if (ImGui::BeginTable("PolygonAnimTable", 2, ImGuiTableFlags_None)) {
@@ -569,21 +611,16 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
 
         ImGui::EndTable();
       }
+
+      ImGui::Separator();
+      ImGui::Text("Polygon Speed");
+      ImGui::SetNextItemWidth(150.0f);
+      ImGui::SliderFloat("##PolygonSpeed",
+                         &app->currentTemplate->polygonSpeedMultiplier, 0.1f,
+                         3.0f, "%.2f");
+      ImGui::Separator();
     }
   }
-
-  ImGui::Separator();
-  ImGui::Text("Speed Control");
-  ImGui::SetNextItemWidth(150.0f);
-  if (ImGui::SliderFloat("Speed", &app->currentTemplate->speedMultiplier, 0.1f,
-                         1.5f, "%.2f")) {
-    // Slider Speed mengkontrol BUKAN CUMA speedMultiplier, tapi juga
-    // lineWaveSpeed untuk wave animation ⭐ NEW Rumus: lineWaveSpeed =
-    // speedMultiplier * 2.0 (range: 0.2 - 3.0)
-    app->lineWaveSpeed = app->currentTemplate->speedMultiplier * 2.0f;
-  }
-  // Slider hanya menyimpan nilai, efek diterapkan saat tombol Draw diklik
-  ImGui::Separator();
 
   float buttonWidth =
       ImGui::CalcTextSize("Draw").x + ImGui::GetStyle().FramePadding.x * 2.0f;
