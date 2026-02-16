@@ -77,8 +77,9 @@ public:
   DrawState drawState = IDLE;
   vec2 startDotPos = vec2(0, 0);
   vec2 mousePos = vec2(9999, 9999);
-  vector<vec2> currentPolylinePoints; // Capture points saat drag untuk polyline
-  vector<CustomLine> customLines;     // CustomLine dari FileManager
+  std::vector<vec2>
+      currentPolylinePoints; // Capture points saat drag untuk polyline
+  std::vector<CustomLine> customLines; // CustomLine dari FileManager
   int loadedFileCustomLinesCount =
       0; // Jumlah customLines dari file yang sedang di-load
   int loadedFilePolygonCount =
@@ -87,13 +88,13 @@ public:
       true; // Flag untuk mengontrol apakah customLines harus digambar saat Draw
 
   // User-created dots system (untuk fitur "Duplicate Dot Above")
-  vector<std::unique_ptr<DotShape>> userDots;
+  std::vector<std::unique_ptr<DotShape>> userDots;
 
   // Invisible polygon system
-  vector<PolygonShape> polygonShapes;
+  std::vector<PolygonShape> polygonShapes;
 
   // Preset warna untuk polygon
-  vector<ofColor> polygonPresetColors = {
+  std::vector<ofColor> polygonPresetColors = {
       ofColor(255, 0, 0, 255),    // 1: Merah (OPAQUE!)
       ofColor(0, 255, 0, 255),    // 2: Hijau (OPAQUE!)
       ofColor(0, 0, 255, 255),    // 3: Biru (OPAQUE!)
@@ -127,6 +128,9 @@ public:
     STEP_WITH_POLYGON_DRAW,   // Bareng dengan polygon draw (paralel)
     STEP_AFTER_POLYGON_DRAW   // Setelah polygon digambar (sequential)
   };
+  LineStepAnimationMode currentLineStepAnimationMode =
+      LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW; // Snapshot saat drawing
+                                                       // dimulai
 
   LineStepAnimationMode lineStepAnimationMode =
       LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW;
@@ -135,6 +139,14 @@ public:
   enum CustomLineDrawMode { CL_DRAW_PARALLEL, CL_DRAW_SEQUENTIAL };
   CustomLineDrawMode customLineDrawMode = CustomLineDrawMode::CL_DRAW_PARALLEL;
   int currentCustomLineIndex = 0; // Untuk tracking sequential draw
+
+  // Staggered Animation State (for robust resetting) ⭐ NEW
+  bool allowStaggeredWaveTrigger = false; // Flag untuk trigger wave ⭐ NEW
+  bool waveAnimationApplied = false;
+  bool polygonAnimationsApplied = false; // Flag untuk re-apply animation ⭐ NEW
+  float waveAnimationTimer = 0.0f;
+  int currentCustomLineWaveIndex = 0;
+  float customLineWaveTimer = 0.0f;
 
   // Polygon Draw Mode ⭐ NEW
   enum PolygonDrawMode { PG_DRAW_PARALLEL, PG_DRAW_SEQUENTIAL };
@@ -231,10 +243,15 @@ public:
   void updateStaggeredPolygons();    // LOAD_POLYGONS stage
 
   // Normal update helpers
-  void updateTemplateShapes(); // Update template di normal mode
-  void updateScaling();        // Handle radius scaling
-  void updateCustomLines();    // Update custom lines
-  void updatePolygons();       // Update polygons
+  void updateTemplateShapes();     // Update template di normal mode
+  void updateScaling();            // Handle radius scaling
+  void updateCustomLines();        // Update custom lines
+  void reapplyPolygonAnimations(); // Re-apply animation dari template ⭐ NEW
+  void updateCustomLinesLogic(
+      float deltaTime,
+      bool enableWaveAnimation = true); // Helper central logic ⭐ NEW
+  void updatePolygons();                // Update polygons
+  void resetAllShapesForRedraw();       // Reset status untuk redraw ⭐ NEW
 
   // Sequential drawing methods
   void startSequentialDrawing();

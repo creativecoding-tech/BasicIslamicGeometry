@@ -33,6 +33,8 @@ public:
   // Wave Animation Helper ⭐ NEW
   void applyWaveAnimationToAllCustomLines(class ofApp *app,
                                           bool enableAnimation = true);
+  void applyWaveAnimationToCustomLine(class ofApp *app, class CustomLine *line,
+                                      bool enableAnimation = true);
 
   // Template-specific playback UI
   bool hasPlaybackSettings() override;

@@ -206,6 +206,16 @@ bool PolygonShape::containsPoint(vec2 point) const {
 }
 
 //--------------------------------------------------------------
+void PolygonShape::setAnimation(std::shared_ptr<AbstractAnimation> anim) {
+  animation = std::move(anim);
+}
+
+//--------------------------------------------------------------
+std::shared_ptr<AbstractAnimation> PolygonShape::getAnimationPtr() const {
+  return animation;
+}
+
+//--------------------------------------------------------------
 // CPU-based rendering untuk newly created polygons (CTRL+G / right-click)
 // Polygon baru TIDAK punya animasi, jadi simple rendering saja
 void PolygonShape::drawCPU() const {

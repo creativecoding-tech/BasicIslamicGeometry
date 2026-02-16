@@ -5,7 +5,6 @@
 #include "../anim/WobbleAnimation.h"
 #include "../anim/WobbleFillAnimation.h"
 
-
 //--------------------------------------------------------------
 //--------------------------------------------------------------
 void FileManager::saveAll(
@@ -868,23 +867,31 @@ void FileManager::cancelSequentialLoad() {
 //--------------------------------------------------------------
 void FileManager::updateSequentialLoad(std::vector<CustomLine> &customLines,
                                        std::vector<PolygonShape> &polygons) {
-  // PARALLEL MODE: Update semua lines barengan
+  // PARALLEL MODE: Instantly load ALL items (Parallel/Instant Load)
   if (loadParallelMode) {
-    bool allComplete = true;
-
-    // Update progress semua lines
-    for (auto &line : customLines) {
-      line.updateProgress();
-      if (line.getProgress() < 1.0f) {
-        allComplete = false;
-      }
+    // 1. Move ALL remaining lines from buffer to customLines
+    while (currentLineIndex < static_cast<int>(loadedLinesBuffer.size())) {
+      customLines.push_back(loadedLinesBuffer[currentLineIndex]);
+      currentLineIndex++;
     }
 
-    // Selesai parallel mode
-    if (allComplete) {
-      loadParallelMode = false;
+    // 2. Move ALL remaining polygons from buffer to polygons
+    while (currentPolygonIndex <
+           static_cast<int>(loadedPolygonsBuffer.size())) {
+      polygons.push_back(std::move(loadedPolygonsBuffer[currentPolygonIndex]));
+      currentPolygonIndex++;
     }
 
+    // 3. Update progress for ALL lines (to ensure they are ready/visible or
+    // animating) Note: If we want them to START animating from 0, we just push
+    // them. If we want them to finish instantly, we set progress=1.0. User
+    // wants "With Polygon Draw" -> Concurrent Animation. So we just push them.
+    // animation progress is handled by ofApp update loop.
+
+    // We do NOT finish them instantly here. We just LOAD them instantly.
+
+    // 4. Turn off parallel mode (loading is done)
+    loadParallelMode = false;
     return;
   }
 

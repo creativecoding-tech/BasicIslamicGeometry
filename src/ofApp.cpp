@@ -168,6 +168,12 @@ void ofApp::updateDelayedLoad() {
   if (loadDelayAccumulator >= loadDelayDuration) {
     // Apply selected draw mode saat mulai drawing (sebelum load)
     polygonDrawMode = nextPolygonDrawMode;
+    currentLineStepAnimationMode = lineStepAnimationMode;
+
+    // Clear all custom line animations at start
+    for (auto &line : customLines) {
+      line.setAnimation(nullptr);
+    }
 
     // Timer selesai, panggil load method
     if (pendingLoadMode == 0) {
@@ -177,10 +183,23 @@ void ofApp::updateDelayedLoad() {
       fileOperationManager->loadWorkspaceSeq(); // Sequential mode: Load All
     }
 
+    // ⭐ NEW: Apply speed multiplier after load (loading resets shapes to
+    // default speed)
+    if (currentTemplate) {
+      currentTemplate->applySpeedMultiplier();
+    }
+
+    // Clear animation state
+    waveAnimationApplied = false;
+    waveAnimationTimer = 0.0f;
+    currentCustomLineWaveIndex = 0;
+    customLineWaveTimer = 0.0f;
+
     // Reset flag dan accumulator
     isWaitingForLoad = false;
     pendingLoadMode = -1;
     loadDelayAccumulator = 0.0f;
+    isStaggeredLoad = true; // ⭐ NEW Enable visibility flags
     currentState = UpdateState::STAGGERED_LOAD; // Lanjut ke staggered load
   }
 }
@@ -254,118 +273,64 @@ void ofApp::updateStaggeredTemplate() {
 
 //--------------------------------------------------------------
 void ofApp::updateStaggeredCustomLines() {
-  // ⭐ NEW: Jika tidak ada Custom Lines (misal: di-uncheck), LANGSUNG skip ke
-  // Polygons Jangan menunggu timer animasi apapun!
-  if (customLines.empty()) {
-    loadStage = LOAD_POLYGONS;
-    currentPolygonIndex = 0; // Reset index untuk sequential polygon draw
-    return;
-  }
-
-  // Cek mode step animation
-  bool isBeforePolygonDraw = (lineStepAnimationMode ==
+  // ⭐ NEW LOGIC: Centralized update logic
+  // Determine if we should animate wave based on mode
+  bool enableWaveAnimation = false; // Default: Static (Growth Only)
+  bool isBeforePolygonDraw = (currentLineStepAnimationMode ==
                               LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
-  bool isWithPolygonDraw =
-      (lineStepAnimationMode == LineStepAnimationMode::STEP_WITH_POLYGON_DRAW);
-  bool isAfterPolygonDraw =
-      (lineStepAnimationMode == LineStepAnimationMode::STEP_AFTER_POLYGON_DRAW);
+  bool isWithPolygonDraw = (currentLineStepAnimationMode ==
+                            LineStepAnimationMode::STEP_WITH_POLYGON_DRAW);
+  bool isAfterPolygonDraw = (currentLineStepAnimationMode ==
+                             LineStepAnimationMode::STEP_AFTER_POLYGON_DRAW);
 
-  // Static flag untuk tracking apakah wave animation sudah di-apply (hanya
-  // untuk BEFORE_POLYGON_DRAW)
-  static bool waveAnimationApplied = false;
-
-  // Static timer untuk tracking durasi wave animation
-  static float waveAnimationTimer = 0.0f;
-
-  // Sequential load: updateSequentialLoad akan menambah customLines bertahap
-  size_t previousSize = customLines.size();
-
-  // ⭐ PENTING: Jangan load polygon jika sedang menunggu animasi (Before
-  // Polygon Draw) Stop panggil updateSequentialLoad jika semua lines sudah
-  // loaded tapi kita masih di stage LOAD_CUSTOMLINES
+  // Check if all lines are loaded based on fileManager state
   bool allLinesLoaded =
       (fileManager.getCurrentLoadIndex() >= fileManager.getTotalLoadedLines());
 
-  if (!allLinesLoaded || !isBeforePolygonDraw) {
-    fileManager.updateSequentialLoad(customLines, polygonShapes);
+  // Jika tidak ada custom lines, langsung ke polygon (skip semua logic)
+  if (customLines.empty()) {
+    loadStage = LOAD_POLYGONS;
+    currentPolygonIndex = 0;
+    return;
   }
 
-  // NOTE: Tidak perlu lagi menghapus polygon yang "terlanjur" diload karena
-  // kita cegah di atas
-
-  // Sync ColorPicker saat customLines pertama kali muncul (sequential load)
-  if (previousSize == 0 && !customLines.empty()) {
-    syncColorPickerFromLoadedLines();
+  // TRANSITION LOGIC:
+  // 1. With Polygon Draw: Transition IMMEDIATELY to Polygons.
+  //    Drawing & Animation will happen in updateStaggeredPolygons.
+  if (isWithPolygonDraw) {
+    // ⭐ NEW: Transition IMMEDIATELY to Polygons stage
+    // Custom Line Growth & Wave will happen concurrently in
+    // updateStaggeredPolygons.
+    loadStage = LOAD_POLYGONS;
+    currentPolygonIndex = 0;
+    polygonAnimationsApplied = false;
+    return;
   }
 
-  // ⭐ PENTING: Tentukan apakah animation boleh jalan saat ini
-  bool shouldAnimate = true;
-  // allLinesLoaded sudah didefinisikan di atas (line 285 kira-kira)
-
-  // Logic Step Animation: // This block logic was slightly confusing in
-  // previous err Removing complex disables for now, letting update() handle it
-  // via logic below
-
-  // ⭐ PENTING: Apply/Update wave animation SETIAP FRAME
-  if (currentTemplate) {
-    BasicZelligeTemplate *zelligeTemplate =
-        dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
-    if (zelligeTemplate) {
-      // Pass 'shouldAnimate' flag ke function
-      zelligeTemplate->applyWaveAnimationToAllCustomLines(this, shouldAnimate);
-    }
+  // 2. After Polygon Draw: Transition IMMEDIATELY to Polygons?
+  //    NO. User said: "After Polygon Draw ... Custom Line Growth ... then
+  //    Polygon ... then Wave". So we MUST draw Custom Lines here (Growth), but
+  //    DISABLE Wave.
+  if (isAfterPolygonDraw) {
+    enableWaveAnimation = false;
+    // We fall through to default update logic below.
   }
 
-  // Update semua customLines yang sudah ada (progressive drawing + animation)
+  // 3. Before Polygon Draw: Draw Growth + Wave. Wait for completion.
+  if (isBeforePolygonDraw) {
+    enableWaveAnimation = true;
+    // We fall through to default update logic below.
+  }
+
+  // EXECUTE UPDATE (Growth + Optional Wave)
   float deltaTime = ofGetLastFrameTime();
+  // Only enable wave if allowed by staggered logic (growth finished)
+  updateCustomLinesLogic(deltaTime, allowStaggeredWaveTrigger);
 
-  // ⭐ NEW: Speed Control Logic (Specific for Custom Lines)
-  float speedMultiplier = 1.0f;
-  if (currentTemplate) {
-    speedMultiplier =
-        currentTemplate
-            ->customLineSpeedMultiplier; // Use Custom Line specific speed
-  }
-  float baseSpeed = 1.2f; // Default speed from CustomLine.cpp
+  // CHECK COMPLETION
+  // Only for Before and After modes (With mode already returned)
 
-  // Tune base speed for Parallel mode (slower because all lines draw at once)
-  if (customLineDrawMode == CL_DRAW_PARALLEL) {
-    baseSpeed = 0.4f; // ~3x slower base speed for Parallel
-  }
-
-  float drawSpeed = baseSpeed * speedMultiplier;
-
-  if (customLineDrawMode == CL_DRAW_PARALLEL) {
-    // PARALLEL MODE: Update semua line sekaligus
-    for (auto &line : customLines) {
-      line.setSpeed(drawSpeed); // Apply speed from slider
-      line.update(deltaTime);
-    }
-  } else {
-    // SEQUENTIAL MODE: Update satu per satu
-    if (currentCustomLineIndex < customLines.size()) {
-      // Update ONLY current line
-      customLines[currentCustomLineIndex].setSpeed(
-          drawSpeed); // Apply speed from slider
-      customLines[currentCustomLineIndex].update(deltaTime);
-
-      // Cek completion (progress >= 1.0)
-      if (customLines[currentCustomLineIndex].getProgress() >= 1.0f) {
-        currentCustomLineIndex++;
-      }
-    }
-
-    // Line yang SUDAH selesai tetap harus di-update (untuk animasi wave/wobble)
-    for (int i = 0; i < currentCustomLineIndex; i++) {
-      if (i < customLines.size()) {
-        customLines[i].update(deltaTime);
-      }
-    }
-  }
-
-  // Cek apakah semua customLines sudah selesai drawing (progressive = 1.0)
   bool allComplete = true;
-
   if (customLineDrawMode == CL_DRAW_PARALLEL) {
     for (const auto &line : customLines) {
       if (line.getProgress() < 1.0f) {
@@ -380,80 +345,47 @@ void ofApp::updateStaggeredCustomLines() {
     }
   }
 
-  // allLinesLoaded sebagai pengganti allLoaded
+  // WAITING LOGIC
+  if (allComplete && allLinesLoaded) {
+    // If Before Polygon Draw, we also need to wait for Wave Animation duration?
+    // User said: "After Polygon Draw: Skip Custom Line (Animation). Custom Line
+    // Growth... then Polygon... then Wave". Wait, "Wave dimatikan" -> Means we
+    // only wait for Growth.
 
-  // KHUSUS UNTUK BEFORE POLYGON DRAW
-  if (isBeforePolygonDraw) {
-    // Untuk BEFORE_POLYGON_DRAW, custom lines HARUS selesai dulu
+    if (isAfterPolygonDraw) {
+      // Growth complete. Wave disabled. Ready to move to Polygons.
+      loadStage = LOAD_POLYGONS;
+      currentPolygonIndex = 0;
+    } else if (isBeforePolygonDraw) {
+      // Growth complete. Wave enabled. Wait for Wave duration?
+      // Existing logic had waveAnimationTimer.
+      // Let's reuse it.
 
-    // Jika semua custom lines sudah selesai progressive drawing DAN loaded
-    if (allComplete && allLinesLoaded) {
-      // Initializer flag untuk timer (pengganti waveAnimationApplied yang dulu)
-      if (!waveAnimationApplied) {
-        waveAnimationApplied = true; // Tandai timer start
-        waveAnimationTimer = 0.0f;   // Reset timer
+      if (!allowStaggeredWaveTrigger) {
+        allowStaggeredWaveTrigger = true;
+        waveAnimationApplied = false; // Reset trigger flag
+        waveAnimationTimer = 0.0f;
+        currentCustomLineWaveIndex = 0;
+        customLineWaveTimer = 0.0f;
       }
-
-      // ⭐ PENTING: Update timer wave animation setiap frame
       waveAnimationTimer += deltaTime;
 
-      // ⭐ PENTING: Cek apakah durasi wave animation sudah habis
       if (lineWaveDuration > 0.0f && waveAnimationTimer >= lineWaveDuration) {
-        // Durasi wave animation sudah habis, paksa hapus semua wave animation
-        for (auto &line : customLines) {
-          line.setAnimation(nullptr); // Hapus wave animation
-        }
-
-        // Pindah ke polygon
+        // Wave duration finished.
         loadStage = LOAD_POLYGONS;
-        currentPolygonIndex =
-            0; // Reset index untuk sequential polygon draw ⭐ NEW
-        waveAnimationApplied = false; // Reset flag untuk next time
-        waveAnimationTimer = 0.0f;    // Reset timer
+        currentPolygonIndex = 0;
+        // ⭐ REMOVED: waveAnimationApplied = false;
+        // This prevents re-triggering in NORMAL state.
 
-        // ⭐ PENTING: Load polygons sekarang karena sebelumnya kita hapus
-        // Panggil updateSequentialLoad lagi untuk load polygons
+        // ⭐ REMOVED: waveAnimationTimer = 0.0f;
+
+        // ⭐ REMOVED: line.setAnimation(nullptr);
+        // We want animations to persist and finish naturally.
+
+        // Load polygons if needed (re-trigger load because we might have
+        // delayed it)
         fileManager.updateSequentialLoad(customLines, polygonShapes);
       }
-    }
-  }
-
-  // KHUSUS UNTUK WITH POLYGON DRAW
-  else if (isWithPolygonDraw) {
-    // Untuk WITH_POLYGON_DRAW, custom lines dan polygons BARENGAN
-
-    // Jika semua custom lines sudah selesai progressive drawing
-    if (allComplete) {
-      // ⭐ PENTING: Apply wave animation HANYA SEKALI (jika belum di-apply)
-      if (!waveAnimationApplied) {
-        if (currentTemplate) {
-          BasicZelligeTemplate *zelligeTemplate =
-              dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
-          if (zelligeTemplate) {
-            zelligeTemplate->applyWaveAnimationToAllCustomLines(this);
-          }
-        }
-        waveAnimationApplied = true; // Tandai sudah di-apply
-      }
-
-      // ⭐ PENTING: TUNGGU sampai SEMUA custom lines di-load dari file
-      if (allComplete && allLinesLoaded) {
-        loadStage = LOAD_POLYGONS;
-        currentPolygonIndex =
-            0; // Reset index untuk sequential polygon draw ⭐ NEW
-        waveAnimationApplied = false; // Reset flag untuk next time
-      }
-    }
-  }
-
-  // KHUSUS UNTUK AFTER POLYGON DRAW
-  else if (isAfterPolygonDraw) {
-    // Hanya pindah ke LOAD_POLYGONS jika SEMUA custom lines sudah selesai
-    if (allComplete && allLinesLoaded) {
-      loadStage = LOAD_POLYGONS;
-      currentPolygonIndex =
-          0; // Reset index untuk sequential polygon draw ⭐ NEW
-      waveAnimationApplied = false; // Reset flag untuk mode lain
     }
   }
 }
@@ -469,53 +401,95 @@ void ofApp::updateStaggeredPolygons() {
     syncColorPickerFromLoadedPolygons();
   }
 
-  // ⭐ PENTING: Update custom lines JUGA agar wave animation tetap berjalan!
-  // Ini khusus untuk WITH_POLYGON_DRAW mode
   float deltaTime = ofGetLastFrameTime();
-  for (auto &line : customLines) {
-    line.update(deltaTime); // Update progressive drawing + wave animation
+
+  // ⭐ NEW LOGIC: Update Custom Lines during Polygon Load Stage
+  bool isWithPolygonDraw = (currentLineStepAnimationMode ==
+                            LineStepAnimationMode::STEP_WITH_POLYGON_DRAW);
+
+  if (isWithPolygonDraw) {
+    if (customLineDrawMode == CL_DRAW_PARALLEL) {
+      // PARALLEL MODE: Update semua bareng + Wave Bareng (handled by helper)
+      updateCustomLinesLogic(deltaTime, true);
+    } else {
+      // SEQUENTIAL MODE: "animasikan custom line secara sequential"
+      // 1. Update existing animations (progressive wave)
+      for (auto &line : customLines) {
+        line.update(deltaTime);
+      }
+
+      // 2. Trigger new animations sequentially
+      customLineWaveTimer += deltaTime;
+
+      // Calculate delay based on draw speed (faster speed = shorter delay)
+      float speed = 1.2f;                  // Use default sequential speed
+      float delay = 0.2f / (speed * 2.0f); // Calibrated delay
+      if (delay < 0.01f)
+        delay = 0.01f;
+
+      if (customLineWaveTimer >= delay) {
+        customLineWaveTimer = 0.0f;
+
+        if (currentCustomLineWaveIndex < customLines.size()) {
+          if (currentTemplate) {
+            BasicZelligeTemplate *zellige =
+                dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
+            if (zellige) {
+              zellige->applyWaveAnimationToCustomLine(
+                  this, &customLines[currentCustomLineWaveIndex], true);
+            }
+          }
+          currentCustomLineWaveIndex++;
+        }
+      }
+    }
+    bool isAfterPolygonDraw = (currentLineStepAnimationMode ==
+                               LineStepAnimationMode::STEP_AFTER_POLYGON_DRAW);
+    bool isWithPolygonDraw = (currentLineStepAnimationMode ==
+                              LineStepAnimationMode::STEP_WITH_POLYGON_DRAW);
+
+    // ⭐ NEW: Trigged wave in WITH mode or BEFORE mode (continuous) or AFTER
+    // mode (if allowed)
+    bool enableWave =
+        isWithPolygonDraw || (!isAfterPolygonDraw) || allowStaggeredWaveTrigger;
+    updateCustomLinesLogic(deltaTime, enableWave);
   }
 
-  // ⭐ NEW: Speed Control Logic (Specific for Polygons)
+  // ⭐ NEW: Re-apply polygon animations if not yet done
+  if (!polygonAnimationsApplied) {
+    reapplyPolygonAnimations();
+    polygonAnimationsApplied = true;
+  }
+
+  // Update Polygons (Parallel / Sequential)
+  // Logic existing sudah OK, tapi kita rapikan sedikit
+
   float speedMultiplier = 1.0f;
   if (currentTemplate) {
     speedMultiplier = currentTemplate->polygonSpeedMultiplier;
   }
-  // Base speed dikelola oleh masing-masing Animation object
-  // Kita hanya kirim multiplier-nya saja (Proportional Control)
 
-  // Update animation polygons berdasarkan mode (Parallel/Sequential)
   if (polygonDrawMode == PG_DRAW_PARALLEL) {
-    // PARALLEL MODE: Update semua polygon sekaligus (jika belum complete)
     for (auto &polygon : polygonShapes) {
       if (!polygon.isAnimationComplete()) {
-        polygon.setSpeedMultiplier(speedMultiplier); // Apply proportional speed
+        polygon.setSpeedMultiplier(speedMultiplier);
         polygon.update(deltaTime);
       }
     }
   } else {
-    // SEQUENTIAL MODE: Update satu per satu
+    // SEQUENTIAL POLYGON MODE
     if (currentPolygonIndex < polygonShapes.size()) {
-      // Update ONLY current polygon
-      polygonShapes[currentPolygonIndex].setSpeedMultiplier(
-          speedMultiplier); // Apply proportional speed
+      polygonShapes[currentPolygonIndex].setSpeedMultiplier(speedMultiplier);
       polygonShapes[currentPolygonIndex].update(deltaTime);
 
-      // Cek completion
       if (polygonShapes[currentPolygonIndex].isAnimationComplete()) {
         currentPolygonIndex++;
       }
     }
-
-    // Polygon yang SUDAH selesai tetap harus di-update jika animasi sifatnya
-    // looping (wobble/wave fill) Jika animasi sifatnya one-shot (FadeIn),
-    // isAnimationComplete() akan true selamanya, tapi update() aman dipanggil
+    // Update completed polygons (wobble/pulse effects if any)
     for (int i = 0; i < currentPolygonIndex; i++) {
       if (i < polygonShapes.size()) {
-        // Kita paksa update walaupun sudah complete, karena mungkin ada wobble
-        // effect PolygonShape::update() handle logic internalnya
-        polygonShapes[i].setSpeedMultiplier(
-            speedMultiplier); // Apply proportional speed
+        polygonShapes[i].setSpeedMultiplier(speedMultiplier);
         polygonShapes[i].update(deltaTime);
       }
     }
@@ -524,13 +498,13 @@ void ofApp::updateStaggeredPolygons() {
   // Cek apakah semua polygons sudah complete DAN sequential load sudah selesai
   bool allComplete = true;
   bool allLoaded = !fileManager.isLoadSequentialMode();
-  bool allPolygonsComplete = true; // ⭐ NEW: Untuk AfterPolygonDraw mode
+  bool allPolygonsComplete = true;
 
   if (polygonDrawMode == PG_DRAW_PARALLEL) {
     for (const auto &polygon : polygonShapes) {
       if (!polygon.isAnimationComplete()) {
         allComplete = false;
-        allPolygonsComplete = false;
+        allPolygonsComplete = false; // logic ini sama saja
         break;
       }
     }
@@ -544,31 +518,21 @@ void ofApp::updateStaggeredPolygons() {
 
   // Selesai staggered load jika semua complete DAN semua sudah di-load
   if (allComplete && allLoaded) {
-    // Apply wave animation ke customLines SETELAH semua selesai di-load ⭐ NEW
-    // Cek mode step animation
-    bool isBeforePolygonDraw =
-        (lineStepAnimationMode ==
-         LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
-    bool isAfterPolygonDraw = (lineStepAnimationMode ==
-                               LineStepAnimationMode::STEP_AFTER_POLYGON_DRAW);
-    bool isWithPolygonDraw = (lineStepAnimationMode ==
-                              LineStepAnimationMode::STEP_WITH_POLYGON_DRAW);
 
-    // Apply wave animation untuk mode WithPolygonDraw dan AfterPolygonDraw
-    // Tapi untuk AfterPolygonDraw, tunggu polygon animation selesai dulu!
-    if (isWithPolygonDraw || (isAfterPolygonDraw && allPolygonsComplete)) {
-      // Cast ke BasicZelligeTemplate karena
-      // applyWaveAnimationToAllCustomLines() method di situ
-      if (currentTemplate) {
-        BasicZelligeTemplate *zelligeTemplate =
-            dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
-        if (zelligeTemplate) {
-          zelligeTemplate->applyWaveAnimationToAllCustomLines(this);
-        }
-      }
+    bool isAfterPolygonDraw = (currentLineStepAnimationMode ==
+                               LineStepAnimationMode::STEP_AFTER_POLYGON_DRAW);
+    if (isAfterPolygonDraw) {
+      // Saat polygon selesai, nyalakan flag agar updateCustomLinesLogic
+      // mulai trigger wave (Parallel/Sequential)
+      allowStaggeredWaveTrigger = true;
+      waveAnimationApplied = false; // Reset trigger flag
+      waveAnimationTimer = 0.0f;
+      currentCustomLineWaveIndex = 0;
+      customLineWaveTimer = 0.0f;
     }
 
     loadStage = LOAD_DONE;
+    isStaggeredLoad = false; // ⭐ NEW Disable visibility flags
     fileManager.cancelSequentialLoad();
   }
 }
@@ -602,12 +566,118 @@ void ofApp::updateScaling() {
 }
 
 //--------------------------------------------------------------
+//--------------------------------------------------------------
 void ofApp::updateCustomLines() {
+  // JANGAN update di NORMAL jika template sedang sequential (Stage 0)
+  if (currentTemplate && currentTemplate->sequentialMode && isStaggeredLoad) {
+    return;
+  }
+
   fileManager.updateSequentialLoad(customLines, polygonShapes);
   float deltaTime = ofGetLastFrameTime();
-  for (auto &line : customLines) {
-    line.update(deltaTime); // Update drawing + wave animation (if loaded from
-                            // .nay) ⭐ NEW
+
+  // Mode NORMAL: Selalu pastikan Wave Animation aktif (jika diset)
+  if (currentTemplate) {
+    BasicZelligeTemplate *zellige =
+        dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
+    if (zellige) {
+      zellige->applyWaveAnimationToAllCustomLines(this, true);
+    }
+  }
+
+  updateCustomLinesLogic(deltaTime, true); // Normal update always enables wave
+}
+
+//--------------------------------------------------------------
+void ofApp::updateCustomLinesLogic(float deltaTime, bool enableWaveAnimation) {
+  // Logic ini dipindahkan dari updateStaggeredCustomLines agar bisa dipakai
+  // di fase loading maupun normal update (untuk sequential drawing konsisten)
+
+  // 1. Calculate Draw Speed
+  float speedMultiplier = 1.0f;
+  if (currentTemplate) {
+    speedMultiplier = currentTemplate->customLineSpeedMultiplier;
+  }
+  float baseSpeed = 1.2f; // Default speed from CustomLine.cpp
+
+  // Tune base speed for Parallel mode (slower because all lines draw at once)
+  if (customLineDrawMode == CL_DRAW_PARALLEL) {
+    baseSpeed = 0.4f; // ~3x slower base speed for Parallel
+  }
+
+  float drawSpeed = baseSpeed * speedMultiplier;
+
+  // 2. Clear animations if disabled (before update loop)
+  if (!enableWaveAnimation) {
+    for (auto &line : customLines) {
+      line.setAnimation(nullptr);
+    }
+  }
+
+  // 3. Update Lines based on Draw Mode
+  if (customLineDrawMode == CL_DRAW_PARALLEL) {
+    // PARALLEL MODE: Update semua line sekaligus
+    for (auto &line : customLines) {
+      line.setSpeed(drawSpeed);
+      line.update(deltaTime);
+    }
+  } else {
+    // SEQUENTIAL MODE: Update satu per satu
+    if (currentCustomLineIndex < customLines.size()) {
+      customLines[currentCustomLineIndex].setSpeed(drawSpeed);
+      customLines[currentCustomLineIndex].update(deltaTime);
+
+      if (customLines[currentCustomLineIndex].getProgress() >= 1.0f) {
+        currentCustomLineIndex++;
+      }
+    }
+
+    // Line yang SUDAH selesai tetap di-update
+    for (int i = 0; i < currentCustomLineIndex; i++) {
+      if (i < customLines.size()) {
+        customLines[i].setSpeed(drawSpeed);
+        customLines[i].update(deltaTime);
+      }
+    }
+  }
+
+  // 4. Wave Animation Triggering (Sequential vs Parallel) ⭐ NEW
+  if (enableWaveAnimation) {
+    if (customLineDrawMode == CL_DRAW_PARALLEL) {
+      // PARALLEL: Trigger sekali saja untuk semua
+      if (!waveAnimationApplied) {
+        waveAnimationApplied = true;
+        if (currentTemplate) {
+          BasicZelligeTemplate *zellige =
+              dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
+          if (zellige) {
+            zellige->applyWaveAnimationToAllCustomLines(this, true);
+          }
+        }
+      }
+    } else {
+      // SEQUENTIAL: Trigger satu per satu dengan delay
+      // Hanya mulai trigger jika enableWaveAnimation true
+      customLineWaveTimer += deltaTime;
+      float interval = 0.2f / (drawSpeed * 2.0f); // Calibrated delay
+      if (interval < 0.02f)
+        interval = 0.02f;
+
+      if (customLineWaveTimer >= interval) {
+        customLineWaveTimer = 0.0f;
+        if (currentCustomLineWaveIndex < customLines.size()) {
+          if (currentTemplate) {
+            BasicZelligeTemplate *zellige =
+                dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
+            if (zellige) {
+              zellige->applyWaveAnimationToCustomLine(
+                  this, &customLines[currentCustomLineWaveIndex], true);
+            }
+          }
+          currentCustomLineWaveIndex++;
+        }
+      }
+    }
   }
 }
 
@@ -1382,6 +1452,27 @@ void ofApp::createInvisiblePolygonFromSelected() {
 }
 
 //--------------------------------------------------------------
+void ofApp::reapplyPolygonAnimations() {
+  if (!currentTemplate)
+    return;
+
+  // Sync mode dari UI (currentTemplate->polygonAnimationMode)
+  // PolygonAnimationMode adalah enum di FileManager.h
+  PolygonAnimationMode mode =
+      static_cast<PolygonAnimationMode>(currentTemplate->polygonAnimationMode);
+
+  for (int i = 0; i < polygonShapes.size(); i++) {
+    // Re-create animation object berdasarkan settings
+    // Pakai FileManager helper agar parameternya konsisten
+    PolygonShape tempShape = fileManager.createPolygonWithAnimation(
+        polygonShapes[i].getVertices(), polygonShapes[i].getColor(), i);
+
+    // Set animation ke shape yang ada
+    polygonShapes[i].setAnimation(tempShape.getAnimationPtr());
+  }
+}
+
+//--------------------------------------------------------------
 // File operations sekarang ditangani oleh FileManager class
 
 //--------------------------------------------------------------
@@ -1418,19 +1509,74 @@ void ofApp::dragEvent(ofDragInfo dragInfo) {}
 
 //--------------------------------------------------------------
 void ofApp::startSequentialDrawing() {
-  // Apply selected draw mode saat mulai drawing
-  polygonDrawMode = nextPolygonDrawMode;
-
   if (!currentTemplate)
     return;
 
-  // Delegate ke template
-  currentTemplate->startSequentialDrawing();
+  // 1. Reset state shapes & animations
+  resetAllShapesForRedraw();
 
-  // NOTE: JANGAN ubah currentState di sini!
-  // sequentialMode adalah flag TEMPLATE level, bukan application state
-  // Sequential drawing di-handle langsung di updateNormal() line 97-102
-  // Jadi biarkan currentState tetap NORMAL
+  // 2. Snapshot animation mode saat drawing dimulai
+  currentLineStepAnimationMode = lineStepAnimationMode;
+  polygonDrawMode = nextPolygonDrawMode;
+
+  // 3. Clear animation state members
+  allowStaggeredWaveTrigger = false;
+  waveAnimationApplied = false;
+  polygonAnimationsApplied = false; // ⭐ NEW
+  waveAnimationTimer = 0.0f;
+  currentCustomLineWaveIndex = 0;
+  customLineWaveTimer = 0.0f;
+
+  // 4. Reset indices
+  currentTemplateIndex = 0;
+  currentCustomLineIndex = 0;
+  currentPolygonIndex = 0;
+
+  // 5. Delegate ke template untuk inisialisasi construction shapes
+  currentTemplate->startSequentialDrawing();
+  currentTemplate->applySpeedMultiplier(); // Ensure speed is applied at start
+
+  // 6. Transition ke STAGGERED_LOAD (menggantikan logic NORMAL) ⭐ NEW
+  isStaggeredLoad = true;
+  currentState = UpdateState::STAGGERED_LOAD;
+  loadStage = LOAD_TEMPLATE;
+}
+
+//--------------------------------------------------------------
+void ofApp::resetAllShapesForRedraw() {
+  lineWaveDuration = 5.0f; // Reset default duration
+
+  // Reset Flags
+  allowStaggeredWaveTrigger = false;
+  polygonAnimationsApplied = false; // ⭐ NEW
+
+  // Reset Custom Lines: Progress 0, No Animation
+  for (auto &line : customLines) {
+    line.setProgress(0.0f);
+    line.setAnimation(nullptr);
+  }
+
+  // Reset Polygons: No Animation (agar FadeIn/Wobble mulai dari awal saat
+  // update) Polygons tidak punya 'progress' eksplisit tapi AbstractAnimation
+  // internal.
+  for (auto &polygon : polygonShapes) {
+    // Force re-apply animation agar start dari frame 0
+    if (currentTemplate) {
+      BasicZelligeTemplate *zellige =
+          dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
+      if (zellige) {
+        // Polygons manual biasanya mengikuti setting UI
+        // Kita cukup set nullptr dulu agar isAnimationComplete() jadi false
+        // (jika sequential) atau restart.
+        // Actually, zelligeTemplate->applyAnimationToPolygon(i, mode) adalah yg
+        // paling benar.
+      }
+    }
+    // Simple reset: remove animation.
+    // Nanti updateStaggeredPolygons akan meng-update-nya.
+    // Polygons di BIG biasanya sudah punya animation object sejak dibuat di
+    // finalizePolygon.
+  }
 }
 
 //--------------------------------------------------------------

@@ -320,31 +320,41 @@ void BasicZelligeTemplate::applyWaveAnimationToAllCustomLines(
     class ofApp *app, bool enableAnimation) {
   // Apply wave animation settings ke SEMUA customLines
   for (auto &line : app->customLines) {
-    if (enableAnimation &&
-        app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
-      // Mode Wave: Cek apakah sudah punya WaveLineAnimation
-      if (auto *existingWaveAnim =
-              dynamic_cast<WaveLineAnimation *>(line.getAnimation().get())) {
-        // Sudah punya WaveLineAnimation, cukup update parameter-nya
-        existingWaveAnim->setAmplitude(app->lineWaveAmplitude);
-        existingWaveAnim->setFrequency(app->lineWaveFrequency);
-        existingWaveAnim->setSpeed(
-            app->lineWaveSpeed); // Update speed juga from slider ⭐ NEW
-      } else {
-        // Belum punya atau bukan WaveLineAnimation, buat baru
-        auto waveAnim = std::make_shared<WaveLineAnimation>(
-            app->lineWaveAmplitude, app->lineWaveFrequency, app->lineWaveSpeed);
-        // Set animation dengan durasi dari slider ⭐ NEW
-        line.setAnimation(waveAnim, app->lineWaveDuration);
-      }
-    } else {
-      // Mode No Animation (atau enableAnimation false): Hapus animation
-      line.setAnimation(nullptr);
-    }
-
-    // Pastikan loadedFromFile = false untuk manual customLines
-    line.setLoadedFromFile(false);
+    applyWaveAnimationToCustomLine(app, &line, enableAnimation);
   }
+}
+
+void BasicZelligeTemplate::applyWaveAnimationToCustomLine(
+    class ofApp *app, class CustomLine *line, bool enableAnimation) {
+  // Check if animation has finished naturally (auto-stop)
+  if (line->hasFinishedAnimation()) {
+    return;
+  }
+
+  if (enableAnimation &&
+      app->lineAnimationMode == ofApp::LineAnimationMode::WAVE) {
+    // Mode Wave: Cek apakah sudah punya WaveLineAnimation
+    if (auto *existingWaveAnim =
+            dynamic_cast<WaveLineAnimation *>(line->getAnimation().get())) {
+      // Sudah punya WaveLineAnimation, cukup update parameter-nya
+      existingWaveAnim->setAmplitude(app->lineWaveAmplitude);
+      existingWaveAnim->setFrequency(app->lineWaveFrequency);
+      existingWaveAnim->setSpeed(
+          app->lineWaveSpeed); // Update speed juga from slider ⭐ NEW
+    } else {
+      // Belum punya atau bukan WaveLineAnimation, buat baru
+      auto waveAnim = std::make_shared<WaveLineAnimation>(
+          app->lineWaveAmplitude, app->lineWaveFrequency, app->lineWaveSpeed);
+      // Set animation dengan durasi dari slider ⭐ NEW
+      line->setAnimation(waveAnim, app->lineWaveDuration);
+    }
+  } else {
+    // Mode No Animation (atau enableAnimation false): Hapus animation
+    line->setAnimation(nullptr);
+  }
+
+  // Pastikan loadedFromFile = false untuk manual customLines
+  line->setLoadedFromFile(false);
 }
 
 //--------------------------------------------------------------

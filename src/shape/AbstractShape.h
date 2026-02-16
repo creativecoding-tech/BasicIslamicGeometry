@@ -3,7 +3,6 @@
 #include "ofMain.h"
 #include <vector>
 
-
 /**
  * AbstractShape - Base class untuk semua shape geometri
  * Menyediakan common attributes dan methods untuk animasi dan visibility
@@ -13,7 +12,7 @@ class AbstractShape {
 public:
   // Common attributes untuk animasi
   float progress = 0;
-  float speed = 50.0f; // Delta time calibrated (60 FPS * 0.5f lama)
+  float speed = 20.0f; // Delta time calibrated (60 FPS * 0.5f lama)
   float lineWidth = 4;
 
   // Constructor

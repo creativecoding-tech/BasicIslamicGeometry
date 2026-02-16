@@ -172,22 +172,26 @@ void SacredGeometryTemplate::applySpeedMultiplier() {
   for (auto &shape : shapes) {
     // Cek tipe shape dan apply base speed yang sesuai
     if (dynamic_cast<CircleShape *>(shape.get())) {
-      shape->speed = 50.0f * templateSpeedMultiplier;
+      shape->speed = 20.0f * templateSpeedMultiplier;
     } else if (dynamic_cast<CrossLine *>(shape.get())) {
-      shape->speed = 50.0f * templateSpeedMultiplier;
+      shape->speed = 20.0f * templateSpeedMultiplier;
     } else if (dynamic_cast<ParallelogramLine *>(shape.get())) {
-      shape->speed = 50.0f * templateSpeedMultiplier;
+      shape->speed = 20.0f * templateSpeedMultiplier;
     } else if (dynamic_cast<RectangleLine *>(shape.get())) {
-      shape->speed = 50.0f * templateSpeedMultiplier;
+      shape->speed = 20.0f * templateSpeedMultiplier;
     } else if (dynamic_cast<OctagramLine *>(shape.get())) {
-      shape->speed = 50.0f * templateSpeedMultiplier;
+      shape->speed = 20.0f * templateSpeedMultiplier;
     } else if (dynamic_cast<CartesianAxes *>(shape.get())) {
-      shape->speed = 1.2f * templateSpeedMultiplier;
+      shape->speed = 0.5f * templateSpeedMultiplier;
     } else if (dynamic_cast<DotShape *>(shape.get())) {
-      shape->speed = 50.0f * templateSpeedMultiplier;
+      shape->speed = 20.0f * templateSpeedMultiplier;
     } else {
       // Default fallback for any other shape type
-      shape->speed = 50.0f * templateSpeedMultiplier;
+      shape->speed = 20.0f * templateSpeedMultiplier;
     }
+
+    // DEBUG LOG (Temporary)
+    // ofLog() << "Applied Speed: " << shape->speed << " (Mult: " <<
+    // templateSpeedMultiplier << ")";
   }
 }

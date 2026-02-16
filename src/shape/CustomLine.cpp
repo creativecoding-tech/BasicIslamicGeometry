@@ -41,6 +41,7 @@ CustomLine &CustomLine::operator=(const CustomLine &other) {
     animationTimer = 0.0f; // Reset timer ⭐ NEW
     animationAutoStopDuration = 5.0f;  // Default durasi ⭐ NEW
     animationTimerInitialized = false; // Reset flag ⭐ NEW
+    isAnimationFinished = false;       // Reset flag ⭐ NEW
   }
   return *this;
 }
@@ -195,6 +196,7 @@ void CustomLine::setAnimation(std::shared_ptr<AbstractAnimation> anim,
   animationTimer = 0.0f; // Reset timer setiap kali animation di-set ⭐ NEW
   animationTimerInitialized =
       false; // Reset flag agar bisa di-reset lagi di update() ⭐ NEW
+  isAnimationFinished = false; // Reset flag finished ⭐ NEW
 
   // Simpan durasi auto-stop untuk animasi (dipakai di update()) ⭐ NEW
   animationAutoStopDuration = duration;
@@ -252,6 +254,7 @@ void CustomLine::update(float deltaTime) {
         animation = nullptr;
         animationTimer = 0.0f;             // Reset timer
         animationTimerInitialized = false; // Reset flag
+        isAnimationFinished = true;        // Tandai selesai ⭐ NEW
       }
     }
   } else {

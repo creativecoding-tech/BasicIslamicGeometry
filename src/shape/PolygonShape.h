@@ -41,6 +41,8 @@ public:
   void update(float deltaTime = 0.016f); // Update animation progress
   bool hasAnimation() const;             // Cek apakah punya animation
   bool isAnimationComplete() const;      // Cek apakah animation sudah selesai
+  void setAnimation(std::shared_ptr<AbstractAnimation> anim); // ⭐ NEW
+  std::shared_ptr<AbstractAnimation> getAnimationPtr() const; // ⭐ NEW
 
   // Setters
   void setColor(ofColor color);

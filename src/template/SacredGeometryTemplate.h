@@ -5,7 +5,6 @@
 #include <memory>
 #include <vector>
 
-
 /**
  * SacredGeometryTemplate - Abstract base class untuk semua geometric pattern
  * templates
