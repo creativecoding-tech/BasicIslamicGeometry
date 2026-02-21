@@ -551,6 +551,9 @@ void ofApp::processPolygonTessellation() {
   int originalPolygonCount = static_cast<int>(polygonShapes.size());
 
   for (int i = 0; i < originalPolygonCount; ++i) {
+    if (polygonShapes[i].isTessellated())
+      continue;
+
     if (i >= static_cast<int>(zellige->tessellationFiles.size()))
       continue;
     std::string nayFile = zellige->tessellationFiles[i];

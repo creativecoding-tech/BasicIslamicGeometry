@@ -644,6 +644,13 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         // (tessellationRadii, tessellationFiles)
 
         for (int i = 0; i < app->loadedFilePolygonCount; ++i) {
+          // Skip polygons that are already tessellated (so they don't get
+          // tessellated again)
+          if (i < app->polygonShapes.size() &&
+              app->polygonShapes[i].isTessellated()) {
+            continue;
+          }
+
           ImGui::TableNextRow();
 
           // Column 0: Polygon Name (Selectable)

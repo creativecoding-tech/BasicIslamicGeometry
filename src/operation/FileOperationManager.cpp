@@ -488,8 +488,8 @@ bool FileOperationManager::peekFilePolygonCount(const std::string &filepath,
       dummyDotsVisible, dummyCustomLines, dummyPolygons, dummyUserDots,
       app->showUserDot, filepath);
 
-  // Ambil jumlah polygons dari buffer via getter
-  outCount = app->fileManager.getTotalLoadedPolygons();
+  // Ambil jumlah polygons NON-TESSELATED dari buffer via getter
+  outCount = app->fileManager.getTotalOriginalPolygons();
 
   // Clear buffer agar tidak mempengaruhi load selanjutnya
   app->fileManager.cancelSequentialLoad();

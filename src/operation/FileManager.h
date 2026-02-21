@@ -68,6 +68,8 @@ public:
   int getCurrentLoadIndex() const;
   int getTotalLoadedLines() const;
   int getTotalLoadedPolygons() const; // Getter untuk jumlah polygons di buffer
+  int getTotalOriginalPolygons()
+      const; // Getter untuk jumlah polygons NON-TESSELATED di buffer
 
   // Getters for buffers (used for instant access like tessellation)
   const std::vector<CustomLine> &getLoadedLinesBuffer() const {
@@ -110,12 +112,14 @@ private:
                          const std::vector<CustomLine> &customLines,
                          float radius);
   bool loadCustomLinesNA(ofBuffer &buffer, size_t &offset,
-                         std::vector<CustomLine> &customLines, float radius);
+                         std::vector<CustomLine> &customLines, float radius,
+                         int version);
 
   void savePolygonsNA(ofBuffer &buffer,
                       const std::vector<PolygonShape> &polygons, float radius);
   bool loadPolygonsNA(ofBuffer &buffer, size_t &offset,
-                      std::vector<PolygonShape> &polygons, float radius);
+                      std::vector<PolygonShape> &polygons, float radius,
+                      int version);
 
   void saveUserDotsNA(ofBuffer &buffer,
                       const std::vector<std::unique_ptr<DotShape>> &userDots,
@@ -152,7 +156,7 @@ private:
 
   // Format constants
   static constexpr char MAGIC_NUMBER[4] = {'N', 'A', '0', '1'};
-  static constexpr int VERSION = 2;
+  static constexpr int VERSION = 3;
   static constexpr int HEADER_SIZE =
       64; // Header tetap 64 bytes untuk masa depan
 };

@@ -115,8 +115,8 @@ bool FileManager::loadAll(std::string &outTemplateName, float &outGlobalRadius,
   // Version
   int version = *reinterpret_cast<int *>(data + offset);
   offset += sizeof(int);
-  // Support version 1 and 2
-  if (version != 1 && version != 2) {
+  // Support version 1, 2 and 3
+  if (version != 1 && version != 2 && version != 3) {
     ofLog() << "Error: Unsupported version: " << version;
     return false;
   }
@@ -145,8 +145,8 @@ bool FileManager::loadAll(std::string &outTemplateName, float &outGlobalRadius,
     outDotsVisible = true;
     outShowUserDot = true; // Default true
     offset += 20;
-  } else if (version == 2) {
-    // Version 2: Read from what was previously reserved
+  } else if (version >= 2) {
+    // Version >= 2: Read from what was previously reserved
 
     // currentLineWidth (float)
     outLineWidth = *reinterpret_cast<float *>(data + offset);
@@ -178,7 +178,8 @@ bool FileManager::loadAll(std::string &outTemplateName, float &outGlobalRadius,
   offset += sizeof(int);
 
   customLines.clear();
-  if (!loadCustomLinesNA(buffer, offset, customLines, outGlobalRadius)) {
+  if (!loadCustomLinesNA(buffer, offset, customLines, outGlobalRadius,
+                         version)) {
     ofLog() << "Error: Failed to load custom lines";
     return false;
   }
@@ -193,7 +194,7 @@ bool FileManager::loadAll(std::string &outTemplateName, float &outGlobalRadius,
   offset += sizeof(int);
 
   polygons.clear();
-  if (!loadPolygonsNA(buffer, offset, polygons, outGlobalRadius)) {
+  if (!loadPolygonsNA(buffer, offset, polygons, outGlobalRadius, version)) {
     ofLog() << "Error: Failed to load polygons";
     return false;
   }
@@ -260,13 +261,17 @@ void FileManager::saveCustomLinesNA(ofBuffer &buffer,
     AxisLock axisLock = line.getAxisLock();
     buffer.append(reinterpret_cast<const char *>(&isDuplicate), sizeof(bool));
     buffer.append(reinterpret_cast<const char *>(&axisLock), sizeof(AxisLock));
+
+    // Write isTessellated for version 3
+    bool isTessellated = line.isTessellated();
+    buffer.append(reinterpret_cast<const char *>(&isTessellated), sizeof(bool));
   }
 }
 
 //--------------------------------------------------------------
 bool FileManager::loadCustomLinesNA(ofBuffer &buffer, size_t &offset,
                                     std::vector<CustomLine> &customLines,
-                                    float radius) {
+                                    float radius, int version) {
   char *data = buffer.getData();
   size_t bufferSize = buffer.size();
 
@@ -358,6 +363,18 @@ bool FileManager::loadCustomLinesNA(ofBuffer &buffer, size_t &offset,
     offset += sizeof(AxisLock);
     line.setAxisLock(axisLock);
 
+    // Read isTessellated (VERSION >= 3)
+    if (version >= 3) {
+      if (offset + sizeof(bool) > bufferSize) {
+        return false;
+      }
+      bool isTessellated = *reinterpret_cast<bool *>(data + offset);
+      offset += sizeof(bool);
+      line.setTessellated(isTessellated);
+    } else {
+      line.setTessellated(false);
+    }
+
     // Set progress ke 0.0 untuk parallel animation (semua barengan)
     line.setProgress(0.0f);
     line.setSpeed(
@@ -399,13 +416,17 @@ void FileManager::savePolygonsNA(ofBuffer &buffer,
     // Write fillColor (tidak perlu normalize)
     ofColor fillColor = polygon.getColor();
     buffer.append(reinterpret_cast<const char *>(&fillColor), sizeof(ofColor));
+
+    // Write isTessellated for version 3
+    bool isTessellated = polygon.isTessellated();
+    buffer.append(reinterpret_cast<const char *>(&isTessellated), sizeof(bool));
   }
 }
 
 //--------------------------------------------------------------
 bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
                                  std::vector<PolygonShape> &polygons,
-                                 float radius) {
+                                 float radius, int version) {
   char *data = buffer.getData();
   size_t bufferSize = buffer.size();
 
@@ -444,9 +465,20 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
     ofColor fillColor = *reinterpret_cast<ofColor *>(data + offset);
     offset += sizeof(ofColor);
 
+    // Read isTessellated (VERSION >= 3)
+    bool isTessellated = false;
+    if (version >= 3) {
+      if (offset + sizeof(bool) > bufferSize) {
+        return false;
+      }
+      isTessellated = *reinterpret_cast<bool *>(data + offset);
+      offset += sizeof(bool);
+    }
+
     // Buat PolygonShape dengan atau tanpa animation tergantung mode
     PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
-    polygon.setLoadedFromFile(true); // Flag sebagai loaded dari file .nay
+    polygon.setLoadedFromFile(true);       // Flag sebagai loaded dari file .nay
+    polygon.setTessellated(isTessellated); // Restore tessellation state
     polygons.push_back(std::move(polygon));
   }
 
@@ -588,8 +620,8 @@ void FileManager::loadAllSequential(
   // Version
   int version = *reinterpret_cast<int *>(data + offset);
   offset += sizeof(int);
-  // Support version 1 and 2
-  if (version != 1 && version != 2) {
+  // Support version 1, 2 and 3
+  if (version != 1 && version != 2 && version != 3) {
     ofLog() << "Error: Unsupported version: " << version;
     return;
   }
@@ -618,8 +650,8 @@ void FileManager::loadAllSequential(
     outDotsVisible = true;
     outShowUserDot = true; // Default true
     offset += 20;
-  } else if (version == 2) {
-    // Version 2: Read dari apa yang sebelumnya reserved
+  } else if (version >= 2) {
+    // Version >= 2: Read dari apa yang sebelumnya reserved
     outLineWidth = *reinterpret_cast<float *>(data + offset);
     offset += sizeof(float);
 
@@ -749,6 +781,19 @@ void FileManager::loadAllSequential(
       offset += sizeof(AxisLock);
       line.setAxisLock(axisLock);
 
+      // Read isTessellated (VERSION >= 3)
+      if (version >= 3) {
+        if (offset + sizeof(bool) > bufferSize) {
+          ofLog() << "Error: Unexpected end of file reading isTessellated";
+          return;
+        }
+        bool isTessellated = *reinterpret_cast<bool *>(data + offset);
+        offset += sizeof(bool);
+        line.setTessellated(isTessellated);
+      } else {
+        line.setTessellated(false);
+      }
+
       // Set initial animation state
       line.setProgress(0.0f);
       line.setSpeed(
@@ -815,9 +860,21 @@ void FileManager::loadAllSequential(
       ofColor fillColor = *reinterpret_cast<ofColor *>(data + offset);
       offset += sizeof(ofColor);
 
+      // Read isTessellated (VERSION >= 3)
+      bool isTessellated = false;
+      if (version >= 3) {
+        if (offset + sizeof(bool) > bufferSize) {
+          ofLog() << "Error: Unexpected end of file reading isTessellated";
+          return;
+        }
+        isTessellated = *reinterpret_cast<bool *>(data + offset);
+        offset += sizeof(bool);
+      }
+
       // Buat PolygonShape dengan atau tanpa animation tergantung mode
       PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
       polygon.setLoadedFromFile(true); // Flag sebagai loaded dari file .nay
+      polygon.setTessellated(isTessellated); // Restore tessellation state
       loadedPolygonsBuffer.push_back(std::move(polygon));
     }
   }
@@ -1028,6 +1085,17 @@ int FileManager::getTotalLoadedLines() const {
 //--------------------------------------------------------------
 int FileManager::getTotalLoadedPolygons() const {
   return static_cast<int>(loadedPolygonsBuffer.size());
+}
+
+//--------------------------------------------------------------
+int FileManager::getTotalOriginalPolygons() const {
+  int count = 0;
+  for (const auto &p : loadedPolygonsBuffer) {
+    if (!p.isTessellated()) {
+      count++;
+    }
+  }
+  return count;
 }
 
 //--------------------------------------------------------------
