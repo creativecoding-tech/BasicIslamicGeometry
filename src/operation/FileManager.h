@@ -84,6 +84,10 @@ public:
   void setPolygonAnimationMode(PolygonAnimationMode mode);
   PolygonAnimationMode getPolygonAnimationMode() const;
 
+  // Polygon Speed Multiplier (Controls Animation Speed & Load Interval)
+  void setPolygonSpeedMultiplier(float multiplier);
+  float getPolygonSpeedMultiplier() const;
+
   // CustomLines load control untuk sequential load
   void setShouldLoadCustomLines(bool shouldLoad);
   bool getShouldLoadCustomLines() const;
@@ -128,6 +132,9 @@ private:
 
   // Polygon animation mode
   PolygonAnimationMode polygonAnimationMode;
+
+  // Polygon speed multiplier (controls animation speed & load interval)
+  float polygonSpeedMultiplier = 1.0f;
 
   // Should load customLines flag (untuk Draw Custom Lines checkbox)
   bool shouldLoadCustomLines = true;

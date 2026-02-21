@@ -690,6 +690,14 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         }
         app->fileManager.setPolygonAnimationMode(polyMode);
 
+        // ⭐ NEW: Set Polygon Draw Mode (Parallel vs Sequential)
+        bool isParallel = (app->nextPolygonDrawMode == 0);
+        app->fileManager.setLoadParallelMode(isParallel);
+
+        // ⭐ NEW: Set Polygon Speed Multiplier
+        app->fileManager.setPolygonSpeedMultiplier(
+            this->polygonSpeedMultiplier);
+
         // Set flag untuk delay load dan update state
         app->isWaitingForLoad = true;
         app->loadDelayAccumulator = 0.0f;
@@ -740,6 +748,14 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
                 break;
               }
               app->fileManager.setPolygonAnimationMode(polyMode);
+
+              // ⭐ NEW: Set Polygon Draw Mode (Parallel vs Sequential)
+              bool isParallel = (app->nextPolygonDrawMode == 0);
+              app->fileManager.setLoadParallelMode(isParallel);
+
+              // ⭐ NEW: Set Polygon Speed Multiplier
+              app->fileManager.setPolygonSpeedMultiplier(
+                  this->polygonSpeedMultiplier);
 
               // Set flag untuk delay load dan update state
               app->isWaitingForLoad = true;

@@ -927,16 +927,40 @@ void FileManager::updateSequentialLoad(std::vector<CustomLine> &customLines,
     }
 
     if (canAddNew) {
-      // Add item baru
-      loadAccumulator += loadSpeed;
+      // Calculate effective load speed depending on item type
+      // Base load speed is 0.05f per frame (approx 3 items per second at 1.0x)
+      float currentLoadSpeed = loadSpeed;
 
-      // Cek apakah saatnya add item baru (line atau polygon)
-      if (loadAccumulator >= 1.0f) {
+      // SPEED SCALING:
+      // If we are loading polygons, scale speed by polygonSpeedMultiplier
+      // If Parallel Mode is ON, force a very high speed to load everything
+      // effectively instantly per frame limit
+      if (loadParallelMode) {
+        currentLoadSpeed = 1000.0f; // Load almost everything in one go
+      } else {
+        if (!(currentLineIndex < static_cast<int>(loadedLinesBuffer.size())) &&
+            (currentPolygonIndex <
+             static_cast<int>(loadedPolygonsBuffer.size()))) {
+          // We are loading polygons now
+          currentLoadSpeed *= polygonSpeedMultiplier;
+        }
+      }
+
+      loadAccumulator += currentLoadSpeed;
+
+      // BATCH LOADING LOOP
+      // Process multiple items per frame if speed is high enough!
+      // This fixes the "slow no animation" issue.
+      while (loadAccumulator >= 1.0f) {
+
+        // Safety check to break if we are done with everything
+        bool anyAdded = false;
+
         // Prioritas: Add line dulu kalau ada
         if (currentLineIndex < static_cast<int>(loadedLinesBuffer.size())) {
           customLines.push_back(loadedLinesBuffer[currentLineIndex]);
           currentLineIndex++;
-          loadAccumulator = 0.0f;
+          anyAdded = true;
         }
         // Kalau tidak ada line lagi, add polygon
         else if (currentPolygonIndex <
@@ -944,8 +968,15 @@ void FileManager::updateSequentialLoad(std::vector<CustomLine> &customLines,
           polygons.push_back(
               std::move(loadedPolygonsBuffer[currentPolygonIndex]));
           currentPolygonIndex++;
-          loadAccumulator = 0.0f;
+          anyAdded = true;
         }
+
+        if (!anyAdded) {
+          loadAccumulator = 0.0f; // Nothing left to add
+          break;
+        }
+
+        loadAccumulator -= 1.0f; // Decrement accumulator (keep remainder)
       }
     }
   }
@@ -1005,32 +1036,45 @@ PolygonShape
 FileManager::createPolygonWithAnimation(const std::vector<vec2> &vertices,
                                         ofColor color, int index) {
   // Buat PolygonShape dengan animation berdasarkan polygonAnimationMode
+
+  // Base speeds setup
+  // NOTE: polygonSpeedMultiplier scales these base speeds.
+
   switch (polygonAnimationMode) {
   case PolygonAnimationMode::FADE_IN: {
-    auto fadeIn = std::make_unique<FadeInAnimation>(
-        color.a, 0.18f); // Delta time calibrated (0.003f * 60 FPS)
+    // Default speed: 2.0f (approx 0.5s fade) -> Scaled by multiplier
+    float speed = 2.0f * polygonSpeedMultiplier;
+    auto fadeIn = std::make_unique<FadeInAnimation>(color.a, speed);
     return PolygonShape(vertices, color, index, std::move(fadeIn));
   }
   case PolygonAnimationMode::WOBBLE: {
-    auto wobble = std::make_unique<WobbleAnimation>(
-        30.0f, 5.0f, 1.8f); // Delta time calibrated (0.03f * 60 FPS)
+    // Wobble Animation
+    float freq = 1.8f * polygonSpeedMultiplier;
+    auto wobble = std::make_unique<WobbleAnimation>(30.0f, 5.0f, freq);
     return PolygonShape(vertices, color, index, std::move(wobble));
   }
   case PolygonAnimationMode::WAVE_FILL: {
-    auto fill = std::make_unique<FillAnimation>(
-        20.0f, 4.0f, 0.12f); // Delta time calibrated (0.002f * 60 FPS)
+    // Fill Animation - speed controls how fast water rises
+    // Base speed 0.3f (approx 3.3s fill)
+    float speed = 0.3f * polygonSpeedMultiplier;
+    auto fill = std::make_unique<FillAnimation>(20.0f, 4.0f, speed);
     return PolygonShape(vertices, color, index, std::move(fill));
   }
   case PolygonAnimationMode::WOBBLE_FILL: {
-    // wobbleAmount=30.0, wobbleSpeed=5.0, wobbleFrequency=1.8,
-    // targetFillLevel=1.0 (100%), fillSpeed=0.3
-    auto wobbleFill =
-        std::make_unique<WobbleFillAnimation>(30.0f, 5.0f, 1.8f, 1.0f, 0.3f);
+    // Wobble Fill - speed controls fill rate
+    // Base speed 0.6f (approx 1.6s fill)
+    float fillSpeed = 0.6f * polygonSpeedMultiplier;
+    float freq = 1.8f * polygonSpeedMultiplier;
+    auto wobbleFill = std::make_unique<WobbleFillAnimation>(30.0f, 5.0f, freq,
+                                                            1.0f, fillSpeed);
     return PolygonShape(vertices, color, index, std::move(wobbleFill));
   }
   case PolygonAnimationMode::GRADIENT: {
-    // speed=2.0, frequency=5.0, duration=5.0 detik
-    auto gradient = std::make_unique<GradientAnimation>(2.0f, 5.0f, 5.0f);
+    // Gradient Animation - speed and frequency
+    // Base speed 0.5f (approx 2s cycle)
+    float speed = 0.5f * polygonSpeedMultiplier;
+    float freq = 5.0f;
+    auto gradient = std::make_unique<GradientAnimation>(speed, freq, 5.0f);
     return PolygonShape(vertices, color, index, std::move(gradient));
   }
   case PolygonAnimationMode::NO_ANIMATION:
@@ -1079,4 +1123,14 @@ bool FileManager::getShouldLoadCustomLines() const {
 //--------------------------------------------------------------
 void FileManager::setLoadParallelMode(bool enabled) {
   loadParallelMode = enabled;
+}
+
+//--------------------------------------------------------------
+void FileManager::setPolygonSpeedMultiplier(float multiplier) {
+  polygonSpeedMultiplier = multiplier;
+}
+
+//--------------------------------------------------------------
+float FileManager::getPolygonSpeedMultiplier() const {
+  return polygonSpeedMultiplier;
 }
