@@ -66,6 +66,8 @@ public:
   void resetDrawMode() {
     playMode = 0;
     showPlaybackSettings = false;
+    tessellationFiles.clear(); // Clear custom tessellation files on file close
+    tessellationRadii.clear(); // Clear radii settings on file close
   }
 
   // Enable playback settings (dipanggil saat file dibuka)
