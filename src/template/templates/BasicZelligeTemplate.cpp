@@ -631,16 +631,31 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
       ImGui::Text("Polygon Tessellation");
       if (ImGui::BeginTable("PolygonTessellationTable", 1,
                             ImGuiTableFlags_None)) {
-        static int selectedPolygonIndex =
-            -1; // Store the currently selected item (-1 for none)
         for (int i = 0; i < app->loadedFilePolygonCount; ++i) {
           ImGui::TableNextRow();
           ImGui::TableSetColumnIndex(0);
           std::string polyName = "Polygon " + std::to_string(i);
-          bool isSelected = (selectedPolygonIndex == i);
+
+          // Get selection state from SelectionManager
+          bool isSelected = false;
+          if (i < app->polygonShapes.size()) {
+            isSelected = app->selectionManager.isPolygonSelected(i);
+          }
+
           if (ImGui::Selectable(polyName.c_str(), isSelected,
                                 ImGuiSelectableFlags_SpanAllColumns)) {
-            selectedPolygonIndex = i; // Update selected index when clicked
+            // Check if bounds are correct before selecting (avoiding crash
+            // if canvas cleans mid-frame)
+            if (i < app->polygonShapes.size()) {
+              if (app->isCtrlPressed) {
+                // Multi-select if CTRL is held down
+                app->selectionManager.togglePolygonSelection(i);
+              } else {
+                // Exclusive selection
+                app->selectionManager.clearAllSelections();
+                app->selectionManager.selectPolygon(i);
+              }
+            }
           }
         }
         ImGui::EndTable();
