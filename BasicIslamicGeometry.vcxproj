@@ -247,6 +247,7 @@
     <ClCompile Include="src\operation\gui\UserCustom.cpp" />
     <ClCompile Include="src\operation\gui\ContextMenu.cpp" />
     <ClCompile Include="src\operation\gui\SuccessPopup.cpp" />
+    <ClCompile Include="src\operation\gui\SaveConfirmationPopup.cpp" />
     <ClCompile Include="src\operation\gui\ErrorPopup.cpp" />
     <ClCompile Include="src\operation\gui\ConfirmationPopup.cpp" />
     <ClCompile Include="src\operation\gui\SelectionInfo.cpp" />
@@ -296,6 +297,7 @@
     <ClInclude Include="src\operation\gui\UserCustom.h" />
     <ClInclude Include="src\operation\gui\ContextMenu.h" />
     <ClInclude Include="src\operation\gui\SuccessPopup.h" />
+    <ClInclude Include="src\operation\gui\SaveConfirmationPopup.h" />
     <ClInclude Include="src\operation\gui\ErrorPopup.h" />
     <ClInclude Include="src\operation\gui\ConfirmationPopup.h" />
     <ClInclude Include="src\operation\gui\SelectionInfo.h" />

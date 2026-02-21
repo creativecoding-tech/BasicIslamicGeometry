@@ -8,39 +8,40 @@
 //--------------------------------------------------------------
 PolygonShape::PolygonShape()
     : vertices(), fillColor(ofColor(255, 0, 0, 150)), selected(false),
-      index(-1), animation(nullptr), minY(0.0f), maxY(0.0f),
-      currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
-      lastFboWidth(0), lastFboHeight(0) {}
+      index(-1), loadedFromFile(false), tessellated(false), animation(nullptr),
+      minY(0.0f), maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false),
+      fboAllocated(false), lastFboWidth(0), lastFboHeight(0) {}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color)
     : vertices(verts), fillColor(color), selected(false), index(-1),
-      animation(nullptr), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
-      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
-      lastFboHeight(0) {}
+      loadedFromFile(false), tessellated(false), animation(nullptr), minY(0.0f),
+      maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
+      lastFboWidth(0), lastFboHeight(0) {}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int idx)
     : vertices(verts), fillColor(color), selected(false), index(idx),
-      animation(nullptr), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
-      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
-      lastFboHeight(0) {}
+      loadedFromFile(false), tessellated(false), animation(nullptr), minY(0.0f),
+      maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
+      lastFboWidth(0), lastFboHeight(0) {}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index,
                            std::shared_ptr<AbstractAnimation> anim)
     : vertices(verts), fillColor(color), selected(false), index(index),
-      animation(std::move(anim)), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
-      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
-      lastFboHeight(0) {}
+      loadedFromFile(false), tessellated(false), animation(std::move(anim)),
+      minY(0.0f), maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false),
+      fboAllocated(false), lastFboWidth(0), lastFboHeight(0) {}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(const PolygonShape &other)
     : vertices(other.vertices), fillColor(other.fillColor),
       selected(other.selected), index(other.index),
-      loadedFromFile(other.loadedFromFile), animation(nullptr), minY(0.0f),
-      maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
-      lastFboWidth(0), lastFboHeight(0) {}
+      loadedFromFile(other.loadedFromFile), tessellated(other.tessellated),
+      animation(nullptr), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
+      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
+      lastFboHeight(0) {}
 
 //--------------------------------------------------------------
 PolygonShape &PolygonShape::operator=(const PolygonShape &other) {
@@ -50,6 +51,7 @@ PolygonShape &PolygonShape::operator=(const PolygonShape &other) {
     selected = other.selected;
     index = other.index;
     loadedFromFile = other.loadedFromFile;
+    tessellated = other.tessellated;
     animation = nullptr; // Animation tidak dicopy (reset ke nullptr)
   }
   return *this;
@@ -60,7 +62,7 @@ PolygonShape &PolygonShape::operator=(const PolygonShape &other) {
 PolygonShape::PolygonShape(PolygonShape &&other) noexcept
     : vertices(std::move(other.vertices)), fillColor(other.fillColor),
       selected(other.selected), index(other.index),
-      loadedFromFile(other.loadedFromFile),
+      loadedFromFile(other.loadedFromFile), tessellated(other.tessellated),
       animation(std::move(other.animation)), minY(0.0f), maxY(0.0f),
       currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
       lastFboWidth(0), lastFboHeight(0) {}
@@ -74,6 +76,7 @@ PolygonShape &PolygonShape::operator=(PolygonShape &&other) noexcept {
     selected = other.selected;
     index = other.index;
     loadedFromFile = other.loadedFromFile;
+    tessellated = other.tessellated;
     animation = std::move(other.animation);
   }
   return *this;

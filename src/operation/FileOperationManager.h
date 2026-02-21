@@ -10,8 +10,15 @@ public:
   FileOperationManager(ofApp *app);
 
   // File operations
-  void saveWorkspace();    // Save workspace to file
-  void saveWorkspaceAs();  // Save workspace to custom location
+  void saveWorkspace();   // Save workspace to file
+  void saveWorkspaceAs(); // Save workspace to custom location
+
+  // Real save executions called after or during confirmations
+  void executeSaveWorkspace(bool filterTessellation);
+  void executeSaveWorkspaceAs(bool filterTessellation);
+
+  // Helper to check for tessellated geometry
+  bool hasTessellatedGeometry() const;
   void openWorkspace();    // Open file dialog dengan validasi .nay
   void loadWorkspace();    // Load workspace from file
   void loadWorkspaceSeq(); // Load workspace seq from file

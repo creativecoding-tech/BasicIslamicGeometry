@@ -666,6 +666,7 @@ void ofApp::processPolygonTessellation() {
             if (!transformedVerts.empty() && allInside) {
               PolygonShape newPoly(transformedVerts, p.getColor());
               newPoly.setLoadedFromFile(true);
+              newPoly.setTessellated(true);
               newPolys.push_back(newPoly);
             }
           }
@@ -701,7 +702,7 @@ void ofApp::processPolygonTessellation() {
       // Explicitly advance the current polygon index so sequential draw doesn't
       // skip the new ones
       if (polygonDrawMode == PG_DRAW_SEQUENTIAL) {
-        currentPolygonIndex += newPolys.size();
+        currentPolygonIndex += static_cast<int>(newPolys.size());
       }
     } else {
       customLines.insert(customLines.end(), newLines.begin(), newLines.end());
@@ -709,7 +710,7 @@ void ofApp::processPolygonTessellation() {
       // Explicitly advance the custom line index so sequential draw doesn't
       // skip the new ones
       if (customLineDrawMode == CL_DRAW_SEQUENTIAL) {
-        currentCustomLineIndex += newLines.size();
+        currentCustomLineIndex += static_cast<int>(newLines.size());
       }
     }
   }
@@ -2407,6 +2408,7 @@ void ofApp::setupImGui() {
   successPopup = std::make_unique<SuccessPopup>(this);
   errorPopup = std::make_unique<ErrorPopup>(this);
   confirmationPopup = std::make_unique<ConfirmationPopup>(this);
+  saveConfirmationPopup = std::make_unique<SaveConfirmationPopup>(this);
 
   // Initialize Selection Info window
   selectionInfo = std::make_unique<SelectionInfo>(this);
@@ -2457,6 +2459,7 @@ void ofApp::drawImGui() {
   successPopup->draw();
   errorPopup->draw();
   confirmationPopup->draw();
+  saveConfirmationPopup->draw();
 
   // Draw Selection Info window
   if (imguiVisible && showSelectionInfo) {

@@ -82,6 +82,10 @@ public:
   void setLoadedFromFile(bool loaded) { loadedFromFile = loaded; }
   bool isLoadedFromFile() const { return loadedFromFile; }
 
+  // Tessellated state ⭐ NEW
+  void setTessellated(bool tess) { tessellated = tess; }
+  bool isTessellated() const { return tessellated; }
+
   // Helper for curve tracking
   vec2 getPointAt(float t) const;      // Get point at t (0.0 - 1.0)
   float getClosestT(vec2 point) const; // Get closest t for a point
@@ -104,6 +108,7 @@ private:
       animation; // Animation system (WaveLineAnimation, dll) ⭐ CHANGED TO
                  // shared_ptr
   bool loadedFromFile = false; // Flag: true jika diload dari file .nay
+  bool tessellated = false;    // Flag: true jika ini hasil tessellasi
   float animationTimer = 0.0f; // Timer untuk tracking durasi animasi (generik,
                                // bukan cuma wave) ⭐ NEW
   float animationAutoStopDuration =

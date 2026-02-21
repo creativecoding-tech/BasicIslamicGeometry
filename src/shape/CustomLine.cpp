@@ -9,8 +9,9 @@ CustomLine::CustomLine()
       selected(false), color(ofColor(0, 0, 255)) // Default biru
       ,
       label(""), isDuplicate(false), axisLock(AxisLock::NONE),
-      animation(nullptr), loadedFromFile(false), animationTimer(0.0f),
-      animationAutoStopDuration(5.0f), animationTimerInitialized(false) {}
+      animation(nullptr), loadedFromFile(false), tessellated(false),
+      animationTimer(0.0f), animationAutoStopDuration(5.0f),
+      animationTimerInitialized(false) {}
 
 //--------------------------------------------------------------
 CustomLine::CustomLine(vector<vec2> points, ofColor color, float lineWidth,
@@ -20,7 +21,7 @@ CustomLine::CustomLine(vector<vec2> points, ofColor color, float lineWidth,
       ,
       selected(false), label(label), isDuplicate(false),
       axisLock(AxisLock::NONE), animation(nullptr), loadedFromFile(false),
-      animationTimer(0.0f), animationAutoStopDuration(5.0f),
+      tessellated(false), animationTimer(0.0f), animationAutoStopDuration(5.0f),
       animationTimerInitialized(false) {}
 
 //--------------------------------------------------------------
@@ -37,6 +38,7 @@ CustomLine &CustomLine::operator=(const CustomLine &other) {
     isDuplicate = other.isDuplicate;
     axisLock = other.axisLock;
     loadedFromFile = other.loadedFromFile;
+    tessellated = other.tessellated;
     animation = nullptr;   // Animation tidak dicopy (reset ke nullptr) ⭐ NEW
     animationTimer = 0.0f; // Reset timer ⭐ NEW
     animationAutoStopDuration = 5.0f;  // Default durasi ⭐ NEW

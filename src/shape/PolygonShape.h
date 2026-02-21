@@ -66,6 +66,10 @@ public:
     loadedFromFile = loaded;
   } // Set flag loaded dari file
 
+  // Tessellated state ⭐ NEW
+  void setTessellated(bool tess) { tessellated = tess; }
+  bool isTessellated() const { return tessellated; }
+
   // Utils
   bool containsPoint(vec2 point) const; // Cek apakah point ada di dalam polygon
 
@@ -80,6 +84,7 @@ private:
   bool selected;
   int index;                   // Index polygon untuk label
   bool loadedFromFile = false; // Flag: true jika diload dari file .nay
+  bool tessellated = false;    // Flag: true jika ini hasil tessellasi
   std::shared_ptr<AbstractAnimation>
       animation; // Animation system (optional) ⭐ CHANGED TO shared_ptr
 

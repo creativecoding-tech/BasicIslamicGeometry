@@ -7,6 +7,19 @@
 FileOperationManager::FileOperationManager(ofApp *app) : app(app) {}
 
 //--------------------------------------------------------------
+bool FileOperationManager::hasTessellatedGeometry() const {
+  for (const auto &line : app->customLines) {
+    if (line.isTessellated())
+      return true;
+  }
+  for (const auto &poly : app->polygonShapes) {
+    if (poly.isTessellated())
+      return true;
+  }
+  return false;
+}
+
+//--------------------------------------------------------------
 void FileOperationManager::saveWorkspace() {
   if (!app->currentTemplate) {
     return;
@@ -18,12 +31,37 @@ void FileOperationManager::saveWorkspace() {
     return;
   }
 
+  if (hasTessellatedGeometry()) {
+    app->saveConfirmationPopup->show(false); // isSaveAs = false
+    return;
+  }
+
+  executeSaveWorkspace(false);
+}
+
+//--------------------------------------------------------------
+void FileOperationManager::executeSaveWorkspace(bool filterTessellation) {
+  std::vector<CustomLine> linesToSave = app->customLines;
+  std::vector<PolygonShape> polysToSave = app->polygonShapes;
+
+  if (filterTessellation) {
+    linesToSave.erase(
+        std::remove_if(linesToSave.begin(), linesToSave.end(),
+                       [](const CustomLine &l) { return l.isTessellated(); }),
+        linesToSave.end());
+
+    polysToSave.erase(
+        std::remove_if(polysToSave.begin(), polysToSave.end(),
+                       [](const PolygonShape &p) { return p.isTessellated(); }),
+        polysToSave.end());
+  }
+
   // Sudah ada Save As sebelumnya, save langsung ke file tersebut
   app->fileManager.saveAll(
       app->currentTemplate->getName(), app->currentTemplate->radius,
-      app->customLines, app->polygonShapes, app->userDots,
-      app->currentTemplate->lineWidth, app->currentTemplate->labelsVisible,
-      app->currentTemplate->dotsVisible, app->showUserDot, app->lastSavedPath);
+      linesToSave, polysToSave, app->userDots, app->currentTemplate->lineWidth,
+      app->currentTemplate->labelsVisible, app->currentTemplate->dotsVisible,
+      app->showUserDot, app->lastSavedPath);
 
   // Update info jumlah customLines dan polygons (untuk CollapsingHeader)
   app->loadedFileCustomLinesCount = static_cast<int>(app->customLines.size());
@@ -47,6 +85,16 @@ void FileOperationManager::saveWorkspaceAs() {
     return; // Tidak ada template aktif
   }
 
+  if (hasTessellatedGeometry()) {
+    app->saveConfirmationPopup->show(true); // isSaveAs = true
+    return;
+  }
+
+  executeSaveWorkspaceAs(false);
+}
+
+//--------------------------------------------------------------
+void FileOperationManager::executeSaveWorkspaceAs(bool filterTessellation) {
   // Buka save dialog untuk pilih lokasi dan nama file
   ofFileDialogResult saveDialog =
       ofSystemSaveDialog("workspace.nay", "Save Workspace As");
@@ -64,12 +112,27 @@ void FileOperationManager::saveWorkspaceAs() {
     filepath += ".nay";
   }
 
+  std::vector<CustomLine> linesToSave = app->customLines;
+  std::vector<PolygonShape> polysToSave = app->polygonShapes;
+
+  if (filterTessellation) {
+    linesToSave.erase(
+        std::remove_if(linesToSave.begin(), linesToSave.end(),
+                       [](const CustomLine &l) { return l.isTessellated(); }),
+        linesToSave.end());
+
+    polysToSave.erase(
+        std::remove_if(polysToSave.begin(), polysToSave.end(),
+                       [](const PolygonShape &p) { return p.isTessellated(); }),
+        polysToSave.end());
+  }
+
   // Simpan langsung ke filepath yang user pilih
   app->fileManager.saveAll(
       app->currentTemplate->getName(), app->currentTemplate->radius,
-      app->customLines, app->polygonShapes, app->userDots,
-      app->currentTemplate->lineWidth, app->currentTemplate->labelsVisible,
-      app->currentTemplate->dotsVisible, app->showUserDot, filepath);
+      linesToSave, polysToSave, app->userDots, app->currentTemplate->lineWidth,
+      app->currentTemplate->labelsVisible, app->currentTemplate->dotsVisible,
+      app->showUserDot, filepath);
 
   // Simpan path ini sebagai lastSavedPath (CTRL+S selanjutnya akan kesini)
   app->lastSavedPath = filepath;

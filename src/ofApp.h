@@ -18,6 +18,7 @@
 #include "operation/gui/ObjectTooltip.h"
 #include "operation/gui/Playground.h"
 #include "operation/gui/SacredGeometry.h"
+#include "operation/gui/SaveConfirmationPopup.h"
 #include "operation/gui/SelectionInfo.h"
 #include "operation/gui/SuccessPopup.h"
 #include "shape/AbstractShape.h"
@@ -215,7 +216,9 @@ public:
   // GUI Components
   std::vector<std::unique_ptr<AbstractGuiComponent>> guiComponents;
   std::unique_ptr<SuccessPopup> successPopup; // Success popup dialog
-  std::unique_ptr<ErrorPopup> errorPopup;     // Error popup dialog
+  std::unique_ptr<SaveConfirmationPopup>
+      saveConfirmationPopup;              // Save confirmation dialog
+  std::unique_ptr<ErrorPopup> errorPopup; // Error popup dialog
   std::unique_ptr<ConfirmationPopup>
       confirmationPopup; // Confirmation popup dialog
   std::unique_ptr<class SelectionInfo> selectionInfo; // Selection Info window
