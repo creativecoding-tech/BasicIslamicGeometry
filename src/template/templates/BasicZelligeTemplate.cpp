@@ -629,6 +629,10 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
 
       ImGui::Separator();
       ImGui::Text("Polygon Tessellation");
+      
+      // ⭐ Wrap Table in a Scrollable Child Region
+      ImGui::BeginChild("PolygonScrollRegion", ImVec2(0, 150), true);
+      
       if (ImGui::BeginTable("PolygonTessellationTable", 1,
                             ImGuiTableFlags_None)) {
         for (int i = 0; i < app->loadedFilePolygonCount; ++i) {
@@ -660,6 +664,8 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         }
         ImGui::EndTable();
       }
+      
+      ImGui::EndChild();
 
       ImGui::Separator();
       ImGui::AlignTextToFramePadding();
