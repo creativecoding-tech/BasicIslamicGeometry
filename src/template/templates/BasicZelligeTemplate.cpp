@@ -629,14 +629,26 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
 
       ImGui::Separator();
       ImGui::Text("Polygon Tessellation");
-      
+
       // ⭐ Wrap Table in a Scrollable Child Region
       ImGui::BeginChild("PolygonScrollRegion", ImVec2(0, 150), true);
-      
-      if (ImGui::BeginTable("PolygonTessellationTable", 1,
-                            ImGuiTableFlags_None)) {
+
+      if (ImGui::BeginTable("PolygonTessellationTable", 2,
+                            ImGuiTableFlags_Borders)) {
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch,
+                                0.35f);
+        ImGui::TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch,
+                                0.65f);
+
+        static std::vector<float> dummyRadii(
+            100, 10.0f); // Temporary storage for radii UI
+        static std::vector<std::string> dummyNayFiles(
+            100, ""); // Temporary storage for selected .nay files
+
         for (int i = 0; i < app->loadedFilePolygonCount; ++i) {
           ImGui::TableNextRow();
+
+          // Column 0: Polygon Name (Selectable)
           ImGui::TableSetColumnIndex(0);
           std::string polyName = "Polygon " + std::to_string(i);
 
@@ -646,8 +658,14 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
             isSelected = app->selectionManager.isPolygonSelected(i);
           }
 
-          if (ImGui::Selectable(polyName.c_str(), isSelected,
-                                ImGuiSelectableFlags_SpanAllColumns)) {
+          // Vertically center the text relative to the taller right column
+          float extraYOffset = ImGui::GetFrameHeightWithSpacing() -
+                               ImGui::GetStyle().ItemSpacing.y;
+          ImGui::SetCursorPosY(ImGui::GetCursorPosY() + extraYOffset);
+
+          // Important: Removed ImGuiSelectableFlags_SpanAllColumns so the
+          // second column (buttons) can be clicked
+          if (ImGui::Selectable(polyName.c_str(), isSelected)) {
             // Check if bounds are correct before selecting (avoiding crash
             // if canvas cleans mid-frame)
             if (i < app->polygonShapes.size()) {
@@ -661,10 +679,65 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
               }
             }
           }
+
+          // Column 1: Browse Button & Short Radius Slider
+          ImGui::TableSetColumnIndex(1);
+          ImGui::PushID(i); // Push unique ID to separate controls per row
+
+          // Ensure vectors are large enough
+          if (i >= dummyRadii.size())
+            dummyRadii.resize(i + 100, 10.0f);
+          if (i >= dummyNayFiles.size())
+            dummyNayFiles.resize(i + 100, "");
+
+          // Browse Button
+          std::string fileNameLabel =
+              dummyNayFiles[i].empty()
+                  ? "-"
+                  : ofFilePath::getFileName(dummyNayFiles[i]);
+          ImGui::TextWrapped("%s", fileNameLabel.c_str());
+
+          if (ImGui::Button("Browse",
+                            ImVec2(0, 0))) { // Let ImGui calculate width
+            ofFileDialogResult openDialog =
+                ofSystemLoadDialog("Open .nay File", false);
+            if (openDialog.bSuccess) {
+              std::string ext =
+                  ofToLower(ofFilePath::getFileExt(openDialog.getPath()));
+              if (ext == "nay") {
+                dummyNayFiles[i] = openDialog.getPath();
+              } else {
+                app->errorPopup->show("Invalid File",
+                                      "Please select a valid .nay file!", "OK");
+              }
+            }
+          }
+          if (!dummyNayFiles[i].empty() && ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", dummyNayFiles[i].c_str());
+          }
+
+          // Close/Clear File Button
+          if (!dummyNayFiles[i].empty()) {
+            ImGui::SameLine();
+            if (ImGui::Button("X", ImVec2(0, 0))) {
+              dummyNayFiles[i] = ""; // Clear file
+              dummyRadii[i] = 10.0f; // Reset slider to default
+            }
+            if (ImGui::IsItemHovered()) {
+              ImGui::SetTooltip("Remove .nay file");
+            }
+          }
+
+          // Short Radius Slider
+          ImGui::SetNextItemWidth(
+              -FLT_MIN); // Fit remaining space, or define fixed like 60.0f
+          ImGui::SliderFloat("##Radius", &dummyRadii[i], 10.0f, 30.0f, "%.1f");
+
+          ImGui::PopID();
         }
         ImGui::EndTable();
       }
-      
+
       ImGui::EndChild();
 
       ImGui::Separator();
