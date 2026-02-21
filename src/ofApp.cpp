@@ -6,6 +6,7 @@
 #include "shape/DotShape.h"
 #include "template/templates/BasicZelligeTemplate.h"
 #include "utils/GeometryUtils.h"
+#include <algorithm>
 #include <vector>
 
 //--------------------------------------------------------------
@@ -531,9 +532,186 @@ void ofApp::updateStaggeredPolygons() {
       customLineWaveTimer = 0.0f;
     }
 
+    // ⭐ NEW: Hook Tessellation Logic
+    processPolygonTessellation();
+
     loadStage = LOAD_DONE;
     isStaggeredLoad = false; // ⭐ NEW Disable visibility flags
     fileManager.cancelSequentialLoad();
+  }
+}
+
+//--------------------------------------------------------------
+void ofApp::processPolygonTessellation() {
+  BasicZelligeTemplate *zellige =
+      dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
+  if (!zellige)
+    return;
+
+  int originalPolygonCount = static_cast<int>(polygonShapes.size());
+
+  for (int i = 0; i < originalPolygonCount; ++i) {
+    if (i >= static_cast<int>(zellige->tessellationFiles.size()))
+      continue;
+    std::string nayFile = zellige->tessellationFiles[i];
+    if (nayFile.empty())
+      continue;
+
+    float radius = zellige->tessellationRadii[i];
+
+    std::string dummyTemplateName;
+    float dummyRadius = 0.0f;
+    float dummyLineWidth;
+    bool dummyLabelsVisible;
+    bool dummyDotsVisible;
+    std::vector<CustomLine> dummyCustomLines;
+    std::vector<PolygonShape> dummyPolygons;
+    std::vector<std::unique_ptr<DotShape>> dummyUserDots;
+    bool dummyShowUserDot;
+
+    fileManager.loadAllSequential(
+        dummyTemplateName, dummyRadius, dummyLineWidth, dummyLabelsVisible,
+        dummyDotsVisible, dummyCustomLines, dummyPolygons, dummyUserDots,
+        dummyShowUserDot, nayFile);
+
+    // Fetch the parsed shapes from internal buffers
+    dummyPolygons = fileManager.getLoadedPolygonsBuffer();
+    dummyCustomLines = fileManager.getLoadedLinesBuffer();
+
+    bool hasPolygons = !dummyPolygons.empty();
+    bool hasLines = !dummyCustomLines.empty();
+
+    if (!hasPolygons && !hasLines) {
+      fileManager.cancelSequentialLoad();
+      continue;
+    }
+
+    float srcMinX = 999999.0f, srcMaxX = -999999.0f;
+    float srcMinY = 999999.0f, srcMaxY = -999999.0f;
+
+    if (hasPolygons) {
+      for (const auto &p : dummyPolygons) {
+        for (const auto &v : p.getVertices()) {
+          srcMinX = std::min(srcMinX, (float)v.x);
+          srcMaxX = std::max(srcMaxX, (float)v.x);
+          srcMinY = std::min(srcMinY, (float)v.y);
+          srcMaxY = std::max(srcMaxY, (float)v.y);
+        }
+      }
+    } else {
+      for (const auto &l : dummyCustomLines) {
+        if (l.getPoints().size() < 2)
+          continue;
+        vec2 start = l.getPoints()[0];
+        vec2 end = l.getPoints()[1];
+        srcMinX = std::min({srcMinX, (float)start.x, (float)end.x});
+        srcMaxX = std::max({srcMaxX, (float)start.x, (float)end.x});
+        srcMinY = std::min({srcMinY, (float)start.y, (float)end.y});
+        srcMaxY = std::max({srcMaxY, (float)start.y, (float)end.y});
+      }
+    }
+
+    float srcWidth = srcMaxX - srcMinX;
+    float srcHeight = srcMaxY - srcMinY;
+    if (srcWidth <= 0 || srcHeight <= 0) {
+      fileManager.cancelSequentialLoad();
+      continue;
+    }
+
+    float targetMinX = 999999.0f, targetMaxX = -999999.0f;
+    float targetMinY = 999999.0f, targetMaxY = -999999.0f;
+    for (const auto &v : polygonShapes[i].getVertices()) {
+      targetMinX = std::min(targetMinX, (float)v.x);
+      targetMaxX = std::max(targetMaxX, (float)v.x);
+      targetMinY = std::min(targetMinY, (float)v.y);
+      targetMaxY = std::max(targetMaxY, (float)v.y);
+    }
+
+    float scale = (dummyRadius > 0.0f) ? (radius / dummyRadius) : 1.0f;
+    float scaledSrcWidth = srcWidth * scale;
+    float scaledSrcHeight = srcHeight * scale;
+
+    vec2 targetCenter = vec2((targetMinX + targetMaxX) / 2.0f,
+                             (targetMinY + targetMaxY) / 2.0f);
+
+    int startCol = std::floor((targetMinX - targetCenter.x) / scaledSrcWidth);
+    int endCol = std::ceil((targetMaxX - targetCenter.x) / scaledSrcWidth);
+    int startRow = std::floor((targetMinY - targetCenter.y) / scaledSrcHeight);
+    int endRow = std::ceil((targetMaxY - targetCenter.y) / scaledSrcHeight);
+
+    std::vector<PolygonShape> newPolys;
+    std::vector<CustomLine> newLines;
+    vec2 srcCenter =
+        vec2((srcMinX + srcMaxX) / 2.0f, (srcMinY + srcMaxY) / 2.0f);
+
+    for (int col = startCol; col <= endCol; ++col) {
+      for (int row = startRow; row <= endRow; ++row) {
+        vec2 gridCenter =
+            targetCenter + vec2(col * scaledSrcWidth, row * scaledSrcHeight);
+
+        if (hasPolygons) {
+          for (const auto &p : dummyPolygons) {
+            std::vector<vec2> transformedVerts;
+            bool allInside = true;
+            for (const auto &v : p.getVertices()) {
+              vec2 localV = v - srcCenter;
+              localV *= scale;
+              vec2 worldV = gridCenter + localV;
+              transformedVerts.push_back(worldV);
+
+              if (!polygonShapes[i].containsPoint(worldV)) {
+                allInside = false;
+              }
+            }
+            if (!transformedVerts.empty() && allInside) {
+              PolygonShape newPoly(transformedVerts, p.getColor());
+              newPoly.setLoadedFromFile(true);
+              newPolys.push_back(newPoly);
+            }
+          }
+        } else {
+          for (const auto &l : dummyCustomLines) {
+            if (l.getPoints().size() < 2)
+              continue;
+            vec2 origStart = l.getPoints()[0];
+            vec2 origEnd = l.getPoints()[1];
+
+            vec2 start = gridCenter + (origStart - srcCenter) * scale;
+            vec2 end = gridCenter + (origEnd - srcCenter) * scale;
+
+            if (polygonShapes[i].containsPoint(start) &&
+                polygonShapes[i].containsPoint(end)) {
+              std::vector<vec2> pts = {start, end};
+              CustomLine newLine(pts, l.getColor(), l.getLineWidth());
+              newLine.setCurve(l.getCurve());
+              newLine.setLoadedFromFile(true);
+              newLines.push_back(newLine);
+            }
+          }
+        }
+      }
+    }
+
+    fileManager.cancelSequentialLoad();
+
+    if (hasPolygons) {
+      polygonShapes.insert(polygonShapes.end(), newPolys.begin(),
+                           newPolys.end());
+
+      // Explicitly advance the current polygon index so sequential draw doesn't
+      // skip the new ones
+      if (polygonDrawMode == PG_DRAW_SEQUENTIAL) {
+        currentPolygonIndex += newPolys.size();
+      }
+    } else {
+      customLines.insert(customLines.end(), newLines.begin(), newLines.end());
+
+      // Explicitly advance the custom line index so sequential draw doesn't
+      // skip the new ones
+      if (customLineDrawMode == CL_DRAW_SEQUENTIAL) {
+        currentCustomLineIndex += newLines.size();
+      }
+    }
   }
 }
 

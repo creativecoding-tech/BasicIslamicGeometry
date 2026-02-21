@@ -177,6 +177,9 @@ public:
   int currentTemplateIndex =
       0; // Index template shape yang sedang di-animate (untuk sequential)
 
+  // Tessellation logic hook
+  void processPolygonTessellation();
+
   // Cached dots untuk performance
   std::vector<DotInfo> cachedDots;
   bool dotsCacheDirty = true; // Flag untuk rebuild cache

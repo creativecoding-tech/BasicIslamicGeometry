@@ -640,10 +640,8 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         ImGui::TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch,
                                 0.65f);
 
-        static std::vector<float> dummyRadii(
-            100, 10.0f); // Temporary storage for radii UI
-        static std::vector<std::string> dummyNayFiles(
-            100, ""); // Temporary storage for selected .nay files
+        // Tessellation variables now part of the class State
+        // (tessellationRadii, tessellationFiles)
 
         for (int i = 0; i < app->loadedFilePolygonCount; ++i) {
           ImGui::TableNextRow();
@@ -685,16 +683,16 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
           ImGui::PushID(i); // Push unique ID to separate controls per row
 
           // Ensure vectors are large enough
-          if (i >= dummyRadii.size())
-            dummyRadii.resize(i + 100, 10.0f);
-          if (i >= dummyNayFiles.size())
-            dummyNayFiles.resize(i + 100, "");
+          if (i >= tessellationRadii.size())
+            tessellationRadii.resize(i + 100, 10.0f);
+          if (i >= tessellationFiles.size())
+            tessellationFiles.resize(i + 100, "");
 
           // Browse Button
           std::string fileNameLabel =
-              dummyNayFiles[i].empty()
+              tessellationFiles[i].empty()
                   ? "-"
-                  : ofFilePath::getFileName(dummyNayFiles[i]);
+                  : ofFilePath::getFileName(tessellationFiles[i]);
           ImGui::TextWrapped("%s", fileNameLabel.c_str());
 
           if (ImGui::Button("Browse",
@@ -705,23 +703,23 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
               std::string ext =
                   ofToLower(ofFilePath::getFileExt(openDialog.getPath()));
               if (ext == "nay") {
-                dummyNayFiles[i] = openDialog.getPath();
+                tessellationFiles[i] = openDialog.getPath();
               } else {
                 app->errorPopup->show("Invalid File",
                                       "Please select a valid .nay file!", "OK");
               }
             }
           }
-          if (!dummyNayFiles[i].empty() && ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("%s", dummyNayFiles[i].c_str());
+          if (!tessellationFiles[i].empty() && ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", tessellationFiles[i].c_str());
           }
 
           // Close/Clear File Button
-          if (!dummyNayFiles[i].empty()) {
+          if (!tessellationFiles[i].empty()) {
             ImGui::SameLine();
             if (ImGui::Button("X", ImVec2(0, 0))) {
-              dummyNayFiles[i] = ""; // Clear file
-              dummyRadii[i] = 10.0f; // Reset slider to default
+              tessellationFiles[i] = "";    // Clear file
+              tessellationRadii[i] = 10.0f; // Reset slider to default
             }
             if (ImGui::IsItemHovered()) {
               ImGui::SetTooltip("Remove .nay file");
@@ -731,7 +729,8 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
           // Short Radius Slider
           ImGui::SetNextItemWidth(
               -FLT_MIN); // Fit remaining space, or define fixed like 60.0f
-          ImGui::SliderFloat("##Radius", &dummyRadii[i], 10.0f, 30.0f, "%.1f");
+          ImGui::SliderFloat("##Radius", &tessellationRadii[i], 10.0f, 30.0f,
+                             "%.1f");
 
           ImGui::PopID();
         }

@@ -23,6 +23,10 @@ public:
   std::string getName() override;
   std::string getDescription() override;
 
+  // Tessellation UI state
+  std::vector<std::string> tessellationFiles;
+  std::vector<float> tessellationRadii;
+
   // Setup shapes ke internal vector (inherited from SacredGeometryTemplate)
   void setupShapes() override;
 

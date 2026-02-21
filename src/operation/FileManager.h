@@ -69,6 +69,14 @@ public:
   int getTotalLoadedLines() const;
   int getTotalLoadedPolygons() const; // Getter untuk jumlah polygons di buffer
 
+  // Getters for buffers (used for instant access like tessellation)
+  const std::vector<CustomLine> &getLoadedLinesBuffer() const {
+    return loadedLinesBuffer;
+  }
+  const std::vector<PolygonShape> &getLoadedPolygonsBuffer() const {
+    return loadedPolygonsBuffer;
+  }
+
   // Setter untuk load mode (diperlukan untuk staggered load)
   void setLoadParallelMode(bool enabled);
 
