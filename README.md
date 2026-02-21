@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--islamic--gs--duplicatedot--track-orange)
+![Branch](https://img.shields.io/badge/Branch-sketch--islamic--gs--pltesselation-orange)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -88,10 +88,22 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - `loadWorkspaceSeq()` - Sequential load dengan per-group animation
 - **Peek Functions** - Optimasi untuk membaca file header tanpa load full data:
   - `peekFileCustomLinesCount()` - Baca jumlah customLines dari file
-  - `peekFilePolygonCount()` - Baca jumlah polygons dari file menggunakan sequential load buffer
+  - `peekFilePolygonCount()` - Baca jumlah polygons dari file (hanya poligon original) ⭐ UPDATED
 - **Conditional UI Display** - CollapsingHeader hanya muncul jika file punya data:
   - Custom Line CollapsingHeader hanya muncul jika `loadedFileCustomLinesCount > 0`
   - Polygon CollapsingHeader hanya muncul jika `loadedFilePolygonCount > 0`
+
+### Polygon Seamless Tessellation ⭐ NEW
+- **Pattern Infusion** - Mengisi area poligon dengan pola geometri dari file `.nay` lain secara otomatis.
+- **Mathematical Tiling** - Sistem tiling yang presisi untuk memastikan antar tile tidak ada celah (*seamless*) dan tidak tumpang tindih (*no overlaps*).
+- **Radius-Based Scaling** - Besar kecilnya pola di dalam poligon dikontrol melalui slider Radius di tabel Tessellation.
+- **Geometric Clipping** - Hanya bentuk yang titik pusatnya berada di dalam poligon target yang akan di-render.
+- **Filtered UI** - Poligon hasil teselasi secara otomatis disembunyikan dari daftar pengaturan untuk mencegah kebingungan dan pengulangan teselasi (*no recursive tessellation*).
+
+### Intelligent Save System ⭐ NEW
+- **Save Confirmation Popup** - Muncul otomatis jika mendeteksi ada geometri hasil teselasi saat menyimpan workspace (CTRL+S / CTRL+SHIFT+S).
+- **Flexible Options** - User bisa memilih untuk menyimpan hanya geometri asli (*Original Only*) atau menyertakan hasil teselasinya (*With Tessellation*).
+- **Version 3 .nay Format** - Mendukung flag `isTessellated` secara persisten untuk membedakan geometri asli dengan geometri hasil regenerasi otomatis.
 
 ### Transform Canvas System ⭐ NEW
 - **Canvas Transform Controls** - Transform slider di SacredGeometry panel:
@@ -396,7 +408,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - `openWorkspace()` - Buka file dialog untuk load workspace
   - `loadWorkspace()` - Parallel load dengan staggered animation
   - `loadWorkspaceSeq()` - Sequential load dengan per-group animation
-- **.nay Binary Format** - Workspace format dengan magic number "NA01", version 2
+- **.nay Binary Format** - Workspace format dengan magic number "NA01", version 3 ⭐ UPDATED
 - **Complete State Persistence** - Save template name, radius, custom lines, polygons, semua settings (labels, dots, line width, draw settings)
 - **Direct File Save** - Save langsung ke filepath target tanpa intermediate "workspace.nay" file
 - **File Dialog Integration** - Native Windows file dialog untuk Save As/Open operations dengan .nay filter validation
@@ -706,8 +718,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 # Clone repository ini
 git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 
-# Checkout branch sketch-islamic-gs-duplicatedot-track
-git checkout sketch-islamic-gs-duplicatedot-track
+# Checkout branch sketch-islamic-gs-pltesselation
+git checkout sketch-islamic-gs-pltesselation
 
 # Jalankan OpenFrameworks Project Generator
 # Buka: openFrameworks/apps/projectGenerator/projectGenerator.exe
