@@ -815,16 +815,13 @@ void ofApp::updateCustomLines() {
   fileManager.updateSequentialLoad(customLines, polygonShapes);
   float deltaTime = ofGetLastFrameTime();
 
-  // Mode NORMAL: Selalu pastikan Wave Animation aktif (jika diset)
-  if (currentTemplate) {
-    BasicZelligeTemplate *zellige =
-        dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
-    if (zellige) {
-      zellige->applyWaveAnimationToAllCustomLines(this, true);
-    }
-  }
+  // Jika kita berada di NORMAL mode, dan waveAnimation sudah pernah dijalankan
+  // selama draw cycle, maka update logic wave. Tapi JANGAN paksa inisiasi
+  // WaveAnimation baru jika tidak ada trigger dari siklus Draw. Wave animation
+  // (jika masih berjalan) akan tetap di-update oleh updateCustomLinesLogic.
 
-  updateCustomLinesLogic(deltaTime, true); // Normal update always enables wave
+  bool shouldEnableWaveUpdate = true;
+  updateCustomLinesLogic(deltaTime, shouldEnableWaveUpdate);
 }
 
 //--------------------------------------------------------------
@@ -886,7 +883,7 @@ void ofApp::updateCustomLinesLogic(float deltaTime, bool enableWaveAnimation) {
       // PARALLEL: Trigger sekali saja untuk semua
       if (!waveAnimationApplied) {
         waveAnimationApplied = true;
-        if (currentTemplate) {
+        if (currentTemplate && lineAnimationMode == LineAnimationMode::WAVE) {
           BasicZelligeTemplate *zellige =
               dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
           if (zellige) {
@@ -897,24 +894,35 @@ void ofApp::updateCustomLinesLogic(float deltaTime, bool enableWaveAnimation) {
     } else {
       // SEQUENTIAL: Trigger satu per satu dengan delay
       // Hanya mulai trigger jika enableWaveAnimation true
-      customLineWaveTimer += deltaTime;
-      float interval = 0.2f / (drawSpeed * 2.0f); // Calibrated delay
-      if (interval < 0.02f)
-        interval = 0.02f;
+      // DAN jika kita SEDANG menjalankan staggered load atau wave masih proses
+      bool isWaveRunning = (currentCustomLineWaveIndex > 0 &&
+                            currentCustomLineWaveIndex < customLines.size());
+      if (isStaggeredLoad || isWaveRunning) {
+        customLineWaveTimer += deltaTime;
+        float interval = 0.2f / (drawSpeed * 2.0f); // Calibrated delay
+        if (interval < 0.02f)
+          interval = 0.02f;
 
-      if (customLineWaveTimer >= interval) {
-        customLineWaveTimer = 0.0f;
-        if (currentCustomLineWaveIndex < customLines.size()) {
-          if (currentTemplate) {
-            BasicZelligeTemplate *zellige =
-                dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
-            if (zellige) {
-              zellige->applyWaveAnimationToCustomLine(
-                  this, &customLines[currentCustomLineWaveIndex], true);
+        if (customLineWaveTimer >= interval) {
+          customLineWaveTimer = 0.0f;
+          if (currentCustomLineWaveIndex < customLines.size()) {
+            if (currentTemplate &&
+                lineAnimationMode == LineAnimationMode::WAVE) {
+              BasicZelligeTemplate *zellige =
+                  dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
+              if (zellige) {
+                zellige->applyWaveAnimationToCustomLine(
+                    this, &customLines[currentCustomLineWaveIndex], true);
+              }
             }
+            currentCustomLineWaveIndex++;
           }
-          currentCustomLineWaveIndex++;
         }
+      } else if (!isStaggeredLoad &&
+                 lineAnimationMode != LineAnimationMode::WAVE &&
+                 currentCustomLineWaveIndex < customLines.size()) {
+        // Cepat loncat ke akhir jika draw sudah selesai tapi no animation
+        currentCustomLineWaveIndex = customLines.size();
       }
     }
   }
