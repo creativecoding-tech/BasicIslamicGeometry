@@ -72,6 +72,7 @@ public:
   float canvasBgColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};       // Default White
   float canvasGradientColor[4] = {1.0f, 1.0f, 1.0f, 1.0f}; // Default White
   bool useCanvasGradient = false;
+  ofFbo canvasFbo; // FBO untuk menggambar trails terpisah dari ImGui
 
   ofTrueTypeFont fontNormal; // Font untuk custom line labels
 

@@ -13,12 +13,26 @@
 //--------------------------------------------------------------
 void ofApp::setup() {
   ofSetVerticalSync(false);
+  ofBackground(255, 255, 255); // Default background agar tidak abu-abu di awal
   ofSetFrameRate(60);
   ofSetEscapeQuitsApp(false);
-  ofSetBackgroundAuto(false);
+  ofSetBackgroundAuto(
+      true); // Automatically clear main buffer, FBO will preserve trails
   ofEnableAntiAliasing();
   ofEnableSmoothing();
   ofDisableArbTex(); // Required for FBO texture sampling in FillAnimation
+
+  // Allocate Canvas FBO
+  ofFbo::Settings fboSettings;
+  fboSettings.width = ofGetWidth();
+  fboSettings.height = ofGetHeight();
+  fboSettings.internalformat = GL_RGBA;
+  fboSettings.numSamples = 4; // Anti-aliasing
+  canvasFbo.allocate(fboSettings);
+
+  canvasFbo.begin();
+  ofClear(255, 255, 255, 255);
+  canvasFbo.end();
 
   // Load font untuk custom line labels
   fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
@@ -883,10 +897,25 @@ void ofApp::updateScaling() {
 
   // Scale customLines & polygons
   scaleCustomLinesAndPolygons(previousRadius, currentTemplate->radius);
-  previousRadius = currentTemplate->radius;
 }
 
 //--------------------------------------------------------------
+void ofApp::windowResized(int w, int h) {
+  // Re-allocate FBO if window is resized to keep it crisp
+  if (w > 0 && h > 0) {
+    ofFbo::Settings fboSettings;
+    fboSettings.width = w;
+    fboSettings.height = h;
+    fboSettings.internalformat = GL_RGBA;
+    fboSettings.numSamples = 4;
+    canvasFbo.allocate(fboSettings);
+
+    canvasFbo.begin();
+    ofClear(255, 255, 255, 255);
+    canvasFbo.end();
+  }
+}
+
 //--------------------------------------------------------------
 void ofApp::updateCustomLines() {
   // JANGAN update di NORMAL jika template sedang sequential (Stage 0)
@@ -1041,6 +1070,8 @@ void ofApp::updatePolygons() {
 
 //--------------------------------------------------------------
 void ofApp::draw() {
+  canvasFbo.begin();
+
   // Trail effect untuk geometry
   int alpha = (trailMode == 1) ? trailsValue : 255;
 
@@ -1100,7 +1131,18 @@ void ofApp::draw() {
   // Reset transform
   ofPopMatrix();
 
+  canvasFbo.end();
+
+  // Draw FBO ke screen utama (tanpa alpha blending agar mengganti pixel screen
+  // sepenuhnya)
+  ofSetColor(255, 255, 255, 255);
+  ofDisableAlphaBlending();
+  canvasFbo.draw(0, 0);
+  ofEnableAlphaBlending();
+
   // ImGUI (always render if context menu, popups, or visible)
+  // ImGui digambar DI ATAS FBO, sehingga efek trails di dalam FBO tidak akan
+  // pernah mengenai ImGui
   if (imguiVisible || contextMenu->isVisible() || successPopup->isVisible() ||
       errorPopup->isVisible() || confirmationPopup->isVisible()) {
     drawImGui();
@@ -1857,7 +1899,6 @@ void ofApp::keyReleased(int key) { inputManager->handleKeyReleased(key); }
 //--------------------------------------------------------------
 void ofApp::mouseEntered(int x, int y) {}
 void ofApp::mouseExited(int x, int y) {}
-void ofApp::windowResized(int w, int h) {}
 void ofApp::gotMessage(ofMessage msg) {}
 void ofApp::dragEvent(ofDragInfo dragInfo) {}
 
