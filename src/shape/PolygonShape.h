@@ -79,6 +79,8 @@ private:
                          // created polygons
   void drawGLSL() const; // GPU-based rendering (GLSL shaders) - untuk polygons
                          // loaded from .nay
+  void updateBounds();   // Helper to recalculate minX, maxX, minY, maxY
+
   vector<vec2> vertices;
   ofColor fillColor;
   bool selected;
@@ -89,6 +91,7 @@ private:
       animation; // Animation system (optional) ⭐ CHANGED TO shared_ptr
 
   // Fill state (dihitung di update(), dipakai di draw())
+  mutable float minX, maxX;    // X bounds untuk AABB check
   mutable float minY;          // Y minimum (atas)
   mutable float maxY;          // Y maksimum (bawah)
   mutable float currentWaterY; // Posisi Y air saat ini

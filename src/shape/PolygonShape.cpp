@@ -9,39 +9,53 @@
 PolygonShape::PolygonShape()
     : vertices(), fillColor(ofColor(255, 0, 0, 150)), selected(false),
       index(-1), loadedFromFile(false), tessellated(false), animation(nullptr),
-      minY(0.0f), maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false),
-      fboAllocated(false), lastFboWidth(0), lastFboHeight(0) {}
+      minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
+      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
+      lastFboHeight(0) {
+  updateBounds();
+}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color)
     : vertices(verts), fillColor(color), selected(false), index(-1),
-      loadedFromFile(false), tessellated(false), animation(nullptr), minY(0.0f),
-      maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
-      lastFboWidth(0), lastFboHeight(0) {}
+      loadedFromFile(false), tessellated(false), animation(nullptr), minX(0.0f),
+      maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
+      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
+      lastFboHeight(0) {
+  updateBounds();
+}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int idx)
     : vertices(verts), fillColor(color), selected(false), index(idx),
-      loadedFromFile(false), tessellated(false), animation(nullptr), minY(0.0f),
-      maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
-      lastFboWidth(0), lastFboHeight(0) {}
+      loadedFromFile(false), tessellated(false), animation(nullptr), minX(0.0f),
+      maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
+      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
+      lastFboHeight(0) {
+  updateBounds();
+}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index,
                            std::shared_ptr<AbstractAnimation> anim)
     : vertices(verts), fillColor(color), selected(false), index(index),
       loadedFromFile(false), tessellated(false), animation(std::move(anim)),
-      minY(0.0f), maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false),
-      fboAllocated(false), lastFboWidth(0), lastFboHeight(0) {}
+      minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
+      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
+      lastFboHeight(0) {
+  updateBounds();
+}
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(const PolygonShape &other)
     : vertices(other.vertices), fillColor(other.fillColor),
       selected(other.selected), index(other.index),
       loadedFromFile(other.loadedFromFile), tessellated(other.tessellated),
-      animation(nullptr), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
-      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
-      lastFboHeight(0) {}
+      animation(nullptr), minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f),
+      currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
+      lastFboWidth(0), lastFboHeight(0) {
+  updateBounds();
+}
 
 //--------------------------------------------------------------
 PolygonShape &PolygonShape::operator=(const PolygonShape &other) {
@@ -53,6 +67,7 @@ PolygonShape &PolygonShape::operator=(const PolygonShape &other) {
     loadedFromFile = other.loadedFromFile;
     tessellated = other.tessellated;
     animation = nullptr; // Animation tidak dicopy (reset ke nullptr)
+    updateBounds();
   }
   return *this;
 }
@@ -63,9 +78,11 @@ PolygonShape::PolygonShape(PolygonShape &&other) noexcept
     : vertices(std::move(other.vertices)), fillColor(other.fillColor),
       selected(other.selected), index(other.index),
       loadedFromFile(other.loadedFromFile), tessellated(other.tessellated),
-      animation(std::move(other.animation)), minY(0.0f), maxY(0.0f),
-      currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
-      lastFboWidth(0), lastFboHeight(0) {}
+      animation(std::move(other.animation)), minX(0.0f), maxX(0.0f), minY(0.0f),
+      maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
+      lastFboWidth(0), lastFboHeight(0) {
+  updateBounds();
+}
 
 //--------------------------------------------------------------
 // Move assignment operator - transfer animation ownership
@@ -78,6 +95,7 @@ PolygonShape &PolygonShape::operator=(PolygonShape &&other) noexcept {
     loadedFromFile = other.loadedFromFile;
     tessellated = other.tessellated;
     animation = std::move(other.animation);
+    updateBounds();
   }
   return *this;
 }
@@ -101,17 +119,8 @@ void PolygonShape::draw() const {
 
 //--------------------------------------------------------------
 void PolygonShape::update(float deltaTime) {
-  // Update bounding box Y (selalu, untuk FillAnimation)
-  if (!vertices.empty()) {
-    minY = vertices[0].y;
-    maxY = vertices[0].y;
-    for (const auto &v : vertices) {
-      if (v.y < minY)
-        minY = v.y;
-      if (v.y > maxY)
-        maxY = v.y;
-    }
-  }
+  // Update bounding box X and Y (selalu, untuk FillAnimation dan AABB check)
+  updateBounds();
 
   // Update animation jika ada
   if (animation) {
@@ -169,7 +178,10 @@ void PolygonShape::setColor(ofColor color) { fillColor = color; }
 void PolygonShape::setSelected(bool sel) { selected = sel; }
 
 //--------------------------------------------------------------
-void PolygonShape::setVertices(const vector<vec2> &verts) { vertices = verts; }
+void PolygonShape::setVertices(const vector<vec2> &verts) {
+  vertices = verts;
+  updateBounds();
+}
 
 //--------------------------------------------------------------
 void PolygonShape::setSpeed(float speed) {
@@ -199,13 +211,25 @@ bool PolygonShape::containsPoint(vec2 point) const {
   if (vertices.size() < 3)
     return false;
 
-  // Gunakan ofPolyline untuk cek apakah point di dalam polygon
-  ofPolyline poly;
-  for (auto &v : vertices) {
-    poly.addVertex(v.x, v.y);
+  // 1. Early-exit AABB check
+  // Pastikan update() sudah dipanggil perlahan setelah titik divariasikan agar
+  // minX/maxX up-to-date
+  if (point.x < minX || point.x > maxX || point.y < minY || point.y > maxY) {
+    return false;
   }
 
-  return poly.inside(point.x, point.y);
+  // 2. Ray-casting algorithm (Sangat ringan dibanding membuat ofPolyline baru)
+  bool inside = false;
+  for (size_t i = 0, j = vertices.size() - 1; i < vertices.size(); j = i++) {
+    if (((vertices[i].y > point.y) != (vertices[j].y > point.y)) &&
+        (point.x < (vertices[j].x - vertices[i].x) * (point.y - vertices[i].y) /
+                           (vertices[j].y - vertices[i].y) +
+                       vertices[i].x)) {
+      inside = !inside;
+    }
+  }
+
+  return inside;
 }
 
 //--------------------------------------------------------------
@@ -216,6 +240,26 @@ void PolygonShape::setAnimation(std::shared_ptr<AbstractAnimation> anim) {
 //--------------------------------------------------------------
 std::shared_ptr<AbstractAnimation> PolygonShape::getAnimationPtr() const {
   return animation;
+}
+
+//--------------------------------------------------------------
+void PolygonShape::updateBounds() {
+  if (vertices.empty()) {
+    minX = maxX = minY = maxY = 0.0f;
+    return;
+  }
+  minX = maxX = vertices[0].x;
+  minY = maxY = vertices[0].y;
+  for (const auto &v : vertices) {
+    if (v.x < minX)
+      minX = v.x;
+    if (v.x > maxX)
+      maxX = v.x;
+    if (v.y < minY)
+      minY = v.y;
+    if (v.y > maxY)
+      maxY = v.y;
+  }
 }
 
 //--------------------------------------------------------------

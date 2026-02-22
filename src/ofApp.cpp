@@ -550,6 +550,18 @@ void ofApp::processPolygonTessellation() {
 
   int originalPolygonCount = static_cast<int>(polygonShapes.size());
 
+  // 🔥 OPTIMIZATION 1: Cache for loaded .nay files to prevent redundant disk
+  // reads
+  struct CachedNayFile {
+    std::vector<PolygonShape> dummyPolygons;
+    std::vector<CustomLine> dummyCustomLines;
+    float dummyRadius;
+    bool hasPolygons;
+    bool hasLines;
+    float srcMinX, srcMaxX, srcMinY, srcMaxY;
+  };
+  std::map<std::string, CachedNayFile> nayCache;
+
   for (int i = 0; i < originalPolygonCount; ++i) {
     if (polygonShapes[i].isTessellated())
       continue;
@@ -561,66 +573,95 @@ void ofApp::processPolygonTessellation() {
       continue;
 
     float radius = zellige->tessellationRadii[i];
+    CachedNayFile cachedData;
 
-    std::string dummyTemplateName;
-    float dummyRadius = 0.0f;
-    float dummyLineWidth;
-    bool dummyLabelsVisible;
-    bool dummyDotsVisible;
-    std::vector<CustomLine> dummyCustomLines;
-    std::vector<PolygonShape> dummyPolygons;
-    std::vector<std::unique_ptr<DotShape>> dummyUserDots;
-    bool dummyShowUserDot;
+    // Check if it's already cached
+    auto cacheIt = nayCache.find(nayFile);
+    if (cacheIt != nayCache.end()) {
+      cachedData = cacheIt->second; // Use cached data
+    } else {
+      // Not cached, load from disk
+      std::string dummyTemplateName;
+      float dummyRadius = 0.0f;
+      float dummyLineWidth;
+      bool dummyLabelsVisible;
+      bool dummyDotsVisible;
+      std::vector<CustomLine> dummyCustomLines;
+      std::vector<PolygonShape> dummyPolygons;
+      std::vector<std::unique_ptr<DotShape>> dummyUserDots;
+      bool dummyShowUserDot;
 
-    fileManager.loadAllSequential(
-        dummyTemplateName, dummyRadius, dummyLineWidth, dummyLabelsVisible,
-        dummyDotsVisible, dummyCustomLines, dummyPolygons, dummyUserDots,
-        dummyShowUserDot, nayFile);
+      fileManager.loadAllSequential(
+          dummyTemplateName, dummyRadius, dummyLineWidth, dummyLabelsVisible,
+          dummyDotsVisible, dummyCustomLines, dummyPolygons, dummyUserDots,
+          dummyShowUserDot, nayFile);
 
-    // Fetch the parsed shapes from internal buffers
-    dummyPolygons = fileManager.getLoadedPolygonsBuffer();
-    dummyCustomLines = fileManager.getLoadedLinesBuffer();
+      // Fetch the parsed shapes from internal buffers
+      dummyPolygons = fileManager.getLoadedPolygonsBuffer();
+      dummyCustomLines = fileManager.getLoadedLinesBuffer();
 
-    bool hasPolygons = !dummyPolygons.empty();
-    bool hasLines = !dummyCustomLines.empty();
+      bool hasPolygons = !dummyPolygons.empty();
+      bool hasLines = !dummyCustomLines.empty();
 
-    if (!hasPolygons && !hasLines) {
-      fileManager.cancelSequentialLoad();
-      continue;
-    }
+      if (!hasPolygons && !hasLines) {
+        fileManager.cancelSequentialLoad();
+        continue;
+      }
 
-    float srcMinX = 999999.0f, srcMaxX = -999999.0f;
-    float srcMinY = 999999.0f, srcMaxY = -999999.0f;
+      float srcMinX = 999999.0f, srcMaxX = -999999.0f;
+      float srcMinY = 999999.0f, srcMaxY = -999999.0f;
 
-    if (hasPolygons) {
-      for (const auto &p : dummyPolygons) {
-        for (const auto &v : p.getVertices()) {
-          srcMinX = std::min(srcMinX, (float)v.x);
-          srcMaxX = std::max(srcMaxX, (float)v.x);
-          srcMinY = std::min(srcMinY, (float)v.y);
-          srcMaxY = std::max(srcMaxY, (float)v.y);
+      if (hasPolygons) {
+        for (auto &p : dummyPolygons) {
+          // Force update to calculate bounds
+          p.update(0.0f);
+          for (const auto &v : p.getVertices()) {
+            srcMinX = std::min(srcMinX, (float)v.x);
+            srcMaxX = std::max(srcMaxX, (float)v.x);
+            srcMinY = std::min(srcMinY, (float)v.y);
+            srcMaxY = std::max(srcMaxY, (float)v.y);
+          }
+        }
+      } else {
+        for (const auto &l : dummyCustomLines) {
+          if (l.getPoints().size() < 2)
+            continue;
+          vec2 start = l.getPoints()[0];
+          vec2 end = l.getPoints()[1];
+          srcMinX = std::min({srcMinX, (float)start.x, (float)end.x});
+          srcMaxX = std::max({srcMaxX, (float)start.x, (float)end.x});
+          srcMinY = std::min({srcMinY, (float)start.y, (float)end.y});
+          srcMaxY = std::max({srcMaxY, (float)start.y, (float)end.y});
         }
       }
-    } else {
-      for (const auto &l : dummyCustomLines) {
-        if (l.getPoints().size() < 2)
-          continue;
-        vec2 start = l.getPoints()[0];
-        vec2 end = l.getPoints()[1];
-        srcMinX = std::min({srcMinX, (float)start.x, (float)end.x});
-        srcMaxX = std::max({srcMaxX, (float)start.x, (float)end.x});
-        srcMinY = std::min({srcMinY, (float)start.y, (float)end.y});
-        srcMaxY = std::max({srcMaxY, (float)start.y, (float)end.y});
-      }
+
+      // Store in cache
+      cachedData.dummyPolygons = dummyPolygons;
+      cachedData.dummyCustomLines = dummyCustomLines;
+      cachedData.dummyRadius = dummyRadius;
+      cachedData.hasPolygons = hasPolygons;
+      cachedData.hasLines = hasLines;
+      cachedData.srcMinX = srcMinX;
+      cachedData.srcMaxX = srcMaxX;
+      cachedData.srcMinY = srcMinY;
+      cachedData.srcMaxY = srcMaxY;
+
+      nayCache[nayFile] = cachedData;
     }
 
-    float srcWidth = srcMaxX - srcMinX;
-    float srcHeight = srcMaxY - srcMinY;
+    float srcWidth = cachedData.srcMaxX - cachedData.srcMinX;
+    float srcHeight = cachedData.srcMaxY - cachedData.srcMinY;
     if (srcWidth <= 0 || srcHeight <= 0) {
       fileManager.cancelSequentialLoad();
       continue;
     }
 
+    // Force update target polygon to recalculate bounds
+    polygonShapes[i].update(0.0f);
+
+    // Gunakan AABB target geometry langsung dari object cache (jika update()
+    // sudah dipanggil) Tapi karena kita baca vertex, mari buat ulang secara
+    // explicit untuk aman
     float targetMinX = 999999.0f, targetMaxX = -999999.0f;
     float targetMinY = 999999.0f, targetMaxY = -999999.0f;
     for (const auto &v : polygonShapes[i].getVertices()) {
@@ -630,7 +671,9 @@ void ofApp::processPolygonTessellation() {
       targetMaxY = std::max(targetMaxY, (float)v.y);
     }
 
-    float scale = (dummyRadius > 0.0f) ? (radius / dummyRadius) : 1.0f;
+    float scale = (cachedData.dummyRadius > 0.0f)
+                      ? (radius / cachedData.dummyRadius)
+                      : 1.0f;
     float scaledSrcWidth = srcWidth * scale;
     float scaledSrcHeight = srcHeight * scale;
 
@@ -644,16 +687,28 @@ void ofApp::processPolygonTessellation() {
 
     std::vector<PolygonShape> newPolys;
     std::vector<CustomLine> newLines;
-    vec2 srcCenter =
-        vec2((srcMinX + srcMaxX) / 2.0f, (srcMinY + srcMaxY) / 2.0f);
+    vec2 srcCenter = vec2((cachedData.srcMinX + cachedData.srcMaxX) / 2.0f,
+                          (cachedData.srcMinY + cachedData.srcMaxY) / 2.0f);
 
     for (int col = startCol; col <= endCol; ++col) {
       for (int row = startRow; row <= endRow; ++row) {
         vec2 gridCenter =
             targetCenter + vec2(col * scaledSrcWidth, row * scaledSrcHeight);
 
-        if (hasPolygons) {
-          for (const auto &p : dummyPolygons) {
+        // Calculate Cell AABB for early exit
+        float cellMinX = gridCenter.x - scaledSrcWidth / 2.0f;
+        float cellMaxX = gridCenter.x + scaledSrcWidth / 2.0f;
+        float cellMinY = gridCenter.y - scaledSrcHeight / 2.0f;
+        float cellMaxY = gridCenter.y + scaledSrcHeight / 2.0f;
+
+        // 🔥 OPTIMIZATION 2: Cell-Target AABB Early Exit
+        if (cellMaxX < targetMinX || cellMinX > targetMaxX ||
+            cellMaxY < targetMinY || cellMinY > targetMaxY) {
+          continue; // Skip cell completely if bounds don't even intersect
+        }
+
+        if (cachedData.hasPolygons) {
+          for (const auto &p : cachedData.dummyPolygons) {
             std::vector<vec2> transformedVerts;
             bool allInside = true;
             for (const auto &v : p.getVertices()) {
@@ -664,6 +719,8 @@ void ofApp::processPolygonTessellation() {
 
               if (!polygonShapes[i].containsPoint(worldV)) {
                 allInside = false;
+                break; // 🔥 OPTIMIZATION 3: Gagal awal, berhenti mengecek titik
+                       // sisanya!
               }
             }
             if (!transformedVerts.empty() && allInside) {
@@ -674,7 +731,7 @@ void ofApp::processPolygonTessellation() {
             }
           }
         } else {
-          for (const auto &l : dummyCustomLines) {
+          for (const auto &l : cachedData.dummyCustomLines) {
             if (l.getPoints().size() < 2)
               continue;
             vec2 origStart = l.getPoints()[0];
@@ -698,7 +755,7 @@ void ofApp::processPolygonTessellation() {
 
     fileManager.cancelSequentialLoad();
 
-    if (hasPolygons) {
+    if (cachedData.hasPolygons) {
       polygonShapes.insert(polygonShapes.end(), newPolys.begin(),
                            newPolys.end());
 
