@@ -2286,7 +2286,7 @@ void ofApp::cleanCanvas() {
 }
 
 //--------------------------------------------------------------
-void ofApp::cleanCanvasInternal(bool resetSpeed) {
+void ofApp::cleanCanvasInternal(bool resetSpeed, bool resetTrails) {
   // Skip kalau sedang load sequential
   if (fileManager.isLoadSequentialMode()) {
     return;
@@ -2319,10 +2319,12 @@ void ofApp::cleanCanvasInternal(bool resetSpeed) {
   resetTransform();
 
   // Reset Trails Settings
-  for (auto &gui : guiComponents) {
-    if (auto canvasSettings = dynamic_cast<CanvasSettings *>(gui.get())) {
-      canvasSettings->resetTrails();
-      break;
+  if (resetTrails) {
+    for (auto &gui : guiComponents) {
+      if (auto canvasSettings = dynamic_cast<CanvasSettings *>(gui.get())) {
+        canvasSettings->resetTrails();
+        break;
+      }
     }
   }
 }

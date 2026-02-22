@@ -300,7 +300,8 @@ public:
                                        // selected objects
   void cleanCanvas();                  // Show confirmation popup, then clean
   void
-  cleanCanvasInternal(bool resetSpeed = false); // Execute clean canvas TANPA
+  cleanCanvasInternal(bool resetSpeed = false,
+                      bool resetTrails = true); // Execute clean canvas TANPA
                                                 // confirmation (internal use)
   void resetTransform(); // Reset canvas transform ke default
   void scaleCustomLinesAndPolygons(

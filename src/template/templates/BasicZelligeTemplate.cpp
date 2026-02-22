@@ -845,7 +845,9 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
               // Callback: User klik Yes, lanjut clean + load workspace
 
               // CLEAN CANVAS DULU - pakai internal method (tanpa popup lagi)
-              app->cleanCanvasInternal();
+              // Note: resetSpeed=false, resetTrails=false (jangan reset trails
+              // saat Draw)
+              app->cleanCanvasInternal(false, false);
 
               // Apply speed multiplier ke SEMUA (template shapes, polygons,
               // customLines)
