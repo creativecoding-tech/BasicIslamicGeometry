@@ -21,6 +21,43 @@ void CanvasSettings::draw() {
 
   // Begin window dengan close button (windowOpen flag)
   if (ImGui::Begin("Canvas Settings", &windowOpen, ImGuiWindowFlags_None)) {
+    // Trails section
+    ImGui::Text("Trails Settings");
+
+    // Table tanpa border untuk layout 2 kolom
+    if (ImGui::BeginTable("TrailsTable", 2, ImGuiTableFlags_None)) {
+      // Baris Pertama
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::RadioButton("No Trails", &trailMode, 0);
+
+      // Baris Kedua
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::RadioButton("Use Trails", &trailMode, 1);
+
+      // Kolom 2 pada Baris Kedua: Slider (hanya muncul kalau Use Trails = 1)
+      ImGui::TableSetColumnIndex(1);
+      if (trailMode == 1) {
+        // Slider lebih pendek dan disembunyikan label value-nya pakai ##
+        ImGui::SetNextItemWidth(100.0f);
+        ImGui::SliderInt("##Value", &trailsValue, 20, 100);
+      }
+
+      ImGui::EndTable();
+    }
+
+    // Tombol Reset Trails di posisi tengah
+    float resetTrailsButtonWidth = ImGui::CalcTextSize("Reset Trails").x +
+                                   ImGui::GetStyle().FramePadding.x * 2.0f;
+    float trailsWindowWidth = ImGui::GetContentRegionAvail().x;
+    ImGui::SetCursorPosX((trailsWindowWidth - resetTrailsButtonWidth) / 2.0f);
+    if (ImGui::Button("Reset Trails", ImVec2(resetTrailsButtonWidth, 0))) {
+      // Belum ada action
+    }
+
+    ImGui::Separator();
+
     // Transform section
     ImGui::Text("Transform Canvas");
     ImGui::SetNextItemWidth(200.0f);
