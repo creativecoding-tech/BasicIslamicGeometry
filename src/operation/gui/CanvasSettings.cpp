@@ -16,8 +16,23 @@ void CanvasSettings::resetTrails() {
 }
 
 //--------------------------------------------------------------
+void CanvasSettings::resetColors() {
+  app->canvasBgColor[0] = 1.0f;
+  app->canvasBgColor[1] = 1.0f;
+  app->canvasBgColor[2] = 1.0f;
+  app->canvasBgColor[3] = 1.0f;
+
+  app->canvasGradientColor[0] = 1.0f;
+  app->canvasGradientColor[1] = 1.0f;
+  app->canvasGradientColor[2] = 1.0f;
+  app->canvasGradientColor[3] = 1.0f;
+
+  app->useCanvasGradient = false;
+}
+
+//--------------------------------------------------------------
 void CanvasSettings::draw() {
-  ImGui::SetNextWindowSize(ImVec2(250, 450), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(250, 550), ImGuiCond_FirstUseEver);
 
   // Focus window jika di-request
   if (focusRequested) {
@@ -27,7 +42,43 @@ void CanvasSettings::draw() {
 
   // Begin window dengan close button (windowOpen flag)
   if (ImGui::Begin("Canvas Settings", &windowOpen, ImGuiWindowFlags_None)) {
-    // Trails section
+    // -------------------------
+    // Color Settings Section
+    // -------------------------
+    ImGui::Text("Color Settings");
+
+    // Background Color Picker
+    ImGui::ColorEdit4("Base Color", app->canvasBgColor,
+                      ImGuiColorEditFlags_NoInputs |
+                          ImGuiColorEditFlags_AlphaBar);
+
+    // Gradient Checkbox
+    ImGui::Checkbox("Use Gradient", &app->useCanvasGradient);
+
+    // Gradient Color Picker (hanya aktif/muncul jika gradient dicentang)
+    if (app->useCanvasGradient) {
+      ImGui::ColorEdit4("Gradient Color", app->canvasGradientColor,
+                        ImGuiColorEditFlags_NoInputs |
+                            ImGuiColorEditFlags_AlphaBar);
+    }
+
+    // Reset Color Button centered
+    ImGui::Spacing();
+    float resetColorButtonWidth = ImGui::CalcTextSize("Reset Color").x +
+                                  ImGui::GetStyle().FramePadding.x * 2.0f;
+    float resetColorWindowWidth = ImGui::GetContentRegionAvail().x;
+    ImGui::SetCursorPosX((resetColorWindowWidth - resetColorButtonWidth) /
+                         2.0f);
+    if (ImGui::Button("Reset Color")) {
+      resetColors();
+    }
+
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    // -------------------------
+    // Trails Settings Section
+    // -------------------------
     ImGui::Text("Trails Settings");
 
     // Table tanpa border untuk layout 2 kolom

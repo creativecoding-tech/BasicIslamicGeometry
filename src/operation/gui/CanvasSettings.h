@@ -17,6 +17,7 @@ public:
   void focusWindow(); // Method to focus the window
   void showWindow();  // Method to open the window
   void resetTrails(); // Method to reset trails
+  void resetColors(); // Method to reset canvas colors
 
 private:
   ofApp *app;

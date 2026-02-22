@@ -1042,14 +1042,34 @@ void ofApp::updatePolygons() {
 //--------------------------------------------------------------
 void ofApp::draw() {
   // Trail effect untuk geometry
-  if (trailMode == 1) {
-    ofSetColor(255, trailsValue); // Semi-transparent untuk trails
-  } else {
-    ofSetColor(255, 255); // Solid color (opaque) agar tidak ada trails
-  }
+  int alpha = (trailMode == 1) ? trailsValue : 255;
 
-  ofFill();
-  ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
+  if (useCanvasGradient) {
+    ofMesh mesh;
+    mesh.setMode(OF_PRIMITIVE_TRIANGLE_STRIP);
+
+    ofColor topColor(canvasBgColor[0] * 255, canvasBgColor[1] * 255,
+                     canvasBgColor[2] * 255, alpha);
+    ofColor bottomColor(canvasGradientColor[0] * 255,
+                        canvasGradientColor[1] * 255,
+                        canvasGradientColor[2] * 255, alpha);
+
+    mesh.addColor(topColor);
+    mesh.addVertex(glm::vec3(0, 0, 0));
+    mesh.addColor(topColor);
+    mesh.addVertex(glm::vec3(ofGetWidth(), 0, 0));
+    mesh.addColor(bottomColor);
+    mesh.addVertex(glm::vec3(0, ofGetHeight(), 0));
+    mesh.addColor(bottomColor);
+    mesh.addVertex(glm::vec3(ofGetWidth(), ofGetHeight(), 0));
+
+    mesh.draw();
+  } else {
+    ofSetColor(canvasBgColor[0] * 255, canvasBgColor[1] * 255,
+               canvasBgColor[2] * 255, alpha);
+    ofFill();
+    ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
+  }
 
   // Push matrix untuk geometry drawing (centered)
   ofPushMatrix();
@@ -2318,7 +2338,7 @@ void ofApp::cleanCanvasInternal(bool resetSpeed, bool resetTrails) {
   // Reset Transform Canvas
   resetTransform();
 
-  // Reset Trails Settings
+  // Reset Trails & Color Settings
   if (resetTrails) {
     for (auto &gui : guiComponents) {
       if (auto canvasSettings = dynamic_cast<CanvasSettings *>(gui.get())) {

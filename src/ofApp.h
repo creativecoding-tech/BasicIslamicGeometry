@@ -69,6 +69,9 @@ public:
   float canvasZoom = 1.0f;             // Zoom scale
   int trailMode = 1;                   // 0: No Trails, 1: Use Trails
   int trailsValue = 25;                // Trails opacity value
+  float canvasBgColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};       // Default White
+  float canvasGradientColor[4] = {1.0f, 1.0f, 1.0f, 1.0f}; // Default White
+  bool useCanvasGradient = false;
 
   ofTrueTypeFont fontNormal; // Font untuk custom line labels
 
