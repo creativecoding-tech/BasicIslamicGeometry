@@ -11,6 +11,7 @@
 #include "operation/FileManager.h"
 #include "operation/FileOperationManager.h"
 #include "operation/gui/AbstractGuiComponent.h"
+#include "operation/gui/CanvasSettings.h"
 #include "operation/gui/ConfirmationPopup.h"
 #include "operation/gui/ContextMenu.h"
 #include "operation/gui/ErrorPopup.h"
@@ -58,6 +59,7 @@ public:
   bool showSacredGeometry = false; // SacredGeometry window visibility
   bool showPlayground = false;     // Playground window visibility
   bool showUserCustom = false;     // UserCustom window visibility
+  bool showCanvasSettings = false; // Canvas Settings window visibility
   bool showUserDot = true;         // UserDot visibility
   bool showSelectionInfo = false;  // SelectionInfo window visibility
 
@@ -307,6 +309,7 @@ public:
   void toggleSacredGeometryWindow(); // Show or focus Sacred Geometry window
   void togglePlaygroundWindow();     // Show or focus Playground window
   void toggleUserCustomWindow();     // Show or focus User Custom window
+  void toggleCanvasSettingsWindow(); // Show or focus Canvas Settings window
   void toggleSelectionInfoWindow();  // Show or focus Selection Info window
   void duplicateDotAbove(); // Duplicate dot yang di-hover dengan offset ke atas
   void

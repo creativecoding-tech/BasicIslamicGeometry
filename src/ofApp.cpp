@@ -1,5 +1,6 @@
 #include "ofApp.h"
 #include "operation/FileOperationManager.h"
+#include "operation/gui/CanvasSettings.h"
 #include "operation/gui/SacredGeometry.h"
 #include "operation/gui/UserCustom.h"
 #include "shape/AbstractShape.h"
@@ -2404,6 +2405,36 @@ void ofApp::toggleUserCustomWindow() {
 }
 
 //--------------------------------------------------------------
+void ofApp::toggleCanvasSettingsWindow() {
+  if (!imguiVisible || !showCanvasSettings) {
+    // Show Canvas Settings window
+    imguiVisible = true;
+    showCanvasSettings = true;
+    // Jangan hide window lain, biarkan user punya banyak windows terbuka
+
+    // Set windowOpen flag di CanvasSettings
+    for (auto &gui : guiComponents) {
+      CanvasSettings *canvasSettings =
+          dynamic_cast<CanvasSettings *>(gui.get());
+      if (canvasSettings) {
+        canvasSettings->showWindow();
+        break;
+      }
+    }
+  } else {
+    // Canvas Settings already visible, focus it
+    for (auto &gui : guiComponents) {
+      CanvasSettings *canvasSettings =
+          dynamic_cast<CanvasSettings *>(gui.get());
+      if (canvasSettings) {
+        canvasSettings->focusWindow();
+        break;
+      }
+    }
+  }
+}
+
+//--------------------------------------------------------------
 void ofApp::toggleSelectionInfoWindow() {
   if (!imguiVisible || !showSelectionInfo) {
     // Show SelectionInfo window
@@ -2548,6 +2579,7 @@ void ofApp::setupImGui() {
   guiComponents.push_back(std::make_unique<SacredGeometry>(this));
   guiComponents.push_back(std::make_unique<Playground>(this));
   guiComponents.push_back(std::make_unique<UserCustom>(this));
+  guiComponents.push_back(std::make_unique<CanvasSettings>(this));
 
   // Initialize Context Menu (bukan bagian dari guiComponents karena draw-nya
   // khusus)
@@ -2602,6 +2634,11 @@ void ofApp::drawImGui() {
   // UserCustom (component 3)
   if (imguiVisible && showUserCustom && guiComponents.size() > 3) {
     guiComponents[3]->draw(); // UserCustom
+  }
+
+  // CanvasSettings (component 4)
+  if (imguiVisible && showCanvasSettings && guiComponents.size() > 4) {
+    guiComponents[4]->draw(); // Canvas Settings
   }
 
   // Draw popup dialogs
