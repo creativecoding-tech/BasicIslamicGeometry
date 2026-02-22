@@ -10,6 +10,12 @@ void CanvasSettings::focusWindow() { focusRequested = true; }
 void CanvasSettings::showWindow() { windowOpen = true; }
 
 //--------------------------------------------------------------
+void CanvasSettings::resetTrails() {
+  app->trailMode = 1;
+  app->trailsValue = 25;
+}
+
+//--------------------------------------------------------------
 void CanvasSettings::draw() {
   ImGui::SetNextWindowSize(ImVec2(250, 450), ImGuiCond_FirstUseEver);
 
@@ -29,19 +35,19 @@ void CanvasSettings::draw() {
       // Baris Pertama
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
-      ImGui::RadioButton("No Trails", &trailMode, 0);
+      ImGui::RadioButton("No Trails", &app->trailMode, 0);
 
       // Baris Kedua
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
-      ImGui::RadioButton("Use Trails", &trailMode, 1);
+      ImGui::RadioButton("Use Trails", &app->trailMode, 1);
 
       // Kolom 2 pada Baris Kedua: Slider (hanya muncul kalau Use Trails = 1)
       ImGui::TableSetColumnIndex(1);
-      if (trailMode == 1) {
+      if (app->trailMode == 1) {
         // Slider lebih pendek dan disembunyikan label value-nya pakai ##
         ImGui::SetNextItemWidth(100.0f);
-        ImGui::SliderInt("##Value", &trailsValue, 20, 100);
+        ImGui::SliderInt("##Value", &app->trailsValue, 20, 100);
       }
 
       ImGui::EndTable();
@@ -53,7 +59,7 @@ void CanvasSettings::draw() {
     float trailsWindowWidth = ImGui::GetContentRegionAvail().x;
     ImGui::SetCursorPosX((trailsWindowWidth - resetTrailsButtonWidth) / 2.0f);
     if (ImGui::Button("Reset Trails", ImVec2(resetTrailsButtonWidth, 0))) {
-      // Belum ada action
+      resetTrails();
     }
 
     ImGui::Separator();

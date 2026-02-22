@@ -1042,7 +1042,12 @@ void ofApp::updatePolygons() {
 //--------------------------------------------------------------
 void ofApp::draw() {
   // Trail effect untuk geometry
-  ofSetColor(255, 25);
+  if (trailMode == 1) {
+    ofSetColor(255, trailsValue); // Semi-transparent untuk trails
+  } else {
+    ofSetColor(255, 255); // Solid color (opaque) agar tidak ada trails
+  }
+
   ofFill();
   ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
 
@@ -2309,6 +2314,17 @@ void ofApp::cleanCanvasInternal(bool resetSpeed) {
   // Reset UserDot settings ke default
   showUserDot = true;   // Checkbox Dot menjadi checked
   userDotRadius = 8.0f; // Slider radius ke default (8.0f)
+
+  // Reset Transform Canvas
+  resetTransform();
+
+  // Reset Trails Settings
+  for (auto &gui : guiComponents) {
+    if (auto canvasSettings = dynamic_cast<CanvasSettings *>(gui.get())) {
+      canvasSettings->resetTrails();
+      break;
+    }
+  }
 }
 
 //--------------------------------------------------------------

@@ -14,11 +14,9 @@ public:
   // Controller flag to open/close this specific window
   bool windowOpen = false;
 
-  int trailMode = 1;    // 0: No Trails, 1: Use Trails
-  int trailsValue = 25; // Trails opacity value
-
   void focusWindow(); // Method to focus the window
   void showWindow();  // Method to open the window
+  void resetTrails(); // Method to reset trails
 
 private:
   ofApp *app;

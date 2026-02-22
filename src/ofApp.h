@@ -63,10 +63,12 @@ public:
   bool showUserDot = true;         // UserDot visibility
   bool showSelectionInfo = false;  // SelectionInfo window visibility
 
-  // Canvas Transform state
+  // Canvas Transform and Effects state
   vec2 canvasTranslation = vec2(0, 0); // Pan X, Y dalam pixels
   float canvasRotation = 0.0f;         // Rotation dalam derajat
   float canvasZoom = 1.0f;             // Zoom scale
+  int trailMode = 1;                   // 0: No Trails, 1: Use Trails
+  int trailsValue = 25;                // Trails opacity value
 
   ofTrueTypeFont fontNormal; // Font untuk custom line labels
 
