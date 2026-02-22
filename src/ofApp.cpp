@@ -1003,7 +1003,7 @@ void ofApp::updateCustomLinesLogic(float deltaTime, bool enableWaveAnimation) {
                  lineAnimationMode != LineAnimationMode::WAVE &&
                  currentCustomLineWaveIndex < customLines.size()) {
         // Cepat loncat ke akhir jika draw sudah selesai tapi no animation
-        currentCustomLineWaveIndex = customLines.size();
+        currentCustomLineWaveIndex = static_cast<int>(customLines.size());
       }
     }
   }
