@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--islamic--gs--pltesselation-orange)
+![Branch](https://img.shields.io/badge/Branch-sketch--islamic--gs--canvassettings-orange)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -100,43 +100,35 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Geometric Clipping** - Hanya bentuk yang titik pusatnya berada di dalam poligon target yang akan di-render.
 - **Filtered UI** - Poligon hasil teselasi secara otomatis disembunyikan dari daftar pengaturan untuk mencegah kebingungan dan pengulangan teselasi (*no recursive tessellation*).
 
-### Intelligent Save System ⭐ NEW
+### Intelligent Save & File Handling ⭐ UPDATED
 - **Save Confirmation Popup** - Muncul otomatis jika mendeteksi ada geometri hasil teselasi saat menyimpan workspace (CTRL+S / CTRL+SHIFT+S).
 - **Flexible Options** - User bisa memilih untuk menyimpan hanya geometri asli (*Original Only*) atau menyertakan hasil teselasinya (*With Tessellation*).
 - **Version 3 .nay Format** - Mendukung flag `isTessellated` secara persisten untuk membedakan geometri asli dengan geometri hasil regenerasi otomatis.
+- **Playground Window Behavior** - Peningkatan pada close confirmation popup:
+  - **Yes, Close File**: Menutup window dan mengakhiri session file (lastSavedPath di-clear).
+  - **No, Keep File Open**: Menutup window tetapi tetap menjaga session file tetap aktif demi kenyamanan user.
 
-### Transform Canvas System ⭐ NEW
-- **Canvas Transform Controls** - Transform slider di SacredGeometry panel:
-  - **Pan X** - Geser canvas horizontal (-500 to +500 pixels)
-  - **Pan Y** - Geser canvas vertikal (-500 to +500 pixels)
-  - **Rotate** - Putar canvas (0° to 360°)
-  - **Zoom** - Scale canvas (0.5x to 3.0x)
-- **Transform Order** - Transform diaplikasikan dengan urutan:
-  1. Translate ke center screen
-  2. Rotate (dari center)
-  3. Zoom/Scale (dari center)
-  4. Pan/Translation (geser posisi)
-- **Inverse Transform** - Mouse input menggunakan `screenToWorld()` untuk konversi screen coordinates ke world coordinates
-- **Reset Transform Button** - Kembalikan transform ke default (no pan, no rotation, 1.0x zoom)
-- **Transform Not Saved** - Transform state TIDAK disimpan ke file .nay (viewport-only)
+### Canvas View & Rendering System ⭐ NEW
+- **Dedicated Canvas Settings Window** - Panel sentral untuk mengatur tampilan visual Canvas independent dari SacredGeometry
+- **Trails Effect (FBO-Based)** - Efek jejak visual (trails) menggunakan Framebuffer Object (FBO) untuk memisahkan render canvas dengan elemen UInya
+  - ImGui UI di render secara aman *di atas* FBO, menghilangkan masalah *UI trail ghosting* (ImGui window meleleh/berbekas saat ditutup)
+  - Slider pengatur panjang trail: Trails mode on/off & Trails length limit
+  - **Instant Clean Trails** - Trails cache otomatis bersih (ofClear) saat `Clean Canvas` atau `Draw` pattern baru dipanggil
+- **Color Settings** - Kustomisasi background color lewat Canvas Settings:
+  - Solid Color mode
+  - Gradient Color mode (perpaduan warna top-to-bottom dengan ofMesh vertex colors)
+  - Color Picker terintegrasi
+  - Reset Color button default white
+- **Transform Canvas Controls** - Slider transform canvas terintegrasi dalam Canvas Settings:
+  - **Pan X** & **Pan Y** (Geser canvas horizontal & vertikal dalam pixels)
+  - **Rotate** (Putar canvas 0° to 360°)
+  - **Zoom** (Scale canvas 0.5x to 3.0x)
+- **Transform Urutan** - Center → Rotate → Zoom → Pan
+- **Inverse Transform** - Input mouse dapat mengonversi koordinat *screen* ke koordinat *world* (`screenToWorld()`)
+- **Reset Transform Button** - Mengembalikan transform ke kondisi default langsung
+- **Viewport Only** - Posisi Transform/Pan/Zoom tidak tersimpan dalam workspace file
 
-### Draw Template System
-- **SacredGeometry Panel Controls**:
-  - **Draw Template** section dengan 2 opsi:
-    - **Parallel** - Draw semua shapes secara parallel (barengan)
-    - **Sequential** - Draw shapes satu per satu dengan animasi
-  - **Clean Canvas** - Benar-benar hapus semua shapes (bukan hide)
-- **Playground Draw Button** - Tombol Arrow (←) di Playground window:
-  - Clean canvas dulu (hapus semua shapes, polygons, customLines)
-  - Apply speed multiplier ke semua animations
-  - Load workspace dengan animasi sesuai mode (Parallel/Sequential)
-- **Load File** - Saat load/open file .nay (CTRL+O):
-  - Template shapes dibuat (setupShapes) TAPI progress=0 (belum visible)
-  - User perlu klik tombol Draw di Playground untuk meng-animate
-  - Tombol Parallel/Sequential di SacredGeometry disabled jika shapes sudah dibuat
-- **Shapes Always Visible** - Shapes yang sudah dibuat SELALU ditampilkan (tidak bisa di-hide)
-
-### Selection Info Panel ⭐ NEW
+### Selection Info Panel
 - **Floating Window** - Menampilkan informasi lengkap tentang selected objects:
   - **Dots** - Radius, color, offset position
   - **Lines** - Curve value, color, lock state
@@ -193,16 +185,17 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - **Speed Control Slider (0.1 - 1.5)**
   - Line Width Slider (0-4px)
   - Labels, Dots checkboxes
-  - **Transform Canvas Section**: Pan X/Y, Rotate, Zoom sliders, Reset Transform button ⭐ NEW
-  - **Custom Line Color Picker** - Circular color wheel untuk custom line color (default: blue)
-  - **Polygon Color Picker** - Circular color wheel untuk polygon color (default: blue)
   - Template-Specific Settings (collapsible)
+- **Canvas Settings Panel** ⭐ NEW - Visual control panel dengan:
+  - **Trails Settings**: Enable/Disable trails, Length limit slider
+  - **Color Settings**: Canvas Background Color Picker, Gradient Target Color Picker, Use Canvas Gradient checkbox, Reset Color button
+  - **Transform Canvas Section**: Pan X/Y, Rotate, Zoom sliders, Reset Transform button
 - **Playground Panel** - Playback panel dengan:
   - Opened File Display
   - Mode Draw: Parallel Per Group / Sequential Per Group radio buttons
-  - **Draw Settings**: Cartesian, Circles, CrossLines, Parallelograms, RectangleLines, OctagramLines checkboxes ⭐ UPDATED
+  - **Draw Settings**: Cartesian, Circles, CrossLines, Parallelograms, RectangleLines, OctagramLines checkboxes
   - Polygon Animate: No Animation / FadeIn / Wobble / Fill / Wobble Fill / Gradient radio buttons
-  - Speed Control Slider (0.1 - 1.5) ⭐ NEW
+  - Speed Control Slider (0.1 - 1.5)
   - **Draw Arrow Button (←)** - Load dan animate workspace
 - **UserCustom Panel** - User control panel dengan:
   - **Dot Section**:
@@ -226,7 +219,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Multi-line indented format untuk readability
   - Shows dot/line/polygon properties
   - Auto-center on first open
-- **Independent Window Management** - SacredGeometry, Playground, UserCustom, dan SelectionInfo windows bisa di-close (X button) dan di-show secara independen melalui View menu
+- **Independent Window Management** - SacredGeometry, Playground, UserCustom, CanvasSettings, dan SelectionInfo windows bisa di-close (X button) dan di-show secara independen melalui View menu
 - **SuccessPopup** - Modal popup untuk save/load success confirmations
 - **ErrorPopup** - Modal popup untuk error handling
 - **Realtime Controls** - Semua settings apply secara realtime tanpa restart
@@ -302,14 +295,12 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Staggered Load Integration** - Step Animation Line bekerja dengan staggered load system (Parallel Per Group mode):
   - **LOAD_TEMPLATE stage**: Template shapes digambar terlebih dahulu
   - **LOAD_CUSTOMLINES stage**: Custom lines diload dan di-animasikan sesuai mode
-    - **With Polygon Draw**: Animasi dimulai SETELAH semua lines selesai digambar (parallel with polygons). ⭐ NEW
-    - **After Polygon Draw**: Animasi dipaksa berhenti selama loading phase (nunggu polygons selesai). ⭐ NEW
+    - **With Polygon Draw**: Animasi dimulai SETELAH semua lines selesai digambar (parallel with polygons).
+    - **After Polygon Draw**: Animasi dipaksa berhenti selama loading phase (nunggu polygons selesai).
   - **LOAD_POLYGONS stage**: Polygons diload dan di-animasikan sesuai mode
   - **LOAD_DONE stage**: Semua animasi selesai, wave animation dihapus (jika ada durasi)
-- **Conditional UI Visibility** ⭐ NEW - Step Animation Line radio buttons (Before/With/After) hanya muncul jika file `.nay` mengandung polygons. Jika tidak ada polygons, sistem otomatis menggunakan mode `Before Polygon Draw` untuk memastikan animasi wave tetap berjalan.
-- **Playground Window Behavior** ⭐ NEW - Peningkatan pada close confirmation popup:
-  - **Yes, Close File**: Menutup window dan mengakhiri session file (lastSavedPath di-clear).
-  - **No, Keep File Open**: Menutup window tetapi tetap menjaga session file tetap aktif demi kenyamanan user.
+- **Animation Trigger Fix** - Memperbaiki bug di mana memilih "Wave Animation" di dropdown akan langsung memulai animasi tanpa memencet "Draw". Animasi wave sekarang 100% tersinkron dengan alur Draw button.
+- **Conditional UI Visibility** - Step Animation Line radio buttons (Before/With/After) hanya muncul jika file `.nay` mengandung polygons. Jika tidak ada polygons, sistem otomatis menggunakan mode `Before Polygon Draw` untuk memastikan animasi wave tetap berjalan.
 - **PolygonShape System** - Class untuk polygon fill-only tanpa outline (hanya warna)
 - **Create Polygon (CTRL+G)** - Buat polygon dari selected customLines (otomatis deteksi closed loop)
 - **Polygon Color Preset** - 9 warna preset untuk polygon (merah, hijau, biru, kuning, magenta, cyan, orange, ungu, abu-abu)
@@ -499,11 +490,11 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | --- | --- |
 | **Opened File Display** | Menampilkan nama file .nay yang terakhir dibuka |
 | **Mode Draw** | Pilihan mode animasi: |
-|  - **Parallel Per Group** | Template, CustomLines, dan Polygons animate secara parallel per group |
-|  - **Sequential Per Group** | Groups animate satu per satu dengan delay |
-| **Custom Line CollapsingHeader** | ⭐ NEW Hanya muncul jika file punya customLines: |
+|  - **Parallel Per Group** | Template, CustomLines, dan Polygons batch animate secara parallel per group |
+|  - **Sequential Per Group** | Groups animate satu per satu dengan delay untuk memastikan *after polygon animation* support |
+| **Custom Line CollapsingHeader** | Hanya muncul jika file punya customLines: |
 |  - **Draw Custom Lines Checkbox** | CustomLines diload/digambar jika dicentang |
-|  - **Custom Line Appearance** | CustomLine controls (color, curve, etc) ⭐ UPDATED: |
+|  - **Custom Line Appearance** | CustomLine controls (color, curve, etc): |
 |  - **Animation Mode** | Pilihan animasi untuk custom lines: |
 |  - **No Animation Line** | CustomLines digambar tanpa animasi wave |
 |  - **Wave Animation Line** | CustomLines digambar dengan efek wave/gelombang ⭐ NEW |
@@ -583,19 +574,20 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Delete Lines & Polygons** | Hapus semua custom lines dan polygons | **CTRL+DEL** |
 | **Clean Canvas** | Clear semua, **hapus** template shapes, + **reset settings** (L/P/D colors → blue, Dot → visible, Radius → 8.0f) ⭐ UPDATED | **CTRL+SHIFT+DEL** |
 
-**MenuBar (View Menu):** ⭐ UPDATED
+**MenuBar (View Menu):**
 | Menu Item | Action |
 | --- | --- |
+| **Canvas** | Show/focus Canvas Settings window (Color, FBO Trails, Viewport Transform) |
 | **Sacred Geometry** | Show SacredGeometry window (hidden) atau focus ke window (already visible) |
 | **Playground** | Show Playground window (hidden) atau focus ke window (already visible) |
 | **User Custom** | Show UserCustom window (hidden) atau focus ke window (already visible) |
-| **Selection Info** | Show SelectionInfo window (hidden) atau focus ke window (already visible) ⭐ NEW |
+| **Selection Info** | Show SelectionInfo window (hidden) atau focus ke window (already visible) |
 
 **Window Management:**
-- **Close Button (X)** - Setiap window (SacredGeometry, Playground, UserCustom, SelectionInfo) punya tombol close di pojok kanan atas
+- **Close Button (X)** - Setiap window (SacredGeometry, Playground, UserCustom, CanvasSettings, SelectionInfo) punya tombol close di pojok kanan atas
 - **Independent Visibility** - Window bisa di-close dan di-show secara independen
 - **Auto-Focus** - Saat file berhasil dibuka, Playground window otomatis muncul dan focus
-- **Auto-Center** - SelectionInfo window muncul di tengah screen saat pertama dibuka ⭐ NEW
+- **Auto-Center** - SelectionInfo window muncul di tengah screen saat pertama dibuka
 
 **Success Popup:**
 - Muncul setelah save berhasil ⭐ UPDATED (tidak muncul untuk load operations)
@@ -719,7 +711,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 git clone https://github.com/creativecoding-tech/BasicIslamicGeometry.git
 
 # Checkout branch sketch-islamic-gs-pltesselation
-git checkout sketch-islamic-gs-pltesselation
+git checkout sketch-islamic-gs-canvassettings
 
 # Jalankan OpenFrameworks Project Generator
 # Buka: openFrameworks/apps/projectGenerator/projectGenerator.exe
@@ -1470,7 +1462,7 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **sketch-islamic-gs-duplicatedot-track**
+## 📝 Current Status: **sketch-islamic-gs-canvassettings**
 
 Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, speed control global, transform canvas, draw only concept, object tooltips, userDot system (termasuk track mode), GLSL rendering, dan file operation manager.
 
@@ -1511,78 +1503,43 @@ Fitur terbaru yang sedang dalam pengembangan aktif:
   - **Before Polygon Draw** - Wave selesai sebelum polygons digambar
   - **With Polygon Draw** - Wave berjalan bareng polygon animation
   - **After Polygon Draw** - Wave berjalan setelah polygon selesai
-✅ **Duplicate Dot Track** - UserDot yang bergerak沿着 customLine/DcustomLine dengan scroll ⭐ IN DEVELOPMENT
-✅ **Track Mode Boundary Margin** - Dot tidak bisa mencapai ujung line (5% margin di setiap ujung) ⭐ FIXED
-✅ **Bezier Curve Support** - Track dots mengikuti garis melengkung (bukan hanya lurus) ⭐ NEW
-✅ **Connected Lines Update** - Lines yang terhubung ke track dot otomatis update ⭐ NEW
-✅ **FileOperationManager** - Wrapper class untuk semua file operations (save, open, load)
-✅ **Conditional CollapsingHeader** - Custom Line/Polygon hanya muncul jika file punya data
+✅ **Duplicate Dot Track** - UserDot yang bergerak沿着 customLine/DcustomLine dengan scroll
+✅ **Bezier Curve Support** - Track dots mengikuti garis melengkung (bukan hanya lurus)
+✅ **CanvasSettings Component** - Sentralisasi fungsi trails, color bg, dan form transform view.
+✅ **FBO Trails Isolation** - Rendering frame buffer object memisahkan kanvas utama dari ImGui sehingga efek *background trials* tidak tumpang tindih dengan menu ImGui.
+✅ **Tessellation UI Filter** - Menyembunyikan otomatis elemen bentuk teselasi (pola anak) dari user setting window.
+✅ **Tiling Polygon Draw Batch** - Mempercepat algoritma batch draw parallel/sequential animasi polygon dan garis panjang secara drastis!
+✅ **Playground Session Keep** - Fungsi close dengan pilihan membiarkan state session .nay original terbuka.
 ✅ **Draw Custom Lines Checkbox** - Kontrol apakah customLines diload/digambar
 ✅ **Skip CustomLines Load** - Parallel dan sequential load skip customLines jika unchecked
 ✅ **GLSL Polygon Rendering** - Conditional rendering berdasarkan `loadedFromFile` flag
-✅ **Polygon Animation Bug Fixes** - Fixed update logic untuk complete animations
 ✅ **Draw Order Bug Fix** - Fixed staggered load setup untuk proper draw order
 ✅ **Draw Only Concept** - Hanya shapes yang dicentang yang dibuat (tidak ada show/hide)
-✅ **No More Showing Flag** - AbstractShape tidak punya `showing` flag
-✅ **Forward Only Animation** - Shapes selalu forward animation (0 → maxProgress)
-✅ **Delta Time Animation System** - Semua animasi menggunakan deltaTime untuk consistency
 ✅ **Global Speed Control** - Slider speed 0.1x - 1.5x berlaku untuk SEMUA animations
 ✅ **Transform Canvas System** - Pan X/Y, Rotate, Zoom controls dengan inverse transform
 ✅ **Selection Info Panel** - Floating window untuk selected objects info
 ✅ **Object Tooltip System** - Custom tooltips untuk selected objects (dots, lines, polygons)
-✅ **UserDot System** - Duplicate dots dengan radius dari slider User Custom
-✅ **Color Sync Improvements** - Better sync antara objects dan color pickers
-✅ **Draw Template UI** - Parallel/Sequential draw di SacredGeometry panel
-✅ **Clean & Draw Workflow** - Clean canvas dulu, baru draw dengan Draw button (Playground)
 ✅ **Auto Speed Sync** - Saat load file, speed mengikuti slider setting
-✅ **UserCustom Panel** - Window untuk kontrol user (Dot, Line, Polygon)
-✅ **Duplicate Line R 180°** - Duplicate selected lines dengan rotate 180° di global center
-✅ **DcustomLine System** - Duplicate lines dengan isDuplicate flag dan axis lock system
-✅ **Axis Lock System** - Control pergerakan DcustomLine (NONE, LOCK_X, LOCK_Y, LOCK_BOTH)
-✅ **Context Menu System** - Per-line dan bulk operation untuk DcustomLine lock/unlock
-✅ **Scroll Control** - Mouse scroll untuk menggerakkan DcustomLine sesuai axis lock
-✅ **WobbleAnimation Fix** - Fixed polygons not wobbling dengan shader wobble.vert/frag
 
-### 🧹 Clean Canvas Reset System ⭐ NEW
+### 🧹 Clean Canvas Reset System
 - **Complete Reset on Clean Canvas** - Saat Clean Canvas dipanggil (SacredGeometry / Edit menu):
-  - **Color Pickers Reset** - L, P, D color pickers kembali ke warna biru default (0, 0, 255)
-  - **Dot Visibility Reset** - Checkbox Dot di UserCustom menjadi checked (showUserDot = true)
-  - **Radius Slider Reset** - Slider radius kembali ke default value (8.0f)
-- **Consistent Default State** - Memastikan setiap kali canvas dibersihkan, settings kembali ke default
-- **Better UX** - User tidak perlu manual reset settings setelah clean canvas
+  - **Color Pickers & UI Settings Reset** - Kembali ke warna default biru, dot checked, radius 8.
+  - **Instant FBO Clear** - Instant wipe background FBO agar old template layer trials tak menyisakan bercak (ghosting overlay).
+- **Consistent Default State** - Memastikan setiap kali canvas dibersihkan, settings kembali ke fresh start.
 
 ### 🐛 Bug Fixes (Latest Updates)
 
-✅ **WobbleAnimation Bug** - Fixed polygons not wobbling/oscillating ⭐ NEW:
-  - Problem: `PolygonShape::drawGLSL()` tidak ada rendering logic untuk WobbleAnimation
-  - Result: Polygon tetap statis, tidak bergoyang meski Wobble dipilih
-  - Fix: Tambahkan WobbleAnimation handling dengan shader wobble.vert/frag untuk vertex displacement
-
-✅ **Wave Fill Animation Bug** - Fixed jagged edges after animation completes ⭐ NEW:
-  - Problem: FillAnimation tidak dihapus setelah complete, shader wave tetap dipanggil
-  - Result: Pinggiran polygon menjadi bergerigi (jagged edges) setelah wave fill selesai
-  - Fix: Tambahkan logic untuk hapus FillAnimation dan switch ke No Animation setelah complete (sama seperti WobbleFillAnimation/GradientAnimation)
-
-✅ **Polygon Animation Bug** - Fixed polygons stopping mid-animation ⭐ NEW:
-  - Problem: `updatePolygons()` hanya update saat `isLoadParallelMode() == true`
-  - Result: Setelah sequential load complete, animations stop prematur
-  - Fix: Selalu update polygons yang belum complete, regardless of mode
-
-✅ **Draw Order Bug** - Fixed polygons appearing before template shapes ⭐ NEW:
-  - Problem: Sequential Per Group mode showed polygons first
-  - Result: Wrong visual order (should be: template → customLines → polygons)
-  - Fix: Added staggered load setup to `loadWorkspace()` (missing initialization)
-
-✅ **FadeIn Animation Bug** - Fixed last polygon not colored correctly ⭐ NEW:
-  - Problem: Update logic stopping before animation complete
-  - Result: Last polygon tidak terwarnai dengan benar
-  - Fix: Check `isAnimationComplete()` before updating
-
-✅ **After Polygon Draw Animation Timing** - Fixed wave animation starting too early ⭐ NEW:
-  - Problem: Wave animation berjalan bareng saat polygons sedang loading.
-  - Fix: Modifikasi `updateStaggeredCustomLines` untuk mematikan wave anim secara eksplisit selama tahap loading polygons.
-
-✅ **C2511 Build Error** - Fixed signature mismatch in BasicZelligeTemplate.cpp. ⭐ NEW
+✅ **Tessellation Stacking Fix** - Menghilangkan overlapping yang salah saat bentuk teselasi tidak dibersihkan setelah redraw atau remove file `.nay`.
+✅ **Wave Animation Trigger Fix** - Menghilangkan bug "Animasi langsung jalan seketika setelah setting diubah", sekarang sinkron total dengan Playground UI Draw Arrow Button.
+✅ **Empty Polygon Lag / Load Issue** - Mempercepat speed render saat "No Animation" dipanggil di Sequential mode.
+✅ **Missing Long Duration Polygons** - Polygons yang terjeda oleh long duration line animation (Before Draw Polygon mode) sekarang secara otomatis terdraw dan terexecute saat selesai antriannya tanpa ada yang ter-skip.
+✅ **WobbleAnimation Bug** - Fixed polygons not wobbling/oscillating
+✅ **Wave Fill Animation Bug** - Fixed jagged edges after animation completes
+✅ **Polygon Animation Bug** - Fixed polygons stopping mid-animation
+✅ **Draw Order Bug** - Fixed polygons appearing before template shapes
+✅ **FadeIn Animation Bug** - Fixed last polygon not colored correctly
+✅ **After Polygon Draw Animation Timing** - Fixed wave animation starting too early
+✅ **C2511 Build Error** - Fixed signature mismatch in BasicZelligeTemplate.cpp.
 
 ---
 
