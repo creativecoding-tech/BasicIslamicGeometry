@@ -2388,6 +2388,13 @@ void ofApp::cleanCanvasInternal(bool resetSpeed, bool resetTrails) {
       }
     }
   }
+
+  // Clear FBO buffer instantly to remove residual trails
+  if (canvasFbo.isAllocated()) {
+    canvasFbo.begin();
+    ofClear(255, 255, 255, 255);
+    canvasFbo.end();
+  }
 }
 
 //--------------------------------------------------------------
