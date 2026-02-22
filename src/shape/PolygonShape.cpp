@@ -8,17 +8,19 @@
 //--------------------------------------------------------------
 PolygonShape::PolygonShape()
     : vertices(), fillColor(ofColor(255, 0, 0, 150)), selected(false),
-      index(-1), loadedFromFile(false), tessellated(false), animation(nullptr),
-      minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
-      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
-      lastFboHeight(0) {
+      index(-1), loadedFromFile(false), tessellated(false),
+      sourceTessellationFile(""), sourceTessellationRadius(10.0f),
+      animation(nullptr), minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f),
+      currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
+      lastFboWidth(0), lastFboHeight(0) {
   updateBounds();
 }
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color)
     : vertices(verts), fillColor(color), selected(false), index(-1),
-      loadedFromFile(false), tessellated(false), animation(nullptr), minX(0.0f),
+      loadedFromFile(false), tessellated(false), sourceTessellationFile(""),
+      sourceTessellationRadius(10.0f), animation(nullptr), minX(0.0f),
       maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
       shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
       lastFboHeight(0) {
@@ -28,7 +30,8 @@ PolygonShape::PolygonShape(vector<vec2> verts, ofColor color)
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int idx)
     : vertices(verts), fillColor(color), selected(false), index(idx),
-      loadedFromFile(false), tessellated(false), animation(nullptr), minX(0.0f),
+      loadedFromFile(false), tessellated(false), sourceTessellationFile(""),
+      sourceTessellationRadius(10.0f), animation(nullptr), minX(0.0f),
       maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
       shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
       lastFboHeight(0) {
@@ -39,8 +42,9 @@ PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int idx)
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index,
                            std::shared_ptr<AbstractAnimation> anim)
     : vertices(verts), fillColor(color), selected(false), index(index),
-      loadedFromFile(false), tessellated(false), animation(std::move(anim)),
-      minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
+      loadedFromFile(false), tessellated(false), sourceTessellationFile(""),
+      sourceTessellationRadius(10.0f), animation(std::move(anim)), minX(0.0f),
+      maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
       shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
       lastFboHeight(0) {
   updateBounds();
@@ -51,6 +55,8 @@ PolygonShape::PolygonShape(const PolygonShape &other)
     : vertices(other.vertices), fillColor(other.fillColor),
       selected(other.selected), index(other.index),
       loadedFromFile(other.loadedFromFile), tessellated(other.tessellated),
+      sourceTessellationFile(other.sourceTessellationFile),
+      sourceTessellationRadius(other.sourceTessellationRadius),
       animation(nullptr), minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f),
       currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
       lastFboWidth(0), lastFboHeight(0) {
@@ -66,6 +72,8 @@ PolygonShape &PolygonShape::operator=(const PolygonShape &other) {
     index = other.index;
     loadedFromFile = other.loadedFromFile;
     tessellated = other.tessellated;
+    sourceTessellationFile = other.sourceTessellationFile;
+    sourceTessellationRadius = other.sourceTessellationRadius;
     animation = nullptr; // Animation tidak dicopy (reset ke nullptr)
     updateBounds();
   }
@@ -78,6 +86,8 @@ PolygonShape::PolygonShape(PolygonShape &&other) noexcept
     : vertices(std::move(other.vertices)), fillColor(other.fillColor),
       selected(other.selected), index(other.index),
       loadedFromFile(other.loadedFromFile), tessellated(other.tessellated),
+      sourceTessellationFile(std::move(other.sourceTessellationFile)),
+      sourceTessellationRadius(other.sourceTessellationRadius),
       animation(std::move(other.animation)), minX(0.0f), maxX(0.0f), minY(0.0f),
       maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
       lastFboWidth(0), lastFboHeight(0) {
@@ -94,6 +104,8 @@ PolygonShape &PolygonShape::operator=(PolygonShape &&other) noexcept {
     index = other.index;
     loadedFromFile = other.loadedFromFile;
     tessellated = other.tessellated;
+    sourceTessellationFile = std::move(other.sourceTessellationFile);
+    sourceTessellationRadius = other.sourceTessellationRadius;
     animation = std::move(other.animation);
     updateBounds();
   }

@@ -491,6 +491,24 @@ bool FileOperationManager::peekFilePolygonCount(const std::string &filepath,
   // Ambil jumlah polygons NON-TESSELATED dari buffer via getter
   outCount = app->fileManager.getTotalOriginalPolygons();
 
+  // ⭐ NEW: Extract tessellation metadata HERE so the UI populates immediately
+  // upon "Open" (before "Draw")
+  if (app->currentTemplate) {
+    BasicZelligeTemplate *zellige =
+        dynamic_cast<BasicZelligeTemplate *>(app->currentTemplate);
+    if (zellige) {
+      zellige->tessellationFiles.clear();
+      zellige->tessellationRadii.clear();
+      const auto &bufferPolys = app->fileManager.getLoadedPolygonsBuffer();
+      for (size_t i = 0; i < bufferPolys.size(); i++) {
+        zellige->tessellationFiles.push_back(
+            bufferPolys[i].getSourceTessellationFile());
+        zellige->tessellationRadii.push_back(
+            bufferPolys[i].getSourceTessellationRadius());
+      }
+    }
+  }
+
   // Clear buffer agar tidak mempengaruhi load selanjutnya
   app->fileManager.cancelSequentialLoad();
 

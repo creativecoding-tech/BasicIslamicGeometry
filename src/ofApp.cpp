@@ -566,13 +566,93 @@ void ofApp::processPolygonTessellation() {
     if (polygonShapes[i].isTessellated())
       continue;
 
-    if (i >= static_cast<int>(zellige->tessellationFiles.size()))
+    std::string nayFile = "";
+    float radius = 10.0f;
+
+    if (i < static_cast<int>(zellige->tessellationFiles.size())) {
+      nayFile = zellige->tessellationFiles[i];
+      radius = zellige->tessellationRadii[i];
+    }
+
+    // ⭐ CLEANUP LOGIC
+    // If this parent polygon already has tessellated children baked/loaded,
+    // we need to check if the new UI settings match. If they DON'T match
+    // (e.g. user changed radius, file, or clicked 'X' to clear),
+    // we MUST delete the old children to prevent stacking or orphaned children.
+    bool uiMatchesLoadedState = false;
+    if (polygonShapes[i].hasSourceTessellation()) {
+      bool fileMatches =
+          (nayFile == polygonShapes[i].getSourceTessellationFile());
+      bool radiusMatches =
+          (std::abs(radius - polygonShapes[i].getSourceTessellationRadius()) <
+           0.001f);
+
+      if (fileMatches && radiusMatches) {
+        uiMatchesLoadedState = true;
+      } else {
+        // Settings changed! Delete old children.
+        // 1. Cleanup old child polygons
+        // We must scan from the VERY BEGINNING (index 0) because baked children
+        // loaded from the .nay file could be anywhere before
+        // `originalPolygonCount`.
+        for (int j = 0; j < static_cast<int>(polygonShapes.size());) {
+          if (j != i && polygonShapes[j].isTessellated()) {
+            vec2 centroid(0, 0);
+            const auto &verts = polygonShapes[j].getVertices();
+            if (!verts.empty()) {
+              for (const auto &v : verts)
+                centroid += v;
+              centroid /= verts.size();
+
+              if (polygonShapes[i].containsPoint(centroid)) {
+                polygonShapes.erase(polygonShapes.begin() + j);
+                // Adjust indices since we just shifted the array left
+                if (j < i) {
+                  i--;
+                }
+                if (j < originalPolygonCount) {
+                  originalPolygonCount--;
+                }
+                continue; // Do not increment j, check the new element at j
+              }
+            }
+          }
+          j++;
+        }
+
+        // 2. Cleanup old child lines (CustomLines generated from tessellation)
+        for (auto it = customLines.begin(); it != customLines.end();) {
+          if (it->isLoadedFromFile()) {
+            const auto &pts = it->getPoints();
+            if (pts.size() >= 2) {
+              vec2 mid = (pts[0] + pts[1]) / 2.0f;
+              if (polygonShapes[i].containsPoint(mid)) {
+                it = customLines.erase(it);
+                continue;
+              }
+            }
+          }
+          ++it;
+        }
+
+        // Clear the parent's source tessellation data since it's wiped
+        if (nayFile.empty()) {
+          polygonShapes[i].setSourceTessellation("", 10.0f);
+        }
+      }
+    }
+
+    if (uiMatchesLoadedState) {
+      // It matches exactly what was loaded, and the children should already
+      // be in the array! We skip re-generating.
       continue;
-    std::string nayFile = zellige->tessellationFiles[i];
+    }
+
+    // If UI is empty, we have already cleaned up above, so nothing more to do
+    // for this polygon.
     if (nayFile.empty())
       continue;
 
-    float radius = zellige->tessellationRadii[i];
     CachedNayFile cachedData;
 
     // Check if it's already cached
@@ -613,7 +693,6 @@ void ofApp::processPolygonTessellation() {
 
       if (hasPolygons) {
         for (auto &p : dummyPolygons) {
-          // Force update to calculate bounds
           p.update(0.0f);
           for (const auto &v : p.getVertices()) {
             srcMinX = std::min(srcMinX, (float)v.x);
@@ -635,7 +714,6 @@ void ofApp::processPolygonTessellation() {
         }
       }
 
-      // Store in cache
       cachedData.dummyPolygons = dummyPolygons;
       cachedData.dummyCustomLines = dummyCustomLines;
       cachedData.dummyRadius = dummyRadius;
@@ -773,6 +851,9 @@ void ofApp::processPolygonTessellation() {
         currentCustomLineIndex += static_cast<int>(newLines.size());
       }
     }
+
+    // ⭐ NEW: Save source tessellation state to parent polygon
+    polygonShapes[i].setSourceTessellation(nayFile, radius);
   }
 }
 

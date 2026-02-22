@@ -115,8 +115,8 @@ bool FileManager::loadAll(std::string &outTemplateName, float &outGlobalRadius,
   // Version
   int version = *reinterpret_cast<int *>(data + offset);
   offset += sizeof(int);
-  // Support version 1, 2 and 3
-  if (version != 1 && version != 2 && version != 3) {
+  // Support version 1, 2, 3, and 4
+  if (version != 1 && version != 2 && version != 3 && version != 4) {
     ofLog() << "Error: Unsupported version: " << version;
     return false;
   }
@@ -420,6 +420,21 @@ void FileManager::savePolygonsNA(ofBuffer &buffer,
     // Write isTessellated for version 3
     bool isTessellated = polygon.isTessellated();
     buffer.append(reinterpret_cast<const char *>(&isTessellated), sizeof(bool));
+
+    // Write sourceTessellation data for version 4 (only if not tessellated
+    // itself)
+    if (!isTessellated) {
+      std::string sourceFile = polygon.getSourceTessellationFile();
+      float sourceRadius = polygon.getSourceTessellationRadius();
+
+      int fileLen = static_cast<int>(sourceFile.length());
+      buffer.append(reinterpret_cast<const char *>(&fileLen), sizeof(int));
+      if (fileLen > 0) {
+        buffer.append(sourceFile.c_str(), fileLen);
+      }
+      buffer.append(reinterpret_cast<const char *>(&sourceRadius),
+                    sizeof(float));
+    }
   }
 }
 
@@ -475,10 +490,38 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
       offset += sizeof(bool);
     }
 
+    // Read sourceTessellation data (VERSION >= 4)
+    std::string sourceFile = "";
+    float sourceRadius = 10.0f;
+    if (version >= 4 && !isTessellated) {
+      if (offset + sizeof(int) > bufferSize) {
+        return false;
+      }
+      int fileLen = *reinterpret_cast<int *>(data + offset);
+      offset += sizeof(int);
+
+      if (fileLen > 0) {
+        if (offset + fileLen > bufferSize) {
+          return false;
+        }
+        sourceFile.assign(data + offset, fileLen);
+        offset += fileLen;
+      }
+
+      if (offset + sizeof(float) > bufferSize) {
+        return false;
+      }
+      sourceRadius = *reinterpret_cast<float *>(data + offset);
+      offset += sizeof(float);
+    }
+
     // Buat PolygonShape dengan atau tanpa animation tergantung mode
     PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
     polygon.setLoadedFromFile(true);       // Flag sebagai loaded dari file .nay
     polygon.setTessellated(isTessellated); // Restore tessellation state
+    if (version >= 4 && !isTessellated && !sourceFile.empty()) {
+      polygon.setSourceTessellation(sourceFile, sourceRadius);
+    }
     polygons.push_back(std::move(polygon));
   }
 
@@ -620,8 +663,8 @@ void FileManager::loadAllSequential(
   // Version
   int version = *reinterpret_cast<int *>(data + offset);
   offset += sizeof(int);
-  // Support version 1, 2 and 3
-  if (version != 1 && version != 2 && version != 3) {
+  // Support version 1, 2, 3, and 4
+  if (version != 1 && version != 2 && version != 3 && version != 4) {
     ofLog() << "Error: Unsupported version: " << version;
     return;
   }
@@ -871,10 +914,44 @@ void FileManager::loadAllSequential(
         offset += sizeof(bool);
       }
 
+      // Read sourceTessellation data (VERSION >= 4)
+      std::string sourceFile = "";
+      float sourceRadius = 10.0f;
+      if (version >= 4 && !isTessellated) {
+        if (offset + sizeof(int) > bufferSize) {
+          ofLog() << "Error: Unexpected end of file reading "
+                     "sourceTessellationFile length";
+          return;
+        }
+        int fileLen = *reinterpret_cast<int *>(data + offset);
+        offset += sizeof(int);
+
+        if (fileLen > 0) {
+          if (offset + fileLen > bufferSize) {
+            ofLog() << "Error: Unexpected end of file reading "
+                       "sourceTessellationFile";
+            return;
+          }
+          sourceFile.assign(data + offset, fileLen);
+          offset += fileLen;
+        }
+
+        if (offset + sizeof(float) > bufferSize) {
+          ofLog() << "Error: Unexpected end of file reading "
+                     "sourceTessellationRadius";
+          return;
+        }
+        sourceRadius = *reinterpret_cast<float *>(data + offset);
+        offset += sizeof(float);
+      }
+
       // Buat PolygonShape dengan atau tanpa animation tergantung mode
       PolygonShape polygon = createPolygonWithAnimation(vertices, fillColor, i);
       polygon.setLoadedFromFile(true); // Flag sebagai loaded dari file .nay
       polygon.setTessellated(isTessellated); // Restore tessellation state
+      if (version >= 4 && !isTessellated && !sourceFile.empty()) {
+        polygon.setSourceTessellation(sourceFile, sourceRadius);
+      }
       loadedPolygonsBuffer.push_back(std::move(polygon));
     }
   }

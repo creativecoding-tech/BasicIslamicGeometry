@@ -70,6 +70,17 @@ public:
   void setTessellated(bool tess) { tessellated = tess; }
   bool isTessellated() const { return tessellated; }
 
+  // Source tessellation metadata (untuk UI state) ⭐ NEW
+  void setSourceTessellation(const std::string &file, float radius) {
+    sourceTessellationFile = file;
+    sourceTessellationRadius = radius;
+  }
+  std::string getSourceTessellationFile() const {
+    return sourceTessellationFile;
+  }
+  float getSourceTessellationRadius() const { return sourceTessellationRadius; }
+  bool hasSourceTessellation() const { return !sourceTessellationFile.empty(); }
+
   // Utils
   bool containsPoint(vec2 point) const; // Cek apakah point ada di dalam polygon
 
@@ -87,6 +98,8 @@ private:
   int index;                   // Index polygon untuk label
   bool loadedFromFile = false; // Flag: true jika diload dari file .nay
   bool tessellated = false;    // Flag: true jika ini hasil tessellasi
+  std::string sourceTessellationFile = ""; // File .nay sumber tessellasi
+  float sourceTessellationRadius = 10.0f;  // Radius sumber tessellasi
   std::shared_ptr<AbstractAnimation>
       animation; // Animation system (optional) ⭐ CHANGED TO shared_ptr
 

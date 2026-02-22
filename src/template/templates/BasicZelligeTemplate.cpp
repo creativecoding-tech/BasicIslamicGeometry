@@ -663,6 +663,17 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
             isSelected = app->selectionManager.isPolygonSelected(i);
           }
 
+          // We DO NOT sync from app->polygonShapes[i] here anymore because in
+          // Sequential Mode, app->polygonShapes is empty until the animation
+          // reaches that polygon. Instead, we just let the UI display whatever
+          // is already in tessellationFiles/Radii, which was pre-populated by
+          // FileOperationManager::loadWorkspaceSeq() immediately upon file
+          // open. Ensure UI vectors are large enough
+          if (i >= tessellationRadii.size())
+            tessellationRadii.resize(i + 100, 10.0f);
+          if (i >= tessellationFiles.size())
+            tessellationFiles.resize(i + 100, "");
+
           // Vertically center the text relative to the taller right column
           float extraYOffset = ImGui::GetFrameHeightWithSpacing() -
                                ImGui::GetStyle().ItemSpacing.y;

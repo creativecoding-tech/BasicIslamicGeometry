@@ -156,7 +156,8 @@ private:
 
   // Format constants
   static constexpr char MAGIC_NUMBER[4] = {'N', 'A', '0', '1'};
-  static constexpr int VERSION = 3;
+  // Version file format
+  static constexpr int VERSION = 4;
   static constexpr int HEADER_SIZE =
       64; // Header tetap 64 bytes untuk masa depan
 };
