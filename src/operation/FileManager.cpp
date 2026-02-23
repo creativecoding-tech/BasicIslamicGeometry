@@ -381,6 +381,10 @@ bool FileManager::loadCustomLinesNA(ofBuffer &buffer, size_t &offset,
         0.18f *
         animationSpeedMultiplier); // Delta time calibrated (0.003f * 60 FPS)
 
+    // Simpan titik asli dan hitung baseRadius untuk mencegah floating point
+    // drift saat dimodifikasi slider Radius ⭐ NEW
+    line.saveOriginalPoints(radius);
+
     // Add ke vector
     customLines.push_back(line);
   }
@@ -522,6 +526,11 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
     if (version >= 4 && !isTessellated && !sourceFile.empty()) {
       polygon.setSourceTessellation(sourceFile, sourceRadius);
     }
+
+    // Simpan titik asli dan hitung baseRadius untuk mencegah floating point
+    // drift saat dimodifikasi slider Radius ⭐ NEW
+    polygon.saveOriginalVertices(radius);
+
     polygons.push_back(std::move(polygon));
   }
 
@@ -613,6 +622,11 @@ bool FileManager::loadUserDotsNA(
     dotShape->setLowerBound(lowerBound);
     dotShape->setColor(color);
     dotShape->progress = 1.0f;
+
+    // Simpan titik asli dan hitung baseRadius untuk mencegah floating point
+    // drift saat dimodifikasi slider Radius ⭐ NEW
+    dotShape->saveOriginalPosition(radius);
+
     userDots.push_back(std::move(dotShape));
   }
 

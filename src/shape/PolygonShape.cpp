@@ -5,20 +5,9 @@
 #include "../anim/WobbleAnimation.h"
 #include "../anim/WobbleFillAnimation.h"
 
-//--------------------------------------------------------------
 PolygonShape::PolygonShape()
-    : vertices(), fillColor(ofColor(255, 0, 0, 150)), selected(false),
-      index(-1), loadedFromFile(false), tessellated(false),
-      sourceTessellationFile(""), sourceTessellationRadius(10.0f),
-      animation(nullptr), minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f),
-      currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
-      lastFboWidth(0), lastFboHeight(0) {
-  updateBounds();
-}
-
-//--------------------------------------------------------------
-PolygonShape::PolygonShape(vector<vec2> verts, ofColor color)
-    : vertices(verts), fillColor(color), selected(false), index(-1),
+    : vertices(), originalVertices(), baseRadius(1.0f),
+      fillColor(ofColor(255, 0, 0, 150)), selected(false), index(-1),
       loadedFromFile(false), tessellated(false), sourceTessellationFile(""),
       sourceTessellationRadius(10.0f), animation(nullptr), minX(0.0f),
       maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
@@ -28,9 +17,22 @@ PolygonShape::PolygonShape(vector<vec2> verts, ofColor color)
 }
 
 //--------------------------------------------------------------
+PolygonShape::PolygonShape(vector<vec2> verts, ofColor color)
+    : vertices(verts), originalVertices(verts), baseRadius(1.0f),
+      fillColor(color), selected(false), index(-1), loadedFromFile(false),
+      tessellated(false), sourceTessellationFile(""),
+      sourceTessellationRadius(10.0f), animation(nullptr), minX(0.0f),
+      maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
+      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
+      lastFboHeight(0) {
+  updateBounds();
+}
+
+//--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int idx)
-    : vertices(verts), fillColor(color), selected(false), index(idx),
-      loadedFromFile(false), tessellated(false), sourceTessellationFile(""),
+    : vertices(verts), originalVertices(verts), baseRadius(1.0f),
+      fillColor(color), selected(false), index(idx), loadedFromFile(false),
+      tessellated(false), sourceTessellationFile(""),
       sourceTessellationRadius(10.0f), animation(nullptr), minX(0.0f),
       maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
       shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
@@ -41,8 +43,9 @@ PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int idx)
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index,
                            std::shared_ptr<AbstractAnimation> anim)
-    : vertices(verts), fillColor(color), selected(false), index(index),
-      loadedFromFile(false), tessellated(false), sourceTessellationFile(""),
+    : vertices(verts), originalVertices(verts), baseRadius(1.0f),
+      fillColor(color), selected(false), index(index), loadedFromFile(false),
+      tessellated(false), sourceTessellationFile(""),
       sourceTessellationRadius(10.0f), animation(std::move(anim)), minX(0.0f),
       maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
       shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
@@ -52,7 +55,8 @@ PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index,
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(const PolygonShape &other)
-    : vertices(other.vertices), fillColor(other.fillColor),
+    : vertices(other.vertices), originalVertices(other.originalVertices),
+      baseRadius(other.baseRadius), fillColor(other.fillColor),
       selected(other.selected), index(other.index),
       loadedFromFile(other.loadedFromFile), tessellated(other.tessellated),
       sourceTessellationFile(other.sourceTessellationFile),
@@ -67,6 +71,8 @@ PolygonShape::PolygonShape(const PolygonShape &other)
 PolygonShape &PolygonShape::operator=(const PolygonShape &other) {
   if (this != &other) {
     vertices = other.vertices;
+    originalVertices = other.originalVertices;
+    baseRadius = other.baseRadius;
     fillColor = other.fillColor;
     selected = other.selected;
     index = other.index;
@@ -83,7 +89,9 @@ PolygonShape &PolygonShape::operator=(const PolygonShape &other) {
 //--------------------------------------------------------------
 // Move constructor - transfer animation ownership
 PolygonShape::PolygonShape(PolygonShape &&other) noexcept
-    : vertices(std::move(other.vertices)), fillColor(other.fillColor),
+    : vertices(std::move(other.vertices)),
+      originalVertices(std::move(other.originalVertices)),
+      baseRadius(other.baseRadius), fillColor(other.fillColor),
       selected(other.selected), index(other.index),
       loadedFromFile(other.loadedFromFile), tessellated(other.tessellated),
       sourceTessellationFile(std::move(other.sourceTessellationFile)),
@@ -99,6 +107,8 @@ PolygonShape::PolygonShape(PolygonShape &&other) noexcept
 PolygonShape &PolygonShape::operator=(PolygonShape &&other) noexcept {
   if (this != &other) {
     vertices = std::move(other.vertices);
+    originalVertices = std::move(other.originalVertices);
+    baseRadius = other.baseRadius;
     fillColor = other.fillColor;
     selected = other.selected;
     index = other.index;
@@ -110,6 +120,29 @@ PolygonShape &PolygonShape::operator=(PolygonShape &&other) noexcept {
     updateBounds();
   }
   return *this;
+}
+
+//--------------------------------------------------------------
+void PolygonShape::saveOriginalVertices(float currentTemplateRadius) {
+  originalVertices = vertices;
+  baseRadius = currentTemplateRadius;
+}
+
+//--------------------------------------------------------------
+void PolygonShape::scaleToRadius(float newRadius) {
+  if (baseRadius <= 0.0f || originalVertices.empty())
+    return;
+  float scaleRatio = newRadius / baseRadius;
+
+  if (std::abs(scaleRatio - 1.0f) < 0.0001f) {
+    vertices = originalVertices;
+  } else {
+    vertices.resize(originalVertices.size());
+    for (size_t i = 0; i < originalVertices.size(); ++i) {
+      vertices[i] = originalVertices[i] * scaleRatio;
+    }
+  }
+  updateBounds();
 }
 
 //--------------------------------------------------------------

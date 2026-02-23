@@ -2568,49 +2568,25 @@ void ofApp::drawUserDots() {
 
 //--------------------------------------------------------------
 void ofApp::scaleCustomLinesAndPolygons(float oldRadius, float newRadius) {
-  // Hitung rasio scaling
-  float scaleRatio = newRadius / oldRadius;
-
-  // Hindari scaling jika ratio ~1 (untuk performance dan presisi)
-  if (std::abs(scaleRatio - 1.0f) < 0.0001f) {
+  // Hindari scaling jika radius tidak berubah (untuk performance)
+  if (std::abs(newRadius - oldRadius) < 0.0001f) {
     return;
   }
 
   // Scale semua customLines
   for (auto &line : customLines) {
-    vector<vec2> points = line.getPoints();
-    for (auto &point : points) {
-      point = point * scaleRatio; // Scale setiap titik
-    }
-    line.setPoints(points);
-
-    // Scale juga curve parameter agar kelengkungan proporsional
-    float oldCurve = line.getCurve();
-    float newCurve = oldCurve * scaleRatio;
-    line.setCurve(newCurve);
+    line.scaleToRadius(newRadius);
   }
 
   // Scale semua polygons
   for (auto &polygon : polygonShapes) {
-    vector<vec2> vertices = polygon.getVertices();
-    for (auto &vertex : vertices) {
-      vertex = vertex * scaleRatio; // Scale setiap vertex
-    }
-    polygon.setVertices(vertices);
+    polygon.scaleToRadius(newRadius);
   }
 
   // Scale semua userDots (duplikat dots)
   for (auto &dot : userDots) {
     if (dot) {
-      // Scale posisi userDot
-      vec2 currentPos = dot->getPosition();
-      vec2 newPos = currentPos * scaleRatio;
-      dot->setPosition(newPos);
-
-      // Scale juga lowerBound (posisi parent dot)
-      vec2 currentLowerBound = dot->getLowerBound();
-      vec2 newLowerBound = currentLowerBound * scaleRatio;
-      dot->setLowerBound(newLowerBound);
+      dot->scaleToRadius(newRadius);
     }
   }
 }

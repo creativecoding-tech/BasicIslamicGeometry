@@ -91,7 +91,20 @@ public:
   float getClosestT(vec2 point) const; // Get closest t for a point
   float getApproxLength() const; // Get approximate length of the line/curve
 
+public:
+  // Method untuk set titik asli dari luar (dipanggil setelah instantiate) ⭐
+  // NEW
+  void saveOriginalPoints(float currentTemplateRadius);
+  // Method untuk scale geometri berdasar ratio absolute dari original ⭐ NEW
+  void scaleToRadius(float newRadius);
+
 private:
+  vector<vec2> originalPoints; // Backup dari titik asli untuk scaling tanpa
+                               // cacat presisi ⭐ NEW
+  float originalCurve;         // Backup dari curve asli
+  float baseRadius =
+      1.0f; // Radius template saat titik asli dibuat/diload ⭐ NEW
+
   vector<vec2> points; // 2 titik: start dan end
   ofColor color;
   float lineWidth;

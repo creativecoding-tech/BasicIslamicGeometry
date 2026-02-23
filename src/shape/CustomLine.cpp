@@ -3,7 +3,8 @@
 
 //--------------------------------------------------------------
 CustomLine::CustomLine()
-    : lineWidth(3.0f), curve(0.0f), progress(1.0f),
+    : points(), originalPoints(), originalCurve(0.0f), baseRadius(1.0f),
+      lineWidth(3.0f), curve(0.0f), progress(1.0f),
       speed(1.2f) // Delta time calibrated (0.02f * 60 FPS)
       ,
       selected(false), color(ofColor(0, 0, 255)) // Default biru
@@ -16,7 +17,8 @@ CustomLine::CustomLine()
 //--------------------------------------------------------------
 CustomLine::CustomLine(vector<vec2> points, ofColor color, float lineWidth,
                        std::string label)
-    : points(points), color(color), lineWidth(lineWidth), curve(0.0f),
+    : points(points), originalPoints(points), originalCurve(0.0f),
+      baseRadius(1.0f), color(color), lineWidth(lineWidth), curve(0.0f),
       progress(1.0f), speed(1.2f) // Delta time calibrated (0.02f * 60 FPS)
       ,
       selected(false), label(label), isDuplicate(false),
@@ -28,6 +30,9 @@ CustomLine::CustomLine(vector<vec2> points, ofColor color, float lineWidth,
 CustomLine &CustomLine::operator=(const CustomLine &other) {
   if (this != &other) {
     points = other.points;
+    originalPoints = other.originalPoints;
+    originalCurve = other.originalCurve;
+    baseRadius = other.baseRadius;
     color = other.color;
     lineWidth = other.lineWidth;
     curve = other.curve;
@@ -46,6 +51,31 @@ CustomLine &CustomLine::operator=(const CustomLine &other) {
     isAnimationFinished = false;       // Reset flag ⭐ NEW
   }
   return *this;
+}
+
+//--------------------------------------------------------------
+void CustomLine::saveOriginalPoints(float currentTemplateRadius) {
+  originalPoints = points;
+  originalCurve = curve;
+  baseRadius = currentTemplateRadius;
+}
+
+//--------------------------------------------------------------
+void CustomLine::scaleToRadius(float newRadius) {
+  if (baseRadius <= 0.0f || originalPoints.empty())
+    return;
+  float scaleRatio = newRadius / baseRadius;
+
+  if (std::abs(scaleRatio - 1.0f) < 0.0001f) {
+    points = originalPoints;
+    curve = originalCurve;
+  } else {
+    points.resize(originalPoints.size());
+    for (size_t i = 0; i < originalPoints.size(); ++i) {
+      points[i] = originalPoints[i] * scaleRatio;
+    }
+    curve = originalCurve * scaleRatio;
+  }
 }
 
 //--------------------------------------------------------------
