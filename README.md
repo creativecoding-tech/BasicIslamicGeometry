@@ -14,7 +14,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 
 ## 📺 Demo Video
 
-Lihat hasilnya di YouTube: [Watch Demo](https://youtu.be/A50uG7nty7U)
+Lihat hasilnya di YouTube: [Watch Demo](https://youtube.com/shorts/ADElH6tLSbM)
 
 ---
 
@@ -163,7 +163,10 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 ### Runtime Updates & Scalability
 - **Runtime Radius Updates** - Semua shapes update posisinya secara realtime saat radius diubah via slider
-- **Proportional Scaling System** - Posisi di-calculate ulang secara proporsional menggunakan `scaleFactor = newRadius / originalRadius`
+- **Absolute Scaling System** ⭐ NEW - Menggantikan sistem increment multiplier yang rentan menyebabkan *floating-point drift* dan *tessellation crash*:
+  - Setiap bentuk (`CustomLine`, `PolygonShape`, `ParallelogramLine`, dll) menyimpan koordinat asli (origin) pada saat diload/dibuat.
+  - Saat radius digerakkan, shape menarik ulang kalkulasi dari origin yang steril dari *drifting*.
+  - Menghilangkan bug dimana polygon menciut atau terdistorsi (self-intersect) yang dulunya membuat `ofTessellator.cpp` crash.
 - **Polar Thinking** - Perhitungan posisi menggunakan trigonometri (cos, sin, atan2) untuk scalability
 - **Angle/Distance Approach** - CircleShape menggunakan angle + distance bukan Cartesian coordinates untuk better scaling
 - **Scalable Dot Positions System** - Semua dot positions diambil langsung dari shape objects, TANPA hardcoded values
@@ -1529,6 +1532,7 @@ Fitur terbaru yang sedang dalam pengembangan aktif:
 
 ### 🐛 Bug Fixes (Latest Updates)
 
+✅ **Tessellation Crash on Radius Drag Fix** ⭐ NEW - Menghilangkan potensi OpenGL tessellator (ofTessellator.cpp) crash dan hang karena penumpukan akumulasi *floating-point drift*. Semua geometri sekarang secara mutlak berskala dari backup posisi awalnya.
 ✅ **Tessellation Stacking Fix** - Menghilangkan overlapping yang salah saat bentuk teselasi tidak dibersihkan setelah redraw atau remove file `.nay`.
 ✅ **Wave Animation Trigger Fix** - Menghilangkan bug "Animasi langsung jalan seketika setelah setting diubah", sekarang sinkron total dengan Playground UI Draw Arrow Button.
 ✅ **Empty Polygon Lag / Load Issue** - Mempercepat speed render saat "No Animation" dipanggil di Sequential mode.
@@ -1568,7 +1572,7 @@ This project is licensed under the **Apache License 2.0** - see the LICENSE file
 ## 🔗 Links
 
 - **[OpenFrameworks](https://openframeworks.cc/)** - openframeworks.cc
-- **[Watch Demo](https://youtu.be/A50uG7nty7U)** - YouTube demonstration
+- **[Watch Demo](https://youtube.com/shorts/ADElH6tLSbM)** - YouTube demonstration
 - **[SandyKurt Tutorials](https://sandykurt.com/free-tutorials)** - Free Islamic geometric patterns tutorials
 - **[Support Me](https://sociabuzz.com/abdkdhni)** - Fund the experiments ☕
 
