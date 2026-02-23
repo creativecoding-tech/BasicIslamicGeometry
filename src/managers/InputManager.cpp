@@ -302,6 +302,15 @@ void InputManager::handleMouseReleased(int x, int y, int button) {
           CustomLine newLine(app->currentPolylinePoints,
                              app->colorManager->getCustomLineColor(),
                              app->mouseLineWidth, newLabel);
+
+          // IMPORTANT: Set base radius to current template radius to prevent
+          // scaling bugs
+          if (app->currentTemplate) {
+            newLine.saveOriginalPoints(app->currentTemplate->radius);
+          } else {
+            newLine.saveOriginalPoints(1.0f);
+          }
+
           app->customLines.push_back(newLine);
 
           // Push undo action

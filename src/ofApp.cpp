@@ -897,6 +897,9 @@ void ofApp::updateScaling() {
 
   // Scale customLines & polygons
   scaleCustomLinesAndPolygons(previousRadius, currentTemplate->radius);
+
+  // Sync previousRadius to prevent runaway scaling logic every frame
+  previousRadius = currentTemplate->radius;
 }
 
 //--------------------------------------------------------------
@@ -1835,6 +1838,15 @@ void ofApp::createInvisiblePolygonFromSelected() {
   int polygonIndex = static_cast<int>(polygonShapes.size());
   PolygonShape newPolygon(allPoints, colorManager->getPolygonColor(),
                           polygonIndex);
+
+  // IMPORTANT: Set base radius to current template radius to prevent scaling
+  // bugs
+  if (currentTemplate) {
+    newPolygon.saveOriginalVertices(currentTemplate->radius);
+  } else {
+    newPolygon.saveOriginalVertices(1.0f);
+  }
+
   polygonShapes.push_back(newPolygon);
 
   // Push undo action
