@@ -58,6 +58,7 @@ public:
   bool showSacredGeometry = false; // SacredGeometry window visibility
   bool showPlayground = false;     // Playground window visibility
   bool showUserCustom = false;     // UserCustom window visibility
+  bool showCanvasSettings = false;  // CanvasSettings window visibility ⭐ NEW
   bool showUserDot = true;         // UserDot visibility
   bool showSelectionInfo = false;  // SelectionInfo window visibility
 
@@ -65,6 +66,13 @@ public:
   vec2 canvasTranslation = vec2(0, 0); // Pan X, Y dalam pixels
   float canvasRotation = 0.0f;         // Rotation dalam derajat
   float canvasZoom = 1.0f;             // Zoom scale
+
+  // Canvas Background & Trails state ⭐ NEW (TANPA FBO!)
+  int trailMode = 1;                   // 0: No Trails, 1: Use Trails
+  int trailsValue = 25;                // Trails opacity value
+  float canvasBgColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};       // Default White
+  float canvasGradientColor[4] = {1.0f, 1.0f, 1.0f, 1.0f}; // Default White
+  bool useCanvasGradient = false;      // Use gradient background
 
   ofTrueTypeFont fontNormal; // Font untuk custom line labels
 
@@ -307,6 +315,7 @@ public:
   void toggleSacredGeometryWindow(); // Show or focus Sacred Geometry window
   void togglePlaygroundWindow();     // Show or focus Playground window
   void toggleUserCustomWindow();     // Show or focus User Custom window
+  void toggleCanvasSettingsWindow(); // Show or focus Canvas Settings window ⭐ NEW
   void toggleSelectionInfoWindow();  // Show or focus Selection Info window
   void duplicateDotAbove(); // Duplicate dot yang di-hover dengan offset ke atas
   void

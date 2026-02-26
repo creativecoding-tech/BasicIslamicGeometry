@@ -56,6 +56,9 @@ void MenuBar::draw() {
         }
 
         if (ImGui::BeginMenu("View")) {
+            if (ImGui::MenuItem("Canvas Settings")) {
+                app->toggleCanvasSettingsWindow();
+            }
             if (ImGui::MenuItem("Sacred Gemotery")) {
                 app->toggleSacredGeometryWindow();
             }

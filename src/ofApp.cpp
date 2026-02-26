@@ -2,6 +2,7 @@
 #include "operation/FileOperationManager.h"
 #include "operation/gui/SacredGeometry.h"
 #include "operation/gui/UserCustom.h"
+#include "operation/gui/CanvasSettings.h"  // ⭐ NEW
 #include "shape/AbstractShape.h"
 #include "shape/DotShape.h"
 #include "template/templates/BasicZelligeTemplate.h"
@@ -1040,10 +1041,37 @@ void ofApp::updatePolygons() {
 
 //--------------------------------------------------------------
 void ofApp::draw() {
-  // Trail effect untuk geometry
-  ofSetColor(255, 25);
-  ofFill();
-  ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
+  // ⭐ NEW: Background dengan optional gradient dan trails effect
+  int alpha = (trailMode == 1) ? trailsValue : 255;
+
+  if (useCanvasGradient) {
+    // Gradient background (vertical gradient dari top ke bottom)
+    ofMesh mesh;
+    mesh.setMode(OF_PRIMITIVE_TRIANGLE_STRIP);
+
+    ofColor topColor(canvasBgColor[0] * 255, canvasBgColor[1] * 255,
+                     canvasBgColor[2] * 255, alpha);
+    ofColor bottomColor(canvasGradientColor[0] * 255,
+                        canvasGradientColor[1] * 255,
+                        canvasGradientColor[2] * 255, alpha);
+
+    mesh.addColor(topColor);
+    mesh.addVertex(glm::vec3(0, 0, 0));
+    mesh.addColor(topColor);
+    mesh.addVertex(glm::vec3(ofGetWidth(), 0, 0));
+    mesh.addColor(bottomColor);
+    mesh.addVertex(glm::vec3(0, ofGetHeight(), 0));
+    mesh.addColor(bottomColor);
+    mesh.addVertex(glm::vec3(ofGetWidth(), ofGetHeight(), 0));
+
+    mesh.draw();
+  } else {
+    // Solid background color dengan optional trails
+    ofSetColor(canvasBgColor[0] * 255, canvasBgColor[1] * 255,
+               canvasBgColor[2] * 255, alpha);
+    ofFill();
+    ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
+  }
 
   // Push matrix untuk geometry drawing (centered)
   ofPushMatrix();
@@ -2404,6 +2432,33 @@ void ofApp::toggleUserCustomWindow() {
 }
 
 //--------------------------------------------------------------
+void ofApp::toggleCanvasSettingsWindow() {  // ⭐ NEW
+  if (!imguiVisible || !showCanvasSettings) {
+    // Show CanvasSettings window
+    imguiVisible = true;
+    showCanvasSettings = true;
+
+    // Set windowOpen flag di CanvasSettings
+    for (auto &gui : guiComponents) {
+      CanvasSettings *canvasSettings = dynamic_cast<CanvasSettings *>(gui.get());
+      if (canvasSettings) {
+        canvasSettings->showWindow();
+        break;
+      }
+    }
+  } else {
+    // CanvasSettings already visible, focus it
+    for (auto &gui : guiComponents) {
+      CanvasSettings *canvasSettings = dynamic_cast<CanvasSettings *>(gui.get());
+      if (canvasSettings) {
+        canvasSettings->focusWindow();
+        break;
+      }
+    }
+  }
+}
+
+//--------------------------------------------------------------
 void ofApp::toggleSelectionInfoWindow() {
   if (!imguiVisible || !showSelectionInfo) {
     // Show SelectionInfo window
@@ -2548,6 +2603,7 @@ void ofApp::setupImGui() {
   guiComponents.push_back(std::make_unique<SacredGeometry>(this));
   guiComponents.push_back(std::make_unique<Playground>(this));
   guiComponents.push_back(std::make_unique<UserCustom>(this));
+  guiComponents.push_back(std::make_unique<CanvasSettings>(this));  // ⭐ NEW
 
   // Initialize Context Menu (bukan bagian dari guiComponents karena draw-nya
   // khusus)
@@ -2602,6 +2658,11 @@ void ofApp::drawImGui() {
   // UserCustom (component 3)
   if (imguiVisible && showUserCustom && guiComponents.size() > 3) {
     guiComponents[3]->draw(); // UserCustom
+  }
+
+  // CanvasSettings (component 4) ⭐ NEW
+  if (imguiVisible && showCanvasSettings && guiComponents.size() > 4) {
+    guiComponents[4]->draw(); // CanvasSettings
   }
 
   // Draw popup dialogs
