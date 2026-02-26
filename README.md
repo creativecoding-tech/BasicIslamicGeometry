@@ -1667,6 +1667,25 @@ Fitur terbaru yang sedang dalam pengembangan aktif:
   - Clear batch tessellated mesh saat deleteAllPolygons
   - Benefit: Clean canvas benar-benar bersih, tidak ada sisa tessellation
 
+✅ **Tessellated Polygons Scaling** - Fixed tessellated polygons tidak ikut berubah saat radius slider digeser ⭐ NEW:
+  - Problem: Saat radius diubah di SacredGeometry slider, tessellated children TIDAK ikut berubah ukuran
+  - Result: Tessellation tetap ukuran lama, tidak proporsional dengan parent polygon
+  - Fix: Saat scaling, hapus tessellated children dan update source tessellation radius ke newRadius
+  - Trigger `processPolygonTessellation()` untuk tessellate ulang dengan radius baru
+  - Benefit: Tessellated polygons update ukuran secara realtime sesuai radius slider
+
+✅ **Smart Delete Behavior - Tessellation Protection** - Fixed tessellated polygons ikut terhapus saat "Delete Lines & Polygons" ⭐ NEW:
+  - Problem: Saat user klik "Delete Lines & Polygons" (CTRL+DEL), tessellated polygons juga ikut terhapus
+  - Result: Tessellation hilang dan harus di-generate ulang
+  - Fix: Parameter `bool includeTessellated` di `deleteAllPolygons()`:
+    - Default `false` untuk "Delete Lines & Polygons" (skip tessellated)
+    - `true` untuk "Clean Canvas" (hapus semua termasuk tessellated)
+  - Behavior berbeda per menu Edit:
+    - **"Delete All Polygons"** → Hanya NON-tessellated polygons (user-created)
+    - **"Delete Lines & Polygons" (CTRL+DEL)** → Hanya customLines + NON-tessellated polygons, tessellated DIPERTAHANKAN
+    - **"Clean Canvas"** → Hapus SEMUA (customLines + polygons + tessellated + userDots + template)
+  - Benefit: User bisa delete user-created polygons tanpa kehilangan tessellation yang sudah di-generate
+
 ✅ **First Draw Delay Canvas Empty** - Fixed Draw pertama tidak force clear screen ⭐ NEW:
   - Problem: Saat canvas kosong dan Draw diklik pertama kali, tidak ada force clear screen
   - Result: Jejak ImGui window masih terlihat di Draw pertama
