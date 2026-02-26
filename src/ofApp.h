@@ -102,6 +102,10 @@ public:
   // Invisible polygon system
   std::vector<PolygonShape> polygonShapes;
 
+  // ⭐ NEW: Cache untuk batch tessellated polygons mesh
+  ofMesh batchedTessellatedMesh;
+  bool batchedTessellatedMeshDirty = true;  // Flag untuk rebuild mesh
+
   // Preset warna untuk polygon
   std::vector<ofColor> polygonPresetColors = {
       ofColor(255, 0, 0, 255),    // 1: Merah (OPAQUE!)
@@ -328,6 +332,7 @@ public:
   void duplicateLineR180(); // Duplicate selected lines dengan rotate 180° di
                             // global center
   void drawUserDots();      // Draw user-created dots dan label
+  void drawBatchedTessellatedPolygons(); // ⭐ NEW: Batch tessellated polygons (1 draw call)
 
   // Interactive Line Creation helpers
   const std::vector<DotInfo> &getAllDots(); // Return cached dots by reference

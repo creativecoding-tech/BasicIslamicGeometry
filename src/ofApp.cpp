@@ -520,7 +520,6 @@ void ofApp::updateStaggeredPolygons() {
 
   // Selesai staggered load jika semua complete DAN semua sudah di-load
   if (allComplete && allLoaded) {
-
     bool isAfterPolygonDraw = (currentLineStepAnimationMode ==
                                LineStepAnimationMode::STEP_AFTER_POLYGON_DRAW);
     if (isAfterPolygonDraw) {
@@ -537,7 +536,7 @@ void ofApp::updateStaggeredPolygons() {
     processPolygonTessellation();
 
     loadStage = LOAD_DONE;
-    isStaggeredLoad = false; // ⭐ NEW Disable visibility flags
+    isStaggeredLoad = false;
     fileManager.cancelSequentialLoad();
   }
 }
@@ -567,11 +566,14 @@ void ofApp::processPolygonTessellation() {
     if (polygonShapes[i].isTessellated())
       continue;
 
-    std::string nayFile = "";
-    float radius = 10.0f;
-
-    if (i < static_cast<int>(zellige->tessellationFiles.size())) {
+    // ⭐ FIX: Baca tessellation info dari TEMPLATE UI state, bukan dari polygonShape!
+    // Ini agar kita bisa detect perubahan tessellation file di UI (browse)
+    std::string nayFile;
+    float radius = 10.0f; // Default radius
+    if (i < zellige->tessellationFiles.size()) {
       nayFile = zellige->tessellationFiles[i];
+    }
+    if (i < zellige->tessellationRadii.size()) {
       radius = zellige->tessellationRadii[i];
     }
 
@@ -581,17 +583,22 @@ void ofApp::processPolygonTessellation() {
     // (e.g. user changed radius, file, or clicked 'X' to clear),
     // we MUST delete the old children to prevent stacking or orphaned children.
     bool uiMatchesLoadedState = false;
+
+    // Cek apakah polygon ini punya source tessellation info (dari load file sebelumnya)
     if (polygonShapes[i].hasSourceTessellation()) {
+      // Ada source tessellation info! Cek apakah UI masih match atau berubah
       bool fileMatches =
           (nayFile == polygonShapes[i].getSourceTessellationFile());
       bool radiusMatches =
           (std::abs(radius - polygonShapes[i].getSourceTessellationRadius()) <
            0.001f);
 
-      if (fileMatches && radiusMatches) {
+      if (!nayFile.empty() && fileMatches && radiusMatches) {
+        // UI masih menampilkan tessellation file yang SAMA dengan yang sudah di-load
         uiMatchesLoadedState = true;
       } else {
-        // Settings changed! Delete old children.
+        // ⭐ UI BERUBAH! User ganti file ATAU klik X (nayFile kosong)
+        // Delete old tessellated children!
         // 1. Cleanup old child polygons
         // We must scan from the VERY BEGINNING (index 0) because baked children
         // loaded from the .nay file could be anywhere before
@@ -621,32 +628,41 @@ void ofApp::processPolygonTessellation() {
           j++;
         }
 
-        // 2. Cleanup old child lines (CustomLines generated from tessellation)
-        for (auto it = customLines.begin(); it != customLines.end();) {
-          if (it->isLoadedFromFile()) {
-            const auto &pts = it->getPoints();
-            if (pts.size() >= 2) {
-              vec2 mid = (pts[0] + pts[1]) / 2.0f;
-              if (polygonShapes[i].containsPoint(mid)) {
-                it = customLines.erase(it);
-                continue;
-              }
-            }
-          }
-          ++it;
-        }
-
-        // Clear the parent's source tessellation data since it's wiped
-        if (nayFile.empty()) {
-          polygonShapes[i].setSourceTessellation("", 10.0f);
-        }
+        // ⭐ FIX: Clear source tessellation info dari parent polygon
+        // Kalau user klik X (nayFile kosong), jangan simpan tessellation info lagi
+        polygonShapes[i].setSourceTessellation("", 10.0f);
+        batchedTessellatedMeshDirty = true;
       }
     }
 
     if (uiMatchesLoadedState) {
-      // It matches exactly what was loaded, and the children should already
-      // be in the array! We skip re-generating.
-      continue;
+      // ⭐ FIX: Cek apakah children BENAR-BENAR sudah ada di polygonShapes!
+      // Kalau belum ada, tessellation harus jalan walau uiMatchesLoadedState=true
+      bool childrenExist = false;
+      for (const auto &poly : polygonShapes) {
+        if (poly.isTessellated()) {
+          // Cek apakah polygon ini ada di dalam parent polygon
+          vec2 centroid(0, 0);
+          const auto &verts = poly.getVertices();
+          if (!verts.empty()) {
+            for (const auto &v : verts)
+              centroid += v;
+            centroid /= verts.size();
+
+            if (polygonShapes[i].containsPoint(centroid)) {
+              childrenExist = true;
+              break;
+            }
+          }
+        }
+      }
+
+      if (childrenExist) {
+        // Children sudah ada, skip tessellation
+        // ⭐ FIX: Tapi batch mesh perlu di-rebuild untuk render children yang sudah ada!
+        batchedTessellatedMeshDirty = true;
+        continue;
+      }
     }
 
     // If UI is empty, we have already cleaned up above, so nothing more to do
@@ -837,6 +853,9 @@ void ofApp::processPolygonTessellation() {
     if (cachedData.hasPolygons) {
       polygonShapes.insert(polygonShapes.end(), newPolys.begin(),
                            newPolys.end());
+
+      // ⭐ NEW: Mark batch mesh dirty agar rebuild
+      batchedTessellatedMeshDirty = true;
 
       // Explicitly advance the current polygon index so sequential draw doesn't
       // skip the new ones
@@ -1089,6 +1108,8 @@ void ofApp::draw() {
   // 4. Apply pan/translation (geser posisi canvas)
   ofTranslate(canvasTranslation.x, canvasTranslation.y);
 
+  drawUserDots();
+
   // Draw template - template handle drawing sendiri!
   if (currentTemplate) {
     currentTemplate->draw();
@@ -1098,6 +1119,10 @@ void ofApp::draw() {
 
   // Draw custom lines dan UI elements
   drawCustomLinesAndUI();
+
+  // ⭐ NEW: Batch tessellated polygons dalam 1 draw call untuk performance
+  // Dipanggil PALING AKHIR setelah semuanya
+  drawBatchedTessellatedPolygons();
 
   // Reset transform
   ofPopMatrix();
@@ -1135,14 +1160,22 @@ void ofApp::drawCustomLinesAndUI() {
   }
 
   if (shouldDrawPolygons) {
-    for (int i = 0; i < polygonShapes.size(); i++) {
+    // ⭐ OPTIMIZED: Single loop untuk set selected, draw, dan collect tessellated
+    int numPolys = static_cast<int>(polygonShapes.size());
+
+    for (int i = 0; i < numPolys; i++) {
       // SEQUENTIAL MODE: Skip invisible polygons (future)
       if (polygonDrawMode == PG_DRAW_SEQUENTIAL && i > currentPolygonIndex) {
         continue;
       }
 
+      // Set selected state
       polygonShapes[i].setSelected(selectionManager.isPolygonSelected(i));
-      polygonShapes[i].draw();
+
+      // Draw non-tessellated polygons (untuk animation support)
+      if (!polygonShapes[i].isTessellated()) {
+        polygonShapes[i].draw();
+      }
     }
   }
 
@@ -2209,11 +2242,21 @@ void ofApp::deleteAllPolygons() {
     return;
   }
 
+  // ⭐ FIX: Reset source tessellation info dari semua polygons SEBELUM clear
+  // Ini untuk mencegah tessellation muncul lagi setelah clean canvas
+  for (auto &poly : polygonShapes) {
+    poly.setSourceTessellation("", 10.0f); // Clear tessellation info
+  }
+
   // Hapus semua polygons
   if (!polygonShapes.empty()) {
     polygonShapes.clear();
     selectionManager.clearPolygonSelection();
   }
+
+  // ⭐ FIX: Clear batch tessellated mesh juga
+  batchedTessellatedMesh.clear();
+  batchedTessellatedMeshDirty = false;
 }
 
 //--------------------------------------------------------------
@@ -2686,6 +2729,115 @@ void ofApp::drawImGui() {
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+//--------------------------------------------------------------
+// ⭐ NEW: Batch tessellated polygons untuk performance optimization
+// Render semua tessellated polygons dalam 1 draw call instead of 1 draw call per polygon
+void ofApp::drawBatchedTessellatedPolygons() {
+  // ⭐ OPTIMIZED: Hanya rebuild mesh jika dirty (polygons berubah)
+  if (batchedTessellatedMeshDirty) {
+    batchedTessellatedMesh.clear();
+    batchedTessellatedMesh.setMode(OF_PRIMITIVE_TRIANGLES);
+
+    int tessellatedCount = 0;
+
+    if (currentTemplate) {
+      const auto &shapes = currentTemplate->getShapes();
+    }
+
+    // Loop semua shapes untuk cari tessellated polygons
+    if (currentTemplate) {
+      const auto &shapes = currentTemplate->getShapes();
+      for (const auto &shape : shapes) {
+        if (!shape) continue;
+
+        // Cek apakah ini PolygonShape dan tessellated
+        PolygonShape *poly = dynamic_cast<PolygonShape*>(shape.get());
+        if (!poly || !poly->isTessellated()) {
+          continue;  // Skip non-tessellated
+        }
+
+        tessellatedCount++;
+
+        const auto &vertices = poly->getVertices();
+        if (vertices.size() < 3) {
+          continue;  // Skip jika kurang dari 3 vertices (bukan polygon)
+        }
+
+        const ofColor &color = poly->getColor();
+
+        // Triangulasi polygon dan tambah ke mesh
+        // Caranya: triangle fan dari first vertex
+        vec2 firstVertex = vertices[0];
+        int numVerts = static_cast<int>(vertices.size());
+
+        for (int j = 1; j < numVerts - 1; j++) {
+          // Triangle: [0, j, j+1]
+          // Vertex 0
+          batchedTessellatedMesh.addVertex(glm::vec3(firstVertex.x, firstVertex.y, 0.0f));
+          batchedTessellatedMesh.addColor(color);
+
+          // Vertex j
+          batchedTessellatedMesh.addVertex(glm::vec3(vertices[j].x, vertices[j].y, 0.0f));
+          batchedTessellatedMesh.addColor(color);
+
+          // Vertex j+1
+          batchedTessellatedMesh.addVertex(
+              glm::vec3(vertices[j + 1].x, vertices[j + 1].y, 0.0f));
+          batchedTessellatedMesh.addColor(color);
+        }
+      }
+    }
+
+    // Loop juga polygonShapes (untuk tessellated children yang sudah di-insert)
+    for (const auto &polygon : polygonShapes) {
+      if (polygon.isTessellated()) {
+        tessellatedCount++;
+
+        const auto &vertices = polygon.getVertices();
+        if (vertices.size() < 3) {
+          continue;  // Skip jika kurang dari 3 vertices (bukan polygon)
+        }
+
+        const ofColor &color = polygon.getColor();
+
+        // Triangulasi polygon dan tambah ke mesh
+        // Caranya: triangle fan dari first vertex
+        vec2 firstVertex = vertices[0];
+        int numVerts = static_cast<int>(vertices.size());
+
+        for (int j = 1; j < numVerts - 1; j++) {
+          // Triangle: [0, j, j+1]
+          // Vertex 0
+          batchedTessellatedMesh.addVertex(glm::vec3(firstVertex.x, firstVertex.y, 0.0f));
+          batchedTessellatedMesh.addColor(color);
+
+          // Vertex j
+          batchedTessellatedMesh.addVertex(glm::vec3(vertices[j].x, vertices[j].y, 0.0f));
+          batchedTessellatedMesh.addColor(color);
+
+          // Vertex j+1
+          batchedTessellatedMesh.addVertex(
+              glm::vec3(vertices[j + 1].x, vertices[j + 1].y, 0.0f));
+          batchedTessellatedMesh.addColor(color);
+        }
+      }
+    }
+
+    batchedTessellatedMeshDirty = false;  // Mark sebagai clean
+  }
+
+  // Render cached mesh
+  if (batchedTessellatedMesh.getNumVertices() > 0) {
+    // ⭐ FIX: Setup OpenGL state untuk tessellated mesh
+    ofPushStyle();
+    ofEnableAlphaBlending();
+    batchedTessellatedMesh.enableColors();
+    batchedTessellatedMesh.draw();
+    ofPopStyle();
+  }
+}
+
+//--------------------------------------------------------------
 void ofApp::exitImGui() {
   // Shutdown OpenGL3 Backend
   ImGui_ImplOpenGL3_Shutdown();
