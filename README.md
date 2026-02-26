@@ -93,19 +93,51 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Custom Line CollapsingHeader hanya muncul jika `loadedFileCustomLinesCount > 0`
   - Polygon CollapsingHeader hanya muncul jika `loadedFilePolygonCount > 0`
 
-### Polygon Seamless Tessellation ⭐ NEW
+### Polygon Seamless Tessellation ⭐
 - **Pattern Infusion** - Mengisi area poligon dengan pola geometri dari file `.nay` lain secara otomatis.
 - **Mathematical Tiling** - Sistem tiling yang presisi untuk memastikan antar tile tidak ada celah (*seamless*) dan tidak tumpang tindih (*no overlaps*).
 - **Radius-Based Scaling** - Besar kecilnya pola di dalam poligon dikontrol melalui slider Radius di tabel Tessellation.
 - **Geometric Clipping** - Hanya bentuk yang titik pusatnya berada di dalam poligon target yang akan di-render.
 - **Filtered UI** - Poligon hasil teselasi secara otomatis disembunyikan dari daftar pengaturan untuk mencegah kebingungan dan pengulangan teselasi (*no recursive tessellation*).
+- **Batch Rendering Optimization** - Tessellated polygons dirender dalam **SATU draw call** menggunakan ofMesh batch:
+  - ~4,500 tessellated polygons dengan **2.4+ juta vertices** dirender sekaligus
+  - Triangle fan triangulation untuk optimal mesh construction
+  - Dirty flag system untuk rebuild mesh hanya saat polygons berubah
+  - Solid 60 FPS performance bahkan dengan ribuan tessellated polygons ⭐ NEW
+- **Source Tessellation Metadata** - Setiap parent polygon menyimpan metadata tessellation (file + radius) untuk prevent re-tessellation
+- **Smart Tessellation System** - Otomatis detect perubahan tessellation settings:
+  - Cek apakah UI settings (file, radius) match dengan loaded state
+  - Jika berubah, otomatis hapus old children dan tessellate dengan setting baru
+  - Jika sama dan children sudah ada, skip tessellation (performance optimization)
+  - Tombol Browse/X untuk ganti/clear tessellation file per polygon ⭐ NEW
 
 ### Intelligent Save System ⭐ NEW
 - **Save Confirmation Popup** - Muncul otomatis jika mendeteksi ada geometri hasil teselasi saat menyimpan workspace (CTRL+S / CTRL+SHIFT+S).
 - **Flexible Options** - User bisa memilih untuk menyimpan hanya geometri asli (*Original Only*) atau menyertakan hasil teselasinya (*With Tessellation*).
 - **Version 3 .nay Format** - Mendukung flag `isTessellated` secara persisten untuk membedakan geometri asli dengan geometri hasil regenerasi otomatis.
 
-### Transform Canvas System ⭐ NEW
+### Canvas Settings System ⭐ NEW
+- **Canvas Settings Window** - Floating window untuk mengatur tampilan canvas:
+  - **Base Color Picker** - Warna background dasar (RGBA color edit)
+  - **Use Gradient Checkbox** - Enable/disable gradient background
+  - **Gradient Color Picker** - Warna gradient (hanya muncul jika gradient dicentang)
+  - **Trails Mode** - Toggle trails effect (0: No Trails, 1: Use Trails)
+  - **Trails Value Slider** - Kontrol opacity trails (1-255, default 25)
+  - **Reset Button** - Reset semua settings ke default (white background, no gradient, trails enabled)
+- **Gradient Background** - Vertical gradient dari Base Color (top) ke Gradient Color (bottom)
+- **Trails Effect** - Semi-transparent background overlay untuk efek jejak visual:
+  - Trails opacity 1-255 (semakin kecil = semakin panjang jejak)
+  - Direct rendering TANPA Frame Buffer Object (FBO) untuk performance ⭐ NEW
+  - Automatic background drawing setiap frame dengan alpha blending
+- **View Menu Integration** - Canvas Settings bisa diakses via View → Canvas Settings
+- **Force Clear Screen System** - Saat clean canvas atau Draw, otomatis:
+  - Pause animation selama force clear (prevent trails contamination)
+  - Clear screen dengan solid background (20 frame / ~0.33 detik)
+  - Resume animation dengan normal trails (20 frame / ~0.33 detik)
+  - Total delay ~40 frame (0.67 detik) untuk menghilangkan jejak ImGui window ⭐ NEW
+- **Canvas Transform Not Saved** - Canvas settings dan transform state TIDAK disimpan ke file .nay (viewport-only)
+
+### Transform Canvas System
 - **Canvas Transform Controls** - Transform slider di SacredGeometry panel:
   - **Pan X** - Geser canvas horizontal (-500 to +500 pixels)
   - **Pan Y** - Geser canvas vertikal (-500 to +500 pixels)
@@ -184,7 +216,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **MenuBar** - Top menu bar dengan File, Edit, dan View menus
   - **File Menu**: Save Workspace (CTRL+S), Save As (CTRL+SHIFT+S), Open (CTRL+O), Exit (END)
   - **Edit Menu**: Undo (CTRL+Z), Redo (CTRL+SHIFT+Z), Delete All Custom Lines, Delete All Polygons, Delete Lines & Polygons (CTRL+DEL), Clean Canvas (CTRL+SHIFT+DEL)
-  - **View Menu**: Sacred Geometry, Playground, User Custom, Selection Info (show/focus windows independently) ⭐ UPDATED
+  - **View Menu**: Sacred Geometry, Playground, User Custom, Canvas Settings, Selection Info (show/focus windows independently)
 - **SacredGeometry Panel** - Template controls panel dengan:
   - Template Name Display (Basic Zellige)
   - **Draw Template** section: Parallel / Sequential buttons
@@ -436,9 +468,13 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 ### Performance & Rendering
 - **Performance Optimization - Cached Dots** - Sistem lazy cache untuk getAllDots() dengan dirty flag, hanya rebuild saat visibility berubah (reduce dari 180 vector copies/detik menjadi 0)
+- **Batch Tessellated Mesh** - 4,500+ tessellated polygons (2.4M vertices) dirender dalam **1 draw call** ⭐ NEW
+- **Triangle Fan Triangulation** - Optimal mesh construction untuk tessellated polygons
+- **Dirty Flag System** - Batch mesh hanya rebuild saat polygons berubah (tidak setiap frame)
 - **Anti-Aliasing & Smoothing** - Garis yang smooth untuk visual yang lebih baik
-- **60 FPS Performance** - Solid 60 FPS pada resolusi bervariasi dengan CPU-based rendering
-- **Trails Effect** - Semi-transparent overlay untuk efek jejak visual yang menarik
+- **60 FPS Performance** - Solid 60 FPS bahkan dengan ribuan tessellated polygons
+- **No Frame Buffer Object (FBO)** - Direct rendering dengan trails effect tanpa FBO overhead ⭐ NEW
+- **OpenGL State Management** - Proper alpha blending dan color management untuk batch rendering ⭐ NEW
 
 ### Display & Controls
 - **Cartesian Coordinate System** - Sumbu X-Y dengan animasi scaling (0 to 2.5x radius) dan label sudut (radians & degrees)
@@ -1583,6 +1619,59 @@ Fitur terbaru yang sedang dalam pengembangan aktif:
   - Fix: Modifikasi `updateStaggeredCustomLines` untuk mematikan wave anim secara eksplisit selama tahap loading polygons.
 
 ✅ **C2511 Build Error** - Fixed signature mismatch in BasicZelligeTemplate.cpp. ⭐ NEW
+
+✅ **Canvas FBO Removal** - Removed Frame Buffer Object (FBO) untuk trails system ⭐ NEW:
+  - Problem: FBO menimbulkan overhead dan complexity untuk trails effect
+  - Result: Direct rendering dengan semi-transparent background setiap frame
+  - Fix: Hapus FBO, gunakan direct rendering dengan alpha blending untuk trails
+  - Benefit: Lebih simple, lebih cepat, tidak ada FBO overhead
+
+✅ **Batch Tessellated Polygons Not Rendering** - Fixed tessellated polygons tidak muncul di layar ⭐ NEW:
+  - Problem: Batch mesh selalu 0 vertices walaupun tessellation files ada
+  - Result: Tessellated polygons (4,500+) tidak terlihat di canvas
+  - Fix: Baca tessellation info dari `PolygonShape::getSourceTessellationFile()` bukan dari zellige vector
+  - Benefit: Tessellation berhasil load dan muncul dengan benar
+
+✅ **Tessellation Children Not Detected** - Fixed logic skip tessellation padahal children belum ada ⭐ NEW:
+  - Problem: `uiMatchesLoadedState` berasumsi children sudah ada walau belum
+  - Result: Tessellation skip, tidak ada children yang dibuat
+  - Fix: Tambahkan centroid-based point-in-polygon check untuk verify children existence
+  - Benefit: Tessellation berjalan dengan benar saat file pertama kali dibuka
+
+✅ **Batch Tessellated Mesh Drawing Order** - Fixed batch mesh tidak terlihat ⭐ NEW:
+  - Problem: `drawBatchedTessellatedPolygons()` dipanggil sebelum `drawCustomLinesAndUI()`
+  - Result: Tessellated polygons tertutup/ditimpa oleh customLines
+  - Fix: Pindahkan `drawBatchedTessellatedPolygons()` ke setelah `drawCustomLinesAndUI()`
+  - Benefit: Tessellated polygons terlihat dengan layer yang benar
+
+✅ **ImGui Window Trails Leftover** - Fixed jejak ImGui window tertinggal saat Draw ⭐ NEW:
+  - Problem: Saat Draw/Clean Canvas, jejak ImGui window (Playground, dll) masih terlihat
+  - Result: Trails effect menunjukkan bekas ImGui window selama animasi berjalan
+  - Fix: Force clear screen system dengan 40 frame delay (20 frame clear + 20 frame no trails)
+  - Pause animation selama force clear untuk prevent trails contamination
+  - Support gradient background selama force clear
+  - Benefit: Layar benar-benar bersih saat Draw, tidak ada jejak ImGui window
+
+✅ **Tessellation File Change Not Applied** - Fixed ganti tessellation file di UI tidak update children ⭐ NEW:
+  - Problem: Saat browse ganti tessellation file, `polygonShapes[i]` masih pakai info lama
+  - Result: Tessellation masih pakai file lama, bukan file baru yang di-browse
+  - Fix: Baca tessellation info dari TEMPLATE UI state (`zellige->tessellationFiles[i]`) bukan dari polygonShapes
+  - Cleanup old children saat settings berubah (file/radius mismatch)
+  - Clear source tessellation info saat tombol X diklik
+  - Benefit: Tessellation update sesuai dengan UI settings real-time
+
+✅ **Tessellated Children Not Deleted on Clean** - Fixed clean canvas tidak hapus tessellated children ⭐ NEW:
+  - Problem: Saat clean canvas, tessellated children polygons TIDAK dihapus
+  - Result: Batch tessellated mesh masih ada, muncul lagi setelah Draw
+  - Fix: Di `deleteAllPolygons()`, reset source tessellation info dari semua polygons SEBELUM clear
+  - Clear batch tessellated mesh saat deleteAllPolygons
+  - Benefit: Clean canvas benar-benar bersih, tidak ada sisa tessellation
+
+✅ **First Draw Delay Canvas Empty** - Fixed Draw pertama tidak force clear screen ⭐ NEW:
+  - Problem: Saat canvas kosong dan Draw diklik pertama kali, tidak ada force clear screen
+  - Result: Jejak ImGui window masih terlihat di Draw pertama
+  - Fix: Tetap set `forceClearScreenCounter` walau canvas kosong (tanpa clean canvas)
+  - Benefit: Draw pertama langsung bersih, tidak perlu Draw ke-2/ke-3 untuk hilangkan trails
 
 ---
 

@@ -354,7 +354,7 @@ public:
   void clearCustomLinesAndPolygons(); // Hapus semua customLines & polygons
                                       // (CTRL+DEL)
   void deleteAllCustomLines(); // Hapus semua customLines saja (tanpa shortcut)
-  void deleteAllPolygons();    // Hapus semua polygons saja (tanpa shortcut)
+  void deleteAllPolygons(bool includeTessellated = false); // ⭐ FIX: Parameter untuk include tessellation
   void deleteAllUserDots();    // Hapus semua userDots saja (tanpa shortcut)
   void deleteSelectedPolygons(); // Hapus polygon yang terseleksi (backspace)
   void deleteSelectedUserDot();  // Hapus userDot yang terseleksi (backspace)

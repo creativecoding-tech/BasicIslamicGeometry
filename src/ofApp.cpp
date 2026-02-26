@@ -2276,8 +2276,8 @@ void ofApp::clearCustomLinesAndPolygons() {
     }
   }
 
-  // Hapus semua polygons - delegate ke deleteAllPolygons()
-  deleteAllPolygons();
+  // Hapus SEMUA polygons termasuk tessellated - ini untuk CLEAN CANVAS
+  deleteAllPolygons(true); // includeTessellated = true
 
   // Hapus semua custom lines - delegate ke deleteAllCustomLines()
   deleteAllCustomLines();
@@ -2298,27 +2298,46 @@ void ofApp::deleteAllCustomLines() {
 }
 
 //--------------------------------------------------------------
-void ofApp::deleteAllPolygons() {
+void ofApp::deleteAllPolygons(bool includeTessellated) {
   // Jangan hapus jika sedang sequential load
   if (fileManager.isLoadSequentialMode()) {
     return;
   }
 
-  // ⭐ FIX: Reset source tessellation info dari semua polygons SEBELUM clear
-  // Ini untuk mencegah tessellation muncul lagi setelah clean canvas
-  for (auto &poly : polygonShapes) {
-    poly.setSourceTessellation("", 10.0f); // Clear tessellation info
-  }
+  if (includeTessellated) {
+    // ⭐ CLEAN CANVAS: Hapus SEMUA polygons termasuk tessellated
+    // Reset source tessellation info dari semua polygons SEBELUM clear
+    for (auto &poly : polygonShapes) {
+      poly.setSourceTessellation("", 10.0f); // Clear tessellation info
+    }
 
-  // Hapus semua polygons
-  if (!polygonShapes.empty()) {
-    polygonShapes.clear();
+    // Hapus semua polygons
+    if (!polygonShapes.empty()) {
+      polygonShapes.clear();
+      selectionManager.clearPolygonSelection();
+    }
+
+    // ⭐ FIX: Clear batch tessellated mesh juga
+    batchedTessellatedMesh.clear();
+    batchedTessellatedMeshDirty = false;
+  } else {
+    // ⭐ DELETE LINES & POLYGONS: Hanya hapus NON-tessellated polygons
+    // Tessellated polygons DIPERTAHANKAN
+    // Kita perlu iterate backward untuk aman hapus elements
+    for (int i = static_cast<int>(polygonShapes.size()) - 1; i >= 0; i--) {
+      if (!polygonShapes[i].isTessellated()) {
+        // Hanya NON-tessellated polygons yang dihapus
+        polygonShapes.erase(polygonShapes.begin() + i);
+      }
+      // Tessellated polygons DIPERTAHANKAN (tidak dihapus)
+    }
+
     selectionManager.clearPolygonSelection();
-  }
 
-  // ⭐ FIX: Clear batch tessellated mesh juga
-  batchedTessellatedMesh.clear();
-  batchedTessellatedMeshDirty = false;
+    // ⭐ FIX: Clear batch tessellated mesh juga
+    batchedTessellatedMesh.clear();
+    batchedTessellatedMeshDirty = true;
+  }
 }
 
 //--------------------------------------------------------------
@@ -2640,14 +2659,33 @@ void ofApp::scaleCustomLinesAndPolygons(float oldRadius, float newRadius) {
     line.setCurve(newCurve);
   }
 
-  // Scale semua polygons
-  for (auto &polygon : polygonShapes) {
-    vector<vec2> vertices = polygon.getVertices();
-    for (auto &vertex : vertices) {
-      vertex = vertex * scaleRatio; // Scale setiap vertex
+  // ⭐ FIX: Scale NON-tessellated polygons saja, hapus tessellated children
+  // Kita perlu iterate backward untuk aman hapus elements
+  for (int i = static_cast<int>(polygonShapes.size()) - 1; i >= 0; i--) {
+    if (polygonShapes[i].isTessellated()) {
+      // Hapus tessellated children
+      polygonShapes.erase(polygonShapes.begin() + i);
+    } else {
+      // Scale NON-tessellated polygons saja
+      vector<vec2> vertices = polygonShapes[i].getVertices();
+      for (auto &vertex : vertices) {
+        vertex = vertex * scaleRatio; // Scale setiap vertex
+      }
+      polygonShapes[i].setVertices(vertices);
+
+      // ⭐ FIX: Update source tessellation radius untuk re-tessellation
+      if (polygonShapes[i].hasSourceTessellation()) {
+        polygonShapes[i].setSourceTessellation(
+            polygonShapes[i].getSourceTessellationFile(), newRadius);
+      }
     }
-    polygon.setVertices(vertices);
   }
+
+  // ⭐ FIX: Mark batch tessellated mesh dirty untuk rebuild
+  batchedTessellatedMeshDirty = true;
+
+  // ⭐ FIX: Trigger tessellation ulang dengan radius baru
+  processPolygonTessellation();
 
   // Scale semua userDots (duplikat dots)
   for (auto &dot : userDots) {

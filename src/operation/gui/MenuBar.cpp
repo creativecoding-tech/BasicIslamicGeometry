@@ -41,7 +41,10 @@ void MenuBar::draw() {
                 app->deleteAllUserDots();
             }
             if (ImGui::MenuItem("Delete Lines & Polygons", "CTRL+DEL")) {
-                app->clearCustomLinesAndPolygons();
+                // ⭐ FIX: Delete customLines dan NON-tessellated polygons saja
+                // Tessellated polygons dipertahankan
+                app->deleteAllCustomLines();
+                app->deleteAllPolygons(false); // false = jangan include tessellated
             }
             // Clean Canvas - Disable jika canvas kosong
             bool isCanvasEmpty = (app->currentTemplate && app->currentTemplate->getShapes().empty()) &&
