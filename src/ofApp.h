@@ -73,6 +73,10 @@ public:
   float canvasBgColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};       // Default White
   float canvasGradientColor[4] = {1.0f, 1.0f, 1.0f, 1.0f}; // Default White
   bool useCanvasGradient = false;      // Use gradient background
+  int forceClearScreenCounter = 0;     // Counter untuk force clear screen (hilangkan trails)
+  int forceNoTrailsCounter = 0;        // Counter untuk force no trails setelah clear screen
+  bool isFirstDrawAfterClean = true;   // Flag untuk track draw pertama setelah clean
+  int delayForceClear = 0;             // Flag untuk tunda force clear 1 frame
 
   ofTrueTypeFont fontNormal; // Font untuk custom line labels
 

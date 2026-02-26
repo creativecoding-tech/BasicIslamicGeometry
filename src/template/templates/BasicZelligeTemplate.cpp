@@ -789,6 +789,10 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
 
       if (isCanvasEmpty) {
         // Canvas kosong, langsung load saja TANPA clean & TANPA confirmation
+        // ⭐ FIX: TAPI TETAP force clear screen untuk hilangkan jejak ImGui!
+        app->forceClearScreenCounter = 10;  // 10 frame (0.16 detik)
+        app->forceNoTrailsCounter = 10;     // 10 frame lagi (0.16 detik)
+
         // Apply speed multiplier ke SEMUA (template shapes, polygons,
         // customLines)
         app->currentTemplate->applySpeedMultiplier();

@@ -91,6 +91,12 @@ void ofApp::switchTemplate(const std::string &templateName) {
 
 //--------------------------------------------------------------
 void ofApp::update() {
+  // ⭐ FIX: SKIP update selama force clear screen untuk pause animation
+  bool isForceClearing = (forceClearScreenCounter > 0 || forceNoTrailsCounter > 0 || delayForceClear > 0);
+  if (isForceClearing) {
+    return; // Skip semua update selama force clear
+  }
+
   // STRATEGY PATTERN: Delegate update ke method yang sesuai berdasarkan state
   switch (currentState) {
   case UpdateState::NORMAL:
@@ -1061,7 +1067,63 @@ void ofApp::updatePolygons() {
 //--------------------------------------------------------------
 void ofApp::draw() {
   // ⭐ NEW: Background dengan optional gradient dan trails effect
-  int alpha = (trailMode == 1) ? trailsValue : 255;
+
+  // ⭐ FIX: DETECT jika sedang force clear atau force no trails
+  bool isForceClearing = (forceClearScreenCounter > 0 || forceNoTrailsCounter > 0);
+
+  // Force clear screen (tanpa trails) setelah clean canvas untuk menghilangkan sisa
+  if (forceClearScreenCounter > 0) {
+    // Tahap 1: Full clear screen, SKIP semua drawing
+    // ⭐ FIX: Hapus glClearColor yang clear ke hitam, langsung gambar background saja
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Lalu gambar background dengan setting yang benar
+    if (useCanvasGradient) {
+      // Gradient background - gambar full gradient mesh dengan FULL OPAQUE
+      ofMesh mesh;
+      mesh.setMode(OF_PRIMITIVE_TRIANGLE_STRIP);
+
+      ofColor topColor(canvasBgColor[0] * 255, canvasBgColor[1] * 255,
+                       canvasBgColor[2] * 255, 255); // FULL OPAQUE
+      ofColor bottomColor(canvasGradientColor[0] * 255,
+                          canvasGradientColor[1] * 255,
+                          canvasGradientColor[2] * 255, 255); // FULL OPAQUE
+
+      mesh.addColor(topColor);
+      mesh.addVertex(glm::vec3(0, 0, 0));
+      mesh.addColor(topColor);
+      mesh.addVertex(glm::vec3(ofGetWidth(), 0, 0));
+      mesh.addColor(bottomColor);
+      mesh.addVertex(glm::vec3(0, ofGetHeight(), 0));
+      mesh.addColor(bottomColor);
+      mesh.addVertex(glm::vec3(ofGetWidth(), ofGetHeight(), 0));
+
+      mesh.draw();
+    } else {
+      // Solid background
+      ofBackground(canvasBgColor[0] * 255, canvasBgColor[1] * 255,
+                   canvasBgColor[2] * 255);
+
+      ofPushStyle();
+      ofSetColor(canvasBgColor[0] * 255, canvasBgColor[1] * 255,
+                 canvasBgColor[2] * 255, 255);
+      ofFill();
+      ofDrawRectangle(0, 0, ofGetWidth(), ofGetHeight());
+      ofPopStyle();
+    }
+
+    forceClearScreenCounter--;
+    return; // Skip SEMUA drawing
+  }
+
+  // Tahap 2: Force no trails (solid background) setelah clear screen
+  int alpha;
+  if (forceNoTrailsCounter > 0) {
+    alpha = 255; // Force solid background (tanpa trails)
+    forceNoTrailsCounter--;
+  } else {
+    alpha = (trailMode == 1) ? trailsValue : 255; // Normal trails
+  }
 
   if (useCanvasGradient) {
     // Gradient background (vertical gradient dari top ke bottom)
@@ -2379,6 +2441,13 @@ void ofApp::cleanCanvasInternal(bool resetSpeed) {
   // Reset UserDot settings ke default
   showUserDot = true;   // Checkbox Dot menjadi checked
   userDotRadius = 8.0f; // Slider radius ke default (8.0f)
+
+  // ⭐ NEW: Force clear screen untuk menghilangkan sisa trails effect
+  // ⭐ FIX: 10 frame saja - super cepat!
+  forceClearScreenCounter = 10;    // 10 frame untuk clear (0.16 detik)
+  forceNoTrailsCounter = 10;       // 10 frame lagi untuk no trails (0.16 detik)
+  isFirstDrawAfterClean = false;   // Jangan pakai flag delay
+  delayForceClear = 0;             // Reset delay
 }
 
 //--------------------------------------------------------------
