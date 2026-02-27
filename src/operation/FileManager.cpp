@@ -3,6 +3,7 @@
 #include "../anim/FillAnimation.h"
 #include "../anim/GradientAnimation.h"
 #include "../anim/RotateLeftAnimation.h"
+#include "../anim/RotateRightAnimation.h"
 #include "../anim/WobbleAnimation.h"
 #include "../anim/WobbleFillAnimation.h"
 
@@ -1316,6 +1317,17 @@ void FileManager::applySpecialPolygonAnimations(
 
       // Base amplitudo: sesuai slider RT. Speed multiplier mengatur kecepatan osilasi.
       auto rotateAnim = std::make_unique<RotateLeftAnimation>(angle);
+      rotateAnim->setSpeedMultiplier(polygonSpeedMultiplier);
+      polys[i].setSpecialAnimation(std::move(rotateAnim));
+    } else if (animMode == 2) { // 2 = Rotate Right ⭐ NEW
+      // Ambil rotate angle dari vector (default 90° jika tidak ada)
+      float angle = 90.0f;
+      if (i < rotateAngles.size()) {
+        angle = rotateAngles[i];
+      }
+
+      // Base amplitudo: sesuai slider RT. Speed multiplier mengatur kecepatan osilasi.
+      auto rotateAnim = std::make_unique<RotateRightAnimation>(angle);
       rotateAnim->setSpeedMultiplier(polygonSpeedMultiplier);
       polys[i].setSpecialAnimation(std::move(rotateAnim));
     }

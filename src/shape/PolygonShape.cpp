@@ -3,6 +3,7 @@
 #include "../anim/FillAnimation.h"
 #include "../anim/GradientAnimation.h"
 #include "../anim/RotateLeftAnimation.h"
+#include "../anim/RotateRightAnimation.h"
 #include "../anim/WobbleAnimation.h"
 #include "../anim/WobbleFillAnimation.h"
 
@@ -395,6 +396,11 @@ void PolygonShape::drawGLSL() const {
             dynamic_cast<RotateLeftAnimation *>(specialAnimation.get())) {
       ofPushMatrix();
       ofRotateDeg(rotateAnim->getAngle());
+      hasRotation = true;
+    } else if (auto *rotateRightAnim =
+                   dynamic_cast<RotateRightAnimation *>(specialAnimation.get())) {
+      ofPushMatrix();
+      ofRotateDeg(rotateRightAnim->getAngle());
       hasRotation = true;
     }
   }
