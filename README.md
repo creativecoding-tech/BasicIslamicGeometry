@@ -1725,8 +1725,8 @@ Fitur terbaru yang sedang dalam pengembangan aktif:
 
 ### Testing Status:
 - ✅ **Test 1: Basic Functionality (Verify Nothing Broken)** - DONE (2026-02-27)
-- 🔄 **Test 2: Special Polygon Animation UI** - IN PROGRESS
-- ⏳ **Test 3-7: Rotate Left Animation & Features** - PENDING
+- ✅ **Test 2: Special Polygon Animation UI** - DONE (2026-02-27)
+- 🔄 **Test 3-7: Rotate Left Animation & Features** - PENDING
 
 ### Cara Test Special Polygon Animation (Rotate Left)
 
@@ -1744,13 +1744,13 @@ Fitur terbaru yang sedang dalam pengembangan aktif:
 - [x] Cek clean canvas masih working → tekan CTRL+SHIFT+DEL, semua harus hilang termasuk tessellation
 - [x] Cek Parallel/Sequential draw masih working → tombol di SacredGeometry window harus jalan
 
-**2. Test Special Polygon Animation UI:**
-- [ ] Setelah load file .nay, buka **Playground window**
-- [ ] Scroll ke bawah sampai ada section **"Special Polygon Animation"**
-- [ ] Cek apakah ada table dengan 2 columns:
+**2. Test Special Polygon Animation UI:** ✅ **DONE**
+- [x] Setelah load file .nay, buka **Playground window**
+- [x] Scroll ke bawah sampai ada section **"Special Polygon Animation"**
+- [x] Cek apakah ada table dengan 2 columns:
   - Column 0: Polygon Name (Polygon 0, Polygon 1, dll)
   - Column 1: Radio buttons ("No Animation", "Rotate Left")
-- [ ] Cek apakah polygon yang tessellated TIDAK muncul di table (should be skipped)
+- [x] Cek apakah polygon yang tessellated TIDAK muncul di table (should be skipped)
 
 **3. Test Rotate Left Animation:**
 - [ ] Pilih salah satu polygon (misal: Polygon 0)
