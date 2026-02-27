@@ -26,6 +26,7 @@ public:
   // Tessellation UI state
   std::vector<std::string> tessellationFiles;
   std::vector<float> tessellationRadii;
+  std::vector<int> specialPolygonAnimations; // 0=No Animation, 1=Rotate Left ⭐ NEW
 
   // Setup shapes ke internal vector (inherited from SacredGeometryTemplate)
   void setupShapes() override;
@@ -66,8 +67,9 @@ public:
   void resetDrawMode() {
     playMode = 0;
     showPlaybackSettings = false;
-    tessellationFiles.clear(); // Clear custom tessellation files on file close
-    tessellationRadii.clear(); // Clear radii settings on file close
+    tessellationFiles.clear();       // Clear custom tessellation files on file close
+    tessellationRadii.clear();       // Clear radii settings on file close
+    specialPolygonAnimations.clear(); // Clear special polygon animations on file close ⭐ NEW
   }
 
   // Enable playback settings (dipanggil saat file dibuka)

@@ -3,9 +3,10 @@
 #include <ofMain.h>
 
 DotShape::DotShape(glm::vec2 position, std::string label, float radius)
-    : position(position), label(label), radius(radius) {
-    // Set maxProgress ke 1 untuk animasi simpel
-    maxProgress = 1;
+    : originalPosition(position), originalLowerBound(position),
+      baseRadius(1.0f), position(position), label(label), radius(radius) {
+  // Set maxProgress ke 1 untuk animasi simpel
+  maxProgress = 1;
 }
 
 //--------------------------------------------------------------
@@ -43,4 +44,28 @@ void DotShape::draw() {
 void DotShape::addDotsToCache(std::vector<DotInfo>& dots) {
     // Tambahkan dot ini ke cache untuk hover detection
     dots.push_back({position, "Dot"});
+}
+
+//--------------------------------------------------------------
+void DotShape::saveOriginalPosition(float currentTemplateRadius) {
+  originalPosition = position;
+  originalLowerBound = lowerBound;
+  baseRadius = currentTemplateRadius;
+}
+
+//--------------------------------------------------------------
+void DotShape::scaleToRadius(float newRadius) {
+  if (baseRadius <= 0.0f)
+    return;
+  float scaleRatio = newRadius / baseRadius;
+
+  if (std::abs(scaleRatio - 1.0f) < 0.0001f) {
+    // Tidak ada scaling yang signifikan, restore ke original
+    position = originalPosition;
+    lowerBound = originalLowerBound;
+  } else {
+    // Scale position dan lowerBound
+    position = originalPosition * scaleRatio;
+    lowerBound = originalLowerBound * scaleRatio;
+  }
 }

@@ -90,6 +90,7 @@ void SacredGeometry::draw() {
                     app->currentTemplate->setupShapes();
                     app->currentTemplate->applySpeedMultiplier();
                     app->currentTemplate->drawParallel();
+                    app->dotsCacheDirty = true;
                 }
             }
             ImGui::SameLine();
@@ -101,6 +102,7 @@ void SacredGeometry::draw() {
                     app->currentTemplate->setupShapes();
                     app->currentTemplate->applySpeedMultiplier();
                     app->currentTemplate->startSequentialDrawing();
+                    app->dotsCacheDirty = true;
                 }
             }
         }

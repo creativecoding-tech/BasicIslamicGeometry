@@ -286,7 +286,34 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
     - Parameters: speed, frequency, duration
     - getFrequency() - Spatial frequency gradient pattern
     - getDuration() - Durasi animation (detik)
+  - **RotateLeftAnimation** - Animasi rotasi berlawanan arah jarum jam ⭐ NEW
+    - Polygon berputar ke kiri (counter-clockwise) dengan osilasi halus
+    - Half-cosine wave motion untuk osilasi mulus: 0° → -90° → 0°
+    - Amplitudo rotasi: 90 derajat (default, dapat diubah)
+    - Finite animation: berhenti setelah 1 siklus penuh (2 detik)
+    - getAngle() - Sudut rotasi saat ini dalam derajat
   - **Configurable Speed** - Animation speed dapat di-adjust via speed slider
+  - **Special Polygon Animation** - System untuk dual-animation pada polygon ⭐ NEW
+    - Polygon dapat memiliki 2 animations sekaligus:
+      - **Appearance Animation** - FadeIn, Wobble, Fill, Gradient, atau None
+      - **Special Animation** - Rotate Left (berlapis di atas appearance animation)
+    - Independent control - Masing-masing animation berjalan independently
+    - Special animation di-update HANYA setelah appearance animation complete
+    - UI Control - Radio buttons di Playground window untuk set special animation per polygon
+    - Default: Semua polygons default "No Animation" untuk special animation
+  - **Configurable Speed** - Animation speed dapat di-adjust via speed slider
+
+### Scaling System ⭐ NEW
+- **Floating Point Drift Prevention** - System untuk mencegah presisi hilang saat radius slider diubah berulang kali
+- **Original Vertices Backup** - Setiap shape (CustomLine, PolygonShape, DotShape) menyimpan titik asli:
+  - `saveOriginalPoints(radius)` - Simpan titik asli CustomLine + baseRadius
+  - `saveOriginalVertices(radius)` - Simpan vertices asli PolygonShape + baseRadius
+  - `saveOriginalPosition(radius)` - Simpan posisi asli DotShape + baseRadius
+- **Absolute Ratio Scaling** - Scaling menggunakan ratio absolute dari original, bukan relative:
+  - Old way: `newPosition = currentPosition * (newRadius / oldRadius)` - akumulasi error
+  - New way: `newPosition = originalPosition * (newRadius / baseRadius)` - presisi terjaga
+- **Apply on Load** - Saat load file .nay, original vertices/points/position otomatis di-backup
+- **Consistent Precision** - Polygon/titik tetap presisi walaupun radius slider diubah berkali-kali
 
 ### Custom Lines & Polygons
 - **Mouse Interaction** - Mouse drag untuk menggambar line secara interaktif antar dots
@@ -1691,6 +1718,88 @@ Fitur terbaru yang sedang dalam pengembangan aktif:
   - Result: Jejak ImGui window masih terlihat di Draw pertama
   - Fix: Tetap set `forceClearScreenCounter` walau canvas kosong (tanpa clean canvas)
   - Benefit: Draw pertama langsung bersih, tidak perlu Draw ke-2/ke-3 untuk hilangkan trails
+
+---
+
+## 🧪 Testing Special Polygon Animation ⭐ NEW
+
+### Testing Status:
+- ✅ **Test 1: Basic Functionality (Verify Nothing Broken)** - DONE (2026-02-27)
+- 🔄 **Test 2: Special Polygon Animation UI** - IN PROGRESS
+- ⏳ **Test 3-7: Rotate Left Animation & Features** - PENDING
+
+### Cara Test Special Polygon Animation (Rotate Left)
+
+#### Prerequisites:
+1. ✅ Rebuild project dengan Visual Studio (setelah merge Special Polygon Animation feature)
+2. ✅ Pastikan aplikasi jalan tanpa error
+
+#### Test Steps:
+
+**1. Test Basic Functionality (Verify Nothing Broken):** ✅ **DONE**
+- [x] Run aplikasi
+- [x] Load file .nay yang punya polygons (CTRL+O)
+- [x] Cek tessellation masih working → polygons yang punya tessellation file harus muncul children-nya
+- [x] Cek radius slider masih working → ubah radius slider, semua shapes dan tessellation harus scale dengan benar
+- [x] Cek clean canvas masih working → tekan CTRL+SHIFT+DEL, semua harus hilang termasuk tessellation
+- [x] Cek Parallel/Sequential draw masih working → tombol di SacredGeometry window harus jalan
+
+**2. Test Special Polygon Animation UI:**
+- [ ] Setelah load file .nay, buka **Playground window**
+- [ ] Scroll ke bawah sampai ada section **"Special Polygon Animation"**
+- [ ] Cek apakah ada table dengan 2 columns:
+  - Column 0: Polygon Name (Polygon 0, Polygon 1, dll)
+  - Column 1: Radio buttons ("No Animation", "Rotate Left")
+- [ ] Cek apakah polygon yang tessellated TIDAK muncul di table (should be skipped)
+
+**3. Test Rotate Left Animation:**
+- [ ] Pilih salah satu polygon (misal: Polygon 0)
+- [ ] Klik radio button **"Rotate Left"** untuk polygon tersebut
+- [ ] Klik tombol **Play (Draw ←)** di Playground window
+- [ ] Amati polygon tersebut:
+  - Appearance animation harus jalan dulu (FadeIn/Wobble/Fill/Gradient sesuai setting)
+  - Setelah appearance animation complete, polygon harus mulai **rotate ke kiri** (berlawanan arah jarum jam)
+  - Rotasi harus **osilasi halus**: 0° → -90° → 0° (menggunakan half-cosine wave)
+  - Durasi osilasi: ±2 detik untuk 1 siklus penuh
+  - Setelah selesai, rotasi berhenti di 0° (posisi awal)
+
+**4. Test Multiple Special Animations:**
+- [ ] Set "Rotate Left" untuk 2-3 polygons berbeda
+- [ ] Klik tombol Play (Draw ←)
+- [ ] Amati apakah SEMUA polygons yang di-set rotate ke kiri:
+  - Masing-masing polygon harus rotate independently
+  - Timing harus independent (tidak sinkron, tergantung kapan masing-masing appearance animation complete)
+
+**5. Test Switch Special Animation Runtime:**
+- [ ] Saat animasi sedang berjalan, ubah radio button dari "No Animation" ke "Rotate Left"
+- [ ] Polygon harus SEKETIKA mulai rotate (sync real-time dari UI ke PolygonShape)
+- [ ] Ubah kembali ke "No Animation", polygon harus berhenti rotate tapi tetap warna/posisi terakhir
+
+**6. Test Speed Multiplier:**
+- [ ] Set "Rotate Left" untuk beberapa polygons
+- [ ] Ubah **Polygon Speed** slider di Playground window
+- [ ] Cek apakah kecepatan rotasi berubah sesuai slider:
+  - Speed 0.1 → Sangat lambat
+  - Speed 1.0 → Normal
+  - Speed 3.0 → Sangat cepat
+
+**7. Test Combination with Appearance Animations:**
+- [ ] Set appearance animation berbeda (FadeIn, Wobble, Fill, Gradient)
+- [ ] Set "Rotate Left" untuk polygons tersebut
+- [ ] Pastikan RotateLeftAnimation JALAN SETELAH appearance animation complete
+- [ ] Tidak ada overlap atau conflict antara 2 animations
+
+**8. Test Scaling System (Floating Point Drift Prevention):**
+- [ ] Load file .nay dengan polygons
+- [ ] Ubah radius slider berulang kali (kecil → besar → kecil → besar)
+- [ ] Cek apakah polygon TIDAK makin cacat/bergeser dari posisi seharusnya
+- [ ] Polygon harus tetap presisi walaupun radius diubah berkali-kali
+
+---
+
+### Expected Results:
+✅ **Pass**: Semua test di atas berhasil
+❌ **Fail**: Ada error, animation tidak jalan, atau unexpected behavior
 
 ---
 

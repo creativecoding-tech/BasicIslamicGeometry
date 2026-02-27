@@ -78,6 +78,9 @@ public:
   const std::vector<PolygonShape> &getLoadedPolygonsBuffer() const {
     return loadedPolygonsBuffer;
   }
+  std::vector<PolygonShape> &getLoadedPolygonsBufferRef() {
+    return loadedPolygonsBuffer;
+  } // ⭐ NEW
 
   // Setter untuk load mode (diperlukan untuk staggered load)
   void setLoadParallelMode(bool enabled);
@@ -105,6 +108,10 @@ public:
   // Helper method untuk create polygon dengan animation berdasarkan mode
   PolygonShape createPolygonWithAnimation(const std::vector<vec2> &vertices,
                                           ofColor color, int index);
+
+  // Apply special polygon animations (No Animation / Rotate Left) ⭐ NEW
+  void applySpecialPolygonAnimations(std::vector<PolygonShape> &polys,
+                                     const std::vector<int> &specialAnims);
 
 private:
   // Helper methods untuk .na format

@@ -140,6 +140,16 @@ void ofApp::updateNormal() {
   updateCustomLines();
   updatePolygons();
 
+  // Sync special polygon animations from UI to PolygonShapes ⭐ NEW
+  if (currentTemplate) {
+    BasicZelligeTemplate *zellige =
+        dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
+    if (zellige && !zellige->specialPolygonAnimations.empty()) {
+      fileManager.applySpecialPolygonAnimations(
+          polygonShapes, zellige->specialPolygonAnimations);
+    }
+  }
+
   // Update user-created dots
   for (auto &dot : userDots) {
     if (dot) {

@@ -758,6 +758,75 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
       ImGui::EndChild();
 
       ImGui::Separator();
+
+      // Special Polygon Animation UI ⭐ NEW
+      ImGui::Text("Special Polygon Animation");
+
+      ImGui::BeginChild("SpecialPolygonScrollRegion", ImVec2(0, 150), true);
+
+      if (ImGui::BeginTable("SpecialPolygonAnimationTable", 2,
+                            ImGuiTableFlags_Borders)) {
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch,
+                                0.35f);
+        ImGui::TableSetupColumn("Controls",
+                                ImGuiTableColumnFlags_WidthStretch, 0.65f);
+
+        for (int i = 0; i < app->loadedFilePolygonCount; ++i) {
+          // Skip polygons that are already tessellated
+          if (i < static_cast<int>(app->polygonShapes.size()) &&
+              app->polygonShapes[i].isTessellated()) {
+            continue;
+          }
+
+          ImGui::TableNextRow();
+
+          // Column 0: Polygon Name (Selectable)
+          ImGui::TableSetColumnIndex(0);
+          std::string polyName = "Polygon " + std::to_string(i);
+
+          bool isSelected = false;
+          if (i < static_cast<int>(app->polygonShapes.size())) {
+            isSelected = app->selectionManager.isPolygonSelected(i);
+          }
+
+          float extraYOffset = ImGui::GetFrameHeightWithSpacing() -
+                               ImGui::GetStyle().ItemSpacing.y;
+          ImGui::SetCursorPosY(ImGui::GetCursorPosY() + extraYOffset);
+
+          if (ImGui::Selectable((polyName + "##Special").c_str(), isSelected)) {
+            if (i < static_cast<int>(app->polygonShapes.size())) {
+              if (app->isCtrlPressed) {
+                app->selectionManager.togglePolygonSelection(i);
+              } else {
+                app->selectionManager.clearAllSelections();
+                app->selectionManager.selectPolygon(i);
+              }
+            }
+          }
+
+          // Column 1: Controls (Radio buttons)
+          ImGui::TableSetColumnIndex(1);
+          ImGui::PushID(i + 1000); // Push unique ID to separate controls per
+                                    // row (offset to avoid collision with
+                                    // Tessellation)
+
+          if (i >= static_cast<int>(specialPolygonAnimations.size())) {
+            specialPolygonAnimations.resize(
+                i + 100, 0); // 0 corresponds to "No Animation" (default)
+          }
+
+          ImGui::RadioButton("No Animation", &specialPolygonAnimations[i], 0);
+          ImGui::SameLine();
+          ImGui::RadioButton("Rotate Left", &specialPolygonAnimations[i], 1);
+
+          ImGui::PopID();
+        }
+        ImGui::EndTable();
+      }
+
+      ImGui::EndChild();
+
+      ImGui::Separator();
       ImGui::AlignTextToFramePadding();
       ImGui::Text("Polygon Speed");
       ImGui::SameLine();
@@ -765,7 +834,6 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
       ImGui::SliderFloat("##PolygonSpeed",
                          &app->currentTemplate->polygonSpeedMultiplier, 0.1f,
                          3.0f, "%.2f");
-      ImGui::Separator();
     }
   }
 

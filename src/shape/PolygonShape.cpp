@@ -2,15 +2,17 @@
 #include "../anim/FadeInAnimation.h"
 #include "../anim/FillAnimation.h"
 #include "../anim/GradientAnimation.h"
+#include "../anim/RotateLeftAnimation.h"
 #include "../anim/WobbleAnimation.h"
 #include "../anim/WobbleFillAnimation.h"
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape()
-    : vertices(), fillColor(ofColor(255, 0, 0, 150)), selected(false),
-      index(-1), loadedFromFile(false), tessellated(false),
-      sourceTessellationFile(""), sourceTessellationRadius(10.0f),
-      animation(nullptr), minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f),
+    : vertices(), originalVertices(), baseRadius(1.0f),
+      fillColor(ofColor(255, 0, 0, 150)), selected(false), index(-1),
+      loadedFromFile(false), tessellated(false), sourceTessellationFile(""),
+      sourceTessellationRadius(10.0f), animation(nullptr),
+      specialAnimation(nullptr), minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f),
       currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
       lastFboWidth(0), lastFboHeight(0) {
   updateBounds();
@@ -18,48 +20,66 @@ PolygonShape::PolygonShape()
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color)
-    : vertices(verts), fillColor(color), selected(false), index(-1),
-      loadedFromFile(false), tessellated(false), sourceTessellationFile(""),
-      sourceTessellationRadius(10.0f), animation(nullptr), minX(0.0f),
-      maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
-      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
-      lastFboHeight(0) {
+    : vertices(verts), originalVertices(verts), baseRadius(1.0f),
+      fillColor(color), selected(false), index(-1), loadedFromFile(false),
+      tessellated(false), sourceTessellationFile(""),
+      sourceTessellationRadius(10.0f), animation(nullptr),
+      specialAnimation(nullptr), minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f),
+      currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
+      lastFboWidth(0), lastFboHeight(0) {
   updateBounds();
 }
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int idx)
-    : vertices(verts), fillColor(color), selected(false), index(idx),
-      loadedFromFile(false), tessellated(false), sourceTessellationFile(""),
-      sourceTessellationRadius(10.0f), animation(nullptr), minX(0.0f),
-      maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
-      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
-      lastFboHeight(0) {
+    : vertices(verts), originalVertices(verts), baseRadius(1.0f),
+      fillColor(color), selected(false), index(idx), loadedFromFile(false),
+      tessellated(false), sourceTessellationFile(""),
+      sourceTessellationRadius(10.0f), animation(nullptr),
+      specialAnimation(nullptr), minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f),
+      currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
+      lastFboWidth(0), lastFboHeight(0) {
   updateBounds();
 }
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index,
                            std::shared_ptr<AbstractAnimation> anim)
-    : vertices(verts), fillColor(color), selected(false), index(index),
-      loadedFromFile(false), tessellated(false), sourceTessellationFile(""),
-      sourceTessellationRadius(10.0f), animation(std::move(anim)), minX(0.0f),
-      maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
-      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
-      lastFboHeight(0) {
+    : vertices(verts), originalVertices(verts), baseRadius(1.0f),
+      fillColor(color), selected(false), index(index), loadedFromFile(false),
+      tessellated(false), sourceTessellationFile(""),
+      sourceTessellationRadius(10.0f), animation(std::move(anim)),
+      specialAnimation(nullptr), minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f),
+      currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
+      lastFboWidth(0), lastFboHeight(0) {
+  updateBounds();
+}
+
+//--------------------------------------------------------------
+PolygonShape::PolygonShape(vector<vec2> verts, ofColor color, int index,
+                           std::shared_ptr<AbstractAnimation> anim,
+                           std::shared_ptr<AbstractAnimation> specialAnim)
+    : vertices(verts), originalVertices(verts), baseRadius(1.0f),
+      fillColor(color), selected(false), index(index), loadedFromFile(false),
+      tessellated(false), sourceTessellationFile(""),
+      sourceTessellationRadius(10.0f), animation(std::move(anim)),
+      specialAnimation(std::move(specialAnim)), minX(0.0f), maxX(0.0f),
+      minY(0.0f), maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false),
+      fboAllocated(false), lastFboWidth(0), lastFboHeight(0) {
   updateBounds();
 }
 
 //--------------------------------------------------------------
 PolygonShape::PolygonShape(const PolygonShape &other)
-    : vertices(other.vertices), fillColor(other.fillColor),
+    : vertices(other.vertices), originalVertices(other.originalVertices),
+      baseRadius(other.baseRadius), fillColor(other.fillColor),
       selected(other.selected), index(other.index),
       loadedFromFile(other.loadedFromFile), tessellated(other.tessellated),
       sourceTessellationFile(other.sourceTessellationFile),
       sourceTessellationRadius(other.sourceTessellationRadius),
-      animation(nullptr), minX(0.0f), maxX(0.0f), minY(0.0f), maxY(0.0f),
-      currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
-      lastFboWidth(0), lastFboHeight(0) {
+      animation(nullptr), specialAnimation(nullptr), minX(0.0f), maxX(0.0f),
+      minY(0.0f), maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false),
+      fboAllocated(false), lastFboWidth(0), lastFboHeight(0) {
   updateBounds();
 }
 
@@ -67,6 +87,8 @@ PolygonShape::PolygonShape(const PolygonShape &other)
 PolygonShape &PolygonShape::operator=(const PolygonShape &other) {
   if (this != &other) {
     vertices = other.vertices;
+    originalVertices = other.originalVertices;
+    baseRadius = other.baseRadius;
     fillColor = other.fillColor;
     selected = other.selected;
     index = other.index;
@@ -75,6 +97,7 @@ PolygonShape &PolygonShape::operator=(const PolygonShape &other) {
     sourceTessellationFile = other.sourceTessellationFile;
     sourceTessellationRadius = other.sourceTessellationRadius;
     animation = nullptr; // Animation tidak dicopy (reset ke nullptr)
+    specialAnimation = nullptr;
     updateBounds();
   }
   return *this;
@@ -83,14 +106,18 @@ PolygonShape &PolygonShape::operator=(const PolygonShape &other) {
 //--------------------------------------------------------------
 // Move constructor - transfer animation ownership
 PolygonShape::PolygonShape(PolygonShape &&other) noexcept
-    : vertices(std::move(other.vertices)), fillColor(other.fillColor),
+    : vertices(std::move(other.vertices)),
+      originalVertices(std::move(other.originalVertices)),
+      baseRadius(other.baseRadius), fillColor(other.fillColor),
       selected(other.selected), index(other.index),
       loadedFromFile(other.loadedFromFile), tessellated(other.tessellated),
       sourceTessellationFile(std::move(other.sourceTessellationFile)),
       sourceTessellationRadius(other.sourceTessellationRadius),
-      animation(std::move(other.animation)), minX(0.0f), maxX(0.0f), minY(0.0f),
-      maxY(0.0f), currentWaterY(0.0f), shaderLoaded(false), fboAllocated(false),
-      lastFboWidth(0), lastFboHeight(0) {
+      animation(std::move(other.animation)),
+      specialAnimation(std::move(other.specialAnimation)), minX(0.0f),
+      maxX(0.0f), minY(0.0f), maxY(0.0f), currentWaterY(0.0f),
+      shaderLoaded(false), fboAllocated(false), lastFboWidth(0),
+      lastFboHeight(0) {
   updateBounds();
 }
 
@@ -99,6 +126,8 @@ PolygonShape::PolygonShape(PolygonShape &&other) noexcept
 PolygonShape &PolygonShape::operator=(PolygonShape &&other) noexcept {
   if (this != &other) {
     vertices = std::move(other.vertices);
+    originalVertices = std::move(other.originalVertices);
+    baseRadius = other.baseRadius;
     fillColor = other.fillColor;
     selected = other.selected;
     index = other.index;
@@ -107,9 +136,33 @@ PolygonShape &PolygonShape::operator=(PolygonShape &&other) noexcept {
     sourceTessellationFile = std::move(other.sourceTessellationFile);
     sourceTessellationRadius = other.sourceTessellationRadius;
     animation = std::move(other.animation);
+    specialAnimation = std::move(other.specialAnimation);
     updateBounds();
   }
   return *this;
+}
+
+//--------------------------------------------------------------
+void PolygonShape::saveOriginalVertices(float currentTemplateRadius) {
+  originalVertices = vertices;
+  baseRadius = currentTemplateRadius;
+}
+
+//--------------------------------------------------------------
+void PolygonShape::scaleToRadius(float newRadius) {
+  if (baseRadius <= 0.0f || originalVertices.empty())
+    return;
+  float scaleRatio = newRadius / baseRadius;
+
+  if (std::abs(scaleRatio - 1.0f) < 0.0001f) {
+    vertices = originalVertices;
+  } else {
+    vertices.resize(originalVertices.size());
+    for (size_t i = 0; i < originalVertices.size(); ++i) {
+      vertices[i] = originalVertices[i] * scaleRatio;
+    }
+  }
+  updateBounds();
 }
 
 //--------------------------------------------------------------
@@ -170,6 +223,12 @@ void PolygonShape::update(float deltaTime) {
       }
     }
   }
+
+  // Update special animation only after appearance animation is complete (atau
+  // tidak ada)
+  if (isAnimationComplete() && specialAnimation) {
+    specialAnimation->update(deltaTime);
+  }
 }
 
 //--------------------------------------------------------------
@@ -181,6 +240,14 @@ bool PolygonShape::isAnimationComplete() const {
     return animation->isComplete();
   }
   return true; // Kalau tidak ada animation, dianggap complete
+}
+
+//--------------------------------------------------------------
+bool PolygonShape::isSpecialAnimationComplete() const {
+  if (specialAnimation) {
+    return specialAnimation->isComplete();
+  }
+  return true;
 }
 
 //--------------------------------------------------------------
@@ -200,12 +267,18 @@ void PolygonShape::setSpeed(float speed) {
   if (animation) {
     animation->setSpeed(speed);
   }
+  if (specialAnimation) {
+    specialAnimation->setSpeed(speed);
+  }
 }
 
 //--------------------------------------------------------------
 void PolygonShape::setSpeedMultiplier(float multiplier) {
   if (animation) {
     animation->setSpeedMultiplier(multiplier); // Delegate to animation
+  }
+  if (specialAnimation) {
+    specialAnimation->setSpeedMultiplier(multiplier);
   }
 }
 
@@ -255,6 +328,18 @@ std::shared_ptr<AbstractAnimation> PolygonShape::getAnimationPtr() const {
 }
 
 //--------------------------------------------------------------
+void PolygonShape::setSpecialAnimation(
+    std::shared_ptr<AbstractAnimation> anim) {
+  specialAnimation = std::move(anim);
+}
+
+//--------------------------------------------------------------
+std::shared_ptr<AbstractAnimation>
+PolygonShape::getSpecialAnimationPtr() const {
+  return specialAnimation;
+}
+
+//--------------------------------------------------------------
 void PolygonShape::updateBounds() {
   if (vertices.empty()) {
     minX = maxX = minY = maxY = 0.0f;
@@ -299,6 +384,19 @@ void PolygonShape::drawGLSL() const {
   if (!globalPolygonShaderLoaded) {
     globalPolygonShader.load("shaders/polygon.vert", "shaders/polygon.frag");
     globalPolygonShaderLoaded = true;
+  }
+
+  // Cek Special Animation yang berlaku global ke seluruh shape (seperti
+  // rotation)
+  bool hasRotation = false;
+
+  if (specialAnimation) {
+    if (auto *rotateAnim =
+            dynamic_cast<RotateLeftAnimation *>(specialAnimation.get())) {
+      ofPushMatrix();
+      ofRotateDeg(rotateAnim->getAngle());
+      hasRotation = true;
+    }
   }
 
   // Cek tipe animation dan apply effect yang sesuai
@@ -697,5 +795,9 @@ void PolygonShape::drawGLSL() const {
     ofEndShape(true);
 
     globalPolygonShader.end();
+  }
+
+  if (hasRotation) {
+    ofPopMatrix();
   }
 }

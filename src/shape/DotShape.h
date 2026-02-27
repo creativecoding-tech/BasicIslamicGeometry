@@ -38,7 +38,17 @@ public:
     int getTrackLineIndex() const { return trackLineIndex; }
     bool hasTrackMode() const { return trackLineIndex >= 0; }
 
+    // Method untuk set titik asli dari luar ⭐ NEW
+    void saveOriginalPosition(float currentTemplateRadius);
+    // Method untuk scale geometri berdasar ratio absolute dari original ⭐ NEW
+    void scaleToRadius(float newRadius);
+
 private:
+    glm::vec2 originalPosition;   // Backup dari posisi asli ⭐ NEW
+    glm::vec2 originalLowerBound; // Backup dari lowerBound asli ⭐ NEW
+    float baseRadius =
+        1.0f; // Radius template saat posisi asli dibuat/diload ⭐ NEW
+
     glm::vec2 position;      // Position dot
     float radius;           // Radius dot (ukuran dot)
     ofColor color = ofColor(0, 0, 255);  // Warna dot (default biru)

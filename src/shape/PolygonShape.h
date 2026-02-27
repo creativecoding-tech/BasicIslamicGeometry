@@ -22,6 +22,11 @@ public:
                std::shared_ptr<AbstractAnimation>
                    anim); // Dengan animation (untuk load dari file)
 
+  // Dengan both animations ⭐ NEW
+  PolygonShape(vector<vec2> verts, ofColor color, int index,
+               std::shared_ptr<AbstractAnimation> anim,
+               std::shared_ptr<AbstractAnimation> specialAnim);
+
   // Copy constructor (animation tidak dicopy)
   PolygonShape(const PolygonShape &other);
 
@@ -43,6 +48,11 @@ public:
   bool isAnimationComplete() const;      // Cek apakah animation sudah selesai
   void setAnimation(std::shared_ptr<AbstractAnimation> anim); // ⭐ NEW
   std::shared_ptr<AbstractAnimation> getAnimationPtr() const; // ⭐ NEW
+
+  // Special Animation ⭐ NEW
+  void setSpecialAnimation(std::shared_ptr<AbstractAnimation> anim);
+  std::shared_ptr<AbstractAnimation> getSpecialAnimationPtr() const;
+  bool isSpecialAnimationComplete() const;
 
   // Setters
   void setColor(ofColor color);
@@ -84,6 +94,11 @@ public:
   // Utils
   bool containsPoint(vec2 point) const; // Cek apakah point ada di dalam polygon
 
+  // Method untuk set titik asli dari luar (dipanggil setelah instantiate) ⭐ NEW
+  void saveOriginalVertices(float currentTemplateRadius);
+  // Method untuk scale geometri berdasar ratio absolute dari original ⭐ NEW
+  void scaleToRadius(float newRadius);
+
 private:
   // Rendering helper methods
   void drawCPU() const;  // CPU-based rendering (ofBeginShape) - untuk newly
@@ -91,6 +106,11 @@ private:
   void drawGLSL() const; // GPU-based rendering (GLSL shaders) - untuk polygons
                          // loaded from .nay
   void updateBounds();   // Helper to recalculate minX, maxX, minY, maxY
+
+  vector<vec2> originalVertices; // Backup dari titik asli untuk scaling tanpa
+                                 // cacat presisi ⭐ NEW
+  float baseRadius =
+      1.0f; // Radius template saat titik asli dibuat/diload ⭐ NEW
 
   vector<vec2> vertices;
   ofColor fillColor;
@@ -102,6 +122,8 @@ private:
   float sourceTessellationRadius = 10.0f;  // Radius sumber tessellasi
   std::shared_ptr<AbstractAnimation>
       animation; // Animation system (optional) ⭐ CHANGED TO shared_ptr
+  std::shared_ptr<AbstractAnimation>
+      specialAnimation; // Special Animation (optional) ⭐ NEW
 
   // Fill state (dihitung di update(), dipakai di draw())
   mutable float minX, maxX;    // X bounds untuk AABB check

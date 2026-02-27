@@ -362,3 +362,31 @@ float CustomLine::getApproxLength() const {
   }
   return length;
 }
+
+//--------------------------------------------------------------
+void CustomLine::saveOriginalPoints(float currentTemplateRadius) {
+  originalPoints = points;
+  originalCurve = curve;
+  baseRadius = currentTemplateRadius;
+}
+
+//--------------------------------------------------------------
+void CustomLine::scaleToRadius(float newRadius) {
+  if (baseRadius <= 0.0f || originalPoints.empty())
+    return;
+  float scaleRatio = newRadius / baseRadius;
+
+  if (std::abs(scaleRatio - 1.0f) < 0.0001f) {
+    // Tidak ada scaling yang signifikan, restore ke original
+    points = originalPoints;
+    curve = originalCurve;
+  } else {
+    // Scale points
+    points.resize(originalPoints.size());
+    for (size_t i = 0; i < originalPoints.size(); ++i) {
+      points[i] = originalPoints[i] * scaleRatio;
+    }
+    // Scale curve juga
+    curve = originalCurve * scaleRatio;
+  }
+}

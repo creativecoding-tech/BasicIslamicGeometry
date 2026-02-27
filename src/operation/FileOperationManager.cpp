@@ -289,6 +289,14 @@ void FileOperationManager::loadWorkspace() {
     app->syncColorPickerFromLoadedPolygons();
     app->syncUserDotFromLoaded();
 
+    // Apply special polygon animations (default all "No Animation") ⭐ NEW
+    BasicZelligeTemplate *zellige =
+        dynamic_cast<BasicZelligeTemplate *>(app->currentTemplate);
+    if (zellige) {
+      app->fileManager.applySpecialPolygonAnimations(app->polygonShapes,
+                                                      zellige->specialPolygonAnimations);
+    }
+
     app->loadStage = ofApp::LOAD_TEMPLATE;
     app->isStaggeredLoad = true;
     app->isSequentialShapeLoad = false; // PARALLEL mode (CTRL+O)
@@ -380,6 +388,14 @@ void FileOperationManager::loadWorkspaceSeq() {
     app->syncColorPickerFromLoadedLines();
     app->syncColorPickerFromLoadedPolygons();
     app->syncUserDotFromLoaded();
+
+    // Apply special polygon animations (default all "No Animation") ⭐ NEW
+    BasicZelligeTemplate *zellige =
+        dynamic_cast<BasicZelligeTemplate *>(app->currentTemplate);
+    if (zellige) {
+      app->fileManager.applySpecialPolygonAnimations(app->polygonShapes,
+                                                      zellige->specialPolygonAnimations);
+    }
 
     // START SEQUENTIAL MODE untuk template shapes!
     // Set sequential mode flag di template
@@ -499,6 +515,7 @@ bool FileOperationManager::peekFilePolygonCount(const std::string &filepath,
     if (zellige) {
       zellige->tessellationFiles.clear();
       zellige->tessellationRadii.clear();
+      zellige->specialPolygonAnimations.clear(); // ⭐ NEW Clear special polygon animations
       const auto &bufferPolys = app->fileManager.getLoadedPolygonsBuffer();
       for (size_t i = 0; i < bufferPolys.size(); i++) {
         zellige->tessellationFiles.push_back(

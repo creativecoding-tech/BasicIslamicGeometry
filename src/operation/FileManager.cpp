@@ -2,6 +2,7 @@
 #include "../anim/FadeInAnimation.h"
 #include "../anim/FillAnimation.h"
 #include "../anim/GradientAnimation.h"
+#include "../anim/RotateLeftAnimation.h"
 #include "../anim/WobbleAnimation.h"
 #include "../anim/WobbleFillAnimation.h"
 
@@ -381,6 +382,10 @@ bool FileManager::loadCustomLinesNA(ofBuffer &buffer, size_t &offset,
         0.18f *
         animationSpeedMultiplier); // Delta time calibrated (0.003f * 60 FPS)
 
+    // Simpan titik asli dan hitung baseRadius untuk mencegah floating point
+    // drift saat dimodifikasi slider Radius ⭐ NEW
+    line.saveOriginalPoints(radius);
+
     // Add ke vector
     customLines.push_back(line);
   }
@@ -522,6 +527,11 @@ bool FileManager::loadPolygonsNA(ofBuffer &buffer, size_t &offset,
     if (version >= 4 && !isTessellated && !sourceFile.empty()) {
       polygon.setSourceTessellation(sourceFile, sourceRadius);
     }
+
+    // Simpan titik asli dan hitung baseRadius untuk mencegah floating point
+    // drift saat dimodifikasi slider Radius ⭐ NEW
+    polygon.saveOriginalVertices(radius);
+
     polygons.push_back(std::move(polygon));
   }
 
@@ -613,6 +623,11 @@ bool FileManager::loadUserDotsNA(
     dotShape->setLowerBound(lowerBound);
     dotShape->setColor(color);
     dotShape->progress = 1.0f;
+
+    // Simpan titik asli dan hitung baseRadius untuk mencegah floating point
+    // drift saat dimodifikasi slider Radius ⭐ NEW
+    dotShape->saveOriginalPosition(radius);
+
     userDots.push_back(std::move(dotShape));
   }
 
@@ -1278,4 +1293,25 @@ void FileManager::setPolygonSpeedMultiplier(float multiplier) {
 //--------------------------------------------------------------
 float FileManager::getPolygonSpeedMultiplier() const {
   return polygonSpeedMultiplier;
+}
+
+//--------------------------------------------------------------
+void FileManager::applySpecialPolygonAnimations(
+    std::vector<PolygonShape> &polys, const std::vector<int> &specialAnims) {
+  // Hanya proses sebanyak min(polys.size(), specialAnims.size())
+  size_t count = std::min(polys.size(), specialAnims.size());
+
+  for (size_t i = 0; i < count; ++i) {
+    int animMode = specialAnims[i];
+
+    if (animMode == 0) { // 0 = No Animation
+      polys[i].setSpecialAnimation(nullptr);
+    } else if (animMode == 1) { // 1 = Rotate Left
+      // Base amplitudo: 90 derajat. Speed multiplier mengatur kecepatan
+      // osilasi.
+      auto rotateAnim = std::make_unique<RotateLeftAnimation>(90.0f);
+      rotateAnim->setSpeedMultiplier(polygonSpeedMultiplier);
+      polys[i].setSpecialAnimation(std::move(rotateAnim));
+    }
+  }
 }
