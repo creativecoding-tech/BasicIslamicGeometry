@@ -7,6 +7,7 @@
 #include "../shape/CustomLine.h"
 #include "../undo/UndoAction.h"
 #include "../utils/GeometryUtils.h"
+#include <imgui.h>
 
 //--------------------------------------------------------------
 InputManager::InputManager(ofApp *app) : app(app) {}
@@ -654,6 +655,27 @@ void InputManager::handleMouseScrolled(int x, int y, float scrollX,
 
 //--------------------------------------------------------------
 void InputManager::handleKeyPressed(int key) {
+  ImGuiIO &io = ImGui::GetIO();
+
+  // Cek apakah sedang ADA ACTIVE ITEM di ImGui (text input sedang diedit)
+  bool isTextInputActive = io.WantCaptureKeyboard && ImGui::IsAnyItemActive();
+
+  if (isTextInputActive) {
+    // Forward printable characters untuk text input
+    if (key >= 32 && key <= 126) { // Printable ASCII
+      io.AddInputCharacter((unsigned int)key);
+      return; // Jangan process di OF
+    }
+
+    // Enter, Escape, dll biarkan lewat - DragFloat akan otomatis commit
+    // saat user klik di luar atau Tab (cara kerja standar ImGui)
+    // Tidak perlu force commit karena akan crash dengan SetFocusID
+
+    // Non-printable keys biarkan lewat ke OF
+    // tapi skip OF logic saat text input active
+    return;
+  }
+
   if (key == OF_KEY_END)
     ofExit();
 
@@ -874,6 +896,19 @@ void InputManager::handleKeyPressed(int key) {
 
 //--------------------------------------------------------------
 void InputManager::handleKeyReleased(int key) {
+  ImGuiIO &io = ImGui::GetIO();
+
+  // Cek apakah sedang ADA ACTIVE ITEM di ImGui (text input sedang diedit)
+  bool isTextInputActive = io.WantCaptureKeyboard && ImGui::IsAnyItemActive();
+
+  if (isTextInputActive) {
+    // Hanya block printable characters, biarkan non-printable lewat
+    if (key >= 32 && key <= 126) {
+      return; // Jangan process di OF untuk printable chars
+    }
+    // Non-printable keys lewat ke OF (untuk shortcut, tracking modifier, dll)
+  }
+
   if (key == OF_KEY_CONTROL)
     app->isCtrlPressed = false;
 }
