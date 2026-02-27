@@ -595,17 +595,16 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         ImGui::TableSetupColumn("Col1", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("Col2", ImGuiTableColumnFlags_WidthStretch);
 
-        // Row 1
+        // Row 1: No Animation Polygon | FadeIn Polygon
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        if (ImGui::RadioButton("No Animation Polygon", &polygonAnimationMode,
-                               0)) {
+        if (ImGui::RadioButton("No Animation Polygon", &polygonAnimationMode, 0)) {
         }
         ImGui::TableSetColumnIndex(1);
         if (ImGui::RadioButton("FadeIn Polygon", &polygonAnimationMode, 1)) {
         }
 
-        // Row 2
+        // Row 2: Wobble Polygon | Wave Fill Polygon
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
         if (ImGui::RadioButton("Wobble Polygon", &polygonAnimationMode, 2)) {
@@ -614,15 +613,31 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         if (ImGui::RadioButton("Wave Fill Polygon", &polygonAnimationMode, 3)) {
         }
 
-        // Row 3
+        // Row 3: Wobble Fill Polygon | Gradient Polygon
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        if (ImGui::RadioButton("Wobble Fill Polygon", &polygonAnimationMode,
-                               4)) {
+        if (ImGui::RadioButton("Wobble Fill Polygon", &polygonAnimationMode, 4)) {
         }
         ImGui::TableSetColumnIndex(1);
         if (ImGui::RadioButton("Gradient Polygon", &polygonAnimationMode, 5)) {
         }
+
+        // Row 4: Appearance Speed
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+
+        // Column 0: Label "Appearance Speed" di pojok kanan (right align)
+        float labelWidth = ImGui::CalcTextSize("Appearance Speed").x;
+        float col0Width = ImGui::GetContentRegionAvail().x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + col0Width - labelWidth);
+        ImGui::Text("Appearance Speed");
+
+        // Column 1: Slider di pojok kiri (left align, default)
+        ImGui::TableSetColumnIndex(1);
+        ImGui::SetNextItemWidth(80.0f);
+        ImGui::SliderFloat("##AppearanceSpeed",
+                           &app->currentTemplate->polygonSpeedMultiplier, 0.1f,
+                           3.0f, "%.2f");
 
         ImGui::EndTable();
       }
@@ -847,13 +862,6 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
       ImGui::EndChild();
 
       ImGui::Separator();
-      ImGui::AlignTextToFramePadding();
-      ImGui::Text("Polygon Speed");
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(80.0f);
-      ImGui::SliderFloat("##PolygonSpeed",
-                         &app->currentTemplate->polygonSpeedMultiplier, 0.1f,
-                         3.0f, "%.2f");
     }
   }
 
