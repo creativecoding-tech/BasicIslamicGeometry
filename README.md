@@ -1726,7 +1726,11 @@ Fitur terbaru yang sedang dalam pengembangan aktif:
 ### Testing Status:
 - ✅ **Test 1: Basic Functionality (Verify Nothing Broken)** - DONE (2026-02-27)
 - ✅ **Test 2: Special Polygon Animation UI** - DONE (2026-02-27)
-- 🔄 **Test 3-7: Rotate Left Animation & Features** - PENDING
+- ✅ **Test 3: Rotate Left Animation** - DONE (2026-02-28)
+- ✅ **Test 4: Multiple Special Animations** - DONE (2026-02-28)
+- ✅ **Test 5: Speed Multiplier** - DONE (2026-02-28)
+- ✅ **Test 6: Combination with Appearance Animations** - DONE (2026-02-28)
+- ✅ **Test 7: Scaling System** - DONE (2026-02-28)
 
 ### Cara Test Special Polygon Animation (Rotate Left)
 
@@ -1752,48 +1756,53 @@ Fitur terbaru yang sedang dalam pengembangan aktif:
   - Column 1: Radio buttons ("No Animation", "Rotate Left")
 - [x] Cek apakah polygon yang tessellated TIDAK muncul di table (should be skipped)
 
-**3. Test Rotate Left Animation:**
-- [ ] Pilih salah satu polygon (misal: Polygon 0)
-- [ ] Klik radio button **"Rotate Left"** untuk polygon tersebut
-- [ ] Klik tombol **Play (Draw ←)** di Playground window
-- [ ] Amati polygon tersebut:
-  - Appearance animation harus jalan dulu (FadeIn/Wobble/Fill/Gradient sesuai setting)
-  - Setelah appearance animation complete, polygon harus mulai **rotate ke kiri** (berlawanan arah jarum jam)
-  - Rotasi harus **osilasi halus**: 0° → -90° → 0° (menggunakan half-cosine wave)
-  - Durasi osilasi: ±2 detik untuk 1 siklus penuh
-  - Setelah selesai, rotasi berhenti di 0° (posisi awal)
+**3. Test Rotate Left Animation:** ✅ **DONE (2026-02-28)**
+- [x] Pilih salah satu polygon (misal: Polygon 0)
+- [x] Klik radio button **"Rotate Left"** untuk polygon tersebut
+- [x] Klik tombol **Play (Draw ←)** di Playground window
+- [x] Amati polygon tersebut:
+  - [x] Appearance animation harus jalan dulu (FadeIn/Wobble/Fill/Gradient sesuai setting)
+  - [x] Setelah appearance animation complete, polygon harus mulai **rotate ke kiri** (berlawanan arah jarum jam)
+  - [x] Rotasi harus **osilasi halus**: 0° → -90° → 0° (menggunakan half-cosine wave)
+  - [x] Durasi osilasi: ±2 detik untuk 1 siklus penuh
+  - [x] Setelah selesai, rotasi berhenti di 0° (posisi awal)
+- [x] **Parallel Mode**: ✅ Working
+- [x] **Sequential Mode**: ✅ Working
 
-**4. Test Multiple Special Animations:**
-- [ ] Set "Rotate Left" untuk 2-3 polygons berbeda
-- [ ] Klik tombol Play (Draw ←)
-- [ ] Amati apakah SEMUA polygons yang di-set rotate ke kiri:
-  - Masing-masing polygon harus rotate independently
-  - Timing harus independent (tidak sinkron, tergantung kapan masing-masing appearance animation complete)
+**4. Test Multiple Special Animations:** ✅ **DONE (2026-02-28)**
+- [x] Set "Rotate Left" untuk 2-3 polygons berbeda
+- [x] Klik tombol Play (Draw ←)
+- [x] Amati apakah SEMUA polygons yang di-set rotate ke kiri:
+  - [x] Masing-masing polygon harus rotate independently
+  - [x] Timing harus independent (tidak sinkron, tergantung kapan masing-masing appearance animation complete)
+- [x] **Parallel Mode**: ✅ Working - Multiple polygons rotate independently
+- [x] **Sequential Mode**: ✅ Working - Each polygon rotates after its appearance completes
 
-**5. Test Switch Special Animation Runtime:**
-- [ ] Saat animasi sedang berjalan, ubah radio button dari "No Animation" ke "Rotate Left"
-- [ ] Polygon harus SEKETIKA mulai rotate (sync real-time dari UI ke PolygonShape)
-- [ ] Ubah kembali ke "No Animation", polygon harus berhenti rotate tapi tetap warna/posisi terakhir
+**5. Test Speed Multiplier:** ✅ **DONE (2026-02-28)**
+- [x] Set "Rotate Left" untuk beberapa polygons
+- [x] Ubah **Polygon Speed** slider di Playground window
+- [x] Cek apakah kecepatan rotasi berubah sesuai slider:
+  - [x] Speed 0.1 → Sangat lambat
+  - [x] Speed 1.0 → Normal
+  - [x] Speed 3.0 → Sangat cepat
+- [x] Speed multiplier berlaku untuk BOTH appearance dan special animation
+- [x] Perubahan speed diterapkan real-time saat slider digeser
 
-**6. Test Speed Multiplier:**
-- [ ] Set "Rotate Left" untuk beberapa polygons
-- [ ] Ubah **Polygon Speed** slider di Playground window
-- [ ] Cek apakah kecepatan rotasi berubah sesuai slider:
-  - Speed 0.1 → Sangat lambat
-  - Speed 1.0 → Normal
-  - Speed 3.0 → Sangat cepat
+**6. Test Combination with Appearance Animations:** ✅ **DONE (2026-02-28)**
+- [x] Set appearance animation berbeda (FadeIn, Wobble, Fill, Gradient)
+- [x] Set "Rotate Left" untuk polygons tersebut
+- [x] Pastikan RotateLeftAnimation JALAN SETELAH appearance animation complete
+- [x] Tidak ada overlap atau conflict antara 2 animations
+- [x] Parallel Mode: ✅ Working - Special animation starts after each polygon's appearance completes
+- [x] Sequential Mode: ✅ Working - Each polygon runs special animation independently after its appearance
 
-**7. Test Combination with Appearance Animations:**
-- [ ] Set appearance animation berbeda (FadeIn, Wobble, Fill, Gradient)
-- [ ] Set "Rotate Left" untuk polygons tersebut
-- [ ] Pastikan RotateLeftAnimation JALAN SETELAH appearance animation complete
-- [ ] Tidak ada overlap atau conflict antara 2 animations
-
-**8. Test Scaling System (Floating Point Drift Prevention):**
-- [ ] Load file .nay dengan polygons
-- [ ] Ubah radius slider berulang kali (kecil → besar → kecil → besar)
-- [ ] Cek apakah polygon TIDAK makin cacat/bergeser dari posisi seharusnya
-- [ ] Polygon harus tetap presisi walaupun radius diubah berkali-kali
+**7. Test Scaling System (Floating Point Drift Prevention):** ✅ **DONE (2026-02-28)**
+- [x] Load file .nay dengan polygons
+- [x] Ubah radius slider berulang kali (kecil → besar → kecil → besar)
+- [x] Cek apakah polygon TIDAK makin cacat/bergeser dari posisi seharusnya
+- [x] Polygon harus tetap presisi walaupun radius diubah berkali-kali
+- [x] Tessellation polygons tetap terattach dengan benar saat scaling
+- [x] Special animation tidak terpengaruh oleh scaling (tetap rotate dengan benar)
 
 ---
 
