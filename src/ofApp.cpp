@@ -140,16 +140,6 @@ void ofApp::updateNormal() {
   updateCustomLines();
   updatePolygons();
 
-  // Sync special polygon animations from UI to PolygonShapes ⭐ NEW
-  if (currentTemplate) {
-    BasicZelligeTemplate *zellige =
-        dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
-    if (zellige && !zellige->specialPolygonAnimations.empty()) {
-      fileManager.applySpecialPolygonAnimations(
-          polygonShapes, zellige->specialPolygonAnimations);
-    }
-  }
-
   // Update user-created dots
   for (auto &dot : userDots) {
     if (dot) {
@@ -489,7 +479,9 @@ void ofApp::updateStaggeredPolygons() {
 
   if (polygonDrawMode == PG_DRAW_PARALLEL) {
     for (auto &polygon : polygonShapes) {
-      if (!polygon.isAnimationComplete()) {
+      // Update jika appearance belum complete ATAU special animation belum complete
+      if (!polygon.isAnimationComplete() ||
+          !polygon.isSpecialAnimationComplete()) {
         polygon.setSpeedMultiplier(speedMultiplier);
         polygon.update(deltaTime);
       }
@@ -520,7 +512,8 @@ void ofApp::updateStaggeredPolygons() {
 
   if (polygonDrawMode == PG_DRAW_PARALLEL) {
     for (const auto &polygon : polygonShapes) {
-      if (!polygon.isAnimationComplete()) {
+      if (!polygon.isAnimationComplete() ||
+          !polygon.isSpecialAnimationComplete()) {
         allComplete = false;
         allPolygonsComplete = false; // logic ini sama saja
         break;
@@ -1930,6 +1923,15 @@ void ofApp::reapplyPolygonAnimations() {
 
     // Set animation ke shape yang ada
     polygonShapes[i].setAnimation(tempShape.getAnimationPtr());
+  }
+
+  // ⭐ NEW: Terapkan juga special animations untuk polygon spesifik
+  BasicZelligeTemplate *zellige =
+      dynamic_cast<BasicZelligeTemplate *>(currentTemplate);
+  if (zellige && !zellige->specialPolygonAnimations.empty()) {
+    // Gunakan fungsi dari fileManager untuk menerapkan special animations
+    fileManager.applySpecialPolygonAnimations(
+        polygonShapes, zellige->specialPolygonAnimations);
   }
 }
 

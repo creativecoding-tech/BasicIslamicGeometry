@@ -516,12 +516,17 @@ bool FileOperationManager::peekFilePolygonCount(const std::string &filepath,
       zellige->tessellationFiles.clear();
       zellige->tessellationRadii.clear();
       zellige->specialPolygonAnimations.clear(); // ⭐ NEW Clear special polygon animations
+
       const auto &bufferPolys = app->fileManager.getLoadedPolygonsBuffer();
       for (size_t i = 0; i < bufferPolys.size(); i++) {
         zellige->tessellationFiles.push_back(
             bufferPolys[i].getSourceTessellationFile());
         zellige->tessellationRadii.push_back(
             bufferPolys[i].getSourceTessellationRadius());
+
+        // ⭐ NEW: Initialize specialPolygonAnimations untuk SEMUA polygons
+        // (termasuk tessellated, tapi nanti akan di-skip di applySpecialPolygonAnimations)
+        zellige->specialPolygonAnimations.push_back(0); // 0 = No Animation (default)
       }
     }
   }

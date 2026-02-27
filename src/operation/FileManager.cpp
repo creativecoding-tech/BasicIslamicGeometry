@@ -1307,8 +1307,7 @@ void FileManager::applySpecialPolygonAnimations(
     if (animMode == 0) { // 0 = No Animation
       polys[i].setSpecialAnimation(nullptr);
     } else if (animMode == 1) { // 1 = Rotate Left
-      // Base amplitudo: 90 derajat. Speed multiplier mengatur kecepatan
-      // osilasi.
+      // Base amplitudo: 90 derajat. Speed multiplier mengatur kecepatan osilasi.
       auto rotateAnim = std::make_unique<RotateLeftAnimation>(90.0f);
       rotateAnim->setSpeedMultiplier(polygonSpeedMultiplier);
       polys[i].setSpecialAnimation(std::move(rotateAnim));
