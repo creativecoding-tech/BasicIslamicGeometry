@@ -293,8 +293,9 @@ void FileOperationManager::loadWorkspace() {
     BasicZelligeTemplate *zellige =
         dynamic_cast<BasicZelligeTemplate *>(app->currentTemplate);
     if (zellige) {
-      app->fileManager.applySpecialPolygonAnimations(app->polygonShapes,
-                                                      zellige->specialPolygonAnimations);
+      app->fileManager.applySpecialPolygonAnimations(
+          app->polygonShapes, zellige->specialPolygonAnimations,
+          zellige->specialPolygonRotateAngles);
     }
 
     app->loadStage = ofApp::LOAD_TEMPLATE;
@@ -393,8 +394,9 @@ void FileOperationManager::loadWorkspaceSeq() {
     BasicZelligeTemplate *zellige =
         dynamic_cast<BasicZelligeTemplate *>(app->currentTemplate);
     if (zellige) {
-      app->fileManager.applySpecialPolygonAnimations(app->polygonShapes,
-                                                      zellige->specialPolygonAnimations);
+      app->fileManager.applySpecialPolygonAnimations(
+          app->polygonShapes, zellige->specialPolygonAnimations,
+          zellige->specialPolygonRotateAngles);
     }
 
     // START SEQUENTIAL MODE untuk template shapes!

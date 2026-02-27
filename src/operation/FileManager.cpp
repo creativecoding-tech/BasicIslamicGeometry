@@ -1297,7 +1297,8 @@ float FileManager::getPolygonSpeedMultiplier() const {
 
 //--------------------------------------------------------------
 void FileManager::applySpecialPolygonAnimations(
-    std::vector<PolygonShape> &polys, const std::vector<int> &specialAnims) {
+    std::vector<PolygonShape> &polys, const std::vector<int> &specialAnims,
+    const std::vector<float> &rotateAngles) {
   // Hanya proses sebanyak min(polys.size(), specialAnims.size())
   size_t count = std::min(polys.size(), specialAnims.size());
 
@@ -1307,8 +1308,14 @@ void FileManager::applySpecialPolygonAnimations(
     if (animMode == 0) { // 0 = No Animation
       polys[i].setSpecialAnimation(nullptr);
     } else if (animMode == 1) { // 1 = Rotate Left
-      // Base amplitudo: 90 derajat. Speed multiplier mengatur kecepatan osilasi.
-      auto rotateAnim = std::make_unique<RotateLeftAnimation>(90.0f);
+      // Ambil rotate angle dari vector (default 90° jika tidak ada)
+      float angle = 90.0f;
+      if (i < rotateAngles.size()) {
+        angle = rotateAngles[i];
+      }
+
+      // Base amplitudo: sesuai slider RT. Speed multiplier mengatur kecepatan osilasi.
+      auto rotateAnim = std::make_unique<RotateLeftAnimation>(angle);
       rotateAnim->setSpeedMultiplier(polygonSpeedMultiplier);
       polys[i].setSpecialAnimation(std::move(rotateAnim));
     }

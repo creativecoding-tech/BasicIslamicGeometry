@@ -1940,7 +1940,8 @@ void ofApp::reapplyPolygonAnimations() {
   if (zellige && !zellige->specialPolygonAnimations.empty()) {
     // Gunakan fungsi dari fileManager untuk menerapkan special animations
     fileManager.applySpecialPolygonAnimations(
-        polygonShapes, zellige->specialPolygonAnimations);
+        polygonShapes, zellige->specialPolygonAnimations,
+        zellige->specialPolygonRotateAngles);
   }
 }
 

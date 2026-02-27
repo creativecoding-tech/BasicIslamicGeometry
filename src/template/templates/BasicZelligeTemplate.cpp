@@ -764,12 +764,14 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
 
       ImGui::BeginChild("SpecialPolygonScrollRegion", ImVec2(0, 150), true);
 
-      if (ImGui::BeginTable("SpecialPolygonAnimationTable", 2,
+      if (ImGui::BeginTable("SpecialPolygonAnimationTable", 3,
                             ImGuiTableFlags_Borders)) {
         ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch,
-                                0.35f);
-        ImGui::TableSetupColumn("Controls",
-                                ImGuiTableColumnFlags_WidthStretch, 0.65f);
+                                0.30f);
+        ImGui::TableSetupColumn("Animation",
+                                ImGuiTableColumnFlags_WidthStretch, 0.35f);
+        ImGui::TableSetupColumn("Angle",
+                                ImGuiTableColumnFlags_WidthStretch, 0.35f);
 
         for (int i = 0; i < app->loadedFilePolygonCount; ++i) {
           // Skip polygons that are already tessellated
@@ -819,6 +821,24 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
           ImGui::RadioButton("Rotate Left", &specialPolygonAnimations[i], 1);
 
           ImGui::PopID();
+
+          // Column 2: Rotate Angle Slider (hanya jika Rotate Left dipilih) ⭐ NEW
+          ImGui::TableSetColumnIndex(2);
+          if (specialPolygonAnimations[i] == 1) { // Rotate Left
+            ImGui::PushID(i + 2000); // Unique ID untuk slider
+
+            // Initialize vector jika perlu
+            if (i >= static_cast<int>(specialPolygonRotateAngles.size())) {
+              specialPolygonRotateAngles.resize(i + 100, 45.0f); // Default 45°
+            }
+
+            // DragFloat RT: 35 - 360 derajat dengan step 1
+            ImGui::SetNextItemWidth(-1); // Full width of column
+            ImGui::DragFloat("RT", &specialPolygonRotateAngles[i], 1.0f, 35.0f,
+                             360.0f, "%.0f°");
+
+            ImGui::PopID();
+          }
         }
         ImGui::EndTable();
       }
