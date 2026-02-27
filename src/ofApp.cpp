@@ -524,6 +524,15 @@ void ofApp::updateStaggeredPolygons() {
     if (currentPolygonIndex < polygonShapes.size()) {
       allComplete = false;
       allPolygonsComplete = false;
+    } else {
+      // Semua appearance complete, tapi cek juga special animations
+      for (const auto &polygon : polygonShapes) {
+        if (!polygon.isSpecialAnimationComplete()) {
+          allComplete = false;
+          allPolygonsComplete = false;
+          break;
+        }
+      }
     }
   }
 
