@@ -816,7 +816,6 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
           }
 
           ImGui::RadioButton("No Animation", &specialPolygonAnimations[i], 0);
-          ImGui::SameLine();
           ImGui::RadioButton("Rotate Left", &specialPolygonAnimations[i], 1);
 
           ImGui::PopID();
