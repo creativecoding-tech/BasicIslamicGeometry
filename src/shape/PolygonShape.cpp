@@ -276,11 +276,9 @@ void PolygonShape::setSpeed(float speed) {
 //--------------------------------------------------------------
 void PolygonShape::setSpeedMultiplier(float multiplier) {
   if (animation) {
-    animation->setSpeedMultiplier(multiplier); // Delegate to animation
+    animation->setSpeedMultiplier(multiplier); // Delegate to appearance animation only
   }
-  if (specialAnimation) {
-    specialAnimation->setSpeedMultiplier(multiplier);
-  }
+  // Special animation punya speed multiplier sendiri, jangan di-override di sini
 }
 
 //--------------------------------------------------------------

@@ -861,6 +861,28 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
 
       ImGui::EndChild();
 
+      // Special Speed slider (alignment sama seperti Appearance Speed)
+      if (ImGui::BeginTable("SpecialSpeedTable", 2, ImGuiTableFlags_None)) {
+        ImGui::TableSetupColumn("Col1", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Col2", ImGuiTableColumnFlags_WidthStretch);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+
+        // Column 0: Label "Special Speed" di pojok kanan (right align)
+        float labelWidth = ImGui::CalcTextSize("Special Speed").x;
+        float col0Width = ImGui::GetContentRegionAvail().x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + col0Width - labelWidth);
+        ImGui::Text("Special Speed");
+
+        // Column 1: Slider di pojok kiri (left align, default)
+        ImGui::TableSetColumnIndex(1);
+        ImGui::SetNextItemWidth(80.0f);
+        ImGui::SliderFloat("##SpecialSpeed", &specialSpeedMultiplier, 0.1f, 3.0f, "%.2f");
+
+        ImGui::EndTable();
+      }
+
       ImGui::Separator();
     }
   }
@@ -928,6 +950,10 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         app->fileManager.setPolygonSpeedMultiplier(
             this->polygonSpeedMultiplier);
 
+        // ⭐ NEW: Set Special Polygon Animation Speed Multiplier
+        app->fileManager.setSpecialSpeedMultiplier(
+            this->specialSpeedMultiplier);
+
         // Set flag untuk delay load dan update state
         app->isWaitingForLoad = true;
         app->loadDelayAccumulator = 0.0f;
@@ -986,6 +1012,10 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
               // ⭐ NEW: Set Polygon Speed Multiplier
               app->fileManager.setPolygonSpeedMultiplier(
                   this->polygonSpeedMultiplier);
+
+              // ⭐ NEW: Set Special Polygon Animation Speed Multiplier
+              app->fileManager.setSpecialSpeedMultiplier(
+                  this->specialSpeedMultiplier);
 
               // Set flag untuk delay load dan update state
               app->isWaitingForLoad = true;

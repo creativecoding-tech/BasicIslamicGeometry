@@ -5,15 +5,12 @@
 // maxAngle: Amplitudo maksimum rotasi ke kiri (derajat). Default 90 derajat.
 RotateLeftAnimation::RotateLeftAnimation(float maxAngle)
     : AbstractAnimation(1.0f), currentAngle(0.0f), maxAngle(maxAngle),
-      time(0.0f), speedInitialized(false) {
+      time(0.0f) {
   // speed (multiplier) diatur melalui setSpeedMultiplier setelah pembuatan
 }
 
 void RotateLeftAnimation::setSpeedMultiplier(float multiplier) {
-  if (!speedInitialized) {
-    AbstractAnimation::setSpeedMultiplier(multiplier);
-    speedInitialized = true;
-  }
+  AbstractAnimation::setSpeedMultiplier(multiplier);
 }
 
 // Update rotasi: Osilasi ke kiri lalu kembali ke 0

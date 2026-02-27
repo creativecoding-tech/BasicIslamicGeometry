@@ -293,6 +293,9 @@ void FileOperationManager::loadWorkspace() {
     BasicZelligeTemplate *zellige =
         dynamic_cast<BasicZelligeTemplate *>(app->currentTemplate);
     if (zellige) {
+      // ⭐ NEW: Set Special Speed Multiplier from template ke FileManager
+      app->fileManager.setSpecialSpeedMultiplier(zellige->specialSpeedMultiplier);
+
       app->fileManager.applySpecialPolygonAnimations(
           app->polygonShapes, zellige->specialPolygonAnimations,
           zellige->specialPolygonRotateAngles);
@@ -394,6 +397,9 @@ void FileOperationManager::loadWorkspaceSeq() {
     BasicZelligeTemplate *zellige =
         dynamic_cast<BasicZelligeTemplate *>(app->currentTemplate);
     if (zellige) {
+      // ⭐ NEW: Set Special Speed Multiplier from template ke FileManager
+      app->fileManager.setSpecialSpeedMultiplier(zellige->specialSpeedMultiplier);
+
       app->fileManager.applySpecialPolygonAnimations(
           app->polygonShapes, zellige->specialPolygonAnimations,
           zellige->specialPolygonRotateAngles);

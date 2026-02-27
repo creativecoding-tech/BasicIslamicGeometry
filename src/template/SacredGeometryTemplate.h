@@ -124,6 +124,7 @@ public:
       1.0f; // ⭐ NEW: Specific for template dots/lines
   float customLineSpeedMultiplier = 1.0f; // ⭐ NEW: Specific for custom lines
   float polygonSpeedMultiplier = 1.0f;    // ⭐ NEW: Specific for polygons
+  float specialSpeedMultiplier = 1.0f;    // ⭐ NEW: Specific for special polygon animation
   void applySpeedMultiplier(); // Apply speed multiplier ke semua shapes
 
   // Template control methods - fully autonomous!

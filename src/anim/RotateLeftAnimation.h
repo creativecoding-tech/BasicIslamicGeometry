@@ -27,5 +27,4 @@ private:
   float currentAngle;    // Sudut saat ini dalam derajat
   float maxAngle;        // Amplitudo rotasi maksimum
   float time;            // Waktu simulasi untuk osilasi
-  bool speedInitialized; // Freeze status speed
 };

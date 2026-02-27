@@ -1533,192 +1533,41 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ---
 
-## 📝 Current Status: **sketch-islamic-gs-duplicatedot-track**
+---
+
+## 📝 Current Status: **sketch-islamic-gs-specialpolygonanimate-fix**
 
 Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, speed control global, transform canvas, draw only concept, object tooltips, userDot system (termasuk track mode), GLSL rendering, dan file operation manager.
 
-### Fitur yang Sedang Dikembangkan: **Duplicate Dot Track** ⭐ IN DEVELOPMENT
+### Fitur Terbaru: **UI Improvements & Special Speed Control** ⭐ NEW (2026-02-28)
 
-Fitur terbaru yang sedang dalam pengembangan aktif:
+Perubahan terbaru yang telah selesai:
 
-- **UserDot Track Mode** - Dots yang bisa bergerak沿着 customLine/DcustomLine path:
-  - Dibuat dari context menu customLine/DcustomLine (right-click)
-  - Link ke line via `trackLineIndex` (DotShape.h)
-  - Mouse scroll untuk movement sepanjang line (t: 0.0 - 1.0)
-  - Mendukung bezier curves (CustomLine::getPointAt, getClosestT, getApproxLength)
-  - **Boundary Margin System** - Dot tidak bisa mencapai ujung line (5% margin di setiap ujung) ⭐ FIXED
-  - Connected lines otomatis update points ketika dot bergerak
-  - Priority system: Track dots > Regular dots > DcustomLine movement
+- **UI Layout Improvements** - Playground UI lebih rapi dan konsisten:
+  - **Polygon Appearance** - Menggunakan table tanpa border (2 kolom untuk radio buttons, 1 baris untuk Appearance Speed slider)
+  - **Special Polygon Animation** - Menggunakan table dengan border (3 kolom: Name, Animation, Angle)
+  - **Appearance Speed** - Slider di bawah table Polygon Appearance (label right-align, slider left-align)
+  - **Special Speed** - Slider baru di bawah Special Polygon Animation (alignment sama seperti Appearance Speed)
+
+- **Special Speed Control** - Pemisahan speed control untuk appearance dan special animation:
+  - **Appearance Speed** - Mengontrol kecepatan appearance animation (FadeIn, Wobble, Wave Fill, Wobble Fill, Gradient)
+  - **Special Speed** - Mengontrol kecepatan special polygon animation (Rotate Left, Rotate Right) secara terpisah
+  - Sebelumnya special animation mengikuti Appearance Speed, sekarang punya kontrol independen
+
+- **Bug Fixes**:
+  - Fixed `speedInitialized` flag di RotateLeftAnimation yang menyebabkan `setSpeedMultiplier` hanya bisa dipanggil sekali
+  - Fixed speed override di `PolygonShape::setSpeedMultiplier` yang meng-override special animation speed setiap frame
+  - Variable shadowing `specialSpeedMultiplier` di BasicZelligeTemplate.h telah dihapus
 
 - **Modified Files**:
-  - `DuplicateManager.cpp/h` - `duplicateDotTrack()` method implementation
-  - `InputManager.cpp` - Scroll handling untuk track dots dengan boundary margin (line 412-414)
-  - `ofApp.cpp/h` - Integrasi fitur track mode
-  - `ContextMenu.cpp` - Menu untuk trigger duplicate dot track
-  - `CustomLine.cpp/h` - Helper methods untuk curved line support
-  - `DotShape.h` - Track mode properties (`trackLineIndex`, `hasTrackMode()`)
+  - `BasicZelligeTemplate.cpp/h` - UI layout improvements, table tanpa border untuk Appearance, table dengan border untuk Special Animation
+  - `SacredGeometryTemplate.h` - Menambahkan `specialSpeedMultiplier` variable
+  - `FileManager.cpp/h` - Setter/getter untuk `specialSpeedMultiplier`, `applySpecialPolygonAnimations` menggunakan `specialSpeedMultiplier`
+  - `FileOperationManager.cpp` - Set `specialSpeedMultiplier` dari template ke FileManager saat load
+  - `PolygonShape.cpp` - `setSpeedMultiplier` tidak meng-override special animation speed
+  - `RotateLeftAnimation.cpp/h` - Menghapus `speedInitialized` flag
 
-- **Implementation Details**:
-  ```cpp
-  // InputManager.cpp line 412-414 (FIXED)
-  float trackTMargin = 0.05f;  // 5% margin di setiap ujung
-  float newT = ofClamp(currentT + deltaT, trackTMargin, 1.0f - trackTMargin);
-  ```
-
-### ✨ Key Features (Latest Updates)
-
-✅ **Custom Line Animation System** - Wave animation untuk custom lines dengan timing control ⭐ NEW
-✅ **Line Animation Mode** - Pilihan animasi untuk custom lines: No Animation / Wave Animation ⭐ NEW
-✅ **Wave Animation Settings** - Amplitude, Frequency, Duration controls untuk wave effect ⭐ NEW
-✅ **Step Animation Line** - Timing control kapan wave animation berjalan terhadap polygons: ⭐ NEW
-  - **Before Polygon Draw** - Wave selesai sebelum polygons digambar
-  - **With Polygon Draw** - Wave berjalan bareng polygon animation
-  - **After Polygon Draw** - Wave berjalan setelah polygon selesai
-✅ **Duplicate Dot Track** - UserDot yang bergerak沿着 customLine/DcustomLine dengan scroll ⭐ IN DEVELOPMENT
-✅ **Track Mode Boundary Margin** - Dot tidak bisa mencapai ujung line (5% margin di setiap ujung) ⭐ FIXED
-✅ **Bezier Curve Support** - Track dots mengikuti garis melengkung (bukan hanya lurus) ⭐ NEW
-✅ **Connected Lines Update** - Lines yang terhubung ke track dot otomatis update ⭐ NEW
-✅ **FileOperationManager** - Wrapper class untuk semua file operations (save, open, load)
-✅ **Conditional CollapsingHeader** - Custom Line/Polygon hanya muncul jika file punya data
-✅ **Draw Custom Lines Checkbox** - Kontrol apakah customLines diload/digambar
-✅ **Skip CustomLines Load** - Parallel dan sequential load skip customLines jika unchecked
-✅ **GLSL Polygon Rendering** - Conditional rendering berdasarkan `loadedFromFile` flag
-✅ **Polygon Animation Bug Fixes** - Fixed update logic untuk complete animations
-✅ **Draw Order Bug Fix** - Fixed staggered load setup untuk proper draw order
-✅ **Draw Only Concept** - Hanya shapes yang dicentang yang dibuat (tidak ada show/hide)
-✅ **No More Showing Flag** - AbstractShape tidak punya `showing` flag
-✅ **Forward Only Animation** - Shapes selalu forward animation (0 → maxProgress)
-✅ **Delta Time Animation System** - Semua animasi menggunakan deltaTime untuk consistency
-✅ **Global Speed Control** - Slider speed 0.1x - 1.5x berlaku untuk SEMUA animations
-✅ **Transform Canvas System** - Pan X/Y, Rotate, Zoom controls dengan inverse transform
-✅ **Selection Info Panel** - Floating window untuk selected objects info
-✅ **Object Tooltip System** - Custom tooltips untuk selected objects (dots, lines, polygons)
-✅ **UserDot System** - Duplicate dots dengan radius dari slider User Custom
-✅ **Color Sync Improvements** - Better sync antara objects dan color pickers
-✅ **Draw Template UI** - Parallel/Sequential draw di SacredGeometry panel
-✅ **Clean & Draw Workflow** - Clean canvas dulu, baru draw dengan Draw button (Playground)
-✅ **Auto Speed Sync** - Saat load file, speed mengikuti slider setting
-✅ **UserCustom Panel** - Window untuk kontrol user (Dot, Line, Polygon)
-✅ **Duplicate Line R 180°** - Duplicate selected lines dengan rotate 180° di global center
-✅ **DcustomLine System** - Duplicate lines dengan isDuplicate flag dan axis lock system
-✅ **Axis Lock System** - Control pergerakan DcustomLine (NONE, LOCK_X, LOCK_Y, LOCK_BOTH)
-✅ **Context Menu System** - Per-line dan bulk operation untuk DcustomLine lock/unlock
-✅ **Scroll Control** - Mouse scroll untuk menggerakkan DcustomLine sesuai axis lock
-✅ **WobbleAnimation Fix** - Fixed polygons not wobbling dengan shader wobble.vert/frag
-
-### 🧹 Clean Canvas Reset System ⭐ NEW
-- **Complete Reset on Clean Canvas** - Saat Clean Canvas dipanggil (SacredGeometry / Edit menu):
-  - **Color Pickers Reset** - L, P, D color pickers kembali ke warna biru default (0, 0, 255)
-  - **Dot Visibility Reset** - Checkbox Dot di UserCustom menjadi checked (showUserDot = true)
-  - **Radius Slider Reset** - Slider radius kembali ke default value (8.0f)
-- **Consistent Default State** - Memastikan setiap kali canvas dibersihkan, settings kembali ke default
-- **Better UX** - User tidak perlu manual reset settings setelah clean canvas
-
-### 🐛 Bug Fixes (Latest Updates)
-
-✅ **WobbleAnimation Bug** - Fixed polygons not wobbling/oscillating ⭐ NEW:
-  - Problem: `PolygonShape::drawGLSL()` tidak ada rendering logic untuk WobbleAnimation
-  - Result: Polygon tetap statis, tidak bergoyang meski Wobble dipilih
-  - Fix: Tambahkan WobbleAnimation handling dengan shader wobble.vert/frag untuk vertex displacement
-
-✅ **Wave Fill Animation Bug** - Fixed jagged edges after animation completes ⭐ NEW:
-  - Problem: FillAnimation tidak dihapus setelah complete, shader wave tetap dipanggil
-  - Result: Pinggiran polygon menjadi bergerigi (jagged edges) setelah wave fill selesai
-  - Fix: Tambahkan logic untuk hapus FillAnimation dan switch ke No Animation setelah complete (sama seperti WobbleFillAnimation/GradientAnimation)
-
-✅ **Polygon Animation Bug** - Fixed polygons stopping mid-animation ⭐ NEW:
-  - Problem: `updatePolygons()` hanya update saat `isLoadParallelMode() == true`
-  - Result: Setelah sequential load complete, animations stop prematur
-  - Fix: Selalu update polygons yang belum complete, regardless of mode
-
-✅ **Draw Order Bug** - Fixed polygons appearing before template shapes ⭐ NEW:
-  - Problem: Sequential Per Group mode showed polygons first
-  - Result: Wrong visual order (should be: template → customLines → polygons)
-  - Fix: Added staggered load setup to `loadWorkspace()` (missing initialization)
-
-✅ **FadeIn Animation Bug** - Fixed last polygon not colored correctly ⭐ NEW:
-  - Problem: Update logic stopping before animation complete
-  - Result: Last polygon tidak terwarnai dengan benar
-  - Fix: Check `isAnimationComplete()` before updating
-
-✅ **After Polygon Draw Animation Timing** - Fixed wave animation starting too early ⭐ NEW:
-  - Problem: Wave animation berjalan bareng saat polygons sedang loading.
-  - Fix: Modifikasi `updateStaggeredCustomLines` untuk mematikan wave anim secara eksplisit selama tahap loading polygons.
-
-✅ **C2511 Build Error** - Fixed signature mismatch in BasicZelligeTemplate.cpp. ⭐ NEW
-
-✅ **Canvas FBO Removal** - Removed Frame Buffer Object (FBO) untuk trails system ⭐ NEW:
-  - Problem: FBO menimbulkan overhead dan complexity untuk trails effect
-  - Result: Direct rendering dengan semi-transparent background setiap frame
-  - Fix: Hapus FBO, gunakan direct rendering dengan alpha blending untuk trails
-  - Benefit: Lebih simple, lebih cepat, tidak ada FBO overhead
-
-✅ **Batch Tessellated Polygons Not Rendering** - Fixed tessellated polygons tidak muncul di layar ⭐ NEW:
-  - Problem: Batch mesh selalu 0 vertices walaupun tessellation files ada
-  - Result: Tessellated polygons (4,500+) tidak terlihat di canvas
-  - Fix: Baca tessellation info dari `PolygonShape::getSourceTessellationFile()` bukan dari zellige vector
-  - Benefit: Tessellation berhasil load dan muncul dengan benar
-
-✅ **Tessellation Children Not Detected** - Fixed logic skip tessellation padahal children belum ada ⭐ NEW:
-  - Problem: `uiMatchesLoadedState` berasumsi children sudah ada walau belum
-  - Result: Tessellation skip, tidak ada children yang dibuat
-  - Fix: Tambahkan centroid-based point-in-polygon check untuk verify children existence
-  - Benefit: Tessellation berjalan dengan benar saat file pertama kali dibuka
-
-✅ **Batch Tessellated Mesh Drawing Order** - Fixed batch mesh tidak terlihat ⭐ NEW:
-  - Problem: `drawBatchedTessellatedPolygons()` dipanggil sebelum `drawCustomLinesAndUI()`
-  - Result: Tessellated polygons tertutup/ditimpa oleh customLines
-  - Fix: Pindahkan `drawBatchedTessellatedPolygons()` ke setelah `drawCustomLinesAndUI()`
-  - Benefit: Tessellated polygons terlihat dengan layer yang benar
-
-✅ **ImGui Window Trails Leftover** - Fixed jejak ImGui window tertinggal saat Draw ⭐ NEW:
-  - Problem: Saat Draw/Clean Canvas, jejak ImGui window (Playground, dll) masih terlihat
-  - Result: Trails effect menunjukkan bekas ImGui window selama animasi berjalan
-  - Fix: Force clear screen system dengan 40 frame delay (20 frame clear + 20 frame no trails)
-  - Pause animation selama force clear untuk prevent trails contamination
-  - Support gradient background selama force clear
-  - Benefit: Layar benar-benar bersih saat Draw, tidak ada jejak ImGui window
-
-✅ **Tessellation File Change Not Applied** - Fixed ganti tessellation file di UI tidak update children ⭐ NEW:
-  - Problem: Saat browse ganti tessellation file, `polygonShapes[i]` masih pakai info lama
-  - Result: Tessellation masih pakai file lama, bukan file baru yang di-browse
-  - Fix: Baca tessellation info dari TEMPLATE UI state (`zellige->tessellationFiles[i]`) bukan dari polygonShapes
-  - Cleanup old children saat settings berubah (file/radius mismatch)
-  - Clear source tessellation info saat tombol X diklik
-  - Benefit: Tessellation update sesuai dengan UI settings real-time
-
-✅ **Tessellated Children Not Deleted on Clean** - Fixed clean canvas tidak hapus tessellated children ⭐ NEW:
-  - Problem: Saat clean canvas, tessellated children polygons TIDAK dihapus
-  - Result: Batch tessellated mesh masih ada, muncul lagi setelah Draw
-  - Fix: Di `deleteAllPolygons()`, reset source tessellation info dari semua polygons SEBELUM clear
-  - Clear batch tessellated mesh saat deleteAllPolygons
-  - Benefit: Clean canvas benar-benar bersih, tidak ada sisa tessellation
-
-✅ **Tessellated Polygons Scaling** - Fixed tessellated polygons tidak ikut berubah saat radius slider digeser ⭐ NEW:
-  - Problem: Saat radius diubah di SacredGeometry slider, tessellated children TIDAK ikut berubah ukuran
-  - Result: Tessellation tetap ukuran lama, tidak proporsional dengan parent polygon
-  - Fix: Saat scaling, hapus tessellated children dan update source tessellation radius ke newRadius
-  - Trigger `processPolygonTessellation()` untuk tessellate ulang dengan radius baru
-  - Benefit: Tessellated polygons update ukuran secara realtime sesuai radius slider
-
-✅ **Smart Delete Behavior - Tessellation Protection** - Fixed tessellated polygons ikut terhapus saat "Delete Lines & Polygons" ⭐ NEW:
-  - Problem: Saat user klik "Delete Lines & Polygons" (CTRL+DEL), tessellated polygons juga ikut terhapus
-  - Result: Tessellation hilang dan harus di-generate ulang
-  - Fix: Parameter `bool includeTessellated` di `deleteAllPolygons()`:
-    - Default `false` untuk "Delete Lines & Polygons" (skip tessellated)
-    - `true` untuk "Clean Canvas" (hapus semua termasuk tessellated)
-  - Behavior berbeda per menu Edit:
-    - **"Delete All Polygons"** → Hanya NON-tessellated polygons (user-created)
-    - **"Delete Lines & Polygons" (CTRL+DEL)** → Hanya customLines + NON-tessellated polygons, tessellated DIPERTAHANKAN
-    - **"Clean Canvas"** → Hapus SEMUA (customLines + polygons + tessellated + userDots + template)
-  - Benefit: User bisa delete user-created polygons tanpa kehilangan tessellation yang sudah di-generate
-
-✅ **First Draw Delay Canvas Empty** - Fixed Draw pertama tidak force clear screen ⭐ NEW:
-  - Problem: Saat canvas kosong dan Draw diklik pertama kali, tidak ada force clear screen
-  - Result: Jejak ImGui window masih terlihat di Draw pertama
-  - Fix: Tetap set `forceClearScreenCounter` walau canvas kosong (tanpa clean canvas)
-  - Benefit: Draw pertama langsung bersih, tidak perlu Draw ke-2/ke-3 untuk hilangkan trails
-
+---
 
 ## 🤝 Contributing
 

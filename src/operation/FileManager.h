@@ -101,6 +101,10 @@ public:
   void setPolygonSpeedMultiplier(float multiplier);
   float getPolygonSpeedMultiplier() const;
 
+  // Special Polygon Animation Speed Multiplier (Controls Special Animation Speed)
+  void setSpecialSpeedMultiplier(float multiplier);
+  float getSpecialSpeedMultiplier() const;
+
   // CustomLines load control untuk sequential load
   void setShouldLoadCustomLines(bool shouldLoad);
   bool getShouldLoadCustomLines() const;
@@ -155,6 +159,9 @@ private:
 
   // Polygon speed multiplier (controls animation speed & load interval)
   float polygonSpeedMultiplier = 1.0f;
+
+  // Special polygon animation speed multiplier (controls special animation speed)
+  float specialSpeedMultiplier = 1.0f;
 
   // Should load customLines flag (untuk Draw Custom Lines checkbox)
   bool shouldLoadCustomLines = true;
