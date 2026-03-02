@@ -298,7 +298,8 @@ void FileOperationManager::loadWorkspace() {
 
       app->fileManager.applySpecialPolygonAnimations(
           app->polygonShapes, zellige->specialPolygonAnimations,
-          zellige->specialPolygonRotateAngles);
+          zellige->specialPolygonRotateAngles,
+          zellige->specialPolygonPauseDurations); // ⭐ NEW: Pass pause durations
     }
 
     app->loadStage = ofApp::LOAD_TEMPLATE;
@@ -402,7 +403,8 @@ void FileOperationManager::loadWorkspaceSeq() {
 
       app->fileManager.applySpecialPolygonAnimations(
           app->polygonShapes, zellige->specialPolygonAnimations,
-          zellige->specialPolygonRotateAngles);
+          zellige->specialPolygonRotateAngles,
+          zellige->specialPolygonPauseDurations); // ⭐ NEW: Pass pause durations
     }
 
     // START SEQUENTIAL MODE untuk template shapes!
@@ -535,6 +537,7 @@ bool FileOperationManager::peekFilePolygonCount(const std::string &filepath,
         // ⭐ NEW: Initialize specialPolygonAnimations untuk SEMUA polygons
         // (termasuk tessellated, tapi nanti akan di-skip di applySpecialPolygonAnimations)
         zellige->specialPolygonAnimations.push_back(0); // 0 = No Animation (default)
+        zellige->specialPolygonPauseDurations.push_back(0.0f); // ⭐ NEW: Default 0.0 (no pause)
       }
     }
   }

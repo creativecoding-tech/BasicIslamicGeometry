@@ -1941,7 +1941,8 @@ void ofApp::reapplyPolygonAnimations() {
     // Gunakan fungsi dari fileManager untuk menerapkan special animations
     fileManager.applySpecialPolygonAnimations(
         polygonShapes, zellige->specialPolygonAnimations,
-        zellige->specialPolygonRotateAngles);
+        zellige->specialPolygonRotateAngles,
+        zellige->specialPolygonPauseDurations); // ⭐ NEW: Pass pause durations
   }
 }
 

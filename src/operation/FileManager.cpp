@@ -1311,7 +1311,8 @@ float FileManager::getSpecialSpeedMultiplier() const {
 //--------------------------------------------------------------
 void FileManager::applySpecialPolygonAnimations(
     std::vector<PolygonShape> &polys, const std::vector<int> &specialAnims,
-    const std::vector<float> &rotateAngles) {
+    const std::vector<float> &rotateAngles,
+    const std::vector<float> &pauseDurations) { // ⭐ NEW: Pause durations parameter
   // Hanya proses sebanyak min(polys.size(), specialAnims.size())
   size_t count = std::min(polys.size(), specialAnims.size());
 
@@ -1349,10 +1350,17 @@ void FileManager::applySpecialPolygonAnimations(
         angle = rotateAngles[i];
       }
 
+      // ⭐ NEW: Ambil pause duration dari vector (default 0.0 jika tidak ada)
+      float pauseDur = 0.0f;
+      if (i < pauseDurations.size()) {
+        pauseDur = pauseDurations[i];
+      }
+
       // Base amplitudo: sesuai slider RT. Speed multiplier mengatur kecepatan osilasi.
       // Spin: Polygon berputar pada porosnya sendiri (centroid)
       auto spinAnim = std::make_unique<SpinLeftAnimation>(angle);
       spinAnim->setSpeedMultiplier(specialSpeedMultiplier);
+      spinAnim->setPauseDuration(pauseDur); // ⭐ NEW: Set pause duration
       polys[i].setSpecialAnimation(std::move(spinAnim));
     } else if (animMode == 4) { // 4 = Spin Right ⭐ NEW
       // Ambil spin angle dari vector (default 90° jika tidak ada)
@@ -1361,10 +1369,17 @@ void FileManager::applySpecialPolygonAnimations(
         angle = rotateAngles[i];
       }
 
+      // ⭐ NEW: Ambil pause duration dari vector (default 0.0 jika tidak ada)
+      float pauseDur = 0.0f;
+      if (i < pauseDurations.size()) {
+        pauseDur = pauseDurations[i];
+      }
+
       // Base amplitudo: sesuai slider RT. Speed multiplier mengatur kecepatan osilasi.
       // Spin: Polygon berputar pada porosnya sendiri (centroid)
       auto spinAnim = std::make_unique<SpinRightAnimation>(angle);
       spinAnim->setSpeedMultiplier(specialSpeedMultiplier);
+      spinAnim->setPauseDuration(pauseDur); // ⭐ NEW: Set pause duration
       polys[i].setSpecialAnimation(std::move(spinAnim));
     }
   }

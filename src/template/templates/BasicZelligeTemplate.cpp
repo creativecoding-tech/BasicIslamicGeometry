@@ -857,6 +857,22 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
 
             ImGui::PopID();
           }
+
+          // ⭐ NEW: Pause Duration Slider (hanya untuk Spin Left/Right)
+          if (specialPolygonAnimations[i] == 3 || specialPolygonAnimations[i] == 4) { // Spin Left or Spin Right
+            ImGui::PushID(i + 3000); // Unique ID untuk pause slider
+
+            // Initialize vector jika perlu
+            if (i >= static_cast<int>(specialPolygonPauseDurations.size())) {
+              specialPolygonPauseDurations.resize(i + 100, 0.0f); // Default 0.0 (no pause)
+            }
+
+            // Pause Duration: 0.0 - 1.0 detik dengan slider
+            ImGui::SetNextItemWidth(-1); // Full width of column
+            ImGui::SliderFloat("Pause", &specialPolygonPauseDurations[i], 0.0f, 1.0f, "%.2f s");
+
+            ImGui::PopID();
+          }
         }
         ImGui::EndTable();
       }

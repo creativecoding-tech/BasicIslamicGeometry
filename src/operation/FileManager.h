@@ -116,7 +116,8 @@ public:
   // Apply special polygon animations (No Animation / Orbit Left/Right / Spin Left/Right) ⭐ NEW
   void applySpecialPolygonAnimations(std::vector<PolygonShape> &polys,
                                      const std::vector<int> &specialAnims,
-                                     const std::vector<float> &rotateAngles);
+                                     const std::vector<float> &rotateAngles,
+                                     const std::vector<float> &pauseDurations); // ⭐ NEW: Pause durations for Spin animations
 
 private:
   // Helper methods untuk .na format

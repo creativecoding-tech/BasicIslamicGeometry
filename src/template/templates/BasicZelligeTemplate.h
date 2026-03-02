@@ -28,6 +28,7 @@ public:
   std::vector<float> tessellationRadii;
   std::vector<int> specialPolygonAnimations; // 0=No Animation, 1=Orbit Left ⭐ NEW
   std::vector<float> specialPolygonRotateAngles; // Rotate angle in degrees (90-360) ⭐ NEW
+  std::vector<float> specialPolygonPauseDurations; // ⭐ NEW: Pause duration for Spin animations (0.1-1.0 seconds)
 
   // Setup shapes ke internal vector (inherited from SacredGeometryTemplate)
   void setupShapes() override;
@@ -71,6 +72,8 @@ public:
     tessellationFiles.clear();       // Clear custom tessellation files on file close
     tessellationRadii.clear();       // Clear radii settings on file close
     specialPolygonAnimations.clear(); // Clear special polygon animations on file close ⭐ NEW
+    specialPolygonRotateAngles.clear(); // ⭐ NEW: Clear rotate angles on file close
+    specialPolygonPauseDurations.clear(); // ⭐ NEW: Clear pause durations on file close
   }
 
   // Enable playback settings (dipanggil saat file dibuka)
