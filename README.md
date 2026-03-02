@@ -286,22 +286,61 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
     - Parameters: speed, frequency, duration
     - getFrequency() - Spatial frequency gradient pattern
     - getDuration() - Durasi animation (detik)
-  - **RotateLeftAnimation** - Animasi rotasi berlawanan arah jarum jam ⭐ NEW
-    - Polygon berputar ke kiri (counter-clockwise) dengan osilasi halus
-    - Half-cosine wave motion untuk osilasi mulus: 0° → -90° → 0°
-    - Amplitudo rotasi: 90 derajat (default, dapat diubah)
-    - Finite animation: berhenti setelah 1 siklus penuh (2 detik)
-    - getAngle() - Sudut rotasi saat ini dalam derajat
+  - **OrbitLeftAnimation** - Animasi orbit berlawanan arah jarum jam ⭐ NEW
+    - Polygon mengorbit/mengelilingi titik (0,0) / Circle A (counter-clockwise)
+    - Half-cosine wave motion untuk osilasi mulus: 0° → -maxAngle → 0°
+    - Amplitudo orbit: 90 derajat (default, dapat diubah via UI slider: 35° - 360°)
+    - Finite animation: berhenti setelah 1 siklus penuh (±2 detik)
+    - getAngle() - Sudut orbit saat ini dalam derajat
+  - **OrbitRightAnimation** - Animasi orbit searah jarum jam ⭐ NEW
+    - Polygon mengorbit/mengelilingi titik (0,0) / Circle A (clockwise)
+    - Half-cosine wave motion untuk osilasi mulus: 0° → +maxAngle → 0°
+    - Amplitudo orbit: 90 derajat (default, dapat diubah via UI slider: 35° - 360°)
+    - Finite animation: berhenti setelah 1 siklus penuh (±2 detik)
+    - getAngle() - Sudut orbit saat ini dalam derajat
+  - **SpinLeftAnimation** - Animasi spin berlawanan arah jarum jam ⭐ NEW
+    - Polygon berputar pada porosnya sendiri/centroid (counter-clockwise)
+    - Half-cosine wave motion untuk osilasi mulus: 0° → -maxAngle → 0°
+    - Amplitudo spin: 90 derajat (default, dapat diubah via UI slider: 35° - 360°)
+    - Finite animation: berhenti setelah 1 siklus penuh (±2 detik)
+    - getAngle() - Sudut spin saat ini dalam derajat
+  - **SpinRightAnimation** - Animasi spin searah jarum jam ⭐ NEW
+    - Polygon berputar pada porosnya sendiri/centroid (clockwise)
+    - Half-cosine wave motion untuk osilasi mulus: 0° → +maxAngle → 0°
+    - Amplitudo spin: 90 derajat (default, dapat diubah via UI slider: 35° - 360°)
+    - Finite animation: berhenti setelah 1 siklus penuh (±2 detik)
+    - getAngle() - Sudut spin saat ini dalam derajat
   - **Configurable Speed** - Animation speed dapat di-adjust via speed slider
   - **Special Polygon Animation** - System untuk dual-animation pada polygon ⭐ NEW
     - Polygon dapat memiliki 2 animations sekaligus:
       - **Appearance Animation** - FadeIn, Wobble, Fill, Gradient, atau None
-      - **Special Animation** - Rotate Left (berlapis di atas appearance animation)
+      - **Special Animation** - Orbit Left/Right atau Spin Left/Right (berlapis di atas appearance animation)
     - Independent control - Masing-masing animation berjalan independently
     - Special animation di-update HANYA setelah appearance animation complete
-    - UI Control - Radio buttons di Playground window untuk set special animation per polygon
+    - UI Control - Radio buttons di SacredGeometry window untuk set special animation per polygon
+    - Angle Control - DragFloat slider RT (35° - 360°) untuk mengatur amplitudo orbit/spin
     - Default: Semua polygons default "No Animation" untuk special animation
+  - **Perbedaan Orbit vs Spin**:
+    - **Orbit** = Polygon mengelilingi titik (0,0) / Circle A (seperti Bumi mengelilingi Matahari)
+    - **Spin** = Polygon berputar pada porosnya sendiri/centroid (seperti Bumi berotasi pada sumbunya)
   - **Configurable Speed** - Animation speed dapat di-adjust via speed slider
+
+### Special Polygon Animation System ⭐ LATEST
+- **5 Mode Special Animation** - Setiap polygon dapat memiliki special animation independen:
+  - **No Animation (0)** - Polygon statis setelah appearance animation selesai
+  - **Orbit Left (1)** - Polygon mengelilingi (0,0) counter-clockwise (0° → -maxAngle → 0°)
+  - **Orbit Right (2)** - Polygon mengelilingi (0,0) clockwise (0° → +maxAngle → 0°)
+  - **Spin Left (3)** - Polygon berputar pada porosnya sendiri counter-clockwise (0° → -maxAngle → 0°)
+  - **Spin Right (4)** - Polygon berputar pada porosnya sendiri clockwise (0° → +maxAngle → 0°)
+- **Angle Control** - DragFloat slider RT untuk mengatur amplitudo orbit/spin (35° - 360°)
+- **Independent Speed Control** - Special Speed slider mengontrol kecepatan orbit/spin secara terpisah dari appearance speed
+- **UI Table Layout** - 3 kolom: Polygon Name, Animation Type (radio buttons), Angle Slider
+- **Per-Polygon Configuration** - Setiap polygon dapat dikonfigurasi secara individual
+- **Animation Timing** - Special animation berjalan HANYA setelah appearance animation complete
+- **Dual Animation Stack** - Appearance animation + Special animation dapat berjalan simultaneously (setelah appearance complete)
+- **Finite Duration** - Semua orbit/spin animations berhenti setelah 1 siklus penuh (±2 detik)
+- **Orbit Implementation** - Menggunakan `ofRotateDeg()` untuk global rotation mengelilingi (0,0)
+- **Spin Implementation** - Menggunakan transform matrix: Translate → Rotate → Translate back ke centroid
 
 ### Scaling System ⭐ NEW
 - **Floating Point Drift Prevention** - System untuk mencegah presisi hilang saat radius slider diubah berulang kali
@@ -1551,13 +1590,14 @@ Perubahan terbaru yang telah selesai:
 
 - **Special Speed Control** - Pemisahan speed control untuk appearance dan special animation:
   - **Appearance Speed** - Mengontrol kecepatan appearance animation (FadeIn, Wobble, Wave Fill, Wobble Fill, Gradient)
-  - **Special Speed** - Mengontrol kecepatan special polygon animation (Rotate Left, Rotate Right) secara terpisah
+  - **Special Speed** - Mengontrol kecepatan special polygon animation (Orbit Left/Right, Spin Left/Right) secara terpisah
   - Sebelumnya special animation mengikuti Appearance Speed, sekarang punya kontrol independen
 
 - **Bug Fixes**:
   - Fixed `speedInitialized` flag di RotateLeftAnimation yang menyebabkan `setSpeedMultiplier` hanya bisa dipanggil sekali
   - Fixed speed override di `PolygonShape::setSpeedMultiplier` yang meng-override special animation speed setiap frame
   - Variable shadowing `specialSpeedMultiplier` di BasicZelligeTemplate.h telah dihapus
+  - Rename: Rotate Left/Right → Orbit Left/Right (untuk clarity dan membedakan dengan Spin)
 
 - **Modified Files**:
   - `BasicZelligeTemplate.cpp/h` - UI layout improvements, table tanpa border untuk Appearance, table dengan border untuk Special Animation
@@ -1565,7 +1605,10 @@ Perubahan terbaru yang telah selesai:
   - `FileManager.cpp/h` - Setter/getter untuk `specialSpeedMultiplier`, `applySpecialPolygonAnimations` menggunakan `specialSpeedMultiplier`
   - `FileOperationManager.cpp` - Set `specialSpeedMultiplier` dari template ke FileManager saat load
   - `PolygonShape.cpp` - `setSpeedMultiplier` tidak meng-override special animation speed
-  - `RotateLeftAnimation.cpp/h` - Menghapus `speedInitialized` flag
+  - `OrbitLeftAnimation.cpp/h` - Menghapus `speedInitialized` flag (sebelumnya RotateLeftAnimation)
+  - `OrbitRightAnimation.cpp/h` - Sebelumnya RotateRightAnimation
+  - `SpinLeftAnimation.cpp/h` - NEW: Spin pada porosnya sendiri (counter-clockwise)
+  - `SpinRightAnimation.cpp/h` - NEW: Spin pada porosnya sendiri (clockwise)
 
 ---
 
