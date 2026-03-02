@@ -858,8 +858,8 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
             ImGui::PopID();
           }
 
-          // ⭐ NEW: Pause Duration Slider (hanya untuk Spin Left/Right)
-          if (specialPolygonAnimations[i] == 3 || specialPolygonAnimations[i] == 4) { // Spin Left or Spin Right
+          // ⭐ NEW: Pause Duration Slider (untuk Orbit Left/Right & Spin Left/Right)
+          if (specialPolygonAnimations[i] == 1 || specialPolygonAnimations[i] == 2 || specialPolygonAnimations[i] == 3 || specialPolygonAnimations[i] == 4) { // Orbit Left/Right or Spin Left/Right
             ImGui::PushID(i + 3000); // Unique ID untuk pause slider
 
             // Initialize vector jika perlu

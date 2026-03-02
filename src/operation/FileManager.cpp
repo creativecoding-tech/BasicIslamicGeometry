@@ -1328,9 +1328,16 @@ void FileManager::applySpecialPolygonAnimations(
         angle = rotateAngles[i];
       }
 
+      // ⭐ NEW: Ambil pause duration dari vector (default 0.0 jika tidak ada)
+      float pauseDur = 0.0f;
+      if (i < pauseDurations.size()) {
+        pauseDur = pauseDurations[i];
+      }
+
       // Base amplitudo: sesuai slider RT. Speed multiplier mengatur kecepatan osilasi.
       auto rotateAnim = std::make_unique<RotateLeftAnimation>(angle);
       rotateAnim->setSpeedMultiplier(specialSpeedMultiplier);
+      rotateAnim->setPauseDuration(pauseDur); // ⭐ NEW: Set pause duration
       polys[i].setSpecialAnimation(std::move(rotateAnim));
     } else if (animMode == 2) { // 2 = Orbit Right ⭐ NEW
       // Ambil rotate angle dari vector (default 90° jika tidak ada)
@@ -1339,9 +1346,16 @@ void FileManager::applySpecialPolygonAnimations(
         angle = rotateAngles[i];
       }
 
+      // ⭐ NEW: Ambil pause duration dari vector (default 0.0 jika tidak ada)
+      float pauseDur = 0.0f;
+      if (i < pauseDurations.size()) {
+        pauseDur = pauseDurations[i];
+      }
+
       // Base amplitudo: sesuai slider RT. Speed multiplier mengatur kecepatan osilasi.
       auto rotateAnim = std::make_unique<RotateRightAnimation>(angle);
       rotateAnim->setSpeedMultiplier(specialSpeedMultiplier);
+      rotateAnim->setPauseDuration(pauseDur); // ⭐ NEW: Set pause duration
       polys[i].setSpecialAnimation(std::move(rotateAnim));
     } else if (animMode == 3) { // 3 = Spin Left ⭐ NEW
       // Ambil spin angle dari vector (default 90° jika tidak ada)

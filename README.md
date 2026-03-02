@@ -333,8 +333,13 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - **Spin Left (3)** - Polygon berputar pada porosnya sendiri counter-clockwise (0° → -maxAngle → 0°)
   - **Spin Right (4)** - Polygon berputar pada porosnya sendiri clockwise (0° → +maxAngle → 0°)
 - **Angle Control** - DragFloat slider RT untuk mengatur amplitudo orbit/spin (35° - 360°)
+- **Pause Duration Control** ⭐ NEW - Slider Pause (0.0 - 1.0 detik) untuk Orbit Left/Right dan Spin Left/Right:
+  - Polygon akan pause di posisi maxAngle selama durasi yang ditentukan
+  - Setelah pause selesai, polygon kembali ke posisi awal (0°)
+  - Default: 0.0 detik (tidak ada pause)
+  - Hanya muncul ketika Orbit atau Spin animation dipilih
 - **Independent Speed Control** - Special Speed slider mengontrol kecepatan orbit/spin secara terpisah dari appearance speed
-- **UI Table Layout** - 3 kolom: Polygon Name, Animation Type (radio buttons), Angle Slider
+- **UI Table Layout** - 3 kolom: Polygon Name, Animation Type (radio buttons), Angle Slider + Pause Slider
 - **Per-Polygon Configuration** - Setiap polygon dapat dikonfigurasi secara individual
 - **Animation Timing** - Special animation berjalan HANYA setelah appearance animation complete
 - **Dual Animation Stack** - Appearance animation + Special animation dapat berjalan simultaneously (setelah appearance complete)
@@ -1578,37 +1583,41 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, speed control global, transform canvas, draw only concept, object tooltips, userDot system (termasuk track mode), GLSL rendering, dan file operation manager.
 
-### Fitur Terbaru: **UI Improvements & Special Speed Control** ⭐ NEW (2026-02-28)
+### Fitur Terbaru: **Pause Duration for Special Animation** ⭐ NEW (2026-03-02)
 
 Perubahan terbaru yang telah selesai:
 
-- **UI Layout Improvements** - Playground UI lebih rapi dan konsisten:
-  - **Polygon Appearance** - Menggunakan table tanpa border (2 kolom untuk radio buttons, 1 baris untuk Appearance Speed slider)
-  - **Special Polygon Animation** - Menggunakan table dengan border (3 kolom: Name, Animation, Angle)
-  - **Appearance Speed** - Slider di bawah table Polygon Appearance (label right-align, slider left-align)
-  - **Special Speed** - Slider baru di bawah Special Polygon Animation (alignment sama seperti Appearance Speed)
+- **Pause Duration Control** - Slider Pause (0.0 - 1.0 detik) untuk semua Special Animation:
+  - **Orbit Left/Right** - Polygon pause di posisi maxAngle, lalu kembali ke posisi awal
+  - **Spin Left/Right** - Polygon pause di posisi maxAngle, lalu kembali ke posisi awal
+  - Slider hanya muncul ketika Orbit atau Spin animation dipilih
+  - Default: 0.0 detik (tidak ada pause)
+  - Pause berlaku setelah polygon mencapai posisi maxAngle dalam animasi
 
-- **Special Speed Control** - Pemisahan speed control untuk appearance dan special animation:
-  - **Appearance Speed** - Mengontrol kecepatan appearance animation (FadeIn, Wobble, Wave Fill, Wobble Fill, Gradient)
-  - **Special Speed** - Mengontrol kecepatan special polygon animation (Orbit Left/Right, Spin Left/Right) secara terpisah
-  - Sebelumnya special animation mengikuti Appearance Speed, sekarang punya kontrol independen
+- **Phase-Based Animation System** - Implementasi phase-based animation untuk pause:
+  - **FORWARD phase** - Polygon bergerak dari 0° ke ±maxAngle
+  - **PAUSED phase** - Polygon pause di posisi maxAngle sesuai durasi yang ditentukan
+  - **BACKWARD phase** - Polygon kembali dari ±maxAngle ke 0°
+  - Animation menggunakan half-cosine wave untuk osilasi halus
 
-- **Bug Fixes**:
-  - Fixed `speedInitialized` flag di RotateLeftAnimation yang menyebabkan `setSpeedMultiplier` hanya bisa dipanggil sekali
-  - Fixed speed override di `PolygonShape::setSpeedMultiplier` yang meng-override special animation speed setiap frame
-  - Variable shadowing `specialSpeedMultiplier` di BasicZelligeTemplate.h telah dihapus
-  - Rename: Rotate Left/Right → Orbit Left/Right (untuk clarity dan membedakan dengan Spin)
+- **Per-Polygon Pause Configuration** - Setiap polygon dapat memiliki durasi pause yang berbeda:
+  - Pause duration disimpan di `specialPolygonPauseDurations` vector
+  - Vector di-clear saat file close
+  - Pause duration diterapkan saat tombol Draw diklik (tidak real-time)
 
 - **Modified Files**:
-  - `BasicZelligeTemplate.cpp/h` - UI layout improvements, table tanpa border untuk Appearance, table dengan border untuk Special Animation
-  - `SacredGeometryTemplate.h` - Menambahkan `specialSpeedMultiplier` variable
-  - `FileManager.cpp/h` - Setter/getter untuk `specialSpeedMultiplier`, `applySpecialPolygonAnimations` menggunakan `specialSpeedMultiplier`
-  - `FileOperationManager.cpp` - Set `specialSpeedMultiplier` dari template ke FileManager saat load
-  - `PolygonShape.cpp` - `setSpeedMultiplier` tidak meng-override special animation speed
-  - `OrbitLeftAnimation.cpp/h` - Menghapus `speedInitialized` flag (sebelumnya RotateLeftAnimation)
-  - `OrbitRightAnimation.cpp/h` - Sebelumnya RotateRightAnimation
-  - `SpinLeftAnimation.cpp/h` - NEW: Spin pada porosnya sendiri (counter-clockwise)
-  - `SpinRightAnimation.cpp/h` - NEW: Spin pada porosnya sendiri (clockwise)
+  - `SpinLeftAnimation.cpp/h` - Tambah pause system (phase enum, pauseTimer, isPaused flag, setPauseDuration method)
+  - `SpinRightAnimation.cpp/h` - Tambah pause system (sama seperti SpinLeft)
+  - `RotateLeftAnimation.cpp/h` - Tambah pause system (Orbit Left)
+  - `RotateRightAnimation.cpp/h` - Tambah pause system (Orbit Right)
+  - `BasicZelligeTemplate.cpp/h` - Tambah `specialPolygonPauseDurations` vector, UI slider Pause untuk Orbit/Spin animations
+  - `FileManager.cpp/h` - Update `applySpecialPolygonAnimations` dengan parameter `pauseDurations`, pass pause duration ke semua 4 animation types
+  - `FileOperationManager.cpp` - Initialize `specialPolygonPauseDurations` saat load file
+  - `ofApp.cpp` - Update pemanggilan `applySpecialPolygonAnimations` dengan pause durations
+
+---
+
+### Fitur Sebelumnya: **UI Improvements & Special Speed Control** (2026-02-28)
 
 ---
 
