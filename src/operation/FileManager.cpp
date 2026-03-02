@@ -1318,7 +1318,7 @@ void FileManager::applySpecialPolygonAnimations(
 
     if (animMode == 0) { // 0 = No Animation
       polys[i].setSpecialAnimation(nullptr);
-    } else if (animMode == 1) { // 1 = Rotate Left
+    } else if (animMode == 1) { // 1 = Orbit Left
       // Ambil rotate angle dari vector (default 90° jika tidak ada)
       float angle = 90.0f;
       if (i < rotateAngles.size()) {
@@ -1329,7 +1329,7 @@ void FileManager::applySpecialPolygonAnimations(
       auto rotateAnim = std::make_unique<RotateLeftAnimation>(angle);
       rotateAnim->setSpeedMultiplier(specialSpeedMultiplier);
       polys[i].setSpecialAnimation(std::move(rotateAnim));
-    } else if (animMode == 2) { // 2 = Rotate Right ⭐ NEW
+    } else if (animMode == 2) { // 2 = Orbit Right ⭐ NEW
       // Ambil rotate angle dari vector (default 90° jika tidak ada)
       float angle = 90.0f;
       if (i < rotateAngles.size()) {

@@ -26,7 +26,7 @@ public:
   // Tessellation UI state
   std::vector<std::string> tessellationFiles;
   std::vector<float> tessellationRadii;
-  std::vector<int> specialPolygonAnimations; // 0=No Animation, 1=Rotate Left ⭐ NEW
+  std::vector<int> specialPolygonAnimations; // 0=No Animation, 1=Orbit Left ⭐ NEW
   std::vector<float> specialPolygonRotateAngles; // Rotate angle in degrees (90-360) ⭐ NEW
 
   // Setup shapes ke internal vector (inherited from SacredGeometryTemplate)
