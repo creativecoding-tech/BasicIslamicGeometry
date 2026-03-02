@@ -260,6 +260,8 @@
     <ClCompile Include="src\anim\FadeInAnimation.cpp" />
     <ClCompile Include="src\anim\RotateLeftAnimation.cpp" />
     <ClCompile Include="src\anim\RotateRightAnimation.cpp" />
+    <ClCompile Include="src\anim\SpinLeftAnimation.cpp" />
+    <ClCompile Include="src\anim\SpinRightAnimation.cpp" />
     <ClCompile Include="src\anim\WobbleAnimation.cpp" />
     <ClCompile Include="src\anim\FillAnimation.cpp" />
     <ClCompile Include="src\anim\WobbleFillAnimation.cpp" />
@@ -313,6 +315,8 @@
     <ClInclude Include="src\anim\FadeInAnimation.h" />
     <ClInclude Include="src\anim\RotateLeftAnimation.h" />
     <ClInclude Include="src\anim\RotateRightAnimation.h" />
+    <ClInclude Include="src\anim\SpinLeftAnimation.h" />
+    <ClInclude Include="src\anim\SpinRightAnimation.h" />
     <ClInclude Include="src\anim\WobbleAnimation.h" />
     <ClInclude Include="src\anim\FillAnimation.h" />
     <ClInclude Include="src\anim\WobbleFillAnimation.h" />

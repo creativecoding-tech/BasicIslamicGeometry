@@ -4,6 +4,8 @@
 #include "../anim/GradientAnimation.h"
 #include "../anim/RotateLeftAnimation.h"
 #include "../anim/RotateRightAnimation.h"
+#include "../anim/SpinLeftAnimation.h"
+#include "../anim/SpinRightAnimation.h"
 #include "../anim/WobbleAnimation.h"
 #include "../anim/WobbleFillAnimation.h"
 
@@ -388,6 +390,7 @@ void PolygonShape::drawGLSL() const {
   // Cek Special Animation yang berlaku global ke seluruh shape (seperti
   // rotation)
   bool hasRotation = false;
+  bool hasSpin = false;
 
   if (specialAnimation) {
     if (auto *rotateAnim =
@@ -400,6 +403,38 @@ void PolygonShape::drawGLSL() const {
       ofPushMatrix();
       ofRotateDeg(rotateRightAnim->getAngle());
       hasRotation = true;
+    } else if (auto *spinLeftAnim =
+                   dynamic_cast<SpinLeftAnimation *>(specialAnimation.get())) {
+      // SPIN ANIMATION: Berputar pada porosnya sendiri (centroid)
+      // Hitung centroid
+      vec2 centroid(0.0f, 0.0f);
+      for (const auto &v : vertices) {
+        centroid += v;
+      }
+      centroid /= vertices.size();
+
+      // Apply transform: Translate -> Rotate -> Translate back
+      ofPushMatrix();
+      ofTranslate(centroid.x, centroid.y);
+      ofRotateDeg(spinLeftAnim->getAngle());
+      ofTranslate(-centroid.x, -centroid.y);
+      hasSpin = true;
+    } else if (auto *spinRightAnim =
+                   dynamic_cast<SpinRightAnimation *>(specialAnimation.get())) {
+      // SPIN ANIMATION: Berputar pada porosnya sendiri (centroid)
+      // Hitung centroid
+      vec2 centroid(0.0f, 0.0f);
+      for (const auto &v : vertices) {
+        centroid += v;
+      }
+      centroid /= vertices.size();
+
+      // Apply transform: Translate -> Rotate -> Translate back
+      ofPushMatrix();
+      ofTranslate(centroid.x, centroid.y);
+      ofRotateDeg(spinRightAnim->getAngle());
+      ofTranslate(-centroid.x, -centroid.y);
+      hasSpin = true;
     }
   }
 
@@ -801,7 +836,7 @@ void PolygonShape::drawGLSL() const {
     globalPolygonShader.end();
   }
 
-  if (hasRotation) {
+  if (hasRotation || hasSpin) {
     ofPopMatrix();
   }
 }

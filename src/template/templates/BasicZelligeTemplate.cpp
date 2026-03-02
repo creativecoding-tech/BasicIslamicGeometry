@@ -835,12 +835,14 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
           ImGui::RadioButton("No Animation", &specialPolygonAnimations[i], 0);
           ImGui::RadioButton("Orbit Left", &specialPolygonAnimations[i], 1);
           ImGui::RadioButton("Orbit Right", &specialPolygonAnimations[i], 2);
+          ImGui::RadioButton("Spin Left", &specialPolygonAnimations[i], 3);
+          ImGui::RadioButton("Spin Right", &specialPolygonAnimations[i], 4);
 
           ImGui::PopID();
 
-          // Column 2: Orbit Angle Slider (untuk Orbit Left & Orbit Right) ⭐ NEW
+          // Column 2: Angle Slider (untuk Orbit Left/Right & Spin Left/Right) ⭐ NEW
           ImGui::TableSetColumnIndex(2);
-          if (specialPolygonAnimations[i] == 1 || specialPolygonAnimations[i] == 2) { // Orbit Left or Right
+          if (specialPolygonAnimations[i] == 1 || specialPolygonAnimations[i] == 2 || specialPolygonAnimations[i] == 3 || specialPolygonAnimations[i] == 4) { // Orbit Left/Right or Spin Left/Right
             ImGui::PushID(i + 2000); // Unique ID untuk slider
 
             // Initialize vector jika perlu

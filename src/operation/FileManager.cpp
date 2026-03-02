@@ -4,6 +4,8 @@
 #include "../anim/GradientAnimation.h"
 #include "../anim/RotateLeftAnimation.h"
 #include "../anim/RotateRightAnimation.h"
+#include "../anim/SpinLeftAnimation.h"
+#include "../anim/SpinRightAnimation.h"
 #include "../anim/WobbleAnimation.h"
 #include "../anim/WobbleFillAnimation.h"
 
@@ -1340,6 +1342,30 @@ void FileManager::applySpecialPolygonAnimations(
       auto rotateAnim = std::make_unique<RotateRightAnimation>(angle);
       rotateAnim->setSpeedMultiplier(specialSpeedMultiplier);
       polys[i].setSpecialAnimation(std::move(rotateAnim));
+    } else if (animMode == 3) { // 3 = Spin Left ⭐ NEW
+      // Ambil spin angle dari vector (default 90° jika tidak ada)
+      float angle = 90.0f;
+      if (i < rotateAngles.size()) {
+        angle = rotateAngles[i];
+      }
+
+      // Base amplitudo: sesuai slider RT. Speed multiplier mengatur kecepatan osilasi.
+      // Spin: Polygon berputar pada porosnya sendiri (centroid)
+      auto spinAnim = std::make_unique<SpinLeftAnimation>(angle);
+      spinAnim->setSpeedMultiplier(specialSpeedMultiplier);
+      polys[i].setSpecialAnimation(std::move(spinAnim));
+    } else if (animMode == 4) { // 4 = Spin Right ⭐ NEW
+      // Ambil spin angle dari vector (default 90° jika tidak ada)
+      float angle = 90.0f;
+      if (i < rotateAngles.size()) {
+        angle = rotateAngles[i];
+      }
+
+      // Base amplitudo: sesuai slider RT. Speed multiplier mengatur kecepatan osilasi.
+      // Spin: Polygon berputar pada porosnya sendiri (centroid)
+      auto spinAnim = std::make_unique<SpinRightAnimation>(angle);
+      spinAnim->setSpeedMultiplier(specialSpeedMultiplier);
+      polys[i].setSpecialAnimation(std::move(spinAnim));
     }
   }
 }
