@@ -104,6 +104,17 @@ public:
 	 */
 	void duplicateLineR180();
 
+	/**
+	 * Duplicate dot with track mode from hovered/selected customLine
+	 * Created dot can move along the line direction using scroll
+	 *
+	 * Process:
+	 * 1. Create dot at line's midpoint with track mode
+	 * 2. Set trackLineIndex to link dot with the line
+	 * 3. Dot moves along line direction when scrolled
+	 */
+	void duplicateDotTrack();
+
 private:
 	ofApp* app;  // Pointer to main app
 

@@ -7,14 +7,14 @@ void MenuBar::draw() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Open","CTRL+O ")) {
-                app->openWorkspace();
+                app->fileOperationManager->openWorkspace();
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Save Workspace", "CTRL+S")) {
-                app->saveWorkspace();
+                app->fileOperationManager->saveWorkspace();
             }
             if (ImGui::MenuItem("Save As...", "CTRL+SHIFT+S")) {
-                app->saveWorkspaceAs();
+                app->fileOperationManager->saveWorkspaceAs();
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Exit", "END")) {
@@ -41,7 +41,10 @@ void MenuBar::draw() {
                 app->deleteAllUserDots();
             }
             if (ImGui::MenuItem("Delete Lines & Polygons", "CTRL+DEL")) {
-                app->clearCustomLinesAndPolygons();
+                // ⭐ FIX: Delete customLines dan NON-tessellated polygons saja
+                // Tessellated polygons dipertahankan
+                app->deleteAllCustomLines();
+                app->deleteAllPolygons(false); // false = jangan include tessellated
             }
             // Clean Canvas - Disable jika canvas kosong
             bool isCanvasEmpty = (app->currentTemplate && app->currentTemplate->getShapes().empty()) &&
@@ -56,6 +59,9 @@ void MenuBar::draw() {
         }
 
         if (ImGui::BeginMenu("View")) {
+            if (ImGui::MenuItem("Canvas Settings")) {
+                app->toggleCanvasSettingsWindow();
+            }
             if (ImGui::MenuItem("Sacred Gemotery")) {
                 app->toggleSacredGeometryWindow();
             }

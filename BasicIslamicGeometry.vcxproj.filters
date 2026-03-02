@@ -17,6 +17,7 @@
     <ClCompile Include="src\shape\DotShape.cpp" />
     <ClCompile Include="src\shape\PolygonShape.cpp" />
     <ClCompile Include="src\operation\FileManager.cpp" />
+    <ClCompile Include="src\operation\FileOperationManager.cpp" />
     <ClCompile Include="src\managers\SelectionManager.cpp" />
     <ClCompile Include="src\managers\ColorManager.cpp" />
     <ClCompile Include="src\managers\DuplicateManager.cpp" />
@@ -26,8 +27,10 @@
     <ClCompile Include="src\operation\gui\SacredGeometry.cpp" />
     <ClCompile Include="src\operation\gui\Playground.cpp" />
     <ClCompile Include="src\operation\gui\UserCustom.cpp" />
+    <ClCompile Include="src\operation\gui\CanvasSettings.cpp" />
     <ClCompile Include="src\operation\gui\ContextMenu.cpp" />
     <ClCompile Include="src\operation\gui\SuccessPopup.cpp" />
+    <ClCompile Include="src\operation\gui\SaveConfirmationPopup.cpp" />
     <ClCompile Include="src\operation\gui\ErrorPopup.cpp" />
     <ClCompile Include="src\operation\gui\SelectionInfo.cpp" />
     <ClCompile Include="src\operation\gui\ObjectTooltip.cpp" />
@@ -36,8 +39,12 @@
     <ClCompile Include="src\template\templates\BasicZelligeTemplate.cpp" />
     <ClCompile Include="src\anim\AbstractAnimation.cpp" />
     <ClCompile Include="src\anim\FadeInAnimation.cpp" />
+    <ClCompile Include="src\anim\RotateLeftAnimation.cpp" />
+    <ClCompile Include="src\anim\RotateRightAnimation.cpp" />
     <ClCompile Include="src\anim\WobbleAnimation.cpp" />
     <ClCompile Include="src\anim\FillAnimation.cpp" />
+    <ClCompile Include="src\anim\WobbleFillAnimation.cpp" />
+    <ClCompile Include="src\anim\GradientAnimation.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp" />
     <ClCompile Include="src\imgui\imgui_draw.cpp" />
     <ClCompile Include="src\imgui\imgui_widgets.cpp" />
@@ -65,6 +72,7 @@
     <ClInclude Include="src\shape\OctagramLine.h" />
     <ClInclude Include="src\shape\PolygonShape.h" />
     <ClInclude Include="src\operation\FileManager.h" />
+    <ClInclude Include="src\operation\FileOperationManager.h" />
     <ClInclude Include="src\managers\SelectionManager.h" />
     <ClInclude Include="src\managers\ColorManager.h" />
     <ClInclude Include="src\managers\DuplicateManager.h" />
@@ -76,8 +84,10 @@
     <ClInclude Include="src\operation\gui\SacredGeometry.h" />
     <ClInclude Include="src\operation\gui\Playground.h" />
     <ClInclude Include="src\operation\gui\UserCustom.h" />
+    <ClInclude Include="src\operation\gui\CanvasSettings.h" />
     <ClInclude Include="src\operation\gui\ContextMenu.h" />
     <ClInclude Include="src\operation\gui\SuccessPopup.h" />
+    <ClInclude Include="src\operation\gui\SaveConfirmationPopup.h" />
     <ClInclude Include="src\operation\gui\ErrorPopup.h" />
     <ClInclude Include="src\operation\gui\SelectionInfo.h" />
     <ClInclude Include="src\operation\gui\ObjectTooltip.h" />
@@ -86,8 +96,12 @@
     <ClInclude Include="src\template\templates\BasicZelligeTemplate.h" />
     <ClInclude Include="src\anim\AbstractAnimation.h" />
     <ClInclude Include="src\anim\FadeInAnimation.h" />
+    <ClInclude Include="src\anim\RotateLeftAnimation.h" />
+    <ClInclude Include="src\anim\RotateRightAnimation.h" />
     <ClInclude Include="src\anim\WobbleAnimation.h" />
     <ClInclude Include="src\anim\FillAnimation.h" />
+    <ClInclude Include="src\anim\WobbleFillAnimation.h" />
+    <ClInclude Include="src\anim\GradientAnimation.h" />
     <ClInclude Include="src\imgui\imgui.h" />
     <ClInclude Include="src\imgui\imgui_internal.h" />
     <ClInclude Include="src\imgui\imconfig.h" />

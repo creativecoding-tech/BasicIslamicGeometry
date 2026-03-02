@@ -243,6 +243,81 @@ void DuplicateManager::duplicateLineR180() {
 // ========================================================================
 
 //--------------------------------------------------------------
+void DuplicateManager::duplicateDotTrack() {
+	// Check if there's a hovered/selected line
+	int lineIndex = app->contextMenu->getHoveredLineIndex();
+	if (lineIndex < 0 || lineIndex >= app->customLines.size()) {
+		// Jika tidak ada hovered line, cek apakah ada selected line
+		if (app->selectionManager.hasSelectedLine()) {
+			// Ambil first selected line
+			const std::set<int>& selectedIndices = app->selectionManager.getSelectedLineIndices();
+			if (!selectedIndices.empty()) {
+				lineIndex = *selectedIndices.begin();
+			}
+		}
+	}
+
+	// Validasi line index
+	if (lineIndex < 0 || lineIndex >= app->customLines.size()) {
+		return; // No valid line
+	}
+
+	const CustomLine& line = app->customLines[lineIndex];
+	const vector<vec2>& points = line.getPoints();
+
+	// Hitung midpoint dari garis
+	vec2 midpoint;
+	if (points.size() >= 2) {
+		midpoint = (points[0] + points[1]) / 2.0f;
+	} else {
+		midpoint = points[0];
+	}
+
+	// Create DotShape dengan track mode
+	auto dotShape = std::make_unique<DotShape>(midpoint, "Dot", app->userDotRadius);
+	dotShape->progress = 1.0f; // Instant appearance
+	dotShape->setColor(app->colorManager->getUserDotColor()); // Set color dari userDotColor
+	dotShape->setTrackLineIndex(lineIndex); // ⭐ TRACK MODE - link ke line!
+
+	// Hitung arah garis (normalized direction)
+	vec2 lineDirection = points[1] - points[0];
+	float lineLength = glm::length(lineDirection);
+	vec2 normalizedDir = lineLength > 0 ? lineDirection / lineLength : vec2(0, 0);
+
+	// Set lower bound berdasarkan orientasi garis
+	// Jika garis lebih horizontal (|x| > |y|), batas di kiri/kanan
+	// Jika garis lebih vertikal (|y| > |x|), batas di atas/bawah
+	vec2 lowerBound;
+	if (std::abs(normalizedDir.x) > std::abs(normalizedDir.y)) {
+		// Horizontal dominant - batas di kiri (untuk scroll kanan) atau kanan (untuk scroll kiri)
+		if (normalizedDir.x > 0) {
+			// Garis ke kanan → batas di kiri (start point)
+			lowerBound = points[0];
+		} else {
+			// Garis ke kiri → batas di kanan (start point)
+			lowerBound = points[0];
+		}
+	} else {
+		// Vertikal dominant - batas di bawah (untuk scroll atas)
+		lowerBound = points[0]; // Start point sebagai batas bawah
+	}
+
+	dotShape->setLowerBound(lowerBound);
+
+	// Add ke userDots
+	app->userDots.push_back(std::move(dotShape));
+
+	// Select dot yang baru dibuat
+	app->selectionManager.selectUserDot(static_cast<int>(app->userDots.size()) - 1);
+
+	// Push undo action
+	pushUndoAction();
+
+	// Hide context menu
+	app->contextMenu->hideWindow();
+}
+
+//--------------------------------------------------------------
 void DuplicateManager::pushUndoAction() {
 	UndoAction undoAction;
 	undoAction.type = CREATE_DOT;

@@ -7,18 +7,21 @@ ConfirmationPopup::ConfirmationPopup(ofApp* app)
       message("Are you sure?"),
       confirmButton("Yes"),
       cancelButton("No"),
-      onConfirmCallback(nullptr) {}
+      onConfirmCallback(nullptr),
+      onCancelCallback(nullptr) {}
 
 void ConfirmationPopup::show(const std::string& title,
                             const std::string& message,
                             const std::string& confirmButton,
                             const std::string& cancelButton,
-                            ConfirmCallback onConfirm) {
+                            ConfirmCallback onConfirm,
+                            CancelCallback onCancel) {
     this->title = title;
     this->message = message;
     this->confirmButton = confirmButton;
     this->cancelButton = cancelButton;
     this->onConfirmCallback = onConfirm;
+    this->onCancelCallback = onCancel;
     showPopup = true;
 }
 
@@ -44,8 +47,9 @@ void ConfirmationPopup::draw() {
         ImGui::Spacing();
 
         // Dua tombol: Yes dan No
-        float yesButtonWidth = 100.0f;
-        float noButtonWidth = 100.0f;
+        // Hitung lebar tombol berdasarkan text content
+        float yesButtonWidth = ImGui::CalcTextSize(confirmButton.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        float noButtonWidth = ImGui::CalcTextSize(cancelButton.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f;
         float buttonSpacing = 10.0f;
         float totalButtonWidth = yesButtonWidth + buttonSpacing + noButtonWidth;
         float windowWidth = ImGui::GetWindowSize().x;
@@ -65,6 +69,10 @@ void ConfirmationPopup::draw() {
         // No button
         ImGui::SameLine(0.0f, buttonSpacing);
         if (ImGui::Button(cancelButton.c_str(), ImVec2(noButtonWidth, 0))) {
+            // Panggil callback jika ada
+            if (onCancelCallback) {
+                onCancelCallback();
+            }
             ImGui::CloseCurrentPopup();
         }
 

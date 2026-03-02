@@ -20,29 +20,62 @@
  */
 class BasicZelligeTemplate : public SacredGeometryTemplate {
 public:
-	std::string getName() override;
-	std::string getDescription() override;
+  std::string getName() override;
+  std::string getDescription() override;
 
-	// Setup shapes ke internal vector (inherited from SacredGeometryTemplate)
-	void setupShapes() override;
+  // Tessellation UI state
+  std::vector<std::string> tessellationFiles;
+  std::vector<float> tessellationRadii;
+  std::vector<int> specialPolygonAnimations; // 0=No Animation, 1=Orbit Left ⭐ NEW
+  std::vector<float> specialPolygonRotateAngles; // Rotate angle in degrees (90-360) ⭐ NEW
+  std::vector<float> specialPolygonPauseDurations; // ⭐ NEW: Pause duration for Spin animations (0.1-1.0 seconds)
 
-	// Template-specific UI
-	bool hasCustomSettings() override;
-	void showSettingsUI() override;
+  // Setup shapes ke internal vector (inherited from SacredGeometryTemplate)
+  void setupShapes() override;
 
-	// Template-specific playback UI
-	bool hasPlaybackSettings() override;
-	void showPlaybackUI(class ofApp* app) override;
+  // Template-specific UI
+  bool hasCustomSettings() override;
+  void showSettingsUI() override;
 
-	// radius diambil dari SacredGeometryTemplate::radius (protected)
-	// Tidak perlu radius sendiri lagi
+  // Wave Animation Helper ⭐ NEW
+  void applyWaveAnimationToAllCustomLines(class ofApp *app,
+                                          bool enableAnimation = true);
+  void applyWaveAnimationToCustomLine(class ofApp *app, class CustomLine *line,
+                                      bool enableAnimation = true);
+
+  // Template-specific playback UI
+  bool hasPlaybackSettings() override;
+  void showPlaybackUI(class ofApp *app) override;
+
+  // radius diambil dari SacredGeometryTemplate::radius (protected)
+  // Tidak perlu radius sendiri lagi
 
 private:
-	// Setup methods populate this->shapes (inherited protected member)
-	void setupCircles();
-	void setupCartesianAxes();
-	void setupCrossLines();
-	void setupParallelograms();
-	void setupRectangleLines();
-	void setupOctagramLines();
+  // Setup methods populate this->shapes (inherited protected member)
+  void setupCircles();
+  void setupCartesianAxes();
+  void setupCrossLines();
+  void setupParallelograms();
+  void setupRectangleLines();
+  void setupOctagramLines();
+
+  // Playback state
+  int playMode = 0;                  // 0 = Parallel (DEFAULT), 1 = Sequential
+  int polygonAnimationMode = 0;      // 0=None, 1=FadeIn, 2=Wobble, 3=Fill
+  bool showPlaybackSettings = false; // Control visibility of playback UI
+
+public:
+  // Reset draw mode ke default (Parallel)
+  void resetDrawMode() {
+    playMode = 0;
+    showPlaybackSettings = false;
+    tessellationFiles.clear();       // Clear custom tessellation files on file close
+    tessellationRadii.clear();       // Clear radii settings on file close
+    specialPolygonAnimations.clear(); // Clear special polygon animations on file close ⭐ NEW
+    specialPolygonRotateAngles.clear(); // ⭐ NEW: Clear rotate angles on file close
+    specialPolygonPauseDurations.clear(); // ⭐ NEW: Clear pause durations on file close
+  }
+
+  // Enable playback settings (dipanggil saat file dibuka)
+  void enablePlaybackSettings() { showPlaybackSettings = true; }
 };

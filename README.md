@@ -77,7 +77,67 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Consistent Speed** - Saat load file .nay, speed mengikuti slider setting
 - **No Speed Variation** - Tidak ada lagi animasi "cepat kedua, lambat ketiga" - selalu konsisten!
 
-### Transform Canvas System ⭐ NEW
+### FileOperationManager ⭐ NEW
+- **Wrapper Pattern** - FileOperationManager class untuk semua file operations (save, open, load)
+- **Clean Architecture** - Mengikuti pattern yang sama dengan ColorManager/DuplicateManager
+- **Centralized File Operations** - Semua file operations dipindah dari ofApp ke FileOperationManager:
+  - `saveWorkspace()` - Save ke lastSavedPath (CTRL+S)
+  - `saveWorkspaceAs()` - Save dengan dialog (CTRL+SHIFT+S)
+  - `openWorkspace()` - Buka file dialog untuk load workspace
+  - `loadWorkspace()` - Parallel load dengan staggered animation
+  - `loadWorkspaceSeq()` - Sequential load dengan per-group animation
+- **Peek Functions** - Optimasi untuk membaca file header tanpa load full data:
+  - `peekFileCustomLinesCount()` - Baca jumlah customLines dari file
+  - `peekFilePolygonCount()` - Baca jumlah polygons dari file (hanya poligon original) ⭐ UPDATED
+- **Conditional UI Display** - CollapsingHeader hanya muncul jika file punya data:
+  - Custom Line CollapsingHeader hanya muncul jika `loadedFileCustomLinesCount > 0`
+  - Polygon CollapsingHeader hanya muncul jika `loadedFilePolygonCount > 0`
+
+### Polygon Seamless Tessellation ⭐
+- **Pattern Infusion** - Mengisi area poligon dengan pola geometri dari file `.nay` lain secara otomatis.
+- **Mathematical Tiling** - Sistem tiling yang presisi untuk memastikan antar tile tidak ada celah (*seamless*) dan tidak tumpang tindih (*no overlaps*).
+- **Radius-Based Scaling** - Besar kecilnya pola di dalam poligon dikontrol melalui slider Radius di tabel Tessellation.
+- **Geometric Clipping** - Hanya bentuk yang titik pusatnya berada di dalam poligon target yang akan di-render.
+- **Filtered UI** - Poligon hasil teselasi secara otomatis disembunyikan dari daftar pengaturan untuk mencegah kebingungan dan pengulangan teselasi (*no recursive tessellation*).
+- **Batch Rendering Optimization** - Tessellated polygons dirender dalam **SATU draw call** menggunakan ofMesh batch:
+  - ~4,500 tessellated polygons dengan **2.4+ juta vertices** dirender sekaligus
+  - Triangle fan triangulation untuk optimal mesh construction
+  - Dirty flag system untuk rebuild mesh hanya saat polygons berubah
+  - Solid 60 FPS performance bahkan dengan ribuan tessellated polygons ⭐ NEW
+- **Source Tessellation Metadata** - Setiap parent polygon menyimpan metadata tessellation (file + radius) untuk prevent re-tessellation
+- **Smart Tessellation System** - Otomatis detect perubahan tessellation settings:
+  - Cek apakah UI settings (file, radius) match dengan loaded state
+  - Jika berubah, otomatis hapus old children dan tessellate dengan setting baru
+  - Jika sama dan children sudah ada, skip tessellation (performance optimization)
+  - Tombol Browse/X untuk ganti/clear tessellation file per polygon ⭐ NEW
+
+### Intelligent Save System ⭐ NEW
+- **Save Confirmation Popup** - Muncul otomatis jika mendeteksi ada geometri hasil teselasi saat menyimpan workspace (CTRL+S / CTRL+SHIFT+S).
+- **Flexible Options** - User bisa memilih untuk menyimpan hanya geometri asli (*Original Only*) atau menyertakan hasil teselasinya (*With Tessellation*).
+- **Version 3 .nay Format** - Mendukung flag `isTessellated` secara persisten untuk membedakan geometri asli dengan geometri hasil regenerasi otomatis.
+
+### Canvas Settings System ⭐ NEW
+- **Canvas Settings Window** - Floating window untuk mengatur tampilan canvas:
+  - **Base Color Picker** - Warna background dasar (RGBA color edit)
+  - **Use Gradient Checkbox** - Enable/disable gradient background
+  - **Gradient Color Picker** - Warna gradient (hanya muncul jika gradient dicentang)
+  - **Trails Mode** - Toggle trails effect (0: No Trails, 1: Use Trails)
+  - **Trails Value Slider** - Kontrol opacity trails (1-255, default 25)
+  - **Reset Button** - Reset semua settings ke default (white background, no gradient, trails enabled)
+- **Gradient Background** - Vertical gradient dari Base Color (top) ke Gradient Color (bottom)
+- **Trails Effect** - Semi-transparent background overlay untuk efek jejak visual:
+  - Trails opacity 1-255 (semakin kecil = semakin panjang jejak)
+  - Direct rendering TANPA Frame Buffer Object (FBO) untuk performance ⭐ NEW
+  - Automatic background drawing setiap frame dengan alpha blending
+- **View Menu Integration** - Canvas Settings bisa diakses via View → Canvas Settings
+- **Force Clear Screen System** - Saat clean canvas atau Draw, otomatis:
+  - Pause animation selama force clear (prevent trails contamination)
+  - Clear screen dengan solid background (20 frame / ~0.33 detik)
+  - Resume animation dengan normal trails (20 frame / ~0.33 detik)
+  - Total delay ~40 frame (0.67 detik) untuk menghilangkan jejak ImGui window ⭐ NEW
+- **Canvas Transform Not Saved** - Canvas settings dan transform state TIDAK disimpan ke file .nay (viewport-only)
+
+### Transform Canvas System
 - **Canvas Transform Controls** - Transform slider di SacredGeometry panel:
   - **Pan X** - Geser canvas horizontal (-500 to +500 pixels)
   - **Pan Y** - Geser canvas vertikal (-500 to +500 pixels)
@@ -134,7 +194,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
 ### Draw Button Behavior (Playground)
 - **Clean First, Then Draw** - Saat tombol Draw (Arrow ←) di Playground diklik:
-  1. **Clean Canvas** - Hapus semua shapes, polygons, customLines, userDots
+  1. **Clean Canvas** - Hapus semua shapes, polygons, customLines, userDots + **reset settings** (L/P/D colors → blue, Dot → visible, Radius → 8.0f) ⭐ UPDATED
   2. **Apply Speed** - Sync speed multiplier ke FileManager untuk polygons & customLines
   3. **Set Animation Mode** - FadeIn/Wobble/Fill/None sesuai radio button
   4. **Load Workspace** - Load dari file .nay dengan animation (Parallel/Sequential mode)
@@ -156,7 +216,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **MenuBar** - Top menu bar dengan File, Edit, dan View menus
   - **File Menu**: Save Workspace (CTRL+S), Save As (CTRL+SHIFT+S), Open (CTRL+O), Exit (END)
   - **Edit Menu**: Undo (CTRL+Z), Redo (CTRL+SHIFT+Z), Delete All Custom Lines, Delete All Polygons, Delete Lines & Polygons (CTRL+DEL), Clean Canvas (CTRL+SHIFT+DEL)
-  - **View Menu**: Sacred Geometry, Playground, User Custom, Selection Info (show/focus windows independently) ⭐ UPDATED
+  - **View Menu**: Sacred Geometry, Playground, User Custom, Canvas Settings, Selection Info (show/focus windows independently)
 - **SacredGeometry Panel** - Template controls panel dengan:
   - Template Name Display (Basic Zellige)
   - **Draw Template** section: Parallel / Sequential buttons
@@ -173,7 +233,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Opened File Display
   - Mode Draw: Parallel Per Group / Sequential Per Group radio buttons
   - **Draw Settings**: Cartesian, Circles, CrossLines, Parallelograms, RectangleLines, OctagramLines checkboxes ⭐ UPDATED
-  - Polygon Animate: No Animation / FadeIn / Wobble / Fill radio buttons
+  - Polygon Animate: No Animation / FadeIn / Wobble / Fill / Wobble Fill / Gradient radio buttons
   - Speed Control Slider (0.1 - 1.5) ⭐ NEW
   - **Draw Arrow Button (←)** - Load dan animate workspace
 - **UserCustom Panel** - User control panel dengan:
@@ -215,7 +275,89 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - **FadeInAnimation** - Alpha blending fade-in (0 → targetAlpha) dengan deltaTime
   - **WobbleAnimation** - Oscillation effect dengan amplitude dan frequency dengan deltaTime
   - **FillAnimation** - Directional fill (bottom to top) dengan wave effect dan deltaTime
+  - **WobbleFillAnimation** - Kombinasi wobble + gradual fill dengan deltaTime ⭐ NEW
+    - Polygon bergerak-goyang (wobble) SEKALIGUS di-fill secara gradual
+    - Parameters: wobbleAmount, wobbleSpeed, wobbleFrequency, targetFillLevel, fillSpeed
+    - getWobbleOffset() - Vertex offset untuk goyangan
+    - getFillLevel() - Current fill level (0.0 - 1.0)
+  - **GradientAnimation** - Smooth gradient flow effect dengan finite duration ⭐ NEW
+    - Smooth gradient flow effect pada warna fill polygon
+    - Finite animation: berhenti setelah duration (default 5 detik)
+    - Parameters: speed, frequency, duration
+    - getFrequency() - Spatial frequency gradient pattern
+    - getDuration() - Durasi animation (detik)
+  - **OrbitLeftAnimation** - Animasi orbit berlawanan arah jarum jam ⭐ NEW
+    - Polygon mengorbit/mengelilingi titik (0,0) / Circle A (counter-clockwise)
+    - Half-cosine wave motion untuk osilasi mulus: 0° → -maxAngle → 0°
+    - Amplitudo orbit: 90 derajat (default, dapat diubah via UI slider: 35° - 360°)
+    - Finite animation: berhenti setelah 1 siklus penuh (±2 detik)
+    - getAngle() - Sudut orbit saat ini dalam derajat
+  - **OrbitRightAnimation** - Animasi orbit searah jarum jam ⭐ NEW
+    - Polygon mengorbit/mengelilingi titik (0,0) / Circle A (clockwise)
+    - Half-cosine wave motion untuk osilasi mulus: 0° → +maxAngle → 0°
+    - Amplitudo orbit: 90 derajat (default, dapat diubah via UI slider: 35° - 360°)
+    - Finite animation: berhenti setelah 1 siklus penuh (±2 detik)
+    - getAngle() - Sudut orbit saat ini dalam derajat
+  - **SpinLeftAnimation** - Animasi spin berlawanan arah jarum jam ⭐ NEW
+    - Polygon berputar pada porosnya sendiri/centroid (counter-clockwise)
+    - Half-cosine wave motion untuk osilasi mulus: 0° → -maxAngle → 0°
+    - Amplitudo spin: 90 derajat (default, dapat diubah via UI slider: 35° - 360°)
+    - Finite animation: berhenti setelah 1 siklus penuh (±2 detik)
+    - getAngle() - Sudut spin saat ini dalam derajat
+  - **SpinRightAnimation** - Animasi spin searah jarum jam ⭐ NEW
+    - Polygon berputar pada porosnya sendiri/centroid (clockwise)
+    - Half-cosine wave motion untuk osilasi mulus: 0° → +maxAngle → 0°
+    - Amplitudo spin: 90 derajat (default, dapat diubah via UI slider: 35° - 360°)
+    - Finite animation: berhenti setelah 1 siklus penuh (±2 detik)
+    - getAngle() - Sudut spin saat ini dalam derajat
   - **Configurable Speed** - Animation speed dapat di-adjust via speed slider
+  - **Special Polygon Animation** - System untuk dual-animation pada polygon ⭐ NEW
+    - Polygon dapat memiliki 2 animations sekaligus:
+      - **Appearance Animation** - FadeIn, Wobble, Fill, Gradient, atau None
+      - **Special Animation** - Orbit Left/Right atau Spin Left/Right (berlapis di atas appearance animation)
+    - Independent control - Masing-masing animation berjalan independently
+    - Special animation di-update HANYA setelah appearance animation complete
+    - UI Control - Radio buttons di SacredGeometry window untuk set special animation per polygon
+    - Angle Control - DragFloat slider RT (35° - 360°) untuk mengatur amplitudo orbit/spin
+    - Default: Semua polygons default "No Animation" untuk special animation
+  - **Perbedaan Orbit vs Spin**:
+    - **Orbit** = Polygon mengelilingi titik (0,0) / Circle A (seperti Bumi mengelilingi Matahari)
+    - **Spin** = Polygon berputar pada porosnya sendiri/centroid (seperti Bumi berotasi pada sumbunya)
+  - **Configurable Speed** - Animation speed dapat di-adjust via speed slider
+
+### Special Polygon Animation System ⭐ LATEST
+- **5 Mode Special Animation** - Setiap polygon dapat memiliki special animation independen:
+  - **No Animation (0)** - Polygon statis setelah appearance animation selesai
+  - **Orbit Left (1)** - Polygon mengelilingi (0,0) counter-clockwise (0° → -maxAngle → 0°)
+  - **Orbit Right (2)** - Polygon mengelilingi (0,0) clockwise (0° → +maxAngle → 0°)
+  - **Spin Left (3)** - Polygon berputar pada porosnya sendiri counter-clockwise (0° → -maxAngle → 0°)
+  - **Spin Right (4)** - Polygon berputar pada porosnya sendiri clockwise (0° → +maxAngle → 0°)
+- **Angle Control** - DragFloat slider RT untuk mengatur amplitudo orbit/spin (35° - 360°)
+- **Pause Duration Control** ⭐ NEW - Slider Pause (0.0 - 1.0 detik) untuk Orbit Left/Right dan Spin Left/Right:
+  - Polygon akan pause di posisi maxAngle selama durasi yang ditentukan
+  - Setelah pause selesai, polygon kembali ke posisi awal (0°)
+  - Default: 0.0 detik (tidak ada pause)
+  - Hanya muncul ketika Orbit atau Spin animation dipilih
+- **Independent Speed Control** - Special Speed slider mengontrol kecepatan orbit/spin secara terpisah dari appearance speed
+- **UI Table Layout** - 3 kolom: Polygon Name, Animation Type (radio buttons), Angle Slider + Pause Slider
+- **Per-Polygon Configuration** - Setiap polygon dapat dikonfigurasi secara individual
+- **Animation Timing** - Special animation berjalan HANYA setelah appearance animation complete
+- **Dual Animation Stack** - Appearance animation + Special animation dapat berjalan simultaneously (setelah appearance complete)
+- **Finite Duration** - Semua orbit/spin animations berhenti setelah 1 siklus penuh (±2 detik)
+- **Orbit Implementation** - Menggunakan `ofRotateDeg()` untuk global rotation mengelilingi (0,0)
+- **Spin Implementation** - Menggunakan transform matrix: Translate → Rotate → Translate back ke centroid
+
+### Scaling System ⭐ NEW
+- **Floating Point Drift Prevention** - System untuk mencegah presisi hilang saat radius slider diubah berulang kali
+- **Original Vertices Backup** - Setiap shape (CustomLine, PolygonShape, DotShape) menyimpan titik asli:
+  - `saveOriginalPoints(radius)` - Simpan titik asli CustomLine + baseRadius
+  - `saveOriginalVertices(radius)` - Simpan vertices asli PolygonShape + baseRadius
+  - `saveOriginalPosition(radius)` - Simpan posisi asli DotShape + baseRadius
+- **Absolute Ratio Scaling** - Scaling menggunakan ratio absolute dari original, bukan relative:
+  - Old way: `newPosition = currentPosition * (newRadius / oldRadius)` - akumulasi error
+  - New way: `newPosition = originalPosition * (newRadius / baseRadius)` - presisi terjaga
+- **Apply on Load** - Saat load file .nay, original vertices/points/position otomatis di-backup
+- **Consistent Precision** - Polygon/titik tetap presisi walaupun radius slider diubah berkali-kali
 
 ### Custom Lines & Polygons
 - **Mouse Interaction** - Mouse drag untuk menggambar line secara interaktif antar dots
@@ -224,9 +366,76 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Multi-Select System** - CTRL+Klik untuk toggle selection multiple garis
 - **CustomLine Labels** - Saat selected, muncul label dari getLabel() (customLine0, DcustomLine0, dst)
 - **Curve Label** - Display nilai curve saat garis di-select
+- **Draw Custom Lines Checkbox** - Checkbox "Draw Custom Lines" mengontrol apakah customLines digambar saat Draw:
+  - ✓ Dicentang = CustomLines diload dan digambar
+  - ✗ Tidak dicentang = CustomLines TIDAK diload (di-skip saat load)
+- **Skip CustomLines Load** - Parallel vs Sequential load behavior:
+  - **Parallel load**: CustomLines diload, lalu di-clear jika flag false
+  - **Sequential load**: CustomLines TIDAK ditambahkan ke buffer jika flag false
+
+### CustomLine Animation Controls ⭐ NEW
+- **Line Animation Mode** - Control animasi untuk custom lines yang diload dari file .nay:
+  - **No Animation** - Custom lines digambar tanpa animasi wave (progressive drawing saja)
+  - **Wave Animation** - Custom lines digambar dengan efek wave/gelombang yang halus
+- **Wave Animation Settings** - Parameter untuk wave effect (hanya muncul jika Wave Animation dipilih):
+  - **Amplitude (px)** - Tinggi gelombang dalam pixels (2.0 - 5.0 px)
+  - **Frequency** - Kekerapan gelombang (1.0 - 3.0 Hz)
+  - **Duration (sec)** - Durasi wave animation sebelum auto-stop (0.0 - 60.0 detik)
+    - 0.0 detik = Infinite loop (wave tidak berhenti otomatis)
+    - > 0.0 detik = Wave berhenti setelah durasi habis
+- **Step Animation Line** - Mengatur TIMING kapan wave animation dijalankan terhadap polygon animation:
+  - **Before Polygon Draw** - Wave animation BERJALAN dan SELESAI sebelum polygons digambar:
+    1. Custom lines selesai progressive drawing (0% → 100%)
+    2. Wave animation diaplikasikan ke semua custom lines
+    3. Wave animation berjalan selama durasi yang ditentukan
+    4. Setelah durasi habis, wave animation dihapus
+    5. Polygons baru mulai digambar dan beranimasi
+  - **With Polygon Draw** - Wave animation dan polygon animation BERJALAN BARENGAN:
+    1. Custom lines selesai progressive drawing
+    2. Wave animation diaplikasikan ke semua custom lines
+    3. Polygons mulai digambar dan beranimasi
+    4. Wave animation terus berjalan selama polygons beranimasi
+    5. Kedua animasi selesai secara independent
+  - **After Polygon Draw** - Wave animation dijalankan SETELAH polygon animation selesai:
+    1. Custom lines selesai progressive drawing
+    2. Polygons mulai digambar dan beranimasi
+    3. Setelah SEMUA polygons selesai beranimasi
+    4. Wave animation diaplikasikan ke semua custom lines
+    5. Wave animation berjalan selama durasi yang ditentukan
+- **Staggered Load Integration** - Step Animation Line bekerja dengan staggered load system (Parallel Per Group mode):
+  - **LOAD_TEMPLATE stage**: Template shapes digambar terlebih dahulu
+  - **LOAD_CUSTOMLINES stage**: Custom lines diload dan di-animasikan sesuai mode
+    - **With Polygon Draw**: Animasi dimulai SETELAH semua lines selesai digambar (parallel with polygons). ⭐ NEW
+    - **After Polygon Draw**: Animasi dipaksa berhenti selama loading phase (nunggu polygons selesai). ⭐ NEW
+  - **LOAD_POLYGONS stage**: Polygons diload dan di-animasikan sesuai mode
+  - **LOAD_DONE stage**: Semua animasi selesai, wave animation dihapus (jika ada durasi)
+- **Conditional UI Visibility** ⭐ NEW - Step Animation Line radio buttons (Before/With/After) hanya muncul jika file `.nay` mengandung polygons. Jika tidak ada polygons, sistem otomatis menggunakan mode `Before Polygon Draw` untuk memastikan animasi wave tetap berjalan.
+- **Playground Window Behavior** ⭐ NEW - Peningkatan pada close confirmation popup:
+  - **Yes, Close File**: Menutup window dan mengakhiri session file (lastSavedPath di-clear).
+  - **No, Keep File Open**: Menutup window tetapi tetap menjaga session file tetap aktif demi kenyamanan user.
 - **PolygonShape System** - Class untuk polygon fill-only tanpa outline (hanya warna)
 - **Create Polygon (CTRL+G)** - Buat polygon dari selected customLines (otomatis deteksi closed loop)
 - **Polygon Color Preset** - 9 warna preset untuk polygon (merah, hijau, biru, kuning, magenta, cyan, orange, ungu, abu-abu)
+- **GLSL vs CPU Rendering** - Conditional rendering berdasarkan `loadedFromFile` flag ⭐ NEW:
+  - **Loaded polygons** (dari .nay file) → Gunakan GLSL shaders untuk rendering dan animations
+    - FadeIn: GLSL alpha blending dengan deltaTime
+    - Wobble: GLSL offset animation dengan deltaTime
+    - Wave Fill: Multi-pass FBO dengan wave shader
+  - **New polygons** (CTRL+G / right-click) → Gunakan CPU rendering sederhana
+    - Tidak ada animation
+    - Direct ofSetColor() + ofBeginShape()
+- **Animation System** - AbstractAnimation base class untuk reusable polygon animations:
+  - **FadeInAnimation** - Alpha blending fade-in (0 → targetAlpha) dengan deltaTime
+  - **WobbleAnimation** - Oscillation effect dengan amplitude dan frequency dengan deltaTime
+  - **FillAnimation** - Water fill effect dari bawah ke atas dengan wave dan deltaTime
+  - **Configurable Speed** - Animation speed di-adjust via speed slider (0.12f - 1.8f * multiplier)
+  - **Different Base Speeds** - Setiap tipe animation punya base speed berbeda:
+    - Wobble: 1.8f * animationSpeedMultiplier
+    - FadeIn: 0.18f * animationSpeedMultiplier
+    - Wave Fill: 0.12f * animationSpeedMultiplier
+- **Update Strategy** - Polygons hanya di-update jika belum complete (isAnimationComplete() check) ⭐ NEW
+  - Mencegah animations berhenti prematur
+  - Berlaku untuk semua load modes (parallel dan sequential)
 - **Color Picker Integration** - Ubah warna custom line dan polygon secara real-time via color picker di UserCustom panel
 - **Color Sync System** - Color picker otomatis sync dengan warna object yang terseleksi:
   - Saat select object → color picker update ke warna object tersebut
@@ -246,6 +455,13 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - **Duplicate Dot Below** - Duplicate dengan offset ke bawah (Y positif)
   - **Duplicate Dot Left** - Duplicate dengan offset ke kiri (X negatif)
   - **Duplicate Dot Right** - Duplicate dengan offset ke kanan (X positif)
+  - **Duplicate Dot Track** ⭐ NEW - Buat dot yang bisa bergerak沿着 customLine/DcustomLine:
+    - Dot dibuat di midpoint customLine/DcustomLine
+    - Link ke line via `trackLineIndex` untuk movement
+    - Mouse scroll untuk menggerakkan dot sepanjang line (0.0 - 1.0 progress)
+    - Mendukung bezier curves (bukan hanya garis lurus)
+    - **Boundary margin** - Dot tidak bisa mencapai ujung line (5% margin di setiap ujung) ⭐ NEW
+    - Connected lines otomatis update points ketika dot bergerak
 - **Context Menu Access** - Right-click pada original dot untuk show duplicate options
 - **Radius from Slider** - New userDot radius diambil langsung dari slider User Custom (0-8) ⭐ UPDATED
   - Tidak lagi dipengaruhi lineWidth template
@@ -253,9 +469,10 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Color from Picker** - New userDot color diambil dari color picker User Custom
 - **Lower Bound System** - Setiap userDot punya lower bound (dot parent position) untuk reference
 - **Scroll Control** - Mouse scroll untuk menggerakkan selected userDots:
+  - **Track dots** (highest priority) - Dots yang ter-link ke customLine/DcustomLine bergerak sepanjang line path
   - Horizontal dots (left/right) → Scroll gerakkan di sumbu X
   - Vertical dots (above/below) → Scroll gerakkan di sumbu Y
-  - Dengan boundary validation (tidak bisa melewati dot parent)
+  - Dengan boundary validation (tidak bisa melewati dot parent / ujung line)
 - **Color Copy/Paste** - Copy color dari selected userDot, paste ke userDots lain
 - **Undo/Redo Support** - CREATE_DOT action dengan radius preservation ⭐ UPDATED
   - Saat undo CREATE_DOT → Simpan radius dot yang dihapus
@@ -287,27 +504,48 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Priority: userDot > DcustomLine > curve adjustment
 
 ### Workspace Save/Load
-- **Centralized Save/Load** - Satu method `saveWorkspace()`, `saveWorkspaceAs()`, dan `loadWorkspace()` untuk semua state
-- **.nay Binary Format** - Workspace format dengan magic number "NA01", version 2
+- **FileOperationManager** - Wrapper class untuk semua file operations (mirip ColorManager/DuplicateManager pattern) ⭐ NEW
+- **Centralized Save/Load** - Semua file operations dipindah ke FileOperationManager:
+  - `saveWorkspace()` - Save ke lastSavedPath (CTRL+S)
+  - `saveWorkspaceAs()` - Save dengan dialog (CTRL+SHIFT+S)
+  - `openWorkspace()` - Buka file dialog untuk load workspace
+  - `loadWorkspace()` - Parallel load dengan staggered animation
+  - `loadWorkspaceSeq()` - Sequential load dengan per-group animation
+- **.nay Binary Format** - Workspace format dengan magic number "NA01", version 3 ⭐ UPDATED
 - **Complete State Persistence** - Save template name, radius, custom lines, polygons, semua settings (labels, dots, line width, draw settings)
 - **Direct File Save** - Save langsung ke filepath target tanpa intermediate "workspace.nay" file
 - **File Dialog Integration** - Native Windows file dialog untuk Save As/Open operations dengan .nay filter validation
 - **Draw Mode Selection** - Mode animate dipilih lewat radio button di Playground:
   - **Parallel Per Group**: Template → CustomLines → Polygons animate simultaneously per group
   - **Sequential Per Group**: Groups animate satu per satu dengan delay
+- **Staggered Load Setup** - Parallel load (CTRL+O) menggunakan staggered load system ⭐ NEW:
+  - LOAD_TEMPLATE → LOAD_CUSTOMLINES → LOAD_POLYGONS → LOAD_DONE
+  - Template shapes dibuat progress=0, baru di-animate via Draw button
+  - CustomLines dan polygons diload dengan animation sesuai mode
+- **Sequential Load Setup** - Sequential load (CTRL+SHIFT+O) dengan per-group animation:
+  - Template shapes dulu → CustomLines → Polygons
+  - Setiap group tunggu sampai complete sebelum lanjut
+- **Draw Custom Lines Integration** - "Draw Custom Lines" checkbox mengontrol customLines load ⭐ NEW:
+  - Dicentang → CustomLines diload dan digambar
+  - Tidak dicentang → CustomLines di-skip saat load
 - **Auto Clean Canvas** - Otomatis bersihkan canvas sebelum load (selalu dicenterangkan)
 - **Delay Load System** - Smooth transition dengan delay sebelum animation starts (0.0f = tanpa delay)
 - **Animation State Preservation** - State animasi di-save dan di-restore dengan benar
 - **Playground Auto-Focus** - Saat file berhasil dibuka, Playground window otomatis muncul dan focus
+- **No Success Popup on Load** - Load operations tidak menampilkan success popup (hanya save yang menampilkan) ⭐ NEW
 - **Error Handling** - Comprehensive error handling untuk no file selected, invalid format, canvas not empty, no mode selected
 - **Color Picker Sync** - Color picker otomatis sync dengan warna customLines/polygons yang diload
 - **Speed Sync** - Speed multiplier otomatis sync ke FileManager saat load
 
 ### Performance & Rendering
 - **Performance Optimization - Cached Dots** - Sistem lazy cache untuk getAllDots() dengan dirty flag, hanya rebuild saat visibility berubah (reduce dari 180 vector copies/detik menjadi 0)
+- **Batch Tessellated Mesh** - 4,500+ tessellated polygons (2.4M vertices) dirender dalam **1 draw call** ⭐ NEW
+- **Triangle Fan Triangulation** - Optimal mesh construction untuk tessellated polygons
+- **Dirty Flag System** - Batch mesh hanya rebuild saat polygons berubah (tidak setiap frame)
 - **Anti-Aliasing & Smoothing** - Garis yang smooth untuk visual yang lebih baik
-- **60 FPS Performance** - Solid 60 FPS pada resolusi bervariasi dengan CPU-based rendering
-- **Trails Effect** - Semi-transparent overlay untuk efek jejak visual yang menarik
+- **60 FPS Performance** - Solid 60 FPS bahkan dengan ribuan tessellated polygons
+- **No Frame Buffer Object (FBO)** - Direct rendering dengan trails effect tanpa FBO overhead ⭐ NEW
+- **OpenGL State Management** - Proper alpha blending dan color management untuk batch rendering ⭐ NEW
 
 ### Display & Controls
 - **Cartesian Coordinate System** - Sumbu X-Y dengan animasi scaling (0 to 2.5x radius) dan label sudut (radians & degrees)
@@ -330,10 +568,10 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Component Pattern** - AbstractGuiComponent untuk reusable GUI components
 - **Factory Pattern** - Template dan polygon creation through registry
 - **State Pattern** - Drawing states (IDLE, DRAGGING) dan load states (LoadStage)
-- **Smart Pointer Management** - Menggunakan `std::unique_ptr` dan `std::shared_ptr` untuk resource management
+- **Smart Pointer Management** - Menggunakan `std::unique_ptr` dan `std::shared_ptr` secara eksplisit untuk resource management otomatis (RAII).
+- **No Memory Leaks** - Audit memori menunjukkan penggunaan RAII yang solid, virtual destructors pada base classes (AbstractAnimation), dan penanganan OpenGL resources yang aman di PolygonShape (mencegah VRAM leaks). ⭐ UPDATED
 - **Modular Design** - Terpisah dalam kategori: `shape/`, `anim/`, `operation/`, `template/`, `operation/gui/`
 - **Memory-safe Implementation** - Modern C++17 features dengan RAII, smart pointers, move semantics
-- **No Memory Leaks** - Comprehensive memory management dengan automatic cleanup
 
 ---
 
@@ -347,7 +585,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Template Name Display** | Menampilkan nama template yang sedang aktif (Basic Zellige) |
 | **Draw Template - Parallel** | Setup & show semua shapes secara parallel (barengan) |
 | **Draw Template - Sequential** | Setup & start sequential drawing animation (shapes muncul berurutan) |
-| **Clean Canvas Button** | Clear semua polygons, custom lines, dan **hapus** template shapes |
+| **Clean Canvas Button** | Clear semua polygons, custom lines, dan **hapus** template shapes + **reset settings** (L/P/D colors → blue, Dot checkbox → checked, Radius → 8.0f) ⭐ UPDATED |
 | **Radius Slider** | Adjust template radius (50 - 600) secara realtime - semua shapes update posisinya secara proporsional |
 | **Speed Slider** | Adjust global speed multiplier (0.1 - 1.5x) untuk semua animations |
 | **Line Width Slider** | Adjust ketebalan garis (0 - 4px) untuk semua shapes |
@@ -370,6 +608,28 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Mode Draw** | Pilihan mode animasi: |
 |  - **Parallel Per Group** | Template, CustomLines, dan Polygons animate secara parallel per group |
 |  - **Sequential Per Group** | Groups animate satu per satu dengan delay |
+| **Custom Line CollapsingHeader** | ⭐ NEW Hanya muncul jika file punya customLines: |
+|  - **Draw Custom Lines Checkbox** | CustomLines diload/digambar jika dicentang |
+|  - **Custom Line Appearance** | CustomLine controls (color, curve, etc) ⭐ UPDATED: |
+|  - **Animation Mode** | Pilihan animasi untuk custom lines: |
+|  - **No Animation Line** | CustomLines digambar tanpa animasi wave |
+|  - **Wave Animation Line** | CustomLines digambar dengan efek wave/gelombang ⭐ NEW |
+|  - **Wave Settings** (Wave Animation only) | Slider untuk parameter wave: |
+|  - **Amplitude (px)** | Tinggi gelombang dalam pixels (2.0 - 5.0 px) ⭐ NEW |
+|  - **Frequency** | Kekerapan gelombang (1.0 - 3.0 Hz) ⭐ NEW |
+|  - **Duration (sec)** | Durasi wave animation (0.0 - 60.0 detik, 0 = infinite) ⭐ NEW |
+|  - **Step Animation Line** (Wave only) | Timing kapan wave animation berjalan: ⭐ NEW |
+|  - **Before Polygon Draw** | Wave selesai sebelum polygons digambar |
+|  - **With Polygon Draw** | Wave berjalan bareng polygon animation |
+|  - **After Polygon Draw** | Wave berjalan setelah polygon selesai |
+| **Polygon CollapsingHeader** | ⭐ NEW Hanya muncul jika file punya polygons: |
+|  - **Polygon Animate** | Pilihan animation mode untuk polygons: |
+|  - **No Animation** | Polygons langsung muncul tanpa animasi |
+|  - **FadeIn** | Alpha blending fade-in effect |
+|  - **Wobble** | Oscillation/goyang effect |
+|  - **Fill** | Water fill effect dari bawah ke atas |
+|  - **Wobble Fill** | Kombinasi wobble + gradual fill ⭐ NEW |
+|  - **Gradient** | Smooth gradient flow effect ⭐ NEW |
 | **Draw Settings** ⭐ UPDATED | Shapes yang DIBUAT saat Draw diklik: |
 |  - **Cartesian** Checkbox | Cartesian axes dibuat jika dicentang |
 |  - **Circles** Checkbox | Circle shapes dibuat jika dicentang |
@@ -377,11 +637,6 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 |  - **Parallelograms** Checkbox | ParallelogramLine shapes dibuat jika dicentang |
 |  - **RectangleLines** Checkbox | RectangleLine shapes dibuat jika dicentang |
 |  - **OctagramLines** Checkbox | OctagramLine shapes dibuat jika dicentang |
-| **Polygon Animate** | Pilihan animation mode untuk polygons: |
-|  - **No Animation** | Polygons langsung muncul tanpa animasi |
-|  - **FadeIn** | Alpha blending fade-in effect |
-|  - **Wobble** | Oscillation/goyang effect |
-|  - **Fill** | Water fill effect dari bawah ke atas |
 | **Speed Control** ⭐ NEW | Slider speed 0.1 - 1.5x untuk semua animations |
 | **Draw Arrow Button (←)** | Load dan animate workspace |
    - Clean canvas dulu
@@ -433,7 +688,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 | **Delete All Custom Lines** | Hapus semua custom lines saja | - |
 | **Delete All Polygons** | Hapus semua polygons saja | - |
 | **Delete Lines & Polygons** | Hapus semua custom lines dan polygons | **CTRL+DEL** |
-| **Clean Canvas** | Clear semua dan **hapus** template shapes | **CTRL+SHIFT+DEL** |
+| **Clean Canvas** | Clear semua, **hapus** template shapes, + **reset settings** (L/P/D colors → blue, Dot → visible, Radius → 8.0f) ⭐ UPDATED | **CTRL+SHIFT+DEL** |
 
 **MenuBar (View Menu):** ⭐ UPDATED
 | Menu Item | Action |
@@ -450,7 +705,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - **Auto-Center** - SelectionInfo window muncul di tengah screen saat pertama dibuka ⭐ NEW
 
 **Success Popup:**
-- Muncul setelah save berhasil
+- Muncul setelah save berhasil ⭐ UPDATED (tidak muncul untuk load operations)
 - Menampilkan pesan konfirmasi
 - Auto-close setelah klik OK atau anywhere
 
@@ -503,9 +758,11 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 **UserDot Controls:** ⭐ NEW
 | Input | Action |
 | --- | --- |
-| **Right-Click (Original Dot)** | Context menu untuk Duplicate Dot (Above/Below/Left/Right) |
+| **Right-Click (Original Dot)** | Context menu untuk Duplicate Dot (Above/Below/Left/Right/Track) |
 | **Right-Click (UserDot)** | Context menu untuk Copy/Paste Color |
-| **Mouse Scroll (Selected)** | Gerakkan selected userDot sesuai arah offset (without CTRL) |
+| **Right-Click (CustomLine/DcustomLine)** | Context menu untuk Duplicate Dot Track ⭐ NEW |
+| **Mouse Scroll (Track Dot)** | Gerakkan dot sepanjang customLine path (highest priority) ⭐ NEW |
+| **Mouse Scroll (Regular Dot)** | Gerakkan selected userDot sesuai arah offset (without CTRL) |
 | **Radius Slider** | Atur radius userDot (0-8) - applied ke selected userDots atau new userDots |
 | **Color Picker** | Atur warna userDot - applied ke selected userDots atau new userDots |
 
@@ -864,6 +1121,223 @@ class FileManager {
 | Polygons (FadeIn) | 0.003f | 0.18f | × 60 |
 | Polygons (Wobble) | 0.03f | 1.8f | × 60 |
 | Polygons (Fill) | 0.002f | 0.12f | × 60 |
+| Polygons (Wobble Fill) | - | 0.3f | × 18 (estimated) ⭐ NEW |
+| Polygons (Gradient) | - | 2.0f | × 4 ⭐ NEW |
+
+### GLSL Polygon Rendering System ⭐ NEW
+
+Polygon rendering menggunakan conditional rendering berdasarkan `loadedFromFile` flag:
+
+```cpp
+void PolygonShape::draw() const {
+    if (loadedFromFile) {
+        // Polygon diload dari file .nay → Gunakan GLSL shaders
+        drawGLSL();
+    } else {
+        // Polygon dibuat baru (CTRL+G / right-click) → Gunakan CPU rendering
+        drawCPU();
+    }
+}
+```
+
+**CPU Rendering (New Polygons):**
+- Simple ofSetColor() + ofBeginShape() rendering
+- Tidak ada animation
+- Direct color fill
+
+**GLSL Rendering (Loaded Polygons):**
+
+1. **Basic Rendering (No Animation/FadeIn):**
+   - Vertex shader untuk tessellated curve support
+   - Fragment shader untuk solid color rendering
+   - Alpha fade untuk FadeIn animation
+
+2. **Wobble Rendering (WobbleAnimation):** ⭐ NEW
+   - Vertex shader (wobble.vert) untuk wobble displacement
+   - Fragment shader (wobble.frag) untuk solid color
+   - Vertex offset berdasarkan getWobbleOffset() dari WobbleAnimation
+   - Smooth oscillation effect pada polygon vertices
+
+3. **Wave Fill Rendering (FillAnimation):**
+   - Multi-pass rendering dengan FBO (mask + quad)
+   - Mask FBO untuk polygon shape
+   - Wave shader untuk water fill effect
+   - Auto-switch to No Animation setelah complete (fix jagged edges bug) ⭐ UPDATED
+
+4. **Wobble Fill Rendering (WobbleFillAnimation):**
+   - Multi-pass rendering dengan FBO (mask + quad)
+   - Mask FBO untuk polygon shape
+   - Wobble + fill shader untuk kombinasi goyang + gradual fill
+   - Auto-switch to No Animation setelah complete
+
+5. **Gradient Rendering (GradientAnimation):**
+   - Multi-pass rendering dengan FBO (mask + quad)
+   - Mask FBO untuk polygon shape
+   - Gradient shader untuk smooth color flow effect
+   - Finite duration animation (auto-stop setelah selesai)
+   - Auto-switch to No Animation setelah complete
+
+6. **Animation Integration:**
+   - Delta time untuk smooth animations
+   - Progress-based rendering (0.0 → 1.0)
+   - Complete check untuk auto-switch ke No Animation (FadeIn, Fill, WobbleFill, Gradient, Wobble) ⭐ UPDATED
+
+**Update Strategy:**
+```cpp
+void ofApp::updateStaggeredPolygons() {
+    float deltaTime = ofGetLastFrameTime();
+    // Update animation polygons yang BELUM complete saja ⭐ BUG FIX
+    for (auto& polygon : polygonShapes) {
+        if (!polygon.isAnimationComplete()) {
+            polygon.update(deltaTime);
+        }
+    }
+}
+
+void ofApp::updatePolygons() {
+    float deltaTime = ofGetLastFrameTime();
+    // Update polygons yang BELUM complete (bebas apa pun modenya) ⭐ BUG FIX
+    for (auto& polygon : polygonShapes) {
+        if (!polygon.isAnimationComplete()) {
+            polygon.update(deltaTime);
+        }
+    }
+}
+```
+
+**Bug Fix - Animation Stopping Prematurely:**
+- Sebelumnya: `updatePolygons()` hanya update saat `isLoadParallelMode() == true`
+- Masalah: Setelah sequential load complete, `isLoadParallelMode` = false, animations stop
+- Solusi: Selalu update polygons yang belum complete, regardless of mode
+
+### Duplicate Dot Track System ⭐ NEW
+
+**UserDot Track Mode** - Dots yang bergerak沿着 customLine/DcustomLine path dengan scroll wheel.
+
+**Creation Process (DuplicateManager::duplicateDotTrack):**
+```cpp
+// 1. Identify target line (hovered or selected)
+int lineIndex = app->contextMenu->getHoveredLineIndex();
+// Fallback to first selected line if no hovered line
+if (lineIndex < 0 && app->selectionManager.hasSelectedLine()) {
+    const std::set<int>& selectedIndices = app->selectionManager.getSelectedLineIndices();
+    if (!selectedIndices.empty()) {
+        lineIndex = *selectedIndices.begin();
+    }
+}
+
+// 2. Calculate midpoint for initial dot position
+const CustomLine& line = app->customLines[lineIndex];
+const vector<vec2>& points = line.getPoints();
+vec2 midpoint = (points[0] + points[1]) / 2.0f;
+
+// 3. Create DotShape with track mode enabled
+auto dotShape = std::make_unique<DotShape>(midpoint, "Dot", app->userDotRadius);
+dotShape->setTrackLineIndex(lineIndex);  // ⭐ Link dot to line!
+dotShape->setColor(app->colorManager->getUserDotColor());
+dotShape->setLowerBound(lowerBound);  // Boundary based on line orientation
+```
+
+**Movement Logic (InputManager::handleMouseScrolled):**
+```cpp
+// 1. Get current position on curve (0.0 - 1.0)
+float currentT = line.getClosestT(app->userDots[i]->getPosition());
+
+// 2. Get curve length for consistent scroll speed
+float curveLength = line.getApproxLength();
+
+// 3. Convert pixel scroll to delta t
+float scrollSpeed = 2.0f;
+float scrollAmount = io.MouseWheel * scrollSpeed;
+float deltaT = scrollAmount / curveLength;
+
+// 4. Update t with BOUNDARY MARGIN ⭐ FIXED
+// Track dots cannot reach the endpoints of the line
+float trackTMargin = 0.05f;  // 5% margin at each end
+float newT = ofClamp(currentT + deltaT, trackTMargin, 1.0f - trackTMargin);
+
+// 5. Get new position on curve (supports bezier!)
+vec2 newPos = line.getPointAt(newT);
+
+// 6. Update dot position
+app->userDots[i]->setPosition(newPos);
+
+// 7. Update connected customLines (if any)
+for (auto& customLine : app->customLines) {
+    vector<vec2> linePoints = customLine.getPoints();
+    for (size_t j = 0; j < linePoints.size(); j++) {
+        if (glm::length(linePoints[j] - currentPos) < 0.1f) {
+            linePoints[j] = newPos;  // Update connected point
+            customLine.setPoints(linePoints);
+        }
+    }
+}
+```
+
+**Curve Support (CustomLine):**
+```cpp
+// Get point at t (0.0 - 1.0) on quadratic bezier curve
+vec2 CustomLine::getPointAt(float t) const {
+    vec2 start = points[0];
+    vec2 end = points[1];
+
+    // Calculate control point based on curve parameter
+    vec2 mid = (start + end) / 2.0f;
+    vec2 dir = end - start;
+    vec2 perpendicular = vec2(-dir.y, dir.x);  // Rotate 90°
+    vec2 controlPoint = mid + perpendicular * curve;
+
+    // Quadratic bezier formula: (1-t)²·P0 + 2(1-t)t·P1 + t²·P2
+    return start * (1-t) * (1-t) +
+           controlPoint * 2 * (1-t) * t +
+           end * t * t;
+}
+
+// Find closest t value for a given point (for scroll tracking)
+float CustomLine::getClosestT(vec2 point) const {
+    // Sample curve at 100 points, find closest
+    int samples = 100;
+    float closestT = 0.0f;
+    float minDist = FLOAT_MAX;
+
+    for (int i = 0; i <= samples; i++) {
+        float t = (float)i / samples;
+        vec2 curvePoint = getPointAt(t);
+        float dist = glm::length(point - curvePoint);
+
+        if (dist < minDist) {
+            minDist = dist;
+            closestT = t;
+        }
+    }
+
+    return closestT;
+}
+
+// Approximate curve length for scroll speed calculation
+float CustomLine::getApproxLength() const {
+    // Sample curve and sum distances
+    int samples = 100;
+    float length = 0.0f;
+    vec2 prevPoint = getPointAt(0.0f);
+
+    for (int i = 1; i <= samples; i++) {
+        float t = (float)i / samples;
+        vec2 currPoint = getPointAt(t);
+        length += glm::length(currPoint - prevPoint);
+        prevPoint = currPoint;
+    }
+
+    return length;
+}
+```
+
+**Key Features:**
+- **Bezier Support** - Dots follow curved lines, not just straight lines
+- **Boundary Margin** - 5% margin prevents dots from reaching endpoints (configurable via `trackTMargin`)
+- **Connected Lines** - Other lines connected to the dot update automatically
+- **Scroll Priority** - Track dots have highest scroll priority (above regular dots, DcustomLines, curve adjustment)
+- **Lower Bound System** - Boundary set based on line orientation (horizontal/vertical dominant)
 
 ### Undo/Redo System Architecture
 
@@ -971,7 +1445,7 @@ for (int i = 0; i < numPolygons; i++) {
 
 **Load Process (via Tombol Draw di Playground):**
 
-1. **Clean Canvas** - Hapus semua shapes, polygons, customLines, userDots
+1. **Clean Canvas** - Hapus semua shapes, polygons, customLines, userDots + **reset settings** (L/P/D colors → blue, Dot → visible, Radius → 8.0f) ⭐ UPDATED
 2. **Apply Settings** - Speed multiplier, polygon animation mode
 3. **Load & Animate** - Baca file .nay dan animate sesuai mode yang dipilih:
    - **Parallel Per Group**: Template → CustomLines → Polygons animate simultaneously per group
@@ -986,43 +1460,57 @@ BasicIslamicGeometry/
 ├── src/
 │   ├── main.cpp              # Entry point aplikasi (1920x1080, OpenGL 4.6)
 │   ├── ofApp.cpp/h           # Main application class (~3000+ lines)
+│   ├── managers/              # Manager classes untuk core functionality
+│   │   ├── ColorManager.cpp/h       # Color state & operations
+│   │   ├── DuplicateManager.cpp/h   # Dot/Line duplication operations (Track mode!) ⭐ ACTIVE
+│   │   ├── InputManager.cpp/h       # Mouse/keyboard input handling (~865 lines)
+│   │   └── SelectionManager.cpp/h   # Selection state management
 │   ├── shape/                # Shape implementations
-│   │   ├── AbstractShape.cpp/h         # Base class untuk semua shapes (no showing flag) ⭐ UPDATED
+│   │   ├── AbstractShape.cpp/h         # Base class untuk semua shapes (no showing flag)
 │   │   ├── CircleShape.cpp/h           # Circle dengan angle/distance positioning
 │   │   ├── CartesianAxes.cpp/h         # X-Y axes dengan scaling animation
 │   │   ├── CrossLine.cpp/h             # Diagonal lines dengan proportional scaling
 │   │   ├── ParallelogramLine.cpp/h     # Connecting lines dengan intersections
 │   │   ├── RectangleLine.cpp/h         # Rectangle dengan 2 intersection dots
 │   │   ├── OctagramLine.cpp/h          # 2-phase animation lines
-│   │   ├── CustomLine.cpp/h            # User-created bezier lines
+│   │   ├── CustomLine.cpp/h            # User-created bezier lines (Track support) ⭐ UPDATED
 │   │   ├── PolygonShape.cpp/h          # Fill-only polygons dengan animations
-│   │   ├── DotShape.cpp/h              # Single dot shapes
+│   │   ├── DotShape.cpp/h              # Single dot shapes (Track mode) ⭐ UPDATED
 │   │   └── DotInfo.h                   # Common struct untuk dot information
 │   ├── anim/                 # Animation system
 │   │   ├── AbstractAnimation.cpp/h    # Base class untuk animations
 │   │   ├── FadeInAnimation.cpp/h      # Alpha fade effect dengan deltaTime
 │   │   ├── WobbleAnimation.cpp/h      # Oscillation effect dengan deltaTime
-│   │   └── FillAnimation.cpp/h        # Water fill effect dengan deltaTime
+│   │   ├── FillAnimation.cpp/h        # Water fill effect dengan deltaTime
+│   │   ├── WobbleFillAnimation.cpp/h  # Wobble + fill combo ⭐ NEW
+│   │   └── GradientAnimation.cpp/h    # Gradient flow effect ⭐ NEW
 │   ├── template/             # Template system
 │   │   ├── SacredGeometryTemplate.cpp/h  # Abstract template base
 │   │   ├── TemplateRegistry.cpp/h        # Singleton registry
 │   │   └── templates/
 │   │       └── BasicZelligeTemplate.cpp/h # Moroccan pattern (26 shapes)
-│   └── operation/            # Operations layer
-│       ├── FileManager.cpp/h       # .nay save/load dengan speed sync
-│       └── gui/                    # ImGui components
-│           ├── AbstractGuiComponent.cpp/h # GUI base
-│           ├── MenuBar.cpp/h            # File/Edit/View menus
-│           ├── SacredGeometry.cpp/h     # Template control panel (Transform UI) ⭐ UPDATED
-│           ├── Playground.cpp/h         # Playback panel (Draw Settings UI) ⭐ UPDATED
-│           ├── UserCustom.cpp/h         # User control panel
-│           ├── ContextMenu.cpp/h        # Right-click context menu
-│           ├── SuccessPopup.cpp/h       # Success dialog
-│           ├── ErrorPopup.cpp/h         # Error dialog
-│           ├── SelectionInfo.cpp/h      # Selected objects info window ⭐ NEW
-│           └── ObjectTooltip.cpp/h      # Object tooltips manager ⭐ NEW
-├── bin/                      # Compiled executable
+│   ├── operation/            # Operations layer
+│   │   ├── FileManager.cpp/h       # .nay save/load dengan speed sync
+│   │   ├── FileOperationManager.cpp/h # File operations wrapper
+│   │   └── gui/                    # ImGui components
+│   │       ├── AbstractGuiComponent.cpp/h # GUI base
+│   │       ├── MenuBar.cpp/h            # File/Edit/View menus
+│   │       ├── SacredGeometry.cpp/h     # Template control panel (Transform UI)
+│   │       ├── Playground.cpp/h         # Playback panel (Draw Settings UI)
+│   │       ├── UserCustom.cpp/h         # User control panel
+│   │       ├── ContextMenu.cpp/h        # Right-click context menu
+│   │       ├── SuccessPopup.cpp/h       # Success dialog
+│   │       ├── ErrorPopup.cpp/h         # Error dialog
+│   │       ├── ConfirmationPopup.cpp/h  # Confirmation dialog
+│   │       ├── SelectionInfo.cpp/h      # Selected objects info window
+│   │       └── ObjectTooltip.cpp/h      # Object tooltips manager
+│   ├── undo/                # Undo/Redo system
+│   │   └── UndoAction.h             # Undo/Redo action definitions
+│   └── utils/               # Utility functions
+│       └── GeometryUtils.cpp/h       # Geometry helper functions
+├── bin/                      # Compiled executable & data
 │   └── data/                 # Saved workspaces (.nay files)
+├── imgui/                    # ImGui library integration
 ├── README.md                 # Comprehensive documentation (this file)
 └── BasicIslamicGeometry.sln  # Visual Studio solution
 ```
@@ -1030,19 +1518,25 @@ BasicIslamicGeometry/
 **Total Files**: 70+ source files (.cpp + .h)
 
 **Architecture Highlights:**
+- **Manager Pattern**: Centralized managers (Color, Duplicate, Input, Selection) untuk clean separation of concerns
 - **Template System**: SacredGeometryTemplate base class untuk extensibility
 - **Template Registry**: Singleton pattern untuk managing patterns
 - **GUI System**: Modular ImGui components dengan AbstractGuiComponent
-- **Shape Hierarchy**: Semua shapes inherit dari AbstractShape (no show/hide) ⭐ UPDATED
-- **Animation System**: AbstractAnimation base untuk reusable animations dengan deltaTime
+- **Shape Hierarchy**: Semua shapes inherit dari AbstractShape (no show/hide)
+- **Animation System**: AbstractAnimation base untuk reusable animations dengan deltaTime (FadeIn, Wobble, Fill, WobbleFill, Gradient)
 - **Speed Control**: Centralized speed multiplier system untuk semua animations
-- **Object Tooltip System**: Custom OF rendering untuk selected objects info ⭐ NEW
-- **UserDot System**: Flexible dot placement dengan radius dari slider ⭐ NEW
-- **Color Management**: Smart sync antara objects dan color pickers ⭐ NEW
-- **Undo/Redo**: 100-step history dengan comprehensive state tracking (termasuk CREATE_DOT radius) ⭐ UPDATED
-- **File Operations**: Centralized FileManager dengan direct file save dan speed sync
+- **GLSL Rendering**: Conditional GPU/CPU rendering untuk polygons berdasarkan `loadedFromFile`
+- **FileOperationManager**: Wrapper pattern untuk file operations (mirip ColorManager)
+- **Conditional UI**: CollapsingHeader hanya muncul jika file punya data
+- **Skip Load**: CustomLines load bisa di-skip via checkbox
+- **Object Tooltip System**: Custom OF rendering untuk selected objects info
+- **UserDot System**: Flexible dot placement dengan 5 mode (Above, Below, Left, Right, Track) ⭐ NEW
+- **Track Mode**: Dots bergerak沿 customLine/DcustomLine dengan boundary margin ⭐ NEW
+- **Color Management**: Smart sync antara objects dan color pickers
+- **Undo/Redo**: 100-step history dengan comprehensive state tracking (termasuk CREATE_DOT radius)
+- **File Operations**: FileOperationManager dengan direct file save dan speed sync
 - **Window Management**: Independent window visibility controls
-- **Transform System**: Canvas transform dengan inverse transform untuk mouse input ⭐ NEW
+- **Transform System**: Canvas transform dengan inverse transform untuk mouse input
 
 ---
 
@@ -1057,10 +1551,13 @@ Project ini adalah bagian dari eksplorasi **Creative Coding** dan pembelajaran:
 - 🌿 Fondasi untuk project Islamic geometric patterns yang lebih kompleks
 - 💾 Workspace persistence untuk save/load creative work
 - 🎛️ Professional GUI development dengan ImGui
-- 🖼️ Canvas transform system untuk viewport control ⭐ NEW
-- 📋 Selection info display untuk better UX ⭐ NEW
-- 💡 Object tooltips untuk enhanced user experience ⭐ NEW
-- ✨ UserDot system untuk flexible dot placement ⭐ NEW
+- 🖼️ Canvas transform system untuk viewport control
+- 📋 Selection info display untuk better UX
+- 💡 Object tooltips untuk enhanced user experience
+- ✨ UserDot system untuk flexible dot placement
+- 🎭 GLSL shaders untuk advanced polygon rendering
+- 🗂️ File operation manager pattern untuk clean architecture
+- 🎯 Track mode system untuk interactive dots沿 curves ⭐ NEW
 
 ---
 
@@ -1071,11 +1568,12 @@ Dengan optimasi C++ modern dan openFrameworks:
 - **Solid 60 FPS** pada resolusi bervariasi (1920x1080 default)
 - **Smooth drawing animation** tanpa lag dengan deltaTime system
 - **Anti-aliased rendering** untuk kualitas visual tinggi
-- **CPU-based rendering** (ideal untuk basic geometric shapes)
+- **Hybrid Rendering System** - GLSL untuk loaded polygons, CPU untuk new polygons ⭐ NEW
 - **Lazy caching** untuk dot position queries
 - **Smart pointer optimization** untuk memory management
 - **Consistent Animation Speed** - Delta time system memastikan speed konsisten
-- **Efficient Rendering** - Draw Only concept menghemat resources ⭐ NEW
+- **Efficient Rendering** - Draw Only concept menghemat resources
+- **Update Strategy Optimization** - Hanya update incomplete animations ⭐ NEW
 
 ---
 

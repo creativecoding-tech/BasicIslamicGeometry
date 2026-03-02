@@ -43,7 +43,7 @@ void SacredGeometry::draw() {
         // Radius slider
         if (app->currentTemplate) {
             ImGui::SetNextItemWidth(150.0f);
-            ImGui::SliderFloat("Radius", &app->currentTemplate->radius, 50, 600);
+            ImGui::SliderFloat("Radius", &app->currentTemplate->radius, 25, 600);
         }
         // Line Width slider
         ImGui::SetNextItemWidth(150.0f);
@@ -90,6 +90,7 @@ void SacredGeometry::draw() {
                     app->currentTemplate->setupShapes();
                     app->currentTemplate->applySpeedMultiplier();
                     app->currentTemplate->drawParallel();
+                    app->dotsCacheDirty = true;
                 }
             }
             ImGui::SameLine();
@@ -101,38 +102,10 @@ void SacredGeometry::draw() {
                     app->currentTemplate->setupShapes();
                     app->currentTemplate->applySpeedMultiplier();
                     app->currentTemplate->startSequentialDrawing();
+                    app->dotsCacheDirty = true;
                 }
             }
         }
-        ImGui::Separator();
-
-        // Transform section
-        ImGui::Text("Transform Canvas");
-        ImGui::SetNextItemWidth(200.0f);
-        if (ImGui::SliderFloat("Pan X", &app->canvasTranslation.x, -500.0f, 500.0f, "%.0f")) {
-            // Real-time update saat slider digeser
-        }
-        ImGui::SetNextItemWidth(200.0f);
-        if (ImGui::SliderFloat("Pan Y", &app->canvasTranslation.y, -500.0f, 500.0f, "%.0f")) {
-            // Real-time update saat slider digeser
-        }
-        ImGui::SetNextItemWidth(200.0f);
-        if (ImGui::SliderFloat("Rotate", &app->canvasRotation, 0.0f, 360.0f, "%.0f°")) {
-            // Real-time update saat slider digeser
-        }
-        ImGui::SetNextItemWidth(200.0f);
-        if (ImGui::SliderFloat("Zoom", &app->canvasZoom, 0.5f, 3.0f, "%.2fx")) {
-            // Real-time update saat slider digeser
-        }
-
-        // Reset Transform button
-        float resetButtonWidth = ImGui::CalcTextSize("Reset Transform").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-        float transformWindowWidth = ImGui::GetContentRegionAvail().x;
-        ImGui::SetCursorPosX((transformWindowWidth - resetButtonWidth) / 2.0f);
-        if (ImGui::Button("Reset Transform", ImVec2(resetButtonWidth, 0))) {
-            app->resetTransform();
-        }
-
         ImGui::Separator();
         // Clean Canvas button - Disable jika canvas kosong
         bool isCanvasEmpty = (app->currentTemplate && app->currentTemplate->getShapes().empty()) &&

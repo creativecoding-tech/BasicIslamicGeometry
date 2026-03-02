@@ -454,6 +454,16 @@ void ColorManager::syncColorPickersFromSelection() {
 	customLineColor = targetColor;
 }
 
+//--------------------------------------------------------------
+void ColorManager::resetAllColorPickers() {
+	// Reset SEMUA global color variables ke warna biru default
+	ofColor defaultColor = DEFAULT_COLOR;
+
+	customLineColor = defaultColor;
+	polygonColor = defaultColor;
+	userDotColor = defaultColor;
+}
+
 // ========================================================================
 // HELPER METHODS
 // ========================================================================

@@ -72,6 +72,14 @@ void ContextMenu::draw() {
 		}
 		// Context menu untuk CUSTOMLINE (Create Polygon, Copy/Paste Color, Lock Axis untuk DcustomLine)
 		else if (currentType == CUSTOMLINE_CONTEXT) {
+			// ===== MENU 0: Duplicate Dot Track =====
+			if (ImGui::MenuItem("Duplicate Dot Track")) {
+				app->duplicateDotTrack();
+				showContextMenu = false;
+			}
+
+			ImGui::Separator();
+
 			// ===== MENU 1: Create Polygon =====
 			int selectedCount = app->selectionManager.getSelectedLineCount();
 

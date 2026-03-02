@@ -1,8 +1,9 @@
 #pragma once
 
+#include "../anim/AbstractAnimation.h"
 #include "ofMain.h"
 #include <memory>
-#include "../anim/AbstractAnimation.h"
+
 using glm::vec2;
 
 /**
@@ -12,55 +13,129 @@ using glm::vec2;
  */
 class PolygonShape {
 public:
-	// Constructor
-	PolygonShape();
-	PolygonShape(vector<vec2> verts, ofColor color);
-	PolygonShape(vector<vec2> verts, ofColor color, int index);  // Dengan index untuk label
-	PolygonShape(vector<vec2> verts, ofColor color, int index, std::unique_ptr<AbstractAnimation> anim);  // Dengan animation (untuk load dari file)
+  // Constructor
+  PolygonShape();
+  PolygonShape(vector<vec2> verts, ofColor color);
+  PolygonShape(vector<vec2> verts, ofColor color,
+               int index); // Dengan index untuk label
+  PolygonShape(vector<vec2> verts, ofColor color, int index,
+               std::shared_ptr<AbstractAnimation>
+                   anim); // Dengan animation (untuk load dari file)
 
-	// Copy constructor (animation tidak dicopy)
-	PolygonShape(const PolygonShape& other);
+  // Dengan both animations ⭐ NEW
+  PolygonShape(vector<vec2> verts, ofColor color, int index,
+               std::shared_ptr<AbstractAnimation> anim,
+               std::shared_ptr<AbstractAnimation> specialAnim);
 
-	// Copy assignment operator (animation tidak dicopy)
-	PolygonShape& operator=(const PolygonShape& other);
+  // Copy constructor (animation tidak dicopy)
+  PolygonShape(const PolygonShape &other);
 
-	// Move constructor (transfer animation ownership)
-	PolygonShape(PolygonShape&& other) noexcept;
+  // Copy assignment operator (animation tidak dicopy)
+  PolygonShape &operator=(const PolygonShape &other);
 
-	// Move assignment operator (transfer animation ownership)
-	PolygonShape& operator=(PolygonShape&& other) noexcept;
+  // Move constructor (transfer animation ownership)
+  PolygonShape(PolygonShape &&other) noexcept;
 
-	// Main drawing method - draw fill ONLY, no outline
-	void draw() const;
+  // Move assignment operator (transfer animation ownership)
+  PolygonShape &operator=(PolygonShape &&other) noexcept;
 
-	// Animation
-	void update(float deltaTime = 0.016f);  // Update animation progress
-	bool hasAnimation() const;  // Cek apakah punya animation
-	bool isAnimationComplete() const;  // Cek apakah animation sudah selesai
+  // Main drawing method - draw fill ONLY, no outline
+  void draw() const;
 
-	// Setters
-	void setColor(ofColor color);
-	void setSelected(bool sel);
-	void setVertices(const vector<vec2>& verts);  // Set vertices (untuk scaling)
+  // Animation
+  void update(float deltaTime = 0.016f); // Update animation progress
+  bool hasAnimation() const;             // Cek apakah punya animation
+  bool isAnimationComplete() const;      // Cek apakah animation sudah selesai
+  void setAnimation(std::shared_ptr<AbstractAnimation> anim); // ⭐ NEW
+  std::shared_ptr<AbstractAnimation> getAnimationPtr() const; // ⭐ NEW
 
-	// Getters
-	ofColor getColor() const;
-	bool isSelected() const;
-	const vector<vec2>& getVertices() const;
-	int getIndex() const { return index; }  // Get index polygon
+  // Special Animation ⭐ NEW
+  void setSpecialAnimation(std::shared_ptr<AbstractAnimation> anim);
+  std::shared_ptr<AbstractAnimation> getSpecialAnimationPtr() const;
+  bool isSpecialAnimationComplete() const;
 
-	// Utils
-	bool containsPoint(vec2 point) const;  // Cek apakah point ada di dalam polygon
+  // Setters
+  void setColor(ofColor color);
+  void setSelected(bool sel);
+  void setVertices(const vector<vec2> &verts); // Set vertices (untuk scaling)
+  void setSpeed(float speed);                  // ⭐ NEW: Set animation speed
+  // Setter untuk speed multiplier (for proportional control)
+  void setSpeedMultiplier(float multiplier);
+
+  // Getters
+  ofColor getColor() const;
+  bool isSelected() const;
+  const vector<vec2> &getVertices() const;
+  int getIndex() const { return index; } // Get index polygon
+  bool isLoadedFromFile() const {
+    return loadedFromFile;
+  } // Cek apakah diload dari file .nay
+
+  // Setters
+  void setLoadedFromFile(bool loaded) {
+    loadedFromFile = loaded;
+  } // Set flag loaded dari file
+
+  // Tessellated state ⭐ NEW
+  void setTessellated(bool tess) { tessellated = tess; }
+  bool isTessellated() const { return tessellated; }
+
+  // Source tessellation metadata (untuk UI state) ⭐ NEW
+  void setSourceTessellation(const std::string &file, float radius) {
+    sourceTessellationFile = file;
+    sourceTessellationRadius = radius;
+  }
+  std::string getSourceTessellationFile() const {
+    return sourceTessellationFile;
+  }
+  float getSourceTessellationRadius() const { return sourceTessellationRadius; }
+  bool hasSourceTessellation() const { return !sourceTessellationFile.empty(); }
+
+  // Utils
+  bool containsPoint(vec2 point) const; // Cek apakah point ada di dalam polygon
+
+  // Method untuk set titik asli dari luar (dipanggil setelah instantiate) ⭐ NEW
+  void saveOriginalVertices(float currentTemplateRadius);
+  // Method untuk scale geometri berdasar ratio absolute dari original ⭐ NEW
+  void scaleToRadius(float newRadius);
 
 private:
-	vector<vec2> vertices;
-	ofColor fillColor;
-	bool selected;
-	int index;  // Index polygon untuk label
-	std::unique_ptr<AbstractAnimation> animation;  // Animation system (optional)
+  // Rendering helper methods
+  void drawCPU() const;  // CPU-based rendering (ofBeginShape) - untuk newly
+                         // created polygons
+  void drawGLSL() const; // GPU-based rendering (GLSL shaders) - untuk polygons
+                         // loaded from .nay
+  void updateBounds();   // Helper to recalculate minX, maxX, minY, maxY
 
-	// Fill state (dihitung di update(), dipakai di draw())
-	mutable float minY;                      // Y minimum (atas)
-	mutable float maxY;                      // Y maksimum (bawah)
-	mutable float currentWaterY;             // Posisi Y air saat ini
+  vector<vec2> originalVertices; // Backup dari titik asli untuk scaling tanpa
+                                 // cacat presisi ⭐ NEW
+  float baseRadius =
+      1.0f; // Radius template saat titik asli dibuat/diload ⭐ NEW
+
+  vector<vec2> vertices;
+  ofColor fillColor;
+  bool selected;
+  int index;                   // Index polygon untuk label
+  bool loadedFromFile = false; // Flag: true jika diload dari file .nay
+  bool tessellated = false;    // Flag: true jika ini hasil tessellasi
+  std::string sourceTessellationFile = ""; // File .nay sumber tessellasi
+  float sourceTessellationRadius = 10.0f;  // Radius sumber tessellasi
+  std::shared_ptr<AbstractAnimation>
+      animation; // Animation system (optional) ⭐ CHANGED TO shared_ptr
+  std::shared_ptr<AbstractAnimation>
+      specialAnimation; // Special Animation (optional) ⭐ NEW
+
+  // Fill state (dihitung di update(), dipakai di draw())
+  mutable float minX, maxX;    // X bounds untuk AABB check
+  mutable float minY;          // Y minimum (atas)
+  mutable float maxY;          // Y maksimum (bawah)
+  mutable float currentWaterY; // Posisi Y air saat ini
+
+  // Shader untuk FillAnimation
+  mutable ofShader fillShader; // Pixel based fill shader
+  mutable bool shaderLoaded;   // Flag shader loaded
+  mutable ofFbo maskFbo;       // Mask Fbo untuk polygon
+  mutable bool fboAllocated;   // Flag FBO allocated
+  mutable int lastFboWidth;    // Track FBO width
+  mutable int lastFboHeight;   // Track FBO height
 };
