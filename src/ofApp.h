@@ -199,6 +199,7 @@ public:
   bool isTessellationEnabled = false;  // True jika Yes dipilih di popup
   int tessellationMode = 0;            // 0 = Post-Draw, 1 = Direct
   float tessellationRadius = 120.0f;    // Radius untuk tessellation (25-214)
+  float tessellationOriginalRadius = 0.0f;  // ⭐ Simpan radius asli sebelum tessellation
 
   // Tessellation logic hook
   void processPolygonTessellation();

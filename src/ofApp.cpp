@@ -234,21 +234,24 @@ void ofApp::updateStaggeredLoad() {
 
     // ⭐ TESSELLATION LOGIC: Cek apakah perlu tessellation
     if (isTessellationEnabled && tessellationMode == 0) { // 0 = Post-Draw
+      // ⭐ Simpan original radius SEKARANG (sebelum tessellation) - DARI DRAW PERTAMA
+      if (currentTemplate) {
+        tessellationOriginalRadius = currentTemplate->radius;
+      }
+
       // STEP 2: Clean canvas (tapi jangan reset speed)
       cleanCanvasInternal(false); // false = jangan reset speed multiplier
 
-      // STEP 3: Set radius = tessellationRadius & simpan original
+      // STEP 3: Set radius = tessellationRadius
       if (currentTemplate) {
-        // Simpan radius asli untuk direstore nanti
-        float originalRadius = currentTemplate->radius;
         currentTemplate->radius = tessellationRadius; // Set radius tessellation
 
         // STEP 4: Setup & gambar lagi dengan radius tessellation
         currentTemplate->setupShapes(); // Setup ulang dengan radius baru
         currentTemplate->drawParallel(); // Gambar template dengan radius baru
 
-        // Restore radius asli
-        currentTemplate->radius = originalRadius;
+        // ⭐ JANGAN restore radius! SacredGeometry slider harus tetap di tessellationRadius
+        // currentTemplate->radius = tessellationOriginalRadius; // REMOVED - JANGAN restore!
       }
 
       // Reset tessellation flag agar tidak loop

@@ -1032,6 +1032,9 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         app->tessellationMode = tessellationMode; // 0 = Post-Draw, 1 = Direct
         app->tessellationRadius = tessellationRadius; // Simpan radius
 
+        // ⭐ JANGAN simpan tessellationOriginalRadius di sini - biarkan draw pertama pakai radius file .nay
+        // TessellationOriginalRadius akan disimpan SETELAH draw pertama selesai (di LOAD_DONE)
+
         // ⭐ JANGAN reset speed multiplier saat klik Draw - gunakan speed dari Playground window
         // app->currentTemplate->applySpeedMultiplier(); // REMOVED - jangan reset speed!
 
@@ -1138,6 +1141,9 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
               app->isTessellationEnabled = (tessellationDraw == 1); // True jika Yes
               app->tessellationMode = tessellationMode; // 0 = Post-Draw, 1 = Direct
               app->tessellationRadius = tessellationRadius; // Simpan radius
+
+              // ⭐ JANGAN simpan tessellationOriginalRadius di sini - biarkan draw pertama pakai radius file .nay
+              // TessellationOriginalRadius akan disimpan SETELAH draw pertama selesai (di LOAD_DONE)
 
               // Set flag untuk delay load dan update state
               app->isWaitingForLoad = true;
