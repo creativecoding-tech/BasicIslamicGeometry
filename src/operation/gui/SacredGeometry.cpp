@@ -43,7 +43,15 @@ void SacredGeometry::draw() {
         // Radius slider
         if (app->currentTemplate) {
             ImGui::SetNextItemWidth(150.0f);
-            ImGui::SliderFloat("Radius", &app->currentTemplate->radius, 25, 600);
+
+            // ⭐ TESSELLATION: Jika tessellation drawing berlangsung, tampilkan tessellationRadius
+            if (app->isTessellationEnabled) {
+                // Sedang gambar tessellation, tampilkan tessellationRadius
+                ImGui::SliderFloat("Radius", &app->tessellationRadius, 25, 600);
+            } else {
+                // Normal mode, tampilkan radius template biasa
+                ImGui::SliderFloat("Radius", &app->currentTemplate->radius, 25, 600);
+            }
         }
         // Line Width slider
         ImGui::SetNextItemWidth(150.0f);

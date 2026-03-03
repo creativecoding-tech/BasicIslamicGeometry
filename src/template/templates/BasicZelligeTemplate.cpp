@@ -930,6 +930,8 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
   // Static variable untuk menyimpan state dan ukuran popup
   static ImVec2 tessPopupSize = ImVec2(180, 100); // Initial estimate
   static int tessellationDraw = 0; // Track state Yes/No
+  static int tessellationMode = 0; // 0 = Post-Draw, 1 = Direct
+  static float tessellationRadius = 120.0f; // Radius tessellation (25-214, default 120)
 
   // Set ukuran popup: Auto untuk width & height (menyesuaikan konten)
   ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_Always);
@@ -971,8 +973,6 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         ImGui::TableSetupColumn("Col1", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("Col2", ImGuiTableColumnFlags_WidthStretch);
 
-        static int tessellationMode = 0; // 0 = Post-Draw (default), 1 = Direct
-
         // Single row: Post-Draw (kiri) | Direct (kanan)
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
@@ -987,7 +987,6 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
       ImGui::Separator();
 
       // ⭐ Single DragFloat radius di bawah pilihan Mode
-      static float tessellationRadius = 120.0f; // Default radius
       ImGui::Text("Radius:"); // Label di sebelah kiri
       ImGui::SameLine();
       ImGui::DragFloat("##TessellationRadius", &tessellationRadius, 1.0f, 25.0f, 214.0f, "%.0f");
@@ -1027,6 +1026,11 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         // ⭐ FIX: TAPI TETAP force clear screen untuk hilangkan jejak ImGui!
         app->forceClearScreenCounter = 10;  // 10 frame (0.16 detik)
         app->forceNoTrailsCounter = 10;     // 10 frame lagi (0.16 detik)
+
+        // ⭐ TESSELLATION: Simpan state tessellation untuk dipakai setelah drawing selesai
+        app->isTessellationEnabled = (tessellationDraw == 1); // True jika Yes
+        app->tessellationMode = tessellationMode; // 0 = Post-Draw, 1 = Direct
+        app->tessellationRadius = tessellationRadius; // Simpan radius
 
         // ⭐ JANGAN reset speed multiplier saat klik Draw - gunakan speed dari Playground window
         // app->currentTemplate->applySpeedMultiplier(); // REMOVED - jangan reset speed!
@@ -1129,6 +1133,11 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
               // ⭐ NEW: Set Special Polygon Animation Speed Multiplier
               app->fileManager.setSpecialSpeedMultiplier(
                   this->specialSpeedMultiplier);
+
+              // ⭐ TESSELLATION: Simpan state tessellation untuk dipakai setelah drawing selesai
+              app->isTessellationEnabled = (tessellationDraw == 1); // True jika Yes
+              app->tessellationMode = tessellationMode; // 0 = Post-Draw, 1 = Direct
+              app->tessellationRadius = tessellationRadius; // Simpan radius
 
               // Set flag untuk delay load dan update state
               app->isWaitingForLoad = true;

@@ -42,7 +42,8 @@ public:
     NORMAL,             // Normal update mode
     SEQUENTIAL_DRAWING, // Template sequential drawing mode
     DELAYED_LOAD,       // Delayed load waiting for timer
-    STAGGERED_LOAD      // Staggered parallel load mode
+    STAGGERED_LOAD,     // Staggered parallel load mode
+    TESSELLATION_POST_DRAW  // ⭐ NEW: Post-tessellation drawing phase
   };
   UpdateState currentState = UpdateState::NORMAL;
 
@@ -193,6 +194,11 @@ public:
       false; // Flag untuk sequential load per shape (CTRL+SHIFT+O)
   int currentTemplateIndex =
       0; // Index template shape yang sedang di-animate (untuk sequential)
+
+  // ⭐ TESSELLATION SETTINGS (dari Playground Tessellation Settings popup)
+  bool isTessellationEnabled = false;  // True jika Yes dipilih di popup
+  int tessellationMode = 0;            // 0 = Post-Draw, 1 = Direct
+  float tessellationRadius = 120.0f;    // Radius untuk tessellation (25-214)
 
   // Tessellation logic hook
   void processPolygonTessellation();

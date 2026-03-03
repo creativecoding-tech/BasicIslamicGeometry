@@ -228,10 +228,38 @@ void ofApp::updateStaggeredLoad() {
     break;
 
   case LOAD_DONE:
-    // Selesai, kembali ke normal
+    // Selesai drawing normal
     isStaggeredLoad = false;
     isSequentialShapeLoad = false;
-    currentState = UpdateState::NORMAL;
+
+    // ⭐ TESSELLATION LOGIC: Cek apakah perlu tessellation
+    if (isTessellationEnabled && tessellationMode == 0) { // 0 = Post-Draw
+      // STEP 2: Clean canvas (tapi jangan reset speed)
+      cleanCanvasInternal(false); // false = jangan reset speed multiplier
+
+      // STEP 3: Set radius = tessellationRadius & simpan original
+      if (currentTemplate) {
+        // Simpan radius asli untuk direstore nanti
+        float originalRadius = currentTemplate->radius;
+        currentTemplate->radius = tessellationRadius; // Set radius tessellation
+
+        // STEP 4: Setup & gambar lagi dengan radius tessellation
+        currentTemplate->setupShapes(); // Setup ulang dengan radius baru
+        currentTemplate->drawParallel(); // Gambar template dengan radius baru
+
+        // Restore radius asli
+        currentTemplate->radius = originalRadius;
+      }
+
+      // Reset tessellation flag agar tidak loop
+      isTessellationEnabled = false;
+
+      // Kembali ke normal
+      currentState = UpdateState::NORMAL;
+    } else {
+      // Tidak ada tessellation, kembali ke normal
+      currentState = UpdateState::NORMAL;
+    }
     break;
   }
 }
