@@ -905,13 +905,111 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
     }
   }
 
+  ImGui::Spacing();
+
+  // ⭐ Common height untuk kedua button (explicit agar sama persis)
+  float buttonHeight = ImGui::GetFrameHeight(); // Height standar ImGui button
+
+  // ⭐ Tessellation Button - lebih panjang dari Draw button
+  float tessButtonWidth = 140.0f; // Lebih panjang dari Draw button (100px)
+  float windowWidth = ImGui::GetContentRegionAvail().x;
+  ImGui::SetCursorPosX((windowWidth - tessButtonWidth) / 2.0f);
+
+  // Simpan posisi tombol Tessellation (screen coordinates) sebelum button dibuat
+  ImVec2 tessButtonScreenPos = ImGui::GetCursorScreenPos();
+
+  // Tessellation button - buka popup saat diklik
+  if (ImGui::Button("Tessellation", ImVec2(tessButtonWidth, buttonHeight))) {
+    ImGui::OpenPopup("TessellationPopup"); // Buka popup seperti ColorEdit4
+  }
+
+  // ⭐ Tessellation Popup (seperti ColorEdit4 popup)
+  // Set ukuran dan posisi popup secara TRULY dinamis (menyesuaikan konten)
+  ImVec2 playgroundPos = ImGui::GetWindowPos();
+
+  // Static variable untuk menyimpan state dan ukuran popup
+  static ImVec2 tessPopupSize = ImVec2(180, 100); // Initial estimate
+  static int tessellationDraw = 0; // Track state Yes/No
+
+  // Set ukuran popup: Auto untuk width & height (menyesuaikan konten)
+  ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_Always);
+
+  // Set posisi popup dengan offset Y yang responsif berdasarkan state
+  float popupWidth = tessPopupSize.x + 20; // Lebar popup + margin
+
+  // Offset Y berdasarkan state: Yes = lebih besar (popup lebih panjang)
+  float yOffset;
+  if (tessellationDraw == 1) {
+    yOffset = 150; // Yes = Mode muncul, popup panjang, offset besar
+  } else {
+    yOffset = 60;  // No = popup pendek, offset kecil
+  }
+
+  ImGui::SetNextWindowPos(
+      ImVec2(playgroundPos.x - popupWidth, tessButtonScreenPos.y - yOffset),
+      ImGuiCond_Always); // ⭐ Selalu update posisi setiap frame (responsif saat ganti No/Yes)
+
+  if (ImGui::BeginPopup("TessellationPopup")) {
+    ImGui::Text("Tessellation Settings");
+    ImGui::Separator();
+
+    // ⭐ Tessellation Draw radio button
+    ImGui::RadioButton("No", &tessellationDraw, 0);
+    ImGui::SameLine();
+    ImGui::RadioButton("Yes", &tessellationDraw, 1);
+
+    // ⭐ Tessellation Mode - HANYA muncul jika Yes dipilih
+    if (tessellationDraw == 1) {
+      ImGui::Spacing();
+
+      // Label "Mode"
+      ImGui::Text("Mode");
+
+      // Tessellation Mode dengan table 2 kolom, 2 rows (dengan border)
+      if (ImGui::BeginTable("TessellationModeTable", 2, ImGuiTableFlags_Borders)) {
+        // Setup column - sama rata
+        ImGui::TableSetupColumn("Col1", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Col2", ImGuiTableColumnFlags_WidthStretch);
+
+        static int tessellationMode = 0; // 0 = Post-Draw (default), 1 = Direct
+        static float postDrawRadius = 120.0f; // Default radius untuk Post-Draw
+        static float directRadius = 120.0f; // Default radius untuk Direct
+
+        // Row 1: Post-Draw + DragFloat radius
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::RadioButton("Post-Draw", &tessellationMode, 0);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::DragFloat("##PostDrawRadius", &postDrawRadius, 1.0f, 25.0f, 214.0f, "%.0f");
+
+        // Row 2: Direct + DragFloat radius
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::RadioButton("Direct", &tessellationMode, 1);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::DragFloat("##DirectRadius", &directRadius, 1.0f, 25.0f, 214.0f, "%.0f");
+
+        ImGui::EndTable();
+      }
+    }
+
+    // ⭐ Update ukuran popup setelah render (untuk frame berikutnya)
+    tessPopupSize = ImGui::GetWindowSize();
+
+    ImGui::EndPopup();
+  }
+
+  // ⭐ Separator antara Tessellation dan Draw button
+  ImGui::Separator();
+  ImGui::Spacing();
+
   // ⭐ Draw Button dengan explicit width dan manual arrow rendering
   float buttonWidth = 100.0f; // Width button (bisa diatur untuk lebih panjang)
-  float windowWidth = ImGui::GetContentRegionAvail().x;
+  // Reuse windowWidth dari atas (tidak perlu deklarasi ulang)
   ImGui::SetCursorPosX((windowWidth - buttonWidth) / 2.0f);
 
-  // Button kosong dengan explicit width
-  if (ImGui::Button("##DrawButton", ImVec2(buttonWidth, 0))) {
+  // Button kosong dengan explicit width dan height SAMA dengan Tessellation
+  if (ImGui::Button("##DrawButton", ImVec2(buttonWidth, buttonHeight))) {
     // Cek apakah sudah ada file yang di-open
     if (app->lastSavedPath.empty()) {
       // Belum ada file, munculkan error popup
