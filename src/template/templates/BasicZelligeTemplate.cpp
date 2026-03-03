@@ -932,6 +932,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
   static int tessellationDraw = 0; // Track state Yes/No
   static int tessellationMode = 0; // 0 = Post-Draw, 1 = Direct
   static float tessellationRadius = 120.0f; // Radius tessellation (25-214, default 120)
+  static float preTessellationPause = 0.0f; // Pre-Tessellation pause duration (0-5 detik)
 
   // Set ukuran popup: Auto untuk width & height (menyesuaikan konten)
   ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_Always);
@@ -986,7 +987,13 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
       // Separator
       ImGui::Separator();
 
-      // ⭐ Single DragFloat radius di bawah pilihan Mode
+      // ⭐ Pre-Tessellation Pause slider (sebelum Radius)
+      ImGui::Text("Pre-Tessellation:"); // Label
+      ImGui::SameLine();
+      ImGui::SetNextItemWidth(120.0f);
+      ImGui::SliderFloat("##PreTessellationPause", &preTessellationPause, 0.0f, 5.0f, "%.1f s");
+
+      // ⭐ Single DragFloat radius di bawah Pre-Tessellation
       ImGui::Text("Radius:"); // Label di sebelah kiri
       ImGui::SameLine();
       ImGui::DragFloat("##TessellationRadius", &tessellationRadius, 1.0f, 25.0f, 214.0f, "%.0f");
@@ -1031,6 +1038,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         app->isTessellationEnabled = (tessellationDraw == 1); // True jika Yes
         app->tessellationMode = tessellationMode; // 0 = Post-Draw, 1 = Direct
         app->tessellationRadius = tessellationRadius; // Simpan radius
+        app->preTessellationPause = preTessellationPause; // ⭐ Simpan pause duration
 
         // ⭐ JANGAN simpan tessellationOriginalRadius di sini - biarkan draw pertama pakai radius file .nay
         // TessellationOriginalRadius akan disimpan SETELAH draw pertama selesai (di LOAD_DONE)
@@ -1141,6 +1149,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
               app->isTessellationEnabled = (tessellationDraw == 1); // True jika Yes
               app->tessellationMode = tessellationMode; // 0 = Post-Draw, 1 = Direct
               app->tessellationRadius = tessellationRadius; // Simpan radius
+              app->preTessellationPause = preTessellationPause; // ⭐ Simpan pause duration
 
               // ⭐ JANGAN simpan tessellationOriginalRadius di sini - biarkan draw pertama pakai radius file .nay
               // TessellationOriginalRadius akan disimpan SETELAH draw pertama selesai (di LOAD_DONE)

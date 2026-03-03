@@ -234,6 +234,21 @@ void ofApp::updateStaggeredLoad() {
 
     // ⭐ TESSELLATION LOGIC: Cek apakah perlu tessellation
     if (isTessellationEnabled && tessellationMode == 0) { // 0 = Post-Draw
+
+      // ⭐ PRE-TESSELLATION PAUSE: Tunggu sebentar sebelum tessellation
+      if (preTessellationPause > 0.0f && preTessellationTimer < preTessellationPause) {
+        // Ada pause, gunakan delay system
+        preTessellationTimer += ofGetLastFrameTime();
+
+        if (preTessellationTimer >= preTessellationPause) {
+          // Pause selesai, lanjut tessellation
+          preTessellationTimer = 0.0f; // Reset timer untuk tessellation drawing
+        } else {
+          // Masih pause, jangan lanjut tessellation dulu
+          return; // Keluar dari LOAD_DONE, nanti frame berikutnya masuk lagi
+        }
+      }
+
       // ⭐ Simpan original radius SEKARANG (sebelum tessellation) - DARI DRAW PERTAMA
       if (currentTemplate) {
         tessellationOriginalRadius = currentTemplate->radius;
