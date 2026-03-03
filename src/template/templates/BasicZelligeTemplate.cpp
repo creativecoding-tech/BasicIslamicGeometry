@@ -905,12 +905,13 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
     }
   }
 
-  float buttonWidth =
-      ImGui::CalcTextSize("Draw").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+  // ⭐ Draw Button dengan explicit width dan manual arrow rendering
+  float buttonWidth = 100.0f; // Width button (bisa diatur untuk lebih panjang)
   float windowWidth = ImGui::GetContentRegionAvail().x;
   ImGui::SetCursorPosX((windowWidth - buttonWidth) / 2.0f);
-  // Play arrow button
-  if (ImGui::ArrowButton("Draw", ImGuiDir_Left)) {
+
+  // Button kosong dengan explicit width
+  if (ImGui::Button("##DrawButton", ImVec2(buttonWidth, 0))) {
     // Cek apakah sudah ada file yang di-open
     if (app->lastSavedPath.empty()) {
       // Belum ada file, munculkan error popup
@@ -1047,6 +1048,30 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
       }
     }
   }
-  ImGui::SameLine();
-  ImGui::Text("Draw");
+
+  // ⭐ Manual render arrow triangle dan text "Draw" di dalam button
+  ImVec2 buttonMin = ImGui::GetItemRectMin();
+  ImVec2 buttonMax = ImGui::GetItemRectMax();
+  ImVec2 buttonSize = ImGui::GetItemRectSize();
+  ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+  // Gambar arrow triangle di kiri (smooth triangle seperti ArrowButton asli)
+  float arrowX = buttonMin.x + buttonSize.x * 0.2f; // Arrow di 20% posisi
+  float arrowY = (buttonMin.y + buttonMax.y) * 0.5f; // Vertically centered
+  float arrowSize = 5.0f; // Ukuran arrow
+
+  // Triangle pointing left (◄)
+  drawList->AddTriangleFilled(
+      ImVec2(arrowX + arrowSize, arrowY - arrowSize),     // Top right
+      ImVec2(arrowX + arrowSize, arrowY + arrowSize),     // Bottom right
+      ImVec2(arrowX, arrowY),                            // Left tip
+      ImGui::GetColorU32(ImGuiCol_Text)
+  );
+
+  // Gambar text "Draw" di sebelah kanan arrow
+  const char* drawText = "Draw";
+  ImVec2 textSize = ImGui::CalcTextSize(drawText);
+  float textX = buttonMin.x + buttonSize.x * 0.45f; // Text di 45% posisi
+  float textY = (buttonMin.y + buttonMax.y) * 0.5f - textSize.y * 0.5f; // Vertically centered
+  drawList->AddText(ImVec2(textX, textY), ImGui::GetColorU32(ImGuiCol_Text), drawText);
 }
