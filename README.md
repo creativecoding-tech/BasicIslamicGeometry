@@ -6,7 +6,7 @@ Eksperimen geometri Islam dengan pola lingkaran yang saling berhubungan dan anim
 ![C++](https://img.shields.io/badge/C++-17-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-Apache%202.0-green)
-![Branch](https://img.shields.io/badge/Branch-sketch--islamic--gs--pltesselation-orange)
+![Branch](https://img.shields.io/badge/Branch-sketch-islamic-gs-tesselation-orange)
 
 [![Fund The Experiments](https://img.shields.io/badge/Fund-The_Experiments-FF5722?style=for-the-badge&logo=buy-me-a-coffee)](https://sociabuzz.com/abdkdhni)
 
@@ -136,6 +136,26 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Resume animation dengan normal trails (20 frame / ~0.33 detik)
   - Total delay ~40 frame (0.67 detik) untuk menghilangkan jejak ImGui window ⭐ NEW
 - **Canvas Transform Not Saved** - Canvas settings dan transform state TIDAK disimpan ke file .nay (viewport-only)
+
+### Tessellation Button & Settings ⭐ NEW
+- **Tessellation Button** - Tombol di Playground window (lebar 140px, di atas Draw button)
+  - Membuka popup Tessellation Settings di sebelah kiri Playground
+  - Popup posisi dinamis menyesuaikan ukuran konten
+  - Auto adjust posisi Y saat Mode muncul/dihilangkan
+- **Tessellation Settings Popup** - Floating panel dengan kontrol tessellation:
+  - **Draw Radio Button** - Toggle tessellation On/Off (No/Yes)
+    - No: Tessellation dinonaktifkan (default)
+    - Yes: Tessellation diaktifkan, Mode options muncul
+  - **Mode Selection** - Pilihan metode tessellation (hanya muncul jika Yes):
+    - **Post-Draw** - Gambar bentuk dulu, animasi selesai, baru tessellasi
+    - **Direct** - Langsung tessellasi di posisi, gambar & animasi di posisi tessellation
+  - **Radius DragFloat** - Kontrol radius tessellation (25-214, default 120)
+    - Menentukan ukuran pola tessellation dalam polygon
+    - Single slider untuk kedua Mode (Post-Draw dan Direct)
+- **Dynamic Popup Behavior** - Popup secara otomatis:
+  - Mengubah posisi Y berdasarkan state Yes/No
+  - Menyesuaikan ukuran berdasarkan konten yang aktif
+  - Tetap di sebelah kiri Playground window dengan proper spacing
 
 ### Transform Canvas System
 - **Canvas Transform Controls** - Transform slider di SacredGeometry panel:

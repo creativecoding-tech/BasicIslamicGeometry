@@ -88,9 +88,17 @@ void SacredGeometry::draw() {
                     // Enable semua draw settings (SacredGeometry INDEPENDENT dari Playground!)
                     app->currentTemplate->enableAllDrawSettings();
                     app->currentTemplate->setupShapes();
-                    app->currentTemplate->applySpeedMultiplier();
+
+                    // ⭐ SacredGeometry window pakai speed 1.3 fixed (tidak ikut Playground speed)
+                    float savedSpeed = app->currentTemplate->speedMultiplier; // Simpan speed saat ini
+                    app->currentTemplate->speedMultiplier = 1.3f; // Set speed 1.3 untuk SacredGeometry
+                    app->currentTemplate->applySpeedMultiplier(); // Apply speed 1.3
+
                     app->currentTemplate->drawParallel();
                     app->dotsCacheDirty = true;
+
+                    // Restore speed Playground setelah draw selesai
+                    app->currentTemplate->speedMultiplier = savedSpeed;
                 }
             }
             ImGui::SameLine();
@@ -100,9 +108,17 @@ void SacredGeometry::draw() {
                     // Enable semua draw settings (SacredGeometry INDEPENDENT dari Playground!)
                     app->currentTemplate->enableAllDrawSettings();
                     app->currentTemplate->setupShapes();
-                    app->currentTemplate->applySpeedMultiplier();
+
+                    // ⭐ SacredGeometry window pakai speed 1.3 fixed (tidak ikut Playground speed)
+                    float savedSpeed = app->currentTemplate->speedMultiplier; // Simpan speed saat ini
+                    app->currentTemplate->speedMultiplier = 1.3f; // Set speed 1.3 untuk SacredGeometry
+                    app->currentTemplate->applySpeedMultiplier(); // Apply speed 1.3
+
                     app->currentTemplate->startSequentialDrawing();
                     app->dotsCacheDirty = true;
+
+                    // Restore speed Playground setelah draw selesai
+                    app->currentTemplate->speedMultiplier = savedSpeed;
                 }
             }
         }

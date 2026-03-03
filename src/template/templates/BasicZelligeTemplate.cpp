@@ -965,32 +965,32 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
       // Label "Mode"
       ImGui::Text("Mode");
 
-      // Tessellation Mode dengan table 2 kolom, 2 rows (dengan border)
-      if (ImGui::BeginTable("TessellationModeTable", 2, ImGuiTableFlags_Borders)) {
+      // Tessellation Mode dengan table 2 kolom, 1 row (TANPA border)
+      if (ImGui::BeginTable("TessellationModeTable", 2, ImGuiTableFlags_None)) { // None = tanpa border
         // Setup column - sama rata
         ImGui::TableSetupColumn("Col1", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("Col2", ImGuiTableColumnFlags_WidthStretch);
 
         static int tessellationMode = 0; // 0 = Post-Draw (default), 1 = Direct
-        static float postDrawRadius = 120.0f; // Default radius untuk Post-Draw
-        static float directRadius = 120.0f; // Default radius untuk Direct
 
-        // Row 1: Post-Draw + DragFloat radius
+        // Single row: Post-Draw (kiri) | Direct (kanan)
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
         ImGui::RadioButton("Post-Draw", &tessellationMode, 0);
         ImGui::TableSetColumnIndex(1);
-        ImGui::DragFloat("##PostDrawRadius", &postDrawRadius, 1.0f, 25.0f, 214.0f, "%.0f");
-
-        // Row 2: Direct + DragFloat radius
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
         ImGui::RadioButton("Direct", &tessellationMode, 1);
-        ImGui::TableSetColumnIndex(1);
-        ImGui::DragFloat("##DirectRadius", &directRadius, 1.0f, 25.0f, 214.0f, "%.0f");
 
         ImGui::EndTable();
       }
+
+      // Separator
+      ImGui::Separator();
+
+      // ⭐ Single DragFloat radius di bawah pilihan Mode
+      static float tessellationRadius = 120.0f; // Default radius
+      ImGui::Text("Radius:"); // Label di sebelah kiri
+      ImGui::SameLine();
+      ImGui::DragFloat("##TessellationRadius", &tessellationRadius, 1.0f, 25.0f, 214.0f, "%.0f");
     }
 
     // ⭐ Update ukuran popup setelah render (untuk frame berikutnya)
@@ -1028,11 +1028,8 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         app->forceClearScreenCounter = 10;  // 10 frame (0.16 detik)
         app->forceNoTrailsCounter = 10;     // 10 frame lagi (0.16 detik)
 
-        // Apply speed multiplier ke SEMUA (template shapes, polygons,
-        // customLines)
-        app->currentTemplate->applySpeedMultiplier();
-        app->fileManager.setAnimationSpeedMultiplier(
-            app->currentTemplate->speedMultiplier);
+        // ⭐ JANGAN reset speed multiplier saat klik Draw - gunakan speed dari Playground window
+        // app->currentTemplate->applySpeedMultiplier(); // REMOVED - jangan reset speed!
 
         // Simpan polygon animation mode - convert int ke PolygonAnimationMode
         PolygonAnimationMode polyMode;
@@ -1090,11 +1087,10 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
               // CLEAN CANVAS DULU - pakai internal method (tanpa popup lagi)
               app->cleanCanvasInternal();
 
-              // Apply speed multiplier ke SEMUA (template shapes, polygons,
-              // customLines)
-              app->currentTemplate->applySpeedMultiplier();
-              app->fileManager.setAnimationSpeedMultiplier(
-                  app->currentTemplate->speedMultiplier);
+              // ⭐ JANGAN reset speed multiplier saat klik Draw - gunakan speed dari Playground window
+              // app->currentTemplate->applySpeedMultiplier(); // REMOVED - jangan reset speed!
+              // app->fileManager.setAnimationSpeedMultiplier(
+              //     app->currentTemplate->speedMultiplier); // REMOVED - jangan reset speed!
 
               // Simpan polygon animation mode - convert int ke
               // PolygonAnimationMode

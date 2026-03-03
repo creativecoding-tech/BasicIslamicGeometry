@@ -2471,10 +2471,10 @@ void ofApp::cleanCanvasInternal(bool resetSpeed) {
   // Benar-benar HAPUS semua template shapes - delegate ke template
   if (currentTemplate) {
     currentTemplate->clearAllShapes();
-    if (resetSpeed) {
-      currentTemplate->templateSpeedMultiplier =
-          1.0f; // Reset speed ONLY if requested
-    }
+    // ⭐ JANGAN reset speed multiplier saat clean canvas - pertahankan speed dari user!
+    // if (resetSpeed) {
+    //   currentTemplate->templateSpeedMultiplier = 1.0f; // REMOVED - jangan reset speed!
+    // }
   }
 
   // Reset semua color pickers ke warna biru default
