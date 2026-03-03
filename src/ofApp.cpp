@@ -262,12 +262,11 @@ void ofApp::updateStaggeredLoad() {
       if (currentTemplate) {
         currentTemplate->radius = tessellationRadius; // Set radius tessellation
 
-        // ⭐ Enable draw settings & Set SPEED MULTIPLIER TERSIMPAN
-        currentTemplate->enableAllDrawSettings();
+        // ⭐ Set SPEED MULTIPLIER TERSIMPAN (JANGAN enableAllDrawSettings - biarkan ikut checkbox Playground!)
         currentTemplate->templateSpeedMultiplier = tessellationSpeedMultiplier; // ⭐ PAKAI YANG TERSIMPAN (templateSpeedMultiplier!)
 
         // STEP 4: Setup shapes DULU (buat shapes baru dengan radius tessellation)
-        currentTemplate->setupShapes(); // Setup ulang dengan radius baru
+        currentTemplate->setupShapes(); // Setup ulang dengan radius baru - sudah menghormati draw flags!
 
         // ⭐ Apply speed MULTIPLIER SETELAH setupShapes() - penting!
         currentTemplate->applySpeedMultiplier(); // Apply ke shapes BARU
