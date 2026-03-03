@@ -252,6 +252,7 @@ void ofApp::updateStaggeredLoad() {
       // ⭐ Simpan original radius SEKARANG (sebelum tessellation) - DARI DRAW PERTAMA
       if (currentTemplate) {
         tessellationOriginalRadius = currentTemplate->radius;
+        tessellationSpeedMultiplier = currentTemplate->templateSpeedMultiplier; // ⭐ Simpan speed yang dipakai di draw pertama!
       }
 
       // STEP 2: Clean canvas (tapi jangan reset speed)
@@ -261,9 +262,24 @@ void ofApp::updateStaggeredLoad() {
       if (currentTemplate) {
         currentTemplate->radius = tessellationRadius; // Set radius tessellation
 
-        // STEP 4: Setup & gambar lagi dengan radius tessellation
+        // ⭐ Enable draw settings & Set SPEED MULTIPLIER TERSIMPAN
+        currentTemplate->enableAllDrawSettings();
+        currentTemplate->templateSpeedMultiplier = tessellationSpeedMultiplier; // ⭐ PAKAI YANG TERSIMPAN (templateSpeedMultiplier!)
+
+        // STEP 4: Setup shapes DULU (buat shapes baru dengan radius tessellation)
         currentTemplate->setupShapes(); // Setup ulang dengan radius baru
-        currentTemplate->drawParallel(); // Gambar template dengan radius baru
+
+        // ⭐ Apply speed MULTIPLIER SETELAH setupShapes() - penting!
+        currentTemplate->applySpeedMultiplier(); // Apply ke shapes BARU
+
+        // ⭐ Gunakan playMode yang sama (Parallel atau Sequential)
+        if (tessellationPlayMode == 1) {
+          // Sequential mode
+          currentTemplate->startSequentialDrawing();
+        } else {
+          // Parallel mode
+          currentTemplate->drawParallel();
+        }
 
         // ⭐ JANGAN restore radius! SacredGeometry slider harus tetap di tessellationRadius
         // currentTemplate->radius = tessellationOriginalRadius; // REMOVED - JANGAN restore!

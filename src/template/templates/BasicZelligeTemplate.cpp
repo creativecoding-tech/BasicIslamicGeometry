@@ -1039,6 +1039,8 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         app->tessellationMode = tessellationMode; // 0 = Post-Draw, 1 = Direct
         app->tessellationRadius = tessellationRadius; // Simpan radius
         app->preTessellationPause = preTessellationPause; // ⭐ Simpan pause duration
+        app->tessellationPlayMode = playMode; // ⭐ Simpan playMode: 0=Parallel, 1=Sequential
+        // ⭐ JANGAN simpan tessellationSpeedMultiplier di sini - akan diambil di LOAD_DONE setelah draw selesai!
 
         // ⭐ JANGAN simpan tessellationOriginalRadius di sini - biarkan draw pertama pakai radius file .nay
         // TessellationOriginalRadius akan disimpan SETELAH draw pertama selesai (di LOAD_DONE)
@@ -1150,6 +1152,8 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
               app->tessellationMode = tessellationMode; // 0 = Post-Draw, 1 = Direct
               app->tessellationRadius = tessellationRadius; // Simpan radius
               app->preTessellationPause = preTessellationPause; // ⭐ Simpan pause duration
+              app->tessellationPlayMode = playMode; // ⭐ Simpan playMode: 0=Parallel, 1=Sequential
+              // ⭐ JANGAN simpan tessellationSpeedMultiplier di sini - akan diambil di LOAD_DONE setelah draw selesai!
 
               // ⭐ JANGAN simpan tessellationOriginalRadius di sini - biarkan draw pertama pakai radius file .nay
               // TessellationOriginalRadius akan disimpan SETELAH draw pertama selesai (di LOAD_DONE)

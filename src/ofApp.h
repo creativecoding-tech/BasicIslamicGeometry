@@ -202,6 +202,8 @@ public:
   float tessellationOriginalRadius = 0.0f;  // ⭐ Simpan radius asli sebelum tessellation
   float preTessellationPause = 0.0f;       // ⭐ Pause duration sebelum tessellation (0-5 detik)
   float preTessellationTimer = 0.0f;      // ⭐ Timer accumulator untuk pre-tessellation pause
+  int tessellationPlayMode = 0;         // ⭐ Simpan playMode: 0=Parallel, 1=Sequential
+  float tessellationSpeedMultiplier = 1.0f; // ⭐ Simpan speed multiplier dari Playground slider
 
   // Tessellation logic hook
   void processPolygonTessellation();
