@@ -58,13 +58,6 @@ void TessellationManager::generateGrid(float radius, const vec2& viewportSize,
   bottomRight.x -= halfWidth;
   bottomRight.y -= halfHeight;
 
-  // ⭐ DEBUG: Print bounds untuk checking
-  ofLog() << "=== Tessellation Grid Debug ===";
-  ofLog() << "Viewport: " << viewportSize.x << "x" << viewportSize.y;
-  ofLog() << "Canvas Transform - Pan:(" << canvasTranslation.x << "," << canvasTranslation.y << ") Rot:" << canvasRotation << " Zoom:" << canvasZoom;
-  ofLog() << "World Bounds - TopLeft:(" << topLeft.x << "," << topLeft.y << ") BottomRight:(" << bottomRight.x << "," << bottomRight.y << ")";
-  ofLog() << "TileSize: " << tileSize;
-
   // Generate grid dari world space bounds
   // ⭐ FIX: StartCol/Row dihitung dari world bounds, TAPI origin harus di tile boundary
   int startCol = static_cast<int>(std::floor(topLeft.x / tileSize));
@@ -85,11 +78,6 @@ void TessellationManager::generateGrid(float radius, const vec2& viewportSize,
   int originCol = static_cast<int>(std::floor(topLeft.x / tileSize));
   int originRow = static_cast<int>(std::floor(topLeft.y / tileSize));
   origin = vec2(originCol * tileSize, originRow * tileSize);
-
-  // ⭐ DEBUG: Print grid range
-  ofLog() << "Grid Range - StartCol:" << startCol << " StartRow:" << startRow << " EndCol:" << endCol << " EndRow:" << endRow;
-  ofLog() << "Origin (from world bounds): (" << origin.x << "," << origin.y << ")";
-  ofLog() << "Total Tiles: " << ((endCol - startCol + 1) * (endRow - startRow + 1));
 
   // Generate grid positions (square grid)
   // ⭐ FIX: calculateGridOffset pakai relative indices (0-based)

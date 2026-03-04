@@ -1256,9 +1256,11 @@ void ofApp::draw() {
   // ⭐ TESSELLATION CANVAS: Draw template dengan tessellation grid
   if (currentTemplate) {
     if (tessellationManager && tessellationManager->isActive) {
-      // Tessellation mode: Draw template multiple times dengan grid offset
+      // ⭐ TESSELLATION CANVAS: Direct rendering (seperti polygon tessellation)
+      // Tidak pakai FBO cache - langsung render untuk smooth lines!
       const auto& grid = tessellationManager->grid;
 
+      // Draw tessellation grid langsung ke screen
       for (const auto& gridPos : grid) {
         // Save current transform matrix
         ofPushMatrix();
