@@ -46,6 +46,9 @@ void ofApp::setup() {
   // Initialize FileOperationManager (after ofApp is fully constructed)
   fileOperationManager = std::make_unique<FileOperationManager>(this);
 
+  // Initialize TessellationManager (after ofApp is fully constructed)
+  tessellationManager = std::make_unique<TessellationManager>();
+
   // define ImGUI
   setupImGui();
 }
@@ -270,6 +273,10 @@ void ofApp::updateStaggeredLoad() {
 
         // ⭐ Apply speed MULTIPLIER SETELAH setupShapes() - penting!
         currentTemplate->applySpeedMultiplier(); // Apply ke shapes BARU
+
+        // ⭐ TESSELLATION GRID: Generate square grid untuk canvas tessellation
+        vec2 viewportSize = vec2(ofGetWidth(), ofGetHeight());
+        tessellationManager->generateGrid(tessellationRadius, viewportSize);
 
         // ⭐ Gunakan playMode yang sama (Parallel atau Sequential)
         if (tessellationPlayMode == 1) {
@@ -1245,9 +1252,29 @@ void ofApp::draw() {
 
   drawUserDots();
 
-  // Draw template - template handle drawing sendiri!
+  // ⭐ TESSELLATION CANVAS: Draw template dengan tessellation grid
   if (currentTemplate) {
-    currentTemplate->draw();
+    if (tessellationManager && tessellationManager->isActive) {
+      // Tessellation mode: Draw template multiple times dengan grid offset
+      const auto& grid = tessellationManager->grid;
+
+      for (const auto& gridPos : grid) {
+        // Save current transform matrix
+        ofPushMatrix();
+
+        // Apply grid offset translation
+        ofTranslate(gridPos.offset.x, gridPos.offset.y);
+
+        // Draw template di position ini
+        currentTemplate->draw();
+
+        // Restore transform matrix
+        ofPopMatrix();
+      }
+    } else {
+      // Normal mode: Draw template sekali (existing behavior)
+      currentTemplate->draw();
+    }
   }
 
   drawUserDots();
@@ -2536,6 +2563,11 @@ void ofApp::cleanCanvasInternal(bool resetSpeed) {
     // if (resetSpeed) {
     //   currentTemplate->templateSpeedMultiplier = 1.0f; // REMOVED - jangan reset speed!
     // }
+  }
+
+  // ⭐ TESSELLATION: Clear tessellation grid saat clean canvas
+  if (tessellationManager) {
+    tessellationManager->clearGrid();
   }
 
   // Reset semua color pickers ke warna biru default

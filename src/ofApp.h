@@ -7,6 +7,7 @@
 #include "managers/DuplicateManager.h"
 #include "managers/InputManager.h"
 #include "managers/SelectionManager.h"
+#include "managers/TessellationManager.h"
 #include "ofMain.h"
 #include "operation/FileManager.h"
 #include "operation/FileOperationManager.h"
@@ -203,6 +204,7 @@ public:
   float preTessellationPause = 0.0f;       // ⭐ Pause duration sebelum tessellation (0-5 detik)
   float preTessellationTimer = 0.0f;      // ⭐ Timer accumulator untuk pre-tessellation pause
   int tessellationPlayMode = 0;         // ⭐ Simpan playMode: 0=Parallel, 1=Sequential
+  int tessellationTemplateParallelMode = 0; // ⭐ Template parallel mode: 0=Synchronous, 1=Radial Expansion
   float tessellationSpeedMultiplier = 1.0f; // ⭐ Simpan speed multiplier dari Playground slider
 
   // Tessellation logic hook
@@ -231,6 +233,9 @@ public:
 
   // File Operation Manager untuk handle semua file operations
   std::unique_ptr<FileOperationManager> fileOperationManager;
+
+  // Tessellation Manager untuk handle tessellation grid
+  std::unique_ptr<TessellationManager> tessellationManager;
 
   // Play button delay state
   bool isWaitingForLoad = false;

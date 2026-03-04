@@ -137,7 +137,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Total delay ~40 frame (0.67 detik) untuk menghilangkan jejak ImGui window ⭐ NEW
 - **Canvas Transform Not Saved** - Canvas settings dan transform state TIDAK disimpan ke file .nay (viewport-only)
 
-### Tessellation Button & Settings ⭐ NEW
+### Tessellation Button & Settings ⭐
 - **Tessellation Button** - Tombol di Playground window (lebar 140px, di atas Draw button)
   - Membuka popup Tessellation Settings di sebelah kiri Playground
   - Popup posisi dinamis menyesuaikan ukuran konten
@@ -147,15 +147,301 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
     - No: Tessellation dinonaktifkan (default)
     - Yes: Tessellation diaktifkan, Mode options muncul
   - **Mode Selection** - Pilihan metode tessellation (hanya muncul jika Yes):
-    - **Post-Draw** - Gambar bentuk dulu, animasi selesai, baru tessellasi
-    - **Direct** - Langsung tessellasi di posisi, gambar & animasi di posisi tessellation
+    - **Post-Draw** ✅ IMPLEMENTED - Gambar bentuk normal dulu dengan radius dari file .nay, animasi selesai, clean canvas, lalu gambar lagi dengan tessellation radius
+    - **Direct** 🚧 WIP - Langsung tessellasi di posisi, gambar & animasi di posisi tessellation
+  - **Pre-Tessellation Slider** - Durasi pause sebelum tessellation dimulai (0-5 detik, default 0)
+    - Hanya muncul jika Mode = Post-Draw atau Direct
+    - Memberikan jeda sebelum clean canvas dan redraw tessellation
   - **Radius DragFloat** - Kontrol radius tessellation (25-214, default 120)
-    - Menentukan ukuran pola tessellation dalam polygon
-    - Single slider untuk kedua Mode (Post-Draw dan Direct)
+    - Menentukan ukuran pola tessellation
+    - SacredGeometry slider menampilkan tessellationRadius saat tessellation aktif
+- **Post-Draw Mode Behavior** (IMPLEMENTED):
+  - **Step 1**: Gambar normal dengan radius dari file .nay
+  - **Step 2**: Tunggu hingga animasi selesai
+  - **Step 3**: Pre-Tessellation pause (jika di-set > 0)
+  - **Step 4**: Clean canvas (tanpa reset speed)
+  - **Step 5**: Gambar ulang dengan tessellation radius
+  - **Draw Mode Preservation**: Tessellation menggunakan mode yang sama dengan draw pertama (Sequential/Parallel)
+  - **Template Speed Preservation**: Tessellation menghormati Template Speed slider dari Playground ✅ FIXED
+  - **Draw Settings Preservation**: Tessellation menghormati checkbox Draw Settings dari Playground ✅ FIXED
+  - **SacredGeometry Slider**: Tetap di tessellationRadius setelah tessellation selesai (tidak restore ke radius asli)
 - **Dynamic Popup Behavior** - Popup secara otomatis:
   - Mengubah posisi Y berdasarkan state Yes/No
   - Menyesuaikan ukuran berdasarkan konten yang aktif
   - Tetap di sebelah kiri Playground window dengan proper spacing
+
+### Tessellation Canvas (Square Grid Tiling) 🚧 WIP
+- **What is Tessellation Canvas?**
+  - Men-copy pattern geometri (Template + Custom Lines + Polygons) ke grid di seluruh canvas
+  - Square grid tiling untuk menutup canvas tanpa celah (seamless coverage)
+  - Setiap tile berisi complete pattern geometry
+
+- **Difference from Polygon Tessellation:**
+  - **Polygon Tessellation** (sudah ada): Pattern infusion ke dalam polygon area (clipping)
+  - **Tessellation Canvas** (yang ini): Pattern replication ke grid positions di seluruh viewport
+
+- **Square Grid System:**
+  - **Tile Size**: tessellationRadius × 2
+  - **Grid Layout**: Square grid (tidak brick/hexagonal pattern)
+  - **Coverage**: Seluruh viewport + margin 1 tile di setiap sisi
+  - **Origin**: Top-left viewport (-tileSize, -tileSize)
+  - **No Culling**: Semua tiles di-draw (termasuk yang di luar viewport)
+
+- **Tessellation Scope (ALL Geometry):**
+  - ✅ Template shapes (Cartesian, Circles, CrossLines, Parallelograms, RectangleLines, OctagramLines)
+  - ✅ Custom Lines (jika ada di file .nay)
+  - ✅ Polygons (jika ada di file .nay)
+  - Note: Jika file .nay hanya ada template, tessellation hanya untuk template
+
+- **Animation Modes:**
+
+  **Parallel Mode** (Recommended & Simpler):
+
+  **Parallel Tessellation Settings** (muncul di popup ketika Playground = Parallel):
+  - Group: **"Template Parallel"** (di bawah Radius)
+  - Pilihan:
+    1. **Synchronous** - Semua tile mulai animasi bersamaan
+    2. **Radial Expansion** - Mulai dari tengah grid, menyebar keluar
+
+  **Option 1: Synchronous** ⚡ (Simple & Fast)
+  ```
+  Frame 0:      SEMUA tile mulai BERSAMAAN
+                Tile(0,0): Shape 1,2,3... paralel
+                Tile(0,1): Shape 1,2,3... paralel
+                Tile(0,2): Shape 1,2,3... paralel
+                Tile(1,0): Shape 1,2,3... paralel
+                Tile(1,1): Shape 1,2,3... paralel
+                ... (SEMUA tiles synchronous)
+
+  Frame 100:    Seluruh canvas tessellation visible!
+  ```
+  - **Behavior**: Semua tile di grid mulai animasi di frame yang sama (t = 0)
+  - **Implementation**: Shared template, multiple draw calls dengan offset berbeda
+  - **Visual Effect**: Pattern muncul serentak di seluruh canvas seperti "instant reveal"
+  - **Performance**: Most efficient (1 template instance, N transforms)
+  - **Duration**: shapeCount × durationPerShape (sama dengan single tile)
+
+  **Option 2: Radial Expansion** 🌊 (Artistic & Dynamic)
+  ```
+  Frame 0:      Tile di CENTER grid mulai dulu
+                Tile(centerRow, centerCol): Shape 1,2,3... paralel
+
+  Frame 50:     Tiles di RING 1 (distance = 1 dari center) mulai
+                Tile(centerRow-1, centerCol-1): Shape 1,2,3... paralel
+                Tile(centerRow-1, centerCol): Shape 1,2,3... paralel
+                Tile(centerRow-1, centerCol+1): Shape 1,2,3... paralel
+                Tile(centerRow, centerCol-1): Shape 1,2,3... paralel
+                Tile(centerRow, centerCol): Already complete
+                Tile(centerRow, centerCol+1): Shape 1,2,3... paralel
+                Tile(centerRow+1, centerCol-1): Shape 1,2,3... paralel
+                Tile(centerRow+1, centerCol): Shape 1,2,3... paralel
+                Tile(centerRow+1, centerCol+1): Shape 1,2,3... paralel
+
+  Frame 100:    Tiles di RING 2 (distance = 2 dari center) mulai
+                 ...
+
+  Visual: Pattern "ripple" menyebar dari tengah ke pinggir seperti batu jatuh ke air
+  ```
+  - **Behavior**: Tiles mulai animasi berdasarkan jarak dari center grid (Manhattan distance atau Euclidean distance)
+  - **Ring System**: Tiles dikelompokkan berdasarkan distance dari center
+    - Ring 0: Center tile (distance = 0)
+    - Ring 1: 8 tiles di sekeliling center (distance = 1)
+    - Ring 2: 16 tiles di ring luar (distance = 2)
+    - ...dst
+  - **Implementation**: Per-ring delay system, tiles dalam ring yang sama mulai bersamaan
+  - **Visual Effect**: "Ripple" atau "shockwave" dari tengah ke pinggir, sangat artistic
+  - **Performance**: Medium complexity (ring-based grouping)
+  - **Duration**: (maxRingCount × shapeCount) × durationPerShape
+
+  **Distance Calculation Options:**
+  - **Manhattan Distance**: |row - centerRow| + |col - centerCol| (diamond pattern)
+  - **Euclidean Distance**: √((row - centerRow)² + (col - centerCol)²) (circular pattern)
+  - **Chebyshev Distance**: max(|row - centerRow|, |col - centerCol|) (square pattern) ⭐ RECOMMENDED for square grid
+
+  **Tessellation Scope by Geometry Type:**
+
+  **1. Template Tessellation** (Priority 1 - Handle First)
+  - Mode: **Synchronous** atau **Radial Expansion**
+  - Settings: Di popup Tessellation Settings, group "Template Parallel"
+  - Animasi: Menghormati Template Speed slider dari Playground
+  - Draw Settings: Menghormati checkbox (Cartesian, Circles, CrossLines, dll)
+
+  **2. Custom Lines Tessellation** (Priority 2 - Handle After Template)
+  - Mode: **Synchronous** atau **Radial Expansion** (pilihan terpisah dari template)
+  - Settings: Di popup Tessellation Settings, group "Custom Lines Parallel" (di bawah Template Parallel)
+  - Only if: loadedFileCustomLinesCount > 0 (ada custom lines di file .nay)
+  - Wave Animation: Menghormati Wave settings dari Playground (jika enabled)
+
+  **3. Polygons Tessellation** (Priority 3 - Handle Last)
+  - Mode: **Synchronous** atau **Radial Expansion** (pilihan terpisah)
+  - Settings: Di popup Tessellation Settings, group "Polygons Parallel" (di bawah Custom Lines Parallel)
+  - Only if: loadedFilePolygonCount > 0 (ada polygons di file .nay)
+  - Animation: Menghormati Polygon Animation settings dari Playground (Fade In, Wobble, dll)
+  - Note: Polygons hasil tessellation polygon (isTessellated=true) TIDAK di-tessellate lagi
+
+  **Implementation Approach:**
+  - **Phase 1**: Template tessellation (Synchronous + Radial Expansion)
+  - **Phase 2**: Custom lines tessellation (Synchronous + Radial Expansion)
+  - **Phase 3**: Polygons tessellation (Synchronous + Radial Expansion)
+  - Each phase independent, bisa dipilih on/off per geometry type
+
+### Tessellation Canvas Implementation Status 🚧
+
+**Phase 1: Template Tessellation (Parallel - Synchronous)** ⏳ IN PROGRESS
+
+✅ **Completed:**
+- TessellationManager class created (square grid calculation)
+- TessellationManager registered to .vcxproj and .vcxproj.filters
+- TessellationManager initialized in ofApp
+- Generate tessellation grid in LOAD_DONE (Post-Draw mode)
+- Tessellation grid cleared on clean canvas
+- Draw logic for Synchronous mode (all tiles together)
+- UI: "Template Parallel" group in Tessellation Settings popup
+  - Synchronous radio button (default)
+  - Radial Expansion radio button
+  - Only appears when Playground = Parallel mode
+- TessellationTemplateParallelMode saved to app state
+- Popup Y-offset adjustment for Parallel mode
+
+⏳ **TODO - Need to Build & Test:**
+1. **Build Project** in Visual Studio
+   - Verify TessellationManager compiles without errors
+   - Check all new files are linked correctly
+
+2. **Test Synchronous Mode:**
+   - Open .nay file in Playground
+   - Set Playground mode = Parallel
+   - Set Template Speed (e.g., 0.5 for slow motion)
+   - Tessellation Settings: Yes → Post-Draw → Radius 120 → Pre-Tessellation 0
+   - Verify "Template Parallel" group appears
+   - Select "Synchronous" option
+   - Click Draw button
+   - **Expected Behavior:**
+     - Step 1: Normal draw with file .nay radius
+     - Step 2: Animation completes
+     - Step 3: Clean canvas
+     - Step 4: Template drawn MULTIPLE times in grid positions
+     - Step 5: ALL tiles animate TOGETHER (synchronous)
+   - **Verification Points:**
+     - Grid covers entire viewport
+     - All tiles start animation at same time
+     - Template Speed is respected (0.5 = slow)
+     - SacredGeometry slider stays at tessellationRadius (120)
+     - Clean Canvas clears tessellation grid
+
+3. **Test Edge Cases:**
+   - Tessellation with different radii (25, 120, 214)
+   - Tessellation with very small radius (edge cases)
+   - Tessellation with very large radius (performance check)
+   - Clean Canvas after tessellation
+   - Load different .nay file after tessellation
+
+🚧 **Phase 2: Custom Lines Tessellation** - NOT STARTED
+🚧 **Phase 3: Polygons Tessellation** - NOT STARTED
+🚧 **Phase 4: Radial Expansion Mode** - NOT STARTED
+
+  **Sequential Mode** (Complex - TBD):
+
+  **Option A: Sequential per Row** 🌊 Wave Pattern
+  ```
+  Frame 0-100:   Row 0 semua tile animasi sequential
+                 Tile(0,0): Shape 1→2→3→... (sequential)
+                 Tile(0,1): Shape 1→2→3→... (sequential)
+                 Tile(0,2): Shape 1→2→3→... (sequential)
+                 (Row 0 complete)
+
+  Frame 100-200: Row 1 semua tile animasi sequential
+                 Tile(1,0): Shape 1→2→3→... (sequential)
+                 Tile(1,1): Shape 1→2→3→... (sequential)
+                 Tile(1,2): Shape 1→2→3→... (sequential)
+                 (Row 1 complete)
+
+  Frame 200-300: Row 2 semua tile animasi sequential
+                 ...
+
+  Visual: Pattern "waterfall" dari atas ke bawah
+  ```
+  - **Kelebihan**: Visual menarik seperti wave untaian tasbih
+  - **Kekurangan**: Total duration = (rows × shapeCount) × durationPerShape
+  - **Implementation**: Per-row state management, complexity medium
+
+  **Option B: All Tiles Sequential Together** 🔄 Synchronous Pattern
+  ```
+  Frame 0-50:    SEMUA tile animasi Shape 1 bersamaan
+                 Tile(0,0): Shape 1 complete
+                 Tile(0,1): Shape 1 complete
+                 Tile(0,2): Shape 1 complete
+                 Tile(1,0): Shape 1 complete
+                 ... (semua tile Shape 1 complete)
+
+  Frame 50-100:  SEMUA tile animasi Shape 2 bersamaan
+                 Tile(0,0): Shape 2 complete
+                 Tile(0,1): Shape 2 complete
+                 Tile(0,2): Shape 2 complete
+                 Tile(1,0): Shape 2 complete
+                 ... (semua tile Shape 2 complete)
+
+  Frame 100-150: SEMUA tile animasi Shape 3 bersamaan
+                 ...
+
+  Visual: Seluruh canvas "berkedip" shape-by-shape synchronous
+  ```
+  - **Kelebihan**: Total duration = shapeCount × durationPerShape (sama dengan single tile!)
+  - **Kekurangan**: Tidak ada "flow" antar tile, kurang dinamis
+  - **Implementation**: Shared template state, simplest sequential option
+
+  **Option C: True Sequential (One by One)** 📜 Snake Pattern
+  ```
+  Frame 0-50:    Tile(0,0) complete (Shape 1→2→3→...)
+
+  Frame 50-100:  Tile(0,1) complete (Shape 1→2→3→...)
+
+  Frame 100-150: Tile(0,2) complete (Shape 1→2→3→...)
+
+  Frame 150-200: Tile(1,0) complete (Shape 1→2→3→...)
+                 ... (bergantian satu per satu)
+
+  Visual: Pattern "ular" atau kursor berjalan melintasi grid
+  ```
+  - **Kelebihan**: Sangat dramatic, mata user follow tile progression
+  - **Kekurangan**: Total duration = (totalTiles × shapeCount) × durationPerShape (sangat lama!)
+  - **Implementation**: Per-tile state management, highest complexity
+
+  **Option D: Snake/Zigzag per Row** 🐍 Enhanced Wave Pattern
+  ```
+  Frame 0-100:   Row 0 LEFT→RIGHT
+                 Tile(0,0) → Tile(0,1) → Tile(0,2) → ... (sequential)
+
+  Frame 100-200: Row 1 RIGHT→LEFT (zigzag!)
+                 Tile(1,5) → Tile(1,4) → Tile(1,3) → ... (sequential reverse)
+
+  Frame 200-300: Row 2 LEFT→RIGHT
+                 Tile(2,0) → Tile(2,1) → Tile(2,2) → ... (sequential)
+
+  Visual: Pattern "snaking" seperti mengisi formir zigzag
+  ```
+  - **Kelebihan**: Lebih dinamis dari Option A, continuous flow
+  - **Kekurangan**: Total duration = (rows × cols) × shapeCount × durationPerShape
+  - **Implementation**: Direction-aware row state, complexity high
+
+  **Recommendation for Islamic Geometry:**
+  - **Option B** (All Tiles Sequential Together) untuk **initial implementation**
+    - Simple, predictable duration
+    - Masuskan dengan symmetric nature Islamic pattern
+    - Efficient implementation
+  - **Option A** atau **Option D** untuk **future enhancement**
+    - Lebih artistic dan visually pleasing
+    - Cocok untuk showcase/presentation
+
+  **To Be Determined**: User akan memilih pattern yang sesuai vision
+
+- **Implementation Status:**
+  - ✅ TessellationManager class created
+  - ✅ Square grid calculation (generateGrid)
+  - 🚧 Draw logic untuk tessellation instances (in progress)
+  - 🚧 Custom lines tessellation (pending)
+  - 🚧 Polygons tessellation (pending)
+  - 🚧 Sequential mode pattern selection (pending)
 
 ### Transform Canvas System
 - **Canvas Transform Controls** - Transform slider di SacredGeometry panel:
