@@ -8,7 +8,10 @@ TessellationManager::TessellationManager() {
 }
 
 //--------------------------------------------------------------
-void TessellationManager::generateGrid(float radius, const vec2& viewportSize) {
+void TessellationManager::generateGrid(float radius, const vec2& viewportSize,
+                                       const vec2& canvasTranslation,
+                                       float canvasRotation,
+                                       float canvasZoom) {
   tessellationRadius = radius;
 
   // Clear existing grid
@@ -17,24 +20,86 @@ void TessellationManager::generateGrid(float radius, const vec2& viewportSize) {
   // Hitung tile size (square grid)
   float tileSize = radius * 2.0f;
 
-  // Hitung berapa tile untuk menutup viewport (dengan margin)
-  // Margin 1 tile extra di setiap sisi untuk coverage penuh
-  int tilesX = static_cast<int>(std::ceil(viewportSize.x / tileSize)) + 2;
-  int tilesY = static_cast<int>(std::ceil(viewportSize.y / tileSize)) + 2;
+  // ⭐ FIX: Hitung viewport bounds dalam WORLD space (setelah inverse canvas transform)
+  // Screen space (viewport) → World space dengan inverse transform
+  // Canvas transform order di ofApp::draw():
+  //   1. Translate to center (w/2, h/2)
+  //   2. Rotate (rotation)
+  //   3. Scale (zoom)
+  //   4. Pan (translation)
+  //
+  // Inverse transform order (REVERSE order):
+  //   1. Inverse pan: subtract translation
+  //   2. Inverse scale: divide by zoom
+  //   3. Inverse rotate: rotate by -rotation
+  //   4. Inverse center: subtract half viewport size
 
-  // Origin grid (top-left) - geser ke luar viewport
-  // Supaya viewport tertutup penuh
-  float originX = -tileSize;
-  float originY = -tileSize;
-  origin = vec2(originX, originY);
+  float halfWidth = viewportSize.x / 2.0f;
+  float halfHeight = viewportSize.y / 2.0f;
+
+  // Transform viewport corners dari screen space ke world space
+  // Top-left viewport (0, 0) → world space
+  vec2 topLeft = vec2(0, 0);
+  topLeft.x -= canvasTranslation.x;                      // Inverse pan: subtract
+  topLeft.y -= canvasTranslation.y;
+  topLeft.x /= canvasZoom;                               // Inverse scale: divide
+  topLeft.y /= canvasZoom;
+  topLeft = rotatePoint(topLeft, -canvasRotation);       // Inverse rotate: rotate by -angle
+  topLeft.x -= halfWidth;                                // Inverse center: subtract half size
+  topLeft.y -= halfHeight;
+
+  // Bottom-right viewport (width, height) → world space
+  vec2 bottomRight = vec2(viewportSize.x, viewportSize.y);
+  bottomRight.x -= canvasTranslation.x;
+  bottomRight.y -= canvasTranslation.y;
+  bottomRight.x /= canvasZoom;
+  bottomRight.y /= canvasZoom;
+  bottomRight = rotatePoint(bottomRight, -canvasRotation);
+  bottomRight.x -= halfWidth;
+  bottomRight.y -= halfHeight;
+
+  // ⭐ DEBUG: Print bounds untuk checking
+  ofLog() << "=== Tessellation Grid Debug ===";
+  ofLog() << "Viewport: " << viewportSize.x << "x" << viewportSize.y;
+  ofLog() << "Canvas Transform - Pan:(" << canvasTranslation.x << "," << canvasTranslation.y << ") Rot:" << canvasRotation << " Zoom:" << canvasZoom;
+  ofLog() << "World Bounds - TopLeft:(" << topLeft.x << "," << topLeft.y << ") BottomRight:(" << bottomRight.x << "," << bottomRight.y << ")";
+  ofLog() << "TileSize: " << tileSize;
+
+  // Generate grid dari world space bounds
+  // ⭐ FIX: StartCol/Row dihitung dari world bounds, TAPI origin harus di tile boundary
+  int startCol = static_cast<int>(std::floor(topLeft.x / tileSize));
+  int startRow = static_cast<int>(std::floor(topLeft.y / tileSize));
+  int endCol = static_cast<int>(std::ceil(bottomRight.x / tileSize));
+  int endRow = static_cast<int>(std::ceil(bottomRight.y / tileSize));
+
+  // ⭐ FIX: Tambah extra margin tiles di setiap sisi untuk full coverage
+  // Margin 2 tile extra di setiap sisi (kiri, kanan, atas, bawah) untuk lebih aman
+  int marginTiles = 2;
+  startCol -= marginTiles;
+  startRow -= marginTiles;
+  endCol += marginTiles;
+  endRow += marginTiles;
+
+  // ⭐ FIX: Origin harus di tile boundary (aligned ke tileSize)
+  // Gunakan world bounds untuk origin, bukan startCol/startRow yang sudah di-margin
+  int originCol = static_cast<int>(std::floor(topLeft.x / tileSize));
+  int originRow = static_cast<int>(std::floor(topLeft.y / tileSize));
+  origin = vec2(originCol * tileSize, originRow * tileSize);
+
+  // ⭐ DEBUG: Print grid range
+  ofLog() << "Grid Range - StartCol:" << startCol << " StartRow:" << startRow << " EndCol:" << endCol << " EndRow:" << endRow;
+  ofLog() << "Origin (from world bounds): (" << origin.x << "," << origin.y << ")";
+  ofLog() << "Total Tiles: " << ((endCol - startCol + 1) * (endRow - startRow + 1));
 
   // Generate grid positions (square grid)
-  for (int row = 0; row < tilesY; ++row) {
-    for (int col = 0; col < tilesX; ++col) {
+  // ⭐ FIX: calculateGridOffset pakai relative indices (0-based)
+  for (int row = startRow; row <= endRow; ++row) {
+    for (int col = startCol; col <= endCol; ++col) {
       GridPosition pos;
-      pos.row = row;
-      pos.col = col;
-      pos.offset = calculateGridOffset(row, col, radius);
+      pos.row = row - startRow;  // Relative indices (0-based)
+      pos.col = col - startCol;
+      // ⭐ FIX: Pakai relative indices untuk offset
+      pos.offset = calculateGridOffset(pos.row, pos.col, radius);
       grid.push_back(pos);
     }
   }
@@ -47,6 +112,17 @@ void TessellationManager::clearGrid() {
   grid.clear();
   isActive = false;
   origin = vec2(0, 0);
+}
+
+//--------------------------------------------------------------
+vec2 TessellationManager::rotatePoint(const vec2& point, float angle) {
+  float rad = ofDegToRad(angle);
+  float cosA = cos(rad);
+  float sinA = sin(rad);
+  return vec2(
+    point.x * cosA - point.y * sinA,
+    point.x * sinA + point.y * cosA
+  );
 }
 
 //--------------------------------------------------------------

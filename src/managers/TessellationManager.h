@@ -31,7 +31,9 @@ public:
   float tessellationRadius = 120.0f;  // Radius untuk tessellation
 
   // Generate tessellation grid (square grid)
-  void generateGrid(float radius, const vec2& viewportSize);
+  // viewportSize: Ukuran viewport dalam pixels (screen space)
+  // canvasTransform: Canvas transform parameters (translation, rotation, zoom)
+  void generateGrid(float radius, const vec2& viewportSize, const vec2& canvasTranslation, float canvasRotation, float canvasZoom);
 
   // Clear tessellation grid
   void clearGrid();
@@ -41,6 +43,9 @@ public:
 
   // Hitung offset untuk grid position
   vec2 calculateGridOffset(int row, int col, float radius) const;
+
+  // Helper: Rotate point around origin by angle (degrees)
+  static vec2 rotatePoint(const vec2& point, float angle);
 
   // Cek apakah posisi di dalam viewport bounds
   bool isInViewport(const vec2& pos, const vec2& viewportSize) const;

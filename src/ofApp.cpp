@@ -276,7 +276,8 @@ void ofApp::updateStaggeredLoad() {
 
         // ⭐ TESSELLATION GRID: Generate square grid untuk canvas tessellation
         vec2 viewportSize = vec2(ofGetWidth(), ofGetHeight());
-        tessellationManager->generateGrid(tessellationRadius, viewportSize);
+        tessellationManager->generateGrid(tessellationRadius, viewportSize,
+                                          canvasTranslation, canvasRotation, canvasZoom);
 
         // ⭐ Gunakan playMode yang sama (Parallel atau Sequential)
         if (tessellationPlayMode == 1) {
