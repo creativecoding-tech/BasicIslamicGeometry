@@ -1256,9 +1256,10 @@ void ofApp::draw() {
   // ⭐ TESSELLATION CANVAS: Draw template dengan tessellation grid
   if (currentTemplate) {
     if (tessellationManager && tessellationManager->isActive) {
-      // ⭐ TESSELLATION CANVAS: Direct rendering (seperti polygon tessellation)
+      // ⭐ TESSELLATION CANVAS: Direct rendering dengan scissor test untuk cegah overlap
       // Tidak pakai FBO cache - langsung render untuk smooth lines!
       const auto& grid = tessellationManager->grid;
+      float tileSize = tessellationRadius * 2.0f;
 
       // Draw tessellation grid langsung ke screen
       for (const auto& gridPos : grid) {

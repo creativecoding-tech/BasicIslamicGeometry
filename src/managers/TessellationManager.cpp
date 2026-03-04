@@ -59,22 +59,13 @@ void TessellationManager::generateGrid(float radius, const vec2& viewportSize,
   bottomRight.y -= halfHeight;
 
   // Generate grid dari world space bounds
-  // ⭐ FIX: StartCol/Row dihitung dari world bounds, TAPI origin harus di tile boundary
+  // ⭐ FIX: StartCol/Row dihitung dari world bounds
   int startCol = static_cast<int>(std::floor(topLeft.x / tileSize));
   int startRow = static_cast<int>(std::floor(topLeft.y / tileSize));
   int endCol = static_cast<int>(std::ceil(bottomRight.x / tileSize));
   int endRow = static_cast<int>(std::ceil(bottomRight.y / tileSize));
 
-  // ⭐ FIX: Tambah extra margin tiles di setiap sisi untuk full coverage
-  // Margin 2 tile extra di setiap sisi (kiri, kanan, atas, bawah) untuk lebih aman
-  int marginTiles = 2;
-  startCol -= marginTiles;
-  startRow -= marginTiles;
-  endCol += marginTiles;
-  endRow += marginTiles;
-
   // ⭐ FIX: Origin harus di tile boundary (aligned ke tileSize)
-  // Gunakan world bounds untuk origin, bukan startCol/startRow yang sudah di-margin
   int originCol = static_cast<int>(std::floor(topLeft.x / tileSize));
   int originRow = static_cast<int>(std::floor(topLeft.y / tileSize));
   origin = vec2(originCol * tileSize, originRow * tileSize);
