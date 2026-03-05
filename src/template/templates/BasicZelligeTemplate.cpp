@@ -946,7 +946,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
   if (tessellationDraw == 1) {
     // Cek apakah Playground = Parallel (ada Template Parallel group)
     if (playMode == 0) {
-      yOffset = 210; // Yes + Parallel = popup lebih panjang (ada Template Parallel group)
+      yOffset = 235; // Yes + Parallel = popup lebih panjang (ada Template Parallel group 2 baris)
     } else {
       yOffset = 150; // Yes + Sequential = popup standar (tanpa Template Parallel group)
     }
@@ -1009,18 +1009,23 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         ImGui::Separator();
         ImGui::Text("Template Parallel");
 
-        // Template Parallel Mode dengan table 2 kolom, 1 row (TANPA border)
+        // Template Parallel Mode dengan table 2 kolom, 2 row (TANPA border)
         if (ImGui::BeginTable("TemplateParallelTable", 2, ImGuiTableFlags_None)) {
           // Setup column - sama rata
           ImGui::TableSetupColumn("Col1", ImGuiTableColumnFlags_WidthStretch);
           ImGui::TableSetupColumn("Col2", ImGuiTableColumnFlags_WidthStretch);
 
-          // Single row: Synchronous (kiri) | Radial Expansion (kanan)
+          // Row 1: Synchronous (kiri) | Radial Expansion (kanan)
           ImGui::TableNextRow();
           ImGui::TableSetColumnIndex(0);
           ImGui::RadioButton("Synchronous", &templateParallelMode, 0);
           ImGui::TableSetColumnIndex(1);
-          ImGui::RadioButton("Radial Expansion", &templateParallelMode, 1);
+          ImGui::RadioButton("Radial", &templateParallelMode, 1);
+
+          // Row 2: Diagonal (kiri, di bawah Synchronous)
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::RadioButton("Diagonal", &templateParallelMode, 2);
 
           ImGui::EndTable();
         }
@@ -1068,7 +1073,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         app->tessellationRadius = tessellationRadius; // Simpan radius
         app->preTessellationPause = preTessellationPause; // ⭐ Simpan pause duration
         app->tessellationPlayMode = playMode; // ⭐ Simpan playMode: 0=Parallel, 1=Sequential
-        app->tessellationTemplateParallelMode = templateParallelMode; // ⭐ Simpan template parallel mode: 0=Synchronous, 1=Radial Expansion
+        app->tessellationTemplateParallelMode = templateParallelMode; // ⭐ Simpan template parallel mode: 0=Synchronous, 1=Radial Expansion, 2=Diagonal
         // ⭐ JANGAN simpan tessellationSpeedMultiplier di sini - akan diambil di LOAD_DONE setelah draw selesai!
 
         // ⭐ JANGAN simpan tessellationOriginalRadius di sini - biarkan draw pertama pakai radius file .nay
@@ -1182,7 +1187,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
               app->tessellationRadius = tessellationRadius; // Simpan radius
               app->preTessellationPause = preTessellationPause; // ⭐ Simpan pause duration
               app->tessellationPlayMode = playMode; // ⭐ Simpan playMode: 0=Parallel, 1=Sequential
-              app->tessellationTemplateParallelMode = templateParallelMode; // ⭐ Simpan template parallel mode: 0=Synchronous, 1=Radial Expansion
+              app->tessellationTemplateParallelMode = templateParallelMode; // ⭐ Simpan template parallel mode: 0=Synchronous, 1=Radial Expansion, 2=Diagonal
               // ⭐ JANGAN simpan tessellationSpeedMultiplier di sini - akan diambil di LOAD_DONE setelah draw selesai!
 
               // ⭐ JANGAN simpan tessellationOriginalRadius di sini - biarkan draw pertama pakai radius file .nay

@@ -95,6 +95,9 @@ void TessellationManager::clearGrid() {
   // ⭐ NEW: Clear rings dan reset radial expansion state
   rings.clear();
   resetRadialExpansion();
+
+  // ⭐ NEW: Clear diagonals
+  diagonals.clear();
 }
 
 //--------------------------------------------------------------
@@ -205,6 +208,38 @@ float TessellationManager::getRingElapsedTime(int ringIndex) const {
     return rings[ringIndex].elapsedTime;
   }
   return 0.0f;
+}
+
+//--------------------------------------------------------------
+// ⭐ NEW: Diagonal Expansion methods
+void TessellationManager::groupTilesByDiagonal() {
+  diagonals.clear();
+
+  if (grid.empty()) return;
+
+  // Hitung maksimum diagonal index
+  int maxDiagonal = 0;
+  for (const auto& tile : grid) {
+    int diagonal = tile.row + tile.col;
+    if (diagonal > maxDiagonal) {
+      maxDiagonal = diagonal;
+    }
+  }
+
+  // Create diagonal info untuk setiap diagonal
+  for (int d = 0; d <= maxDiagonal; ++d) {
+    DiagonalInfo diag;
+    diag.diagonalIndex = d;
+
+    // Cari semua tiles yang ada di diagonal ini
+    for (size_t i = 0; i < grid.size(); ++i) {
+      if (grid[i].row + grid[i].col == d) {
+        diag.tileIndices.push_back(i);
+      }
+    }
+
+    diagonals.push_back(diag);
+  }
 }
 
 //--------------------------------------------------------------

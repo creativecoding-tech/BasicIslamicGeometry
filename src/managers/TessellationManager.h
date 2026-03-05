@@ -42,6 +42,13 @@ public:
   std::vector<RingInfo> rings;     // Rings untuk radial expansion (di-populate saat generateGrid)
   int centerRow, centerCol;        // Position dari center tile
 
+  // ⭐ NEW: Diagonal grouping untuk Diagonal Expansion mode
+  struct DiagonalInfo {
+    int diagonalIndex;              // Diagonal index (0, 1, 2, ...) dari kiri-atas
+    std::vector<size_t> tileIndices; // Indices ke grid vector untuk tiles di diagonal ini
+  };
+  std::vector<DiagonalInfo> diagonals; // Diagonals untuk diagonal expansion
+
   // ⭐ NEW: Radial Expansion state
   bool isRadialExpansionActive;    // True jika Radial Expansion mode aktif
   int currentAnimatingRing;         // Ring yang sedang animasi (index ke rings vector)
@@ -85,6 +92,10 @@ public:
   bool isRadialExpansionComplete() const;          // Cek apakah semua rings selesai
   void resetRadialExpansion();                       // Reset state
   float getRingElapsedTime(int ringIndex) const;   // ⭐ NEW: Get elapsed time untuk specific ring (untuk virtual time draw)
+
+  // ⭐ NEW: Diagonal Expansion methods
+  void groupTilesByDiagonal();  // Group tiles into diagonals (dari kiri-atas)
+  int getDiagonalCount() const { return static_cast<int>(diagonals.size()); }  // Get total diagonals
 
   // Cek apakah posisi di dalam viewport bounds
   bool isInViewport(const vec2& pos, const vec2& viewportSize) const;

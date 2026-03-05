@@ -204,8 +204,11 @@ public:
   float preTessellationPause = 0.0f;       // ⭐ Pause duration sebelum tessellation (0-5 detik)
   float preTessellationTimer = 0.0f;      // ⭐ Timer accumulator untuk pre-tessellation pause
   int tessellationPlayMode = 0;         // ⭐ Simpan playMode: 0=Parallel, 1=Sequential
-  int tessellationTemplateParallelMode = 0; // ⭐ Template parallel mode: 0=Synchronous, 1=Radial Expansion
+  int tessellationTemplateParallelMode = 0; // ⭐ Template parallel mode: 0=Synchronous, 1=Radial Expansion, 2=Diagonal
   float tessellationSpeedMultiplier = 1.0f; // ⭐ Simpan speed multiplier dari Playground slider
+
+  // ⭐ Diagonal tessellation animation state (untuk tracking diagonal expansion)
+  float diagonalElapsedTime = 0.0f;        // Waktu yang berlalu sejak tessellation mulai
 
   // Tessellation logic hook
   void processPolygonTessellation();
