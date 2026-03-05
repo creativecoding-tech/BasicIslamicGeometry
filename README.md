@@ -261,7 +261,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   **Tessellation Scope by Geometry Type:**
 
   **1. Template Tessellation** (Priority 1 - Handle First)
-  - Mode: **Synchronous**, **Radial Expansion**, atau **Diagonal**
+  - Mode: **Synchronous**, **Radial Expansion**, **Diagonal**, atau **Seq Per Row**
   - Settings: Di popup Tessellation Settings, group "Template Parallel"
   - Animasi: Menghormati Template Speed slider dari Playground
   - Draw Settings: Menghormati checkbox (Cartesian, Circles, CrossLines, dll)
@@ -301,9 +301,9 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - Draw logic for Synchronous mode (all tiles animate together)
 - UI: "Template Parallel" group in Tessellation Settings popup
   - Row 1: Synchronous (kiri) | Radial (kanan) ✅
-  - Row 2: Diagonal (kiri, di bawah Synchronous) ✅ ⭐ NEW
+  - Row 2: Diagonal (kiri) | Seq Per Row (kanan) ✅ ⭐ NEW
   - Only appears when Playground = Parallel mode
-- TessellationTemplateParallelMode saved to app state (0=Synchronous, 1=Radial, 2=Diagonal)
+- TessellationTemplateParallelMode saved to app state (0=Synchronous, 1=Radial, 2=Diagonal, 3=Seq Per Row)
 - Popup Y-offset adjustment untuk Parallel mode (235px untuk 2 baris)
 
 ✅ **Radial Expansion Mode - Implemented & Tested:**
@@ -347,6 +347,10 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Diagonal 0: Semua shapes animate 0% → 100% (parallel)
   - Diagonal 1: Semua shapes animate 0% → 100% (parallel, setelah Diagonal 0)
   - Diagonal 2+: Semua shapes animate 0% → 100% (parallel, setelah diagonal sebelumnya)
+- **Seq Per Row**: Tiles appear row by row dari atas ke bawah → "Curtain drop" effect ⭐ NEW (2026-03-06)
+  - Row 0: Semua shapes animate 0% → 100% (parallel)
+  - Row 1: Semua shapes animate 0% → 100% (parallel, setelah Row 0)
+  - Row 2+: Semua shapes animate 0% → 100% (parallel, setelah row sebelumnya)
 
 🎨 **Visual Effect:**
 - **Synchronous**: All tiles appear simultaneously → "Instant reveal"
@@ -1927,14 +1931,15 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 ## 📝 Current Status: **sketch-islamic-gs-tesselation**
 
-Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, speed control global, transform canvas, draw only concept, object tooltips, userDot system (termasuk track mode), GLSL rendering, file operation manager, dan **TESSellation Canvas system dengan Radial Expansion dan Diagonal Expansion mode**.
+Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, speed control global, transform canvas, draw only concept, object tooltips, userDot system (termasuk track mode), GLSL rendering, file operation manager, dan **TESSellation Canvas system dengan Radial Expansion, Diagonal Expansion, dan Seq Per Row mode**.
 
-### Fitur Terbaru: **Tessellation Canvas - Diagonal Expansion Mode** ⭐ **COMPLETED & TESTED** (2026-03-05)
+### Fitur Terbaru: **Tessellation Canvas - Seq Per Row Mode** ⭐ **COMPLETED & TESTED** (2026-03-06)
 
-**Tessellation Canvas sekarang memiliki 3 mode Template Parallel:**
+**Tessellation Canvas sekarang memiliki 4 mode Template Parallel:**
 - **Synchronous** (0) - Semua tiles animate bersamaan
 - **Radial Expansion** (1) - Pattern menyebar dari center seperti efek ripple
-- **Diagonal Expansion** (2) - Pattern menyebar dari kiri-atas secara diagonal ⭐ NEW
+- **Diagonal Expansion** (2) - Pattern menyebar dari kiri-atas secara diagonal
+- **Seq Per Row** (3) - Pattern menyebar per baris dari atas ke bawah ⭐ NEW
 
 **Diagonal Expansion Animation System:**
 - **Diagonal-Based Grouping** - Tiles dikelompokkan berdasarkan `row + col`
@@ -1957,24 +1962,47 @@ Diagonal 2 [(0,2), (1,1), (2,0)]: 7.4 → 11.1s - □ ○ ○
                                               ○ ○
 ```
 
+**Seq Per Row Animation System:** ⭐ NEW (2026-03-06)
+- **Row-Based Grouping** - Tiles dikelompokkan berdasarkan `row`
+- **Sequential Row Animation** - Setiap row mulai animasi setelah row sebelumnya selesai
+- **Auto Row Duration** - Durasi dihitung otomatis dari Template Speed slider (dynamic)
+- **PARALLEL Shape Animation** - Semua shapes di setiap tile animate barengan (0% → 100% serempak)
+- **Virtual Time Drawing** - Setiap tile punya animation progress terpisah tanpa mengubah template state asli
+- **Speed Control Integration** - Menggunakan `tessellationSpeedMultiplier` (saved value)
+- **Mode Switching Support** - Switch antara mode-mode bekerja dengan benar
+
+**Visual Effect Timeline:**
+```
+Dengan Template Speed = 0.45:
+shapeDuration = 100 / (0.45 × 60) = 3.7 detik
+
+Row 0: 0 → 3.7s        - ■ ■ ■ ■ ■
+Row 1: 3.7 → 7.4s      - ■ ■ ■ ■ ■
+Row 2: 7.4 → 11.1s     - ■ ■ ■ ■ ■
+Row 3: 11.1 → 14.8s    - ■ ■ ■ ■ ■
+```
+
+
 **Technical Implementation:**
 - `TessellationManager::DistanceMethod` enum - 3 distance calculation options
 - `RingInfo` struct - Ring data dengan tile indices dan animation state
-- `DiagonalInfo` struct - Diagonal data dengan tile indices ⭐ NEW
+- `DiagonalInfo` struct - Diagonal data dengan tile indices
+- `RowInfo` struct - Row data dengan tile indices ⭐ NEW (2026-03-06)
 - `getDistanceFromCenter()` - Calculate distance dari tile ke center
 - `groupTilesByDistance()` - Group tiles into rings berdasarkan distance
-- `groupTilesByDiagonal()` - Group tiles into diagonals (row + col) ⭐ NEW
+- `groupTilesByDiagonal()` - Group tiles into diagonals (row + col)
+- `groupTilesByRow()` - Group tiles into rows ⭐ NEW (2026-03-06)
 - `startRadialExpansion()` - Initialize ring-based animation
 - `updateRadialExpansion()` - Update progress per frame dengan deltaTime
-- Draw logic branching - Synchronous vs Radial Expansion vs Diagonal Expansion modes
+- Draw logic branching - Synchronous vs Radial Expansion vs Diagonal Expansion vs Seq Per Row modes
 
 **UI Integration:**
 - Tessellation Settings popup → Template Parallel group
 - Radio buttons (2-row layout):
   - Row 1: "Synchronous" | "Radial Expansion"
-  - Row 2: "Diagonal" (di bawah Synchronous)
+  - Row 2: "Diagonal" | "Seq Per Row"
 - Only appears when Playground = Parallel mode
-- State saved ke `tessellationTemplateParallelMode` app state (0=Synchronous, 1=Radial, 2=Diagonal)
+- State saved ke `tessellationTemplateParallelMode` app state (0=Synchronous, 1=Radial, 2=Diagonal, 3=Seq Per Row)
 
 **Previous Features:**
 - Square Grid System dengan inverse canvas transform
@@ -1983,12 +2011,12 @@ Diagonal 2 [(0,2), (1,1), (2,0)]: 7.4 → 11.1s - □ ○ ○
 - Synchronous mode - semua tiles animate bersamaan
 
 **Modified Files:**
-- `src/managers/TessellationManager.h` - RingInfo, DistanceMethod, ring state variables, DiagonalInfo struct, diagonals vector
-- `src/managers/TessellationManager.cpp` - Ring grouping, radial animation logic, groupTilesByDiagonal() method
-- `src/ofApp.h` - tessellationTemplateParallelMode, diagonalElapsedTime, tessellationSpeedMultiplier
-- `src/ofApp.cpp` - Draw logic branching for Synchronous/Radial/Diagonal modes, diagonal animation timing
+- `src/managers/TessellationManager.h` - RingInfo, DistanceMethod, ring state variables, DiagonalInfo struct, diagonals vector, RowInfo struct, rows vector
+- `src/managers/TessellationManager.cpp` - Ring grouping, radial animation logic, groupTilesByDiagonal(), groupTilesByRow() method
+- `src/ofApp.h` - tessellationTemplateParallelMode, diagonalElapsedTime, rowElapsedTime, tessellationSpeedMultiplier
+- `src/ofApp.cpp` - Draw logic branching for Synchronous/Radial/Diagonal/Seq Per Row modes, animation timing
 - `src/template/SacredGeometryTemplate.h/cpp` - drawAtVirtualTime() method untuk independent tile animation
-- `src/template/templates/BasicZelligeTemplate.cpp` - 2-row radio button layout (Synchronous|Radial, Diagonal)
+- `src/template/templates/BasicZelligeTemplate.cpp` - 2-row radio button layout (Synchronous|Radial, Diagonal|Seq Per Row)
 - `src/shape/AbstractShape.h` - getMaxProgress() public getter untuk virtual time drawing
 
 ### Fitur Terbaru: **Pause Duration for Special Animation** ⭐ NEW (2026-03-02)
