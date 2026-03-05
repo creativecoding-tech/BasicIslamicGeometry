@@ -306,7 +306,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - TessellationTemplateParallelMode saved to app state
 - Popup Y-offset adjustment for Parallel mode
 
-✅ **Radial Expansion Mode - Implemented & Ready to Test:**
+✅ **Radial Expansion Mode - Implemented & Tested:**
 - **Distance Calculation System** - 3 distance methods untuk ring grouping:
   - `MANHATTAN` - Diamond pattern: |row - centerRow| + |col - centerCol|
   - `EUCLIDEAN` - Circular pattern: √((row - centerRow)² + (col - centerCol)²)
@@ -315,50 +315,57 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - `RingInfo` struct dengan tile indices dan animation state
   - `calculateCenterTile()` - Automatically find center grid position
   - `groupTilesByDistance()` - Group tiles into rings based on distance
-- **Ring Delay Animation System**:
+- **Ring Animation System**:
   - `startRadialExpansion()` - Initialize ring-based sequential animation
   - `updateRadialExpansion()` - Update progress per frame with deltaTime
+  - `getRingElapsedTime()` - Get elapsed time untuk specific ring
   - `isRadialExpansionComplete()` - Check completion status
-  - Per-ring duration: 2 seconds (configurable)
-- **Draw Logic Integration**:
-  - Synchronous mode: All tiles animate together (existing)
-  - Radial Expansion mode: Rings animate sequentially from center outward
-  - Automatic ring grouping triggered on tessellation start
-- **State Management**:
-  - `isRadialExpansionActive` - Mode active flag
-  - `currentAnimatingRing` - Current ring being animated
-  - `ringAnimationProgress` - Progress (0.0 - 1.0)
-  - Per-ring state: `isAnimating`, `isComplete`, `delayStartTime`
+  - Per-ring duration: **Auto-calculated dari Template Speed** (dynamic, bukan fixed 2s)
+- **Virtual Time Drawing System** ⭐ NEW:
+  - `drawAtVirtualTime()` - Draw template dengan virtual time offset
+  - **PARALLEL MODE**: Semua shapes animate barengan (0% → 100% serempak)
+  - Setiap tile di ring punya animation progress terpisah
+  - Original template state tidak termodifikasi (save & restore)
+- **Speed Control Integration** ⭐ NEW:
+  - Menggunakan `tessellationSpeedMultiplier` (saved value saat tessellation mulai)
+  - Mengubah Template Speed di Playground TIDAK mempengaruhi tessellation yang sudah jalan
+  - Speed baru hanya berlaku setelah klik Draw lagi
+- **Mode Switching Fix** ⭐ NEW:
+  - Confirmation popup callback sekarang menyimpan `tessellationTemplateParallelMode`
+  - Switch mode (Radial ↔ Sync) + Draw bekerja dengan benar
+- **Draw Logic**:
+  - Synchronous mode: All tiles animate together
+  - Radial Expansion mode: Rings animate sequentially dari center outward
+  - Ring duration = `shapeDuration = 100 / (templateSpeedMultiplier * 60)`
 
 🎨 **Visual Effect:**
 - **Synchronous**: All tiles appear simultaneously → "Instant reveal"
-- **Radial Expansion**: Tiles appear as ripple from center → "Batubatu ke air" effect
-  - Frame 0-2s: Center tile animates
-  - Frame 2-4s: Ring 1 tiles animate
-  - Frame 4-6s: Ring 2 tiles animate
-  - Continues until viewport fully covered
+- **Radial Expansion**: Tiles appear as ripple dari center → "Batubatu ke air" effect
+  - Ring 0 (center): Semua shapes animate 0% → 100% (parallel)
+  - Ring 1: Semua shapes animate 0% → 100% (parallel, mulai setelah Ring 0 selesai)
+  - Ring 2+: Semua shapes animate 0% → 100% (parallel, mulai setelah ring sebelumnya selesai)
 
 📊 **Technical Implementation:**
 - Modified Files:
-  - `src/managers/TessellationManager.h` - RingInfo struct, distance methods, ring state
+  - `src/managers/TessellationManager.h` - RingInfo struct, distance methods, ring state, elapsedTime
   - `src/managers/TessellationManager.cpp` - All ring grouping and animation logic
   - `src/ofApp.cpp` - Draw logic branching, tessellation initialization
-- Distance calculation supports 3 patterns (Manhattan, Euclidean, Chebyshev)
+  - `src/template/SacredGeometryTemplate.h` - `drawAtVirtualTime()` declaration
+  - `src/template/SacredGeometryTemplate.cpp` - `drawAtVirtualTime()` implementation (PARALLEL mode)
+  - `src/template/templates/BasicZelligeTemplate.cpp` - Confirmation popup mode save fix
+  - `src/shape/AbstractShape.h` - `getMaxProgress()` public getter
 - Chebyshev distance used by default untuk square grid compatibility
-- Ring duration: 2 seconds per ring (can be adjusted)
+- Ring duration: Auto-calculated dari Template Speed slider value
 - Integration point: LOAD_DONE state after grid generation
 
-✅ **Synchronous Mode Testing Results:**
-- ✅ Performance: Solid 60 FPS dengan 165 tiles × 26 shapes
+✅ **Radial Expansion Mode Testing Results:** ⭐ **UPDATED** (2026-03-05)
+- ✅ Performance: Solid 60 FPS dengan multiple rings
 - ✅ Quality: Smooth anti-aliased lines (direct OpenGL rendering with MSAA)
 - ✅ Positioning: Grid covers entire viewport dengan benar
 - ✅ Seamless: Tidak ada double lines di tile boundaries
-- ✅ Animation: Synchronous mode berfungsi - semua tiles animate bersamaan
-
-⏳ **Radial Expansion Mode - Ready for Testing:**
-- ✅ Code complete dan ready untuk rebuild
-- ⏳ Needs testing untuk verify visual effect
-- ⏳ Needs performance check dengan multiple rings
+- ✅ Animation: PARALLEL mode working - semua shapes animate barengan di setiap tile
+- ✅ Speed Control: Template Speed slider berfungsi dengan benar
+- ✅ Mode Switching: Radial ↔ Sync switch bekerja dengan benar
 
 🚧 **Phase 2: Custom Lines Tessellation** - NOT STARTED
 🚧 **Phase 3: Polygons Tessellation** - NOT STARTED
@@ -1912,7 +1919,7 @@ Dengan optimasi C++ modern dan openFrameworks:
 
 Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk membuat, mengedit, dan menyimpan pola geometri Islam dengan GUI berbasis ImGui, sistem template yang modular, speed control global, transform canvas, draw only concept, object tooltips, userDot system (termasuk track mode), GLSL rendering, file operation manager, dan **TESSellation Canvas system dengan Radial Expansion mode**.
 
-### Fitur Terbaru: **Tessellation Canvas - Radial Expansion Mode** ⭐ NEW (2026-03-05)
+### Fitur Terbaru: **Tessellation Canvas - Radial Expansion Mode** ⭐ **COMPLETED & TESTED** (2026-03-05)
 
 **Radial Expansion Animation System** - Pattern menyebar dari center seperti efek ripple:
 - **Ring-Based Grouping** - Tiles dikelompokkan berdasarkan jarak dari center grid
@@ -1921,28 +1928,24 @@ Branch ini adalah **Islamic Geometry Studio** - aplikasi komprehensif untuk memb
   - Manhattan Distance (Diamond pattern ◊)
   - Euclidean Distance (Circular pattern ●)
   - Chebyshev Distance (Square pattern ■) - DEFAULT
-- **Per-Ring Duration** - 2 detik per ring (configurable)
-- **Automatic Center Detection** - System mencari center tile secara otomatis
-- **State Management** - Track animation progress per ring (isAnimating, isComplete, delayStartTime)
+- **Auto Ring Duration** - Durasi dihitung otomatis dari Template Speed slider (dynamic)
+- **PARALLEL Shape Animation** - Semua shapes di setiap tile animate barengan (0% → 100% serempak)
+- **Virtual Time Drawing** - Setiap tile punya animation progress terpisah tanpa mengubah template state asli
+- **Speed Control Integration** - Menggunakan saved speed, TIDAK terpengaruh perubahan live slider
+- **Mode Switching Support** - Switch antara Radial ↔ Sync bekerja dengan benar
 
 **Visual Effect Timeline:**
 ```
-Frame 0-2s:   Center tile (Ring 0) animates
-              □
+Dengan Template Speed = 0.45:
+- shapeDuration = 100 / (0.45 × 60) = 3.7 detik
 
-Frame 2-4s:   Ring 1 tiles animate (distance = 1 dari center)
-  ○ ○ ○
-  ○ □ ○
-  ○ ○ ○
-
-Frame 4-6s:   Ring 2 tiles animate (distance = 2 dari center)
-  ○ ○ ○ ○ ○
-  ○ ○ ○ ○ ○
-  ○ ○ □ ○ ○
-  ○ ○ ○ ○ ○
-  ○ ○ ○ ○ ○
+Frame 0-3.7s: Ring 0 (center) - SEMUA shapes animate 0% → 100% barengan
+Frame 3.7-7.4s: Ring 1 - SEMUA shapes animate 0% → 100% barengan
+Frame 7.4-11.1s: Ring 2 - SEMUA shapes animate 0% → 100% barengan
+...dst...
 
 Result: Pattern "MELEBAR" dari tengah ke luar seperti ripple! 🌊
+```
 ```
 
 **Technical Implementation:**

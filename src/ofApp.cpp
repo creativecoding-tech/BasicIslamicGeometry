@@ -283,16 +283,14 @@ void ofApp::updateStaggeredLoad() {
         if (tessellationTemplateParallelMode == 1) {
           tessellationManager->groupTilesByDistance(TessellationManager::CHEBYSHEV);
 
-          // ⭐ Calculate ringDuration berdasarkan total template animation time
-          // Supaya setiap ring punya waktu cukup untuk complete full template animation
+          // ⭐ Calculate ringDuration berdasarkan template animation time
+          // ⭐ PARALLEL MODE: Semua shapes animate barengan, jadi ringDuration = shapeDuration
           // ⭐ USE tessellationSpeedMultiplier (sudah di-save di line 258)
-          float baseSpeed = 20.0f * tessellationSpeedMultiplier;  // ⭐ Pakai saved value!
-          float shapeDuration = 100.0f / (baseSpeed * 60.0f);  // Duration per shape
-          size_t shapeCount = currentTemplate->getShapes().size();
-          float totalTemplateTime = shapeDuration * shapeCount;  // Total time untuk complete template
+          float baseSpeed = tessellationSpeedMultiplier;  // ⭐ Pakai saved value!
+          float shapeDuration = 100.0f / (baseSpeed * 60.0f);  // Duration untuk complete template
 
           // Start radial expansion animation dengan calculated ring duration
-          tessellationManager->startRadialExpansion(totalTemplateTime);
+          tessellationManager->startRadialExpansion(shapeDuration);
         }
 
         // ⭐ Gunakan playMode yang sama (Parallel atau Sequential)
@@ -1289,17 +1287,15 @@ void ofApp::draw() {
         const auto& grid = tessellationManager->grid;
         const auto& rings = tessellationManager->rings;
 
-        // ⭐ FIX: Calculate ringDuration berdasarkan total template animation time
-        // Supaya setiap ring punya waktu cukup untuk complete full template animation
+        // ⭐ FIX: Calculate ringDuration berdasarkan template animation time
+        // ⭐ PARALLEL MODE: Semua shapes animate barengan, jadi total time = shapeDuration (bukan * shapeCount)
         // ⭐ USE SAVED tessellationSpeedMultiplier, bukan live currentTemplate->templateSpeedMultiplier!
         // Ini mencegah perubahan speed saat runtime mengganggu tessellation yang sudah jalan.
-        float baseSpeed = 20.0f * tessellationSpeedMultiplier;  // ⭐ Pakai saved value!
-        float shapeDuration = 100.0f / (baseSpeed * 60.0f);  // Duration per shape
-        size_t shapeCount = currentTemplate->getShapes().size();
-        float totalTemplateTime = shapeDuration * shapeCount;  // Total time untuk complete template
+        float baseSpeed = tessellationSpeedMultiplier;  // ⭐ Pakai saved value!
+        float shapeDuration = 100.0f / (baseSpeed * 60.0f);  // Duration untuk complete template
 
-        // Ring duration = total template time (setiap ring complete full template sebelum ring berikutnya)
-        float ringDuration = totalTemplateTime;
+        // Ring duration = shapeDuration (semua shapes animate barengan)
+        float ringDuration = shapeDuration;
 
         tessellationManager->updateRadialExpansion(ofGetLastFrameTime(), ringDuration);
 
