@@ -279,14 +279,20 @@ void ofApp::updateStaggeredLoad() {
         tessellationManager->generateGrid(tessellationRadius, viewportSize,
                                           canvasTranslation, canvasRotation, canvasZoom);
 
-        // ⭐ NEW: Group tiles into rings untuk Radial Expansion mode
+        // ⭐ Radial Expansion mode: group tiles by distance dari center
         if (tessellationTemplateParallelMode == 1) {
-          // Radial Expansion mode - group tiles by distance dari center
           tessellationManager->groupTilesByDistance(TessellationManager::CHEBYSHEV);
 
-          // Start radial expansion animation
-          float ringDuration = 2.0f;  // 2 detik per ring
-          tessellationManager->startRadialExpansion(ringDuration);
+          // ⭐ Calculate ringDuration berdasarkan total template animation time
+          // Supaya setiap ring punya waktu cukup untuk complete full template animation
+          // ⭐ USE tessellationSpeedMultiplier (sudah di-save di line 258)
+          float baseSpeed = 20.0f * tessellationSpeedMultiplier;  // ⭐ Pakai saved value!
+          float shapeDuration = 100.0f / (baseSpeed * 60.0f);  // Duration per shape
+          size_t shapeCount = currentTemplate->getShapes().size();
+          float totalTemplateTime = shapeDuration * shapeCount;  // Total time untuk complete template
+
+          // Start radial expansion animation dengan calculated ring duration
+          tessellationManager->startRadialExpansion(totalTemplateTime);
         }
 
         // ⭐ Gunakan playMode yang sama (Parallel atau Sequential)
@@ -1279,25 +1285,41 @@ void ofApp::draw() {
           ofPopMatrix();
         }
       } else {
-        // 🌊 RADIAL EXPANSION MODE: Rings animate sequentially dari center
+        // 🌊 RADIAL EXPANSION MODE: Setiap tile animate dari awal dengan timing berbeda
         const auto& grid = tessellationManager->grid;
         const auto& rings = tessellationManager->rings;
 
-        // Update radial expansion progress
-        float ringDuration = 2.0f;  // Durasi per ring (detik)
+        // ⭐ FIX: Calculate ringDuration berdasarkan total template animation time
+        // Supaya setiap ring punya waktu cukup untuk complete full template animation
+        // ⭐ USE SAVED tessellationSpeedMultiplier, bukan live currentTemplate->templateSpeedMultiplier!
+        // Ini mencegah perubahan speed saat runtime mengganggu tessellation yang sudah jalan.
+        float baseSpeed = 20.0f * tessellationSpeedMultiplier;  // ⭐ Pakai saved value!
+        float shapeDuration = 100.0f / (baseSpeed * 60.0f);  // Duration per shape
+        size_t shapeCount = currentTemplate->getShapes().size();
+        float totalTemplateTime = shapeDuration * shapeCount;  // Total time untuk complete template
+
+        // Ring duration = total template time (setiap ring complete full template sebelum ring berikutnya)
+        float ringDuration = totalTemplateTime;
+
         tessellationManager->updateRadialExpansion(ofGetLastFrameTime(), ringDuration);
 
-        // Draw tiles ring by ring berdasarkan animasi state
-        for (const auto& ring : rings) {
+        // Draw tiles ring by ring dengan masing-masing virtual time
+        for (size_t ringIdx = 0; ringIdx < rings.size(); ++ringIdx) {
+          const auto& ring = rings[ringIdx];
+
           // Cek apakah ring ini sedang animasi atau sudah complete
           if (ring.isAnimating || ring.isComplete) {
-            // Draw semua tiles di ring ini
+            // Get elapsed time untuk ring ini (virtual time)
+            float virtualTime = tessellationManager->getRingElapsedTime(static_cast<int>(ringIdx));
+
+            // Draw semua tiles di ring ini dengan virtual time yang sama
             for (size_t tileIdx : ring.tileIndices) {
               if (tileIdx < grid.size()) {
                 const auto& gridPos = grid[tileIdx];
                 ofPushMatrix();
                 ofTranslate(gridPos.offset.x, gridPos.offset.y);
-                currentTemplate->draw();  // Draw full template
+                // ⭐ KEY: Draw dengan virtual time - setiap tile animate dari awal!
+                currentTemplate->drawAtVirtualTime(virtualTime, shapeDuration);
                 ofPopMatrix();
               }
             }

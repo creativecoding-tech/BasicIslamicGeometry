@@ -55,6 +55,12 @@ public:
     }
   }
 
+  // ⭐ NEW: Draw with virtual sequential progress untuk tessellation
+  // virtualTime: waktu animasi dalam detik (untuk radial expansion)
+  // shapeDuration: durasi per shape dalam detik (default dihitung dari speed)
+  // Ini menggambar seolah-olah template di-state tertentu tanpa mengubah state asli
+  virtual void drawAtVirtualTime(float virtualTime, float shapeDuration = 0.0f);
+
   // Update logic - default implementation update semua shapes
   // Bisa di-override untuk custom update behavior
   virtual void update(float deltaTime = 0.016f) { // Default 60 FPS = 0.016f

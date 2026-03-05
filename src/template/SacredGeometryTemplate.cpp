@@ -195,3 +195,63 @@ void SacredGeometryTemplate::applySpeedMultiplier() {
     // templateSpeedMultiplier << ")";
   }
 }
+
+//--------------------------------------------------------------
+// ⭐ NEW: Draw dengan virtual sequential progress untuk tessellation radial expansion
+// virtualTime: waktu animasi dalam detik (0.0 = mulai, >0 = progress)
+// shapeDuration: durasi per shape dalam detik (0 = auto dari speed)
+//
+// Contoh: 4 shapes dengan shapeDuration = 2 detik:
+// - virtualTime 0.0s: Shape 0 mulai animate (progress 0%)
+// - virtualTime 1.0s: Shape 0 di 50%, shape 1-3 belum muncul
+// - virtualTime 2.0s: Shape 0 complete (100%), Shape 1 mulai animate
+// - virtualTime 4.0s: Shape 1 complete, Shape 2 mulai
+// - virtualTime 6.0s: Shape 2 complete, Shape 3 mulai
+// - virtualTime 8.0s: Semua shapes complete
+//--------------------------------------------------------------
+void SacredGeometryTemplate::drawAtVirtualTime(float virtualTime, float shapeDuration) {
+  if (shapes.empty()) return;
+
+  // Save original progress values untuk restore nanti
+  std::vector<float> originalProgress;
+  originalProgress.reserve(shapes.size());
+  for (const auto& shape : shapes) {
+    originalProgress.push_back(shape->progress);
+  }
+
+  // Calculate actual shape duration jika tidak ditentukan
+  float actualDuration = shapeDuration;
+  if (actualDuration <= 0.0f && !shapes.empty()) {
+    // Gunakan speed dari shape pertama untuk calculate duration
+    float baseSpeed = shapes[0]->speed;
+    if (baseSpeed > 0) {
+      actualDuration = shapes[0]->getMaxProgress() / (baseSpeed * 60.0f); // 60 FPS
+    } else {
+      actualDuration = 2.0f; // Default 2 detik
+    }
+  }
+
+  // Update dan draw shapes berdasarkan virtualTime
+  for (size_t i = 0; i < shapes.size(); ++i) {
+    float shapeStartTime = i * actualDuration;
+    float shapeEndTime = (i + 1) * actualDuration;
+
+    if (virtualTime >= shapeEndTime) {
+      // Shape sudah complete → draw full
+      shapes[i]->progress = shapes[i]->getMaxProgress();
+      shapes[i]->draw();
+    } else if (virtualTime >= shapeStartTime) {
+      // Shape sedang animating → calculate progress
+      float timeIntoShape = virtualTime - shapeStartTime;
+      float progressRatio = timeIntoShape / actualDuration;
+      shapes[i]->progress = progressRatio * shapes[i]->getMaxProgress();
+      shapes[i]->draw();
+    }
+    // else: shape belum mulai → jangan draw
+  }
+
+  // Restore original progress values (jangan modify state asli!)
+  for (size_t i = 0; i < shapes.size(); ++i) {
+    shapes[i]->progress = originalProgress[i];
+  }
+}

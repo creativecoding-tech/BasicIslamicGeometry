@@ -108,6 +108,7 @@ void TessellationManager::resetRadialExpansion() {
     ring.isAnimating = false;
     ring.isComplete = false;
     ring.delayStartTime = 0.0f;
+    ring.elapsedTime = 0.0f;  // ⭐ Reset elapsed time
   }
 }
 
@@ -129,6 +130,7 @@ void TessellationManager::startRadialExpansion(float ringDuration) {
     rings[i].delayStartTime = currentTime;
     rings[i].isAnimating = (i == 0);  // Hanya ring 0 yang mulai animasi
     rings[i].isComplete = false;
+    rings[i].elapsedTime = 0.0f;       // ⭐ Initialize elapsed time
 
     // Next ring mulai setelah ring ini selesai (ringDuration detik)
     currentTime += ringDuration;
@@ -156,22 +158,23 @@ void TessellationManager::updateRadialExpansion(float deltaTime, float ringDurat
   // Cek apakah sudah waktunya ring ini mulai
   if (!currentRing.isAnimating) {
     // Cek apakah delay time sudah lewat
-    // Untuk simplicity, kita pakai progress-based system
     // Ring N mulai setelah ring N-1 complete
     if (currentAnimatingRing == 0 || rings[currentAnimatingRing - 1].isComplete) {
       currentRing.isAnimating = true;
+      currentRing.elapsedTime = 0.0f; // Reset elapsed time saat mulai
       ofLog() << "Ring " << currentAnimatingRing << " started animating";
     }
   }
 
-  // Update progress ring yang sedang animasi
+  // Update elapsed time ring yang sedang animasi
   if (currentRing.isAnimating && !currentRing.isComplete) {
-    ringAnimationProgress += deltaTime / ringDuration;
+    currentRing.elapsedTime += deltaTime;
+    ringAnimationProgress = currentRing.elapsedTime / ringDuration;
 
     if (ringAnimationProgress >= 1.0f) {
       ringAnimationProgress = 1.0f;
       currentRing.isComplete = true;
-      ofLog() << "Ring " << currentAnimatingRing << " complete";
+      ofLog() << "Ring " << currentAnimatingRing << " complete (elapsed: " << currentRing.elapsedTime << "s)";
 
       // Move to next ring
       currentAnimatingRing++;
@@ -194,6 +197,14 @@ bool TessellationManager::isRadialExpansionComplete() const {
   }
 
   return true;
+}
+
+//--------------------------------------------------------------
+float TessellationManager::getRingElapsedTime(int ringIndex) const {
+  if (ringIndex >= 0 && ringIndex < static_cast<int>(rings.size())) {
+    return rings[ringIndex].elapsedTime;
+  }
+  return 0.0f;
 }
 
 //--------------------------------------------------------------

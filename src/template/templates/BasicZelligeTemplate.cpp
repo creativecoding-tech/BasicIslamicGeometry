@@ -1182,6 +1182,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
               app->tessellationRadius = tessellationRadius; // Simpan radius
               app->preTessellationPause = preTessellationPause; // ⭐ Simpan pause duration
               app->tessellationPlayMode = playMode; // ⭐ Simpan playMode: 0=Parallel, 1=Sequential
+              app->tessellationTemplateParallelMode = templateParallelMode; // ⭐ Simpan template parallel mode: 0=Synchronous, 1=Radial Expansion
               // ⭐ JANGAN simpan tessellationSpeedMultiplier di sini - akan diambil di LOAD_DONE setelah draw selesai!
 
               // ⭐ JANGAN simpan tessellationOriginalRadius di sini - biarkan draw pertama pakai radius file .nay

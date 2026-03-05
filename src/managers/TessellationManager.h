@@ -37,6 +37,7 @@ public:
     float delayStartTime;           // Waktu delay sebelum ring ini mulai animate
     bool isAnimating;               // True jika ring ini sedang animasi
     bool isComplete;                // True jika ring ini selesai animasi
+    float elapsedTime;              // ⭐ NEW: Waktu yang telah berlalu sejak ring mulai animate (detik)
   };
   std::vector<RingInfo> rings;     // Rings untuk radial expansion (di-populate saat generateGrid)
   int centerRow, centerCol;        // Position dari center tile
@@ -83,6 +84,7 @@ public:
   void updateRadialExpansion(float deltaTime, float ringDuration);  // Update progress
   bool isRadialExpansionComplete() const;          // Cek apakah semua rings selesai
   void resetRadialExpansion();                       // Reset state
+  float getRingElapsedTime(int ringIndex) const;   // ⭐ NEW: Get elapsed time untuk specific ring (untuk virtual time draw)
 
   // Cek apakah posisi di dalam viewport bounds
   bool isInViewport(const vec2& pos, const vec2& viewportSize) const;

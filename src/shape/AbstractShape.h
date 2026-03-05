@@ -51,6 +51,9 @@ public:
   // Status check - dapat di-override jika logic berbeda
   virtual bool isComplete() { return progress >= maxProgress; }
 
+  // Getter untuk maxProgress (untuk tessellation virtual time drawing)
+  float getMaxProgress() const { return maxProgress; }
+
 protected:
   // Protected attributes untuk derived classes
   float maxProgress = 100; // Default max progress (dapat di-override)
