@@ -210,6 +210,9 @@ public:
   // ⭐ Diagonal tessellation animation state (untuk tracking diagonal expansion)
   float diagonalElapsedTime = 0.0f;        // Waktu yang berlalu sejak tessellation mulai
 
+  // ⭐ Row tessellation animation state (untuk tracking seq per row expansion)
+  float rowElapsedTime = 0.0f;             // Waktu yang berlalu sejak tessellation mulai
+
   // Tessellation logic hook
   void processPolygonTessellation();
 

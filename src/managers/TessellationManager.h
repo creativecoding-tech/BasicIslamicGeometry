@@ -49,6 +49,13 @@ public:
   };
   std::vector<DiagonalInfo> diagonals; // Diagonals untuk diagonal expansion
 
+  // ⭐ NEW: Row grouping untuk Seq Per Row mode
+  struct RowInfo {
+    int rowIndex;                   // Row index (0, 1, 2, ...) dari atas
+    std::vector<size_t> tileIndices; // Indices ke grid vector untuk tiles di row ini
+  };
+  std::vector<RowInfo> rows;        // Rows untuk seq per row expansion
+
   // ⭐ NEW: Radial Expansion state
   bool isRadialExpansionActive;    // True jika Radial Expansion mode aktif
   int currentAnimatingRing;         // Ring yang sedang animasi (index ke rings vector)
@@ -96,6 +103,10 @@ public:
   // ⭐ NEW: Diagonal Expansion methods
   void groupTilesByDiagonal();  // Group tiles into diagonals (dari kiri-atas)
   int getDiagonalCount() const { return static_cast<int>(diagonals.size()); }  // Get total diagonals
+
+  // ⭐ NEW: Seq Per Row methods
+  void groupTilesByRow();       // Group tiles into rows (dari atas ke bawah)
+  int getRowCount() const { return static_cast<int>(rows.size()); }  // Get total rows
 
   // Cek apakah posisi di dalam viewport bounds
   bool isInViewport(const vec2& pos, const vec2& viewportSize) const;

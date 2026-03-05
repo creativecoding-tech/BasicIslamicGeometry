@@ -98,6 +98,9 @@ void TessellationManager::clearGrid() {
 
   // ⭐ NEW: Clear diagonals
   diagonals.clear();
+
+  // ⭐ NEW: Clear rows
+  rows.clear();
 }
 
 //--------------------------------------------------------------
@@ -239,6 +242,37 @@ void TessellationManager::groupTilesByDiagonal() {
     }
 
     diagonals.push_back(diag);
+  }
+}
+
+//--------------------------------------------------------------
+// ⭐ NEW: Seq Per Row methods
+void TessellationManager::groupTilesByRow() {
+  rows.clear();
+
+  if (grid.empty()) return;
+
+  // Hitung maksimum row index
+  int maxRow = 0;
+  for (const auto& tile : grid) {
+    if (tile.row > maxRow) {
+      maxRow = tile.row;
+    }
+  }
+
+  // Create row info untuk setiap row
+  for (int r = 0; r <= maxRow; ++r) {
+    RowInfo rowInfo;
+    rowInfo.rowIndex = r;
+
+    // Cari semua tiles yang ada di row ini
+    for (size_t i = 0; i < grid.size(); ++i) {
+      if (grid[i].row == r) {
+        rowInfo.tileIndices.push_back(i);
+      }
+    }
+
+    rows.push_back(rowInfo);
   }
 }
 

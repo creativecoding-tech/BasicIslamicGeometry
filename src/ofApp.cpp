@@ -282,6 +282,7 @@ void ofApp::updateStaggeredLoad() {
         // ⭐ Reset semua tessellation animation states
         tessellationManager->resetRadialExpansion();
         diagonalElapsedTime = 0.0f;
+        rowElapsedTime = 0.0f;
 
         // ⭐ Radial Expansion mode: group tiles by distance dari center
         if (tessellationTemplateParallelMode == 1) {
@@ -299,6 +300,10 @@ void ofApp::updateStaggeredLoad() {
         // ⭐ Diagonal Expansion mode: group tiles by diagonal
         else if (tessellationTemplateParallelMode == 2) {
           tessellationManager->groupTilesByDiagonal();
+        }
+        // ⭐ Seq Per Row mode: group tiles by row
+        else if (tessellationTemplateParallelMode == 3) {
+          tessellationManager->groupTilesByRow();
         }
 
         // ⭐ Gunakan playMode yang sama (Parallel atau Sequential)
@@ -1329,7 +1334,7 @@ void ofApp::draw() {
             }
           }
         }
-      } else {
+      } else if (tessellationTemplateParallelMode == 2) {
         // 🔷 DIAGONAL EXPANSION MODE: Pattern menyebar dari kiri-atas secara diagonal
         const auto& grid = tessellationManager->grid;
         const auto& diagonals = tessellationManager->diagonals;
@@ -1360,6 +1365,47 @@ void ofApp::draw() {
 
             // Draw semua tiles di diagonal ini
             for (size_t tileIdx : diagonals[diagIdx].tileIndices) {
+              if (tileIdx < grid.size()) {
+                const auto& gridPos = grid[tileIdx];
+                ofPushMatrix();
+                ofTranslate(gridPos.offset.x, gridPos.offset.y);
+                currentTemplate->drawAtVirtualTime(virtualTime, shapeDuration);
+                ofPopMatrix();
+              }
+            }
+          }
+        }
+      } else if (tessellationTemplateParallelMode == 3) {
+        // 📊 SEQ PER ROW MODE: Pattern menyebar per baris dari atas ke bawah
+        const auto& grid = tessellationManager->grid;
+        const auto& rows = tessellationManager->rows;
+
+        // ⭐ Calculate rowDuration berdasarkan template animation time
+        float baseSpeed = tessellationSpeedMultiplier;
+        float shapeDuration = 100.0f / (baseSpeed * 60.0f);  // Duration untuk complete template
+        float rowDuration = shapeDuration;
+
+        // Update row animation progress
+        rowElapsedTime += ofGetLastFrameTime();
+
+        // Draw semua rows berdasarkan elapsed time
+        for (size_t rowIdx = 0; rowIdx < rows.size(); ++rowIdx) {
+          // Calculate start dan end time untuk row ini
+          float rowStartTime = rowIdx * rowDuration;
+          float rowEndTime = (rowIdx + 1) * rowDuration;
+
+          // Cek apakah row ini sudah mulai
+          if (rowElapsedTime >= rowStartTime) {
+            // Calculate virtual time untuk row ini
+            float virtualTime = rowElapsedTime - rowStartTime;
+
+            // Clamp ke maksimum rowDuration
+            if (virtualTime > rowDuration) {
+              virtualTime = rowDuration;
+            }
+
+            // Draw semua tiles di row ini
+            for (size_t tileIdx : rows[rowIdx].tileIndices) {
               if (tileIdx < grid.size()) {
                 const auto& gridPos = grid[tileIdx];
                 ofPushMatrix();
@@ -2672,6 +2718,7 @@ void ofApp::cleanCanvasInternal(bool resetSpeed) {
 
   // ⭐ Reset Diagonal tessellation animation state
   diagonalElapsedTime = 0.0f;
+        rowElapsedTime = 0.0f;
 
   // Reset semua color pickers ke warna biru default
   colorManager->resetAllColorPickers();
