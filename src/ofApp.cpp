@@ -279,6 +279,16 @@ void ofApp::updateStaggeredLoad() {
         tessellationManager->generateGrid(tessellationRadius, viewportSize,
                                           canvasTranslation, canvasRotation, canvasZoom);
 
+        // ⭐ NEW: Group tiles into rings untuk Radial Expansion mode
+        if (tessellationTemplateParallelMode == 1) {
+          // Radial Expansion mode - group tiles by distance dari center
+          tessellationManager->groupTilesByDistance(TessellationManager::CHEBYSHEV);
+
+          // Start radial expansion animation
+          float ringDuration = 2.0f;  // 2 detik per ring
+          tessellationManager->startRadialExpansion(ringDuration);
+        }
+
         // ⭐ Gunakan playMode yang sama (Parallel atau Sequential)
         if (tessellationPlayMode == 1) {
           // Sequential mode
@@ -1256,24 +1266,43 @@ void ofApp::draw() {
   // ⭐ TESSELLATION CANVAS: Draw template dengan tessellation grid
   if (currentTemplate) {
     if (tessellationManager && tessellationManager->isActive) {
-      // ⭐ TESSELLATION CANVAS: Direct rendering dengan scissor test untuk cegah overlap
-      // Tidak pakai FBO cache - langsung render untuk smooth lines!
-      const auto& grid = tessellationManager->grid;
-      float tileSize = tessellationRadius * 2.0f;
+      // ⭐ TESSELLATION CANVAS: Direct rendering untuk smooth lines!
 
-      // Draw tessellation grid langsung ke screen
-      for (const auto& gridPos : grid) {
-        // Save current transform matrix
-        ofPushMatrix();
+      if (tessellationTemplateParallelMode == 0) {
+        // ⚡ SYNCHRONOUS MODE: Semua tiles animate bersamaan
+        const auto& grid = tessellationManager->grid;
 
-        // Apply grid offset translation
-        ofTranslate(gridPos.offset.x, gridPos.offset.y);
+        for (const auto& gridPos : grid) {
+          ofPushMatrix();
+          ofTranslate(gridPos.offset.x, gridPos.offset.y);
+          currentTemplate->draw();  // Draw full template
+          ofPopMatrix();
+        }
+      } else {
+        // 🌊 RADIAL EXPANSION MODE: Rings animate sequentially dari center
+        const auto& grid = tessellationManager->grid;
+        const auto& rings = tessellationManager->rings;
 
-        // Draw template di position ini
-        currentTemplate->draw();
+        // Update radial expansion progress
+        float ringDuration = 2.0f;  // Durasi per ring (detik)
+        tessellationManager->updateRadialExpansion(ofGetLastFrameTime(), ringDuration);
 
-        // Restore transform matrix
-        ofPopMatrix();
+        // Draw tiles ring by ring berdasarkan animasi state
+        for (const auto& ring : rings) {
+          // Cek apakah ring ini sedang animasi atau sudah complete
+          if (ring.isAnimating || ring.isComplete) {
+            // Draw semua tiles di ring ini
+            for (size_t tileIdx : ring.tileIndices) {
+              if (tileIdx < grid.size()) {
+                const auto& gridPos = grid[tileIdx];
+                ofPushMatrix();
+                ofTranslate(gridPos.offset.x, gridPos.offset.y);
+                currentTemplate->draw();  // Draw full template
+                ofPopMatrix();
+              }
+            }
+          }
+        }
       }
     } else {
       // Normal mode: Draw template sekali (existing behavior)
