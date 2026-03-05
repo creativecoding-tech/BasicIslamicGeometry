@@ -115,7 +115,7 @@ void TessellationManager::resetRadialExpansion() {
 //--------------------------------------------------------------
 void TessellationManager::startRadialExpansion(float ringDuration) {
   if (rings.empty()) {
-    ofLog() << "Warning: startRadialExpansion called but no rings!";
+    // ofLog() << "Warning: startRadialExpansion called but no rings!";
     return;
   }
 
@@ -136,7 +136,7 @@ void TessellationManager::startRadialExpansion(float ringDuration) {
     currentTime += ringDuration;
   }
 
-  ofLog() << "Radial Expansion Started - Total rings: " << rings.size() << ", Duration per ring: " << ringDuration;
+  // ofLog() << "Radial Expansion Started - Total rings: " << rings.size() << ", Duration per ring: " << ringDuration;
 }
 
 //--------------------------------------------------------------
@@ -149,7 +149,7 @@ void TessellationManager::updateRadialExpansion(float deltaTime, float ringDurat
   if (currentAnimatingRing >= rings.size()) {
     // Semua rings selesai
     isRadialExpansionActive = false;
-    ofLog() << "Radial Expansion Complete!";
+    // ofLog() << "Radial Expansion Complete!";
     return;
   }
 
@@ -162,7 +162,7 @@ void TessellationManager::updateRadialExpansion(float deltaTime, float ringDurat
     if (currentAnimatingRing == 0 || rings[currentAnimatingRing - 1].isComplete) {
       currentRing.isAnimating = true;
       currentRing.elapsedTime = 0.0f; // Reset elapsed time saat mulai
-      ofLog() << "Ring " << currentAnimatingRing << " started animating";
+      // ofLog() << "Ring " << currentAnimatingRing << " started animating";
     }
   }
 
@@ -174,7 +174,7 @@ void TessellationManager::updateRadialExpansion(float deltaTime, float ringDurat
     if (ringAnimationProgress >= 1.0f) {
       ringAnimationProgress = 1.0f;
       currentRing.isComplete = true;
-      ofLog() << "Ring " << currentAnimatingRing << " complete (elapsed: " << currentRing.elapsedTime << "s)";
+      // ofLog() << "Ring " << currentAnimatingRing << " complete (elapsed: " << currentRing.elapsedTime << "s)";
 
       // Move to next ring
       currentAnimatingRing++;
@@ -301,7 +301,7 @@ void TessellationManager::groupTilesByDistance(DistanceMethod method) {
     }
   }
 
-  ofLog() << "Ring Grouping - Total rings: " << rings.size() << ", Center: (" << centerRow << "," << centerCol << ")";
+  // ofLog() << "Ring Grouping - Total rings: " << rings.size() << ", Center: (" << centerRow << "," << centerCol << ")";
 }
 
 //--------------------------------------------------------------
