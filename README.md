@@ -267,7 +267,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Draw Settings: Menghormati checkbox (Cartesian, Circles, CrossLines, dll)
 
   **2. Custom Lines Tessellation** (Priority 2 - Handle After Template)
-  - Mode: **Synchronous** ✅ IMPLEMENTED, **Radial Expansion** 🚧 WIP (pilihan terpisah dari template)
+  - **Timing**: Muncul SETELAH template tessellation complete (terlepas dulu mode template apa)
+  - Mode: Selalu **Synchronous** (parallel animation) untuk custom lines
   - Settings: Di popup Tessellation Settings, group "Custom Lines Parallel" (di bawah Template Parallel)
   - Only if: loadedFileCustomLinesCount > 0 (ada custom lines di file .nay)
   - Rendering: **Shader-based GPU rendering** dengan geometry shader untuk thick lines
@@ -275,6 +276,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
     - **Smooth grow animation** (0→100%) dengan progress clipping di GPU
     - **Wave animation** (jika Wave Animation Line enabled) dengan auto-stop berdasarkan Wave Duration
   - Speed: Mengikuti **Custom Line Speed slider** dari Playground (sama seperti custom lines biasa)
+    - ⭐ Wave speed: 1.5f untuk tessellation (lebih pelan dari default 2.0f)
   - Draw Mode: Mengikuti **Custom Line Mode** (Parallel/No Animation) dari Playground
   - Wave Animation: ✅ IMPLEMENTED - Menghormati Wave settings dari Playground (Amplitude, Frequency, Duration, Speed)
     - Wave hanya aktif jika: Wave Animation Line enabled + Before Polygon Draw mode + Grow complete
@@ -289,7 +291,7 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 
   **Implementation Approach:**
   - **Phase 1**: Template tessellation (Synchronous + Radial Expansion + Diagonal + Seq Per Row) ✅
-  - **Phase 2**: Custom lines tessellation (Synchronous ✅ + Radial Expansion 🚧)
+  - **Phase 2**: Custom lines tessellation (Synchronous ✅, muncul SETELAH template tessellation complete)
   - **Phase 3**: Polygons tessellation (Synchronous + Radial Expansion)
   - Each phase independent, bisa dipilih on/off per geometry type
 

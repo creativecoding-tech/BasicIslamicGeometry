@@ -1362,6 +1362,21 @@ void ofApp::draw() {
         const auto& grid = tessellationManager->grid;
         const auto& rings = tessellationManager->rings;
 
+        // ⭐ Cek apakah template tessellation sudah complete (UNTUK TRIGGER CUSTOM LINES TESSELLATION)
+        // ⭐ FIX: Cek apakah SEMUA rings sudah complete, bukan cuma shapes!
+        if (currentTemplate && !tessellationTemplateComplete) {
+          bool allRingsComplete = true;
+          for (const auto &ring : rings) {
+            if (!ring.isComplete) {
+              allRingsComplete = false;
+              break;
+            }
+          }
+          if (allRingsComplete) {
+            tessellationTemplateComplete = true;
+          }
+        }
+
         // ⭐ FIX: Calculate ringDuration berdasarkan template animation time
         // ⭐ PARALLEL MODE: Semua shapes animate barengan, jadi total time = shapeDuration (bukan * shapeCount)
         // ⭐ USE SAVED tessellationSpeedMultiplier, bukan live currentTemplate->templateSpeedMultiplier!
@@ -1409,6 +1424,19 @@ void ofApp::draw() {
         // Update diagonal animation progress
         diagonalElapsedTime += ofGetLastFrameTime();
 
+        // ⭐ Cek apakah template tessellation sudah complete (UNTUK TRIGGER CUSTOM LINES TESSELLATION)
+        // ⭐ FIX: Cek apakah SEMUA diagonals sudah selesai animasi
+        if (currentTemplate && !tessellationTemplateComplete) {
+          float totalDiagonalDuration = diagonals.size() * diagonalDuration;
+          bool allDiagonalsComplete = (diagonalElapsedTime >= totalDiagonalDuration);
+          if (allDiagonalsComplete) {
+            tessellationTemplateComplete = true;
+          }
+        }
+
+        // Update diagonal animation progress
+        diagonalElapsedTime += ofGetLastFrameTime();
+
         // Draw semua diagonals berdasarkan elapsed time
         for (size_t diagIdx = 0; diagIdx < diagonals.size(); ++diagIdx) {
           // Calculate start dan end time untuk diagonal ini
@@ -1450,6 +1478,16 @@ void ofApp::draw() {
         // Update row animation progress
         rowElapsedTime += ofGetLastFrameTime();
 
+        // ⭐ Cek apakah template tessellation sudah complete (UNTUK TRIGGER CUSTOM LINES TESSELLATION)
+        // ⭐ FIX: Cek apakah SEMUA rows sudah selesai animasi
+        if (currentTemplate && !tessellationTemplateComplete) {
+          float totalRowDuration = rows.size() * rowDuration;
+          bool allRowsComplete = (rowElapsedTime >= totalRowDuration);
+          if (allRowsComplete) {
+            tessellationTemplateComplete = true;
+          }
+        }
+
         // Draw semua rows berdasarkan elapsed time
         for (size_t rowIdx = 0; rowIdx < rows.size(); ++rowIdx) {
           // Calculate start dan end time untuk row ini
@@ -1484,12 +1522,14 @@ void ofApp::draw() {
       currentTemplate->draw();
     }
 
-    // ⭐ NEW: TESSELLATION CANVAS - CUSTOM LINES (Synchronous Mode)
+    // ⭐ NEW: TESSELLATION CANVAS - CUSTOM LINES (All Modes)
     // Draw customLines tessellation HANYA setelah template tessellation complete
+    // ⭐ NOTE: Custom lines tessellation SELALU Synchronous (parallel animation)
+    //         Tidak peduli template tessellation pakai mode apa (Sync/Radial/Diagonal/Seq Per Row)
     if (tessellationTemplateComplete &&
         tessellationManager && tessellationManager->isActive &&
-        !tessellationCustomLines.empty() && tessellationCustomLineParallelMode == 0) {
-      // ⚡ SYNCHRONOUS MODE: Semua tiles animate bersamaan
+        !tessellationCustomLines.empty()) {
+      // ⚡ CUSTOM LINES SELALU SYNC: Semua tiles animate bersamaan
       const auto& grid = tessellationManager->grid;
 
       // ⭐ Calculate draw speed mengikuti custom line speed slider (sama seperti customLines biasa)
