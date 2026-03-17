@@ -1535,7 +1535,8 @@ void ofApp::draw() {
 
       if (isWaveMode && isBeforePolygonDraw && growComplete && !tessellationWaveFinished) {
         // ⭐ Wave time update sesuai CPU wave animation
-        tessellationWaveTime += lineWaveSpeed * deltaTime;
+        // ⭐ SPEED 1.5f khusus untuk tessellation (lebih pelan dari default 2.0f)
+        tessellationWaveTime += 1.5f * deltaTime;
         if (tessellationWaveTime > 1.0f) {
           tessellationWaveTime -= 1.0f;  // Loop back to 0.0 (infinite wave)
         }
