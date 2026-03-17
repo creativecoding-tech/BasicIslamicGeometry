@@ -205,6 +205,7 @@ public:
   float preTessellationTimer = 0.0f;      // ⭐ Timer accumulator untuk pre-tessellation pause
   int tessellationPlayMode = 0;         // ⭐ Simpan playMode: 0=Parallel, 1=Sequential
   int tessellationTemplateParallelMode = 0; // ⭐ Template parallel mode: 0=Synchronous, 1=Radial Expansion, 2=Diagonal
+  int tessellationCustomLineParallelMode = 0; // ⭐ Custom Lines parallel mode: 0=Synchronous, 1=Radial, 2=Diagonal, 3=Seq Per Row
   float tessellationSpeedMultiplier = 1.0f; // ⭐ Simpan speed multiplier dari Playground slider
 
   // ⭐ Diagonal tessellation animation state (untuk tracking diagonal expansion)

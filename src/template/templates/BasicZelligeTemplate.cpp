@@ -934,6 +934,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
   static float tessellationRadius = 120.0f; // Radius tessellation (25-214, default 120)
   static float preTessellationPause = 0.0f; // Pre-Tessellation pause duration (0-5 detik)
   static int templateParallelMode = 0; // ⭐ NEW: 0 = Synchronous, 1 = Radial Expansion, 2 = Diagonal, 3 = Seq Per Row
+  static int customLineParallelMode = 0; // ⭐ NEW: Custom Lines Parallel mode: 0 = Synchronous, 1 = Radial, 2 = Diagonal, 3 = Seq Per Row
 
   // Set ukuran popup: Auto untuk width & height (menyesuaikan konten)
   ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_Always);
@@ -946,7 +947,15 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
   if (tessellationDraw == 1) {
     // Cek apakah Playground = Parallel (ada Template Parallel group)
     if (playMode == 0) {
-      yOffset = 235; // Yes + Parallel = popup lebih panjang (ada Template Parallel group 2 baris)
+      // Cek apakah ada Custom Lines dengan mode Parallel
+      bool hasCustomLinesParallel = (app->loadedFileCustomLinesCount > 0 &&
+                                      app->shouldDrawCustomLines &&
+                                      app->customLineDrawMode == 0);
+      if (hasCustomLinesParallel) {
+        yOffset = 335; // Yes + Parallel + Custom Lines Parallel = popup paling panjang (ada Template Parallel + Custom Lines Parallel)
+      } else {
+        yOffset = 235; // Yes + Parallel = popup lebih panjang (ada Template Parallel group 2 baris)
+      }
     } else {
       yOffset = 150; // Yes + Sequential = popup standar (tanpa Template Parallel group)
     }
@@ -1031,6 +1040,42 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
 
           ImGui::EndTable();
         }
+
+        // ⭐ Custom Lines Parallel Group - HANYA muncul jika:
+        // 1. Playground = Parallel mode
+        // 2. Ada custom lines di file (loadedFileCustomLinesCount > 0)
+        // 3. Checkbox "Draw Custom Lines" dicentang (shouldDrawCustomLines == true)
+        // 4. Custom Line Draw Mode = Parallel (customLineDrawMode == 0)
+        bool hasCustomLinesParallel = (app->loadedFileCustomLinesCount > 0 &&
+                                        app->shouldDrawCustomLines &&
+                                        app->customLineDrawMode == 0);
+        if (hasCustomLinesParallel) {
+          ImGui::Separator();
+          ImGui::Text("Custom Lines Parallel");
+
+          // Custom Lines Parallel Mode dengan table 2 kolom, 2 row (TANPA border)
+          if (ImGui::BeginTable("CustomLinesParallelTable", 2, ImGuiTableFlags_None)) {
+            // Setup column - sama rata
+            ImGui::TableSetupColumn("Col1", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Col2", ImGuiTableColumnFlags_WidthStretch);
+
+            // Row 1: Synchronous (kiri) | Radial (kanan)
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::RadioButton("Synchronous##CL", &customLineParallelMode, 0);
+            ImGui::TableSetColumnIndex(1);
+            ImGui::RadioButton("Radial##CL", &customLineParallelMode, 1);
+
+            // Row 2: Diagonal (kiri) | Seq Per Row (kanan)
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::RadioButton("Diagonal##CL", &customLineParallelMode, 2);
+            ImGui::TableSetColumnIndex(1);
+            ImGui::RadioButton("Seq Per Row##CL", &customLineParallelMode, 3);
+
+            ImGui::EndTable();
+          }
+        }
       }
     }
 
@@ -1076,6 +1121,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
         app->preTessellationPause = preTessellationPause; // ⭐ Simpan pause duration
         app->tessellationPlayMode = playMode; // ⭐ Simpan playMode: 0=Parallel, 1=Sequential
         app->tessellationTemplateParallelMode = templateParallelMode; // ⭐ Simpan template parallel mode: 0=Synchronous, 1=Radial Expansion, 2=Diagonal, 3=Seq Per Row
+        app->tessellationCustomLineParallelMode = customLineParallelMode; // ⭐ Simpan custom lines parallel mode: 0=Synchronous, 1=Radial, 2=Diagonal, 3=Seq Per Row
         // ⭐ JANGAN simpan tessellationSpeedMultiplier di sini - akan diambil di LOAD_DONE setelah draw selesai!
 
         // ⭐ JANGAN simpan tessellationOriginalRadius di sini - biarkan draw pertama pakai radius file .nay
@@ -1190,6 +1236,7 @@ void BasicZelligeTemplate::showPlaybackUI(ofApp *app) {
               app->preTessellationPause = preTessellationPause; // ⭐ Simpan pause duration
               app->tessellationPlayMode = playMode; // ⭐ Simpan playMode: 0=Parallel, 1=Sequential
               app->tessellationTemplateParallelMode = templateParallelMode; // ⭐ Simpan template parallel mode: 0=Synchronous, 1=Radial Expansion, 2=Diagonal, 3=Seq Per Row
+              app->tessellationCustomLineParallelMode = customLineParallelMode; // ⭐ Simpan custom lines parallel mode: 0=Synchronous, 1=Radial, 2=Diagonal, 3=Seq Per Row
               // ⭐ JANGAN simpan tessellationSpeedMultiplier di sini - akan diambil di LOAD_DONE setelah draw selesai!
 
               // ⭐ JANGAN simpan tessellationOriginalRadius di sini - biarkan draw pertama pakai radius file .nay
