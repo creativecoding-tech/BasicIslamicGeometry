@@ -1487,7 +1487,7 @@ void ofApp::draw() {
       // ⭐ Update progress untuk animasi grow
       float deltaTime = ofGetLastFrameTime();
       for (auto &line : tessellationCustomLines) {
-        if (line.getProgress() < 100.0f) {
+        if (line.getProgress() < 1.0f) {
           line.updateProgress(deltaTime);
         }
       }
@@ -3420,6 +3420,17 @@ void ofApp::drawBatchedTessellatedCustomLines() {
 
     // Set lineWidth uniform (untuk reference, actual width set via glLineWidth)
     customLineShader.setUniform1f("lineWidth", lineWidth);
+
+    // ⭐ Set progress uniform untuk grow animation (0.0 - 1.0)
+    float avgProgress = 1.0f;
+    if (!tessellationCustomLines.empty()) {
+      float totalProgress = 0.0f;
+      for (const auto &line : tessellationCustomLines) {
+        totalProgress += line.getProgress();
+      }
+      avgProgress = totalProgress / tessellationCustomLines.size();
+    }
+    customLineShader.setUniform1f("progress", avgProgress);
 
     // Draw mesh
     batchedTessellatedCustomLinesMesh.draw();
