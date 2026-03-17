@@ -112,6 +112,16 @@ public:
   ofMesh batchedTessellatedMesh;
   bool batchedTessellatedMeshDirty = true;  // Flag untuk rebuild mesh
 
+  // ⭐ NEW: Cache untuk batch tessellated custom lines mesh (shader-based rendering)
+  ofMesh batchedTessellatedCustomLinesMesh;
+  bool batchedTessellatedCustomLinesMeshDirty = true;  // Flag untuk rebuild mesh
+  ofShader customLineShader;  // Shader untuk custom line rendering
+
+  // ⭐ NEW: Copy dari customLines untuk tessellation (disimpan sebelum clean canvas)
+  std::vector<CustomLine> tessellationCustomLines;  // Copy untuk tessellation canvas
+  bool tessellationCustomLinesDirty = true;  // Flag untuk rebuild copy
+  bool tessellationTemplateComplete = false; // Flag untuk template tessellation complete
+
   // Preset warna untuk polygon
   std::vector<ofColor> polygonPresetColors = {
       ofColor(255, 0, 0, 255),    // 1: Merah (OPAQUE!)
@@ -360,6 +370,8 @@ public:
                             // global center
   void drawUserDots();      // Draw user-created dots dan label
   void drawBatchedTessellatedPolygons(); // ⭐ NEW: Batch tessellated polygons (1 draw call)
+  void drawBatchedTessellatedCustomLines(); // ⭐ NEW: Batch tessellated custom lines (shader-based, 1 draw call)
+  void buildTessellatedCustomLinesMesh(); // ⭐ NEW: Build mesh dari customLines untuk tessellation
 
   // Interactive Line Creation helpers
   const std::vector<DotInfo> &getAllDots(); // Return cached dots by reference

@@ -20,6 +20,9 @@ void ofApp::setup() {
   ofEnableSmoothing();
   ofDisableArbTex(); // Required for FBO texture sampling in FillAnimation
 
+  // ⭐ NEW: Load custom line shader dengan geometry shader untuk thick lines
+  customLineShader.load("shaders/line.vert", "shaders/line.frag", "shaders/line.geom");
+
   // Load font untuk custom line labels
   fontNormal.load("C:\\Windows\\Fonts\\calibri.ttf", 15);
 
@@ -258,6 +261,36 @@ void ofApp::updateStaggeredLoad() {
         tessellationSpeedMultiplier = currentTemplate->templateSpeedMultiplier; // ⭐ Simpan speed yang dipakai di draw pertama!
       }
 
+      // ⭐ STEP 1.5: Simpan copy dari customLines untuk tessellation SEBELUM clean canvas
+      tessellationCustomLines = customLines;  // Copy semua customLines
+
+      // ⭐ STEP 1.6: Scale tessellationCustomLines dari tessellationOriginalRadius ke tessellationRadius
+      // Sama seperti template tessellation yang di-setup ulang dengan radius baru
+      float scaleRatio = tessellationRadius / tessellationOriginalRadius;
+      if (std::abs(scaleRatio - 1.0f) >= 0.001f) {
+        for (auto &line : tessellationCustomLines) {
+          // Scale points
+          const auto &originalPoints = line.getPoints();
+          std::vector<vec2> scaledPoints;
+          scaledPoints.reserve(originalPoints.size());
+          for (const auto &pt : originalPoints) {
+            scaledPoints.push_back(vec2(pt.x * scaleRatio, pt.y * scaleRatio));
+          }
+          line.setPoints(scaledPoints);
+
+          // Scale juga curve parameter untuk lengkungan yang benar
+          line.setCurve(line.getCurve() * scaleRatio);
+        }
+      }
+
+      tessellationCustomLinesDirty = false;   // Copy sudah valid
+      batchedTessellatedCustomLinesMeshDirty = true;  // Rebuild mesh
+
+      // ⭐ STEP 1.7: Reset progress ke 0 untuk animasi grow
+      for (auto &line : tessellationCustomLines) {
+        line.setProgress(0.0f);
+      }
+
       // STEP 2: Clean canvas (tapi jangan reset speed)
       cleanCanvasInternal(false); // false = jangan reset speed multiplier
 
@@ -278,6 +311,12 @@ void ofApp::updateStaggeredLoad() {
         vec2 viewportSize = vec2(ofGetWidth(), ofGetHeight());
         tessellationManager->generateGrid(tessellationRadius, viewportSize,
                                           canvasTranslation, canvasRotation, canvasZoom);
+
+        // ⭐ Reset template complete flag (template tessellation baru mulai)
+        tessellationTemplateComplete = false;
+
+        // ⭐ Set dirty flag untuk rebuild tessellated custom lines mesh
+        batchedTessellatedCustomLinesMeshDirty = true;
 
         // ⭐ Reset semua tessellation animation states
         tessellationManager->resetRadialExpansion();
@@ -1289,6 +1328,21 @@ void ofApp::draw() {
         // ⚡ SYNCHRONOUS MODE: Semua tiles animate bersamaan
         const auto& grid = tessellationManager->grid;
 
+        // ⭐ Cek apakah template tessellation sudah complete
+        if (currentTemplate && !tessellationTemplateComplete) {
+          const auto &shapes = currentTemplate->getShapes();
+          bool allComplete = true;
+          for (const auto &shape : shapes) {
+            if (!shape->isComplete()) {
+              allComplete = false;
+              break;
+            }
+          }
+          if (allComplete) {
+            tessellationTemplateComplete = true;
+          }
+        }
+
         for (const auto& gridPos : grid) {
           ofPushMatrix();
           ofTranslate(gridPos.offset.x, gridPos.offset.y);
@@ -1421,6 +1475,34 @@ void ofApp::draw() {
       // Normal mode: Draw template sekali (existing behavior)
       currentTemplate->draw();
     }
+
+    // ⭐ NEW: TESSELLATION CANVAS - CUSTOM LINES (Synchronous Mode)
+    // Draw customLines tessellation HANYA setelah template tessellation complete
+    if (tessellationTemplateComplete &&
+        tessellationManager && tessellationManager->isActive &&
+        !tessellationCustomLines.empty() && tessellationCustomLineParallelMode == 0) {
+      // ⚡ SYNCHRONOUS MODE: Semua tiles animate bersamaan
+      const auto& grid = tessellationManager->grid;
+
+      // ⭐ Update progress untuk animasi grow
+      float deltaTime = ofGetLastFrameTime();
+      for (auto &line : tessellationCustomLines) {
+        if (line.getProgress() < 100.0f) {
+          line.updateProgress(deltaTime);
+        }
+      }
+
+      for (const auto& gridPos : grid) {
+        ofPushMatrix();
+        ofTranslate(gridPos.offset.x, gridPos.offset.y);
+
+        // ⭐ Draw tessellation custom lines dengan shader-based rendering
+        drawBatchedTessellatedCustomLines();
+
+        ofPopMatrix();
+      }
+    }
+    // TODO: Add Radial, Diagonal, Seq Per Row modes untuk custom lines (modes 1, 2, 3)
   }
 
   drawUserDots();
@@ -2713,7 +2795,15 @@ void ofApp::cleanCanvasInternal(bool resetSpeed) {
 
   // ⭐ TESSELLATION: Clear tessellation grid saat clean canvas
   if (tessellationManager) {
+    // Clear tessellation custom lines HANYA jika tessellation sedang aktif
+    // (sedang menampilkan tessellation, bukan akan mengaktifkan tessellation)
+    if (tessellationManager->isActive) {
+      tessellationCustomLines.clear();
+    }
     tessellationManager->clearGrid();
+  } else {
+    // Jika tessellationManager null, clear tessellationCustomLines juga
+    tessellationCustomLines.clear();
   }
 
   // ⭐ Reset Diagonal tessellation animation state
@@ -3208,6 +3298,142 @@ void ofApp::drawBatchedTessellatedPolygons() {
     batchedTessellatedMesh.draw();
     ofPopStyle();
   }
+}
+
+//--------------------------------------------------------------
+// ⭐ NEW: Build mesh dari tessellationCustomLines untuk shader-based rendering
+void ofApp::buildTessellatedCustomLinesMesh() {
+  batchedTessellatedCustomLinesMesh.clear();
+  batchedTessellatedCustomLinesMesh.setMode(OF_PRIMITIVE_LINES);
+
+  int lineCount = 0;
+  int vertexCount = 0;
+  int totalSegments = 0;  // Untuk normalisasi texCoord
+
+  // First pass: count total segments untuk texCoord normalization
+  for (const auto &line : tessellationCustomLines) {
+    if (line.getPoints().size() < 2) continue;
+    lineCount++;
+    if (std::abs(line.getCurve()) < 0.001f) {
+      totalSegments += 1;  // 1 segment untuk straight line
+    } else {
+      totalSegments += 100;  // 100 segments untuk curve
+    }
+  }
+
+  // Second pass: build mesh dengan texCoord
+  float currentSegmentOffset = 0.0f;
+
+  for (const auto &line : tessellationCustomLines) {
+    if (line.getPoints().size() < 2) {
+      continue;
+    }
+
+    const auto &points = line.getPoints();
+    const ofColor &color = line.getColor();
+
+    if (std::abs(line.getCurve()) < 0.001f) {
+      // Straight line
+      float t0 = currentSegmentOffset / totalSegments;
+      float t1 = (currentSegmentOffset + 1) / totalSegments;
+
+      batchedTessellatedCustomLinesMesh.addVertex(glm::vec3(points[0].x, points[0].y, 0.0f));
+      batchedTessellatedCustomLinesMesh.addColor(color);
+      batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(t0, 0.0f));
+
+      batchedTessellatedCustomLinesMesh.addVertex(glm::vec3(points[1].x, points[1].y, 0.0f));
+      batchedTessellatedCustomLinesMesh.addColor(color);
+      batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(t1, 0.0f));
+
+      currentSegmentOffset += 1;
+      vertexCount += 2;
+    } else {
+      // Curved line - lebih banyak segments untuk smooth
+      int segments = 100;  // Increase untuk smoothness
+      vec2 controlPoint = (points[0] + points[1]) / 2.0f;
+      vec2 dir = points[1] - points[0];
+      vec2 perp = vec2(-dir.y, dir.x);
+      float perpLen = glm::length(perp);
+      if (perpLen > 0) {
+        perp = perp / perpLen;
+      }
+      controlPoint = controlPoint + perp * line.getCurve();
+
+      for (int j = 0; j < segments; j++) {
+        float t1 = (float)j / segments;
+        float t2 = (float)(j + 1) / segments;
+
+        vec2 p1 = points[0] * (1 - t1) * (1 - t1) + controlPoint * 2 * (1 - t1) * t1 + points[1] * t1 * t1;
+        vec2 p2 = points[0] * (1 - t2) * (1 - t2) + controlPoint * 2 * (1 - t2) * t2 + points[1] * t2 * t2;
+
+        float texCoord1 = (currentSegmentOffset + j) / totalSegments;
+        float texCoord2 = (currentSegmentOffset + j + 1) / totalSegments;
+
+        batchedTessellatedCustomLinesMesh.addVertex(glm::vec3(p1.x, p1.y, 0.0f));
+        batchedTessellatedCustomLinesMesh.addColor(color);
+        batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(texCoord1, 0.0f));
+
+        batchedTessellatedCustomLinesMesh.addVertex(glm::vec3(p2.x, p2.y, 0.0f));
+        batchedTessellatedCustomLinesMesh.addColor(color);
+        batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(texCoord2, 0.0f));
+      }
+
+      currentSegmentOffset += segments;
+      vertexCount += segments * 2;
+    }
+  }
+
+  batchedTessellatedCustomLinesMeshDirty = false;
+}
+
+//--------------------------------------------------------------
+// ⭐ NEW: Draw tessellated custom lines dengan Shader (GPU rendering)
+void ofApp::drawBatchedTessellatedCustomLines() {
+  if (tessellationCustomLines.empty()) {
+    return;
+  }
+
+  // Build mesh jika dirty
+  if (batchedTessellatedCustomLinesMeshDirty) {
+    buildTessellatedCustomLinesMesh();
+  }
+
+  ofPushStyle();
+  ofEnableAlphaBlending();
+
+  // Get line width dari tessellationCustomLines (sesuai file .nay)
+  float lineWidth = 3.0f;
+  if (!tessellationCustomLines.empty()) {
+    lineWidth = tessellationCustomLines[0].getLineWidth();
+  }
+  ofSetLineWidth(lineWidth);
+
+  // Bind shader
+  if (customLineShader.isLoaded()) {
+    customLineShader.begin();
+
+    // Set modelViewProjectionMatrix - combine modelview dan projection
+    glm::mat4 modelView = ofGetCurrentMatrix(OF_MATRIX_MODELVIEW);
+    glm::mat4 projection = ofGetCurrentMatrix(OF_MATRIX_PROJECTION);
+    glm::mat4 mvp = projection * modelView;
+    customLineShader.setUniformMatrix4f("modelViewProjectionMatrix", mvp);
+
+    // Set lineWidth uniform (untuk reference, actual width set via glLineWidth)
+    customLineShader.setUniform1f("lineWidth", lineWidth);
+
+    // Draw mesh
+    batchedTessellatedCustomLinesMesh.draw();
+
+    customLineShader.end();
+  } else {
+    // Fallback: CPU rendering
+    ofSetLineWidth(lineWidth);
+    for (const auto &line : tessellationCustomLines) {
+      line.draw();
+    }
+  }
+
+  ofPopStyle();
 }
 
 //--------------------------------------------------------------
