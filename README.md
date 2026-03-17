@@ -285,207 +285,207 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - **Phase 3**: Polygons tessellation (Synchronous + Radial Expansion)
   - Each phase independent, bisa dipilih on/off per geometry type
 
-### Tessellation Canvas Implementation Status ✅
+### Status Implementasi Tessellation Canvas ✅
 
-**Phase 1: Template Tessellation (Parallel - Synchronous & Radial Expansion)** ✅ **COMPLETED** (2026-03-05)
+**Fase 1: Template Tessellation (Paralel - Sinkron & Ekspansi Radial)** ✅ **SELESAI** (2026-03-05)
 
-✅ **Synchronous Mode - Implemented & Tested:**
-- TessellationManager class created (square grid calculation)
-- TessellationManager registered to .vcxproj and .vcxproj.filters
-- TessellationManager initialized in ofApp
-- Inverse canvas transform calculation untuk accurate grid positioning
-- Generate tessellation grid in LOAD_DONE (Post-Draw mode)
-- Tessellation grid cleared on clean canvas
-- Direct rendering system (NO FBO cache untuk smooth anti-aliased lines)
-- Grid generation TANPA margin untuk cegah double lines di tile boundaries
-- Draw logic for Synchronous mode (all tiles animate together)
-- UI: "Template Parallel" group in Tessellation Settings popup
-  - Row 1: Synchronous (kiri) | Radial (kanan) ✅
-  - Row 2: Diagonal (kiri) | Seq Per Row (kanan) ✅ ⭐ NEW
-  - Only appears when Playground = Parallel mode
-- TessellationTemplateParallelMode saved to app state (0=Synchronous, 1=Radial, 2=Diagonal, 3=Seq Per Row)
-- Popup Y-offset adjustment untuk Parallel mode (235px untuk 2 baris)
+✅ **Mode Sinkron - Diimplementasikan & Diuji:**
+- Kelas TessellationManager dibuat (kalkulasi grid persegi)
+- TessellationManager terdaftar di .vcxproj dan .vcxproj.filters
+- TessellationManager diinisialisasi di ofApp
+- Kalkulasi transformasi kanvas terbalik untuk penentuan posisi grid yang akurat
+- Pembuatan grid tessellation di LOAD_DONE (mode Pasca-Gambar)
+- Grid tessellation dihapus saat canvas dibersihkan
+- Sistem rendering langsung (TANPA cache FBO untuk garis anti-aliasing yang halus)
+- Pembuatan grid TANPA margin untuk mencegah garis ganda di batas tile
+- Logika gambar untuk mode Sinkron (semua tile beranimasi bersama)
+- UI: Grup "Template Paralel" di popup Pengaturan Tessellation
+  - Baris 1: Sinkron (kiri) | Radial (kanan) ✅
+  - Baris 2: Diagonal (kiri) | Per Baris (kanan) ✅ ⭐ BARU
+  - Hanya muncul saat Playground = mode Paralel
+- TessellationTemplateParallelMode disimpan ke status aplikasi (0=Sinkron, 1=Radial, 2=Diagonal, 3=Per Baris)
+- Penyesuaian Y-offset popup untuk mode Paralel (235px untuk 2 baris)
 
-✅ **Radial Expansion Mode - Implemented & Tested:**
-- **Distance Calculation System** - 3 distance methods untuk ring grouping:
-  - `MANHATTAN` - Diamond pattern: |row - centerRow| + |col - centerCol|
-  - `EUCLIDEAN` - Circular pattern: √((row - centerRow)² + (col - centerCol)²)
-  - `CHEBYSHEV` - Square pattern: max(|row - centerRow|, |col - centerCol|) [DEFAULT]
-- **Ring-Based Grouping System**:
-  - `RingInfo` struct dengan tile indices dan animation state
-  - `calculateCenterTile()` - Automatically find center grid position
-  - `groupTilesByDistance()` - Group tiles into rings based on distance
-- **Ring Animation System**:
-  - `startRadialExpansion()` - Initialize ring-based sequential animation
-  - `updateRadialExpansion()` - Update progress per frame dengan deltaTime
-  - `getRingElapsedTime()` - Get elapsed time untuk specific ring
-  - `isRadialExpansionComplete()` - Check completion status
-  - Per-ring duration: **Auto-calculated dari Template Speed** (dynamic)
-- **Virtual Time Drawing System**:
-  - `drawAtVirtualTime()` - Draw template dengan virtual time offset
-  - **PARALLEL MODE**: Semua shapes animate barengan (0% → 100% serempak)
-  - Setiap tile di ring punya animation progress terpisah
-  - Original template state tidak termodifikasi (save & restore)
+✅ **Mode Ekspansi Radial - Diimplementasikan & Diuji:**
+- **Sistem Kalkulasi Jarak** - 3 metode jarak untuk pengelompokan ring:
+  - `MANHATTAN` - Pola berlian: |baris - barisTengah| + |kolom - kolomTengah|
+  - `EUCLIDEAN` - Pola melingkar: √((baris - barisTengah)² + (kolom - kolomTengah)²)
+  - `CHEBYSHEV` - Pola persegi: max(|baris - barisTengah|, |kolom - kolomTengah|) [DEFAULT]
+- **Sistem Pengelompokan Berbasis Ring:**
+  - Struct `RingInfo` dengan indeks tile dan status animasi
+  - `calculateCenterTile()` - Menemukan posisi grid tengah secara otomatis
+  - `groupTilesByDistance()` - Mengelompokkan tile ke dalam ring berdasarkan jarak
+- **Sistem Animasi Ring:**
+  - `startRadialExpansion()` - Menginisialisasi animasi berurutan berbasis ring
+  - `updateRadialExpansion()` - Memperbarui kemajuan per frame dengan deltaTime
+  - `getRingElapsedTime()` - Mendapatkan waktu yang telah berlalu untuk ring tertentu
+  - `isRadialExpansionComplete()` - Memeriksa status penyelesaian
+  - Durasi per ring: **Dihitung otomatis dari Kecepatan Template** (dinamis)
+- **Sistem Menggambar Waktu Virtual:**
+  - `drawAtVirtualTime()` - Menggambar template dengan offset waktu virtual
+  - **MODE PARALEL**: Semua shape beranimasi bersamaan (0% → 100% serentak)
+  - Setiap tile di ring memiliki kemajuan animasi terpisah
+  - Status template asli tidak dimodifikasi (simpan & pulihkan)
 
-✅ **Diagonal Expansion Mode - Implemented & Tested** ⭐ **NEW** (2026-03-05):
-- **Diagonal Grouping System** - Tiles dikelompokkan berdasarkan diagonal (row + col):
-  - `DiagonalInfo` struct dengan tile indices
-  - `groupTilesByDiagonal()` - Group tiles into diagonals dari kiri-atas
-- **Diagonal Animation System**:
+✅ **Mode Ekspansi Diagonal - Diimplementasikan & Diuji** ⭐ **BARU** (2026-03-05):
+- **Sistem Pengelompokan Diagonal** - Tile dikelompokkan berdasarkan diagonal (baris + kolom):
+  - Struct `DiagonalInfo` dengan indeks tile
+  - `groupTilesByDiagonal()` - Mengelompokkan tile ke dalam diagonal dari kiri-atas
+- **Sistem Animasi Diagonal:**
   - Diagonal 0: (0,0) - pojok kiri-atas
   - Diagonal 1: [(0,1), (1,0)]
   - Diagonal 2: [(0,2), (1,1), (2,0)]
-  - dst... sampai full viewport
-- **PARALLEL MODE**: Semua shapes di setiap tile animate barengan (0% → 100% serempak)
-- **Speed Control**: Menggunakan `tessellationSpeedMultiplier` (saved value)
-- **Draw Logic**: `drawAtVirtualTime()` dengan calculated diagonal offset
+  - dst... sampai viewport penuh
+- **MODE PARALEL**: Semua shape di setiap tile beranimasi bersamaan (0% → 100% serentak)
+- **Kontrol Kecepatan**: Menggunakan `tessellationSpeedMultiplier` (nilai tersimpan)
+- **Logika Gambar**: `drawAtVirtualTime()` dengan offset diagonal yang dihitung
 
-🎨 **Visual Effect:**
-- **Synchronous**: All tiles appear simultaneously → "Instant reveal"
-- **Radial Expansion**: Tiles appear as ripple dari center → "Batu ke air" effect
-- **Diagonal Expansion**: Tiles appear as diagonal wave dari kiri-atas → "Waterfall" effect ⭐ NEW
-  - Diagonal 0: Semua shapes animate 0% → 100% (parallel)
-  - Diagonal 1: Semua shapes animate 0% → 100% (parallel, setelah Diagonal 0)
-  - Diagonal 2+: Semua shapes animate 0% → 100% (parallel, setelah diagonal sebelumnya)
-- **Seq Per Row**: Tiles appear row by row dari atas ke bawah → "Curtain drop" effect ⭐ NEW (2026-03-06)
-  - Row 0: Semua shapes animate 0% → 100% (parallel)
-  - Row 1: Semua shapes animate 0% → 100% (parallel, setelah Row 0)
-  - Row 2+: Semua shapes animate 0% → 100% (parallel, setelah row sebelumnya)
+🎨 **Efek Visual:**
+- **Sinkron**: Semua tile muncul simultaneously → "Instant Reveal" (Penyingkatan Instan)
+- **Ekspansi Radial**: Tile muncul sebagai riak dari pusat → Efek "Batu ke Air"
+- **Ekspansi Diagonal**: Tile muncul sebagai gelombang diagonal dari kiri-atas → Efek "Air Terjun" ⭐ BARU
+  - Diagonal 0: Semua shape beranimasi 0% → 100% (paralel)
+  - Diagonal 1: Semua shape beranimasi 0% → 100% (paralel, setelah Diagonal 0)
+  - Diagonal 2+: Semua shape beranimasi 0% → 100% (paralel, setelah diagonal sebelumnya)
+- **Per Baris Berurutan**: Tile muncul baris per baris dari atas ke bawah → Efek "Tirai Turun" ⭐ BARU (2026-03-06)
+  - Baris 0: Semua shape beranimasi 0% → 100% (paralel)
+  - Baris 1: Semua shape beranimasi 0% → 100% (paralel, setelah Baris 0)
+  - Baris 2+: Semua shape beranimasi 0% → 100% (paralel, setelah baris sebelumnya)
 
-🎨 **Visual Effect:**
-- **Synchronous**: All tiles appear simultaneously → "Instant reveal"
-- **Radial Expansion**: Tiles appear as ripple dari center → "Batubatu ke air" effect
-  - Ring 0 (center): Semua shapes animate 0% → 100% (parallel)
-  - Ring 1: Semua shapes animate 0% → 100% (parallel, mulai setelah Ring 0 selesai)
-  - Ring 2+: Semua shapes animate 0% → 100% (parallel, mulai setelah ring sebelumnya selesai)
+🎨 **Efek Visual (Ring Detail):**
+- **Sinkron**: Semua tile muncul simultaneously → "Instant Reveal"
+- **Ekspansi Radial**: Tile muncul sebagai riak dari pusat → Efek "Batu ke Air"
+  - Ring 0 (pusat): Semua shape beranimasi 0% → 100% (paralel)
+  - Ring 1: Semua shape beranimasi 0% → 100% (paralel, mulai setelah Ring 0 selesai)
+  - Ring 2+: Semua shape beranimasi 0% → 100% (paralel, mulai setelah ring sebelumnya selesai)
 
-📊 **Technical Implementation:**
-- Modified Files:
-  - `src/managers/TessellationManager.h` - RingInfo struct, distance methods, ring state, elapsedTime
-  - `src/managers/TessellationManager.cpp` - All ring grouping and animation logic
-  - `src/ofApp.cpp` - Draw logic branching, tessellation initialization
-  - `src/template/SacredGeometryTemplate.h` - `drawAtVirtualTime()` declaration
-  - `src/template/SacredGeometryTemplate.cpp` - `drawAtVirtualTime()` implementation (PARALLEL mode)
-  - `src/template/templates/BasicZelligeTemplate.cpp` - Confirmation popup mode save fix
-  - `src/shape/AbstractShape.h` - `getMaxProgress()` public getter
-- Chebyshev distance used by default untuk square grid compatibility
-- Ring duration: Auto-calculated dari Template Speed slider value
-- Integration point: LOAD_DONE state after grid generation
+📊 **Implementasi Teknis:**
+- File yang Dimodifikasi:
+  - `src/managers/TessellationManager.h` - Struct RingInfo, metode jarak, status ring, elapsedTime
+  - `src/managers/TessellationManager.cpp` - Semua logika pengelompokan dan animasi ring
+  - `src/ofApp.cpp` - Percabangan logika gambar, inisialisasi tessellation
+  - `src/template/SacredGeometryTemplate.h` - Deklarasi `drawAtVirtualTime()`
+  - `src/template/SacredGeometryTemplate.cpp` - Implementasi `drawAtVirtualTime()` (MODE PARALEL)
+  - `src/template/templates/BasicZelligeTemplate.cpp` - Perbaikan penyimpanan mode popup konfirmasi
+  - `src/shape/AbstractShape.h` - Getter publik `getMaxProgress()`
+- Jarak Chebyshev digunakan secara default untuk kompatibilitas grid persegi
+- Durasi ring: Dihitung otomatis dari nilai slider Kecepatan Template
+- Titik integrasi: Status LOAD_DONE setelah pembuatan grid
 
-✅ **Radial Expansion Mode Testing Results:** ⭐ **UPDATED** (2026-03-05)
-- ✅ Performance: Solid 60 FPS dengan multiple rings
-- ✅ Quality: Smooth anti-aliased lines (direct OpenGL rendering with MSAA)
-- ✅ Positioning: Grid covers entire viewport dengan benar
-- ✅ Seamless: Tidak ada double lines di tile boundaries
-- ✅ Animation: PARALLEL mode working - semua shapes animate barengan di setiap tile
-- ✅ Speed Control: Template Speed slider berfungsi dengan benar
-- ✅ Mode Switching: Radial ↔ Sync switch bekerja dengan benar
+✅ **Hasil Pengujian Mode Ekspansi Radial:** ⭐ **DIPERBARUI** (2026-03-05)
+- ✅ Performa: Solid 60 FPS dengan multiple ring
+- ✅ Kualitas: Garis anti-aliasing halus (rendering OpenGL langsung dengan MSAA)
+- ✅ Posisi: Grid mencakup seluruh viewport dengan benar
+- ✅ Seamless: Tidak ada garis ganda di batas tile
+- ✅ Animasi: Mode PARALEL berfungsi - semua shape beranimasi bersamaan di setiap tile
+- ✅ Kontrol Kecepatan: Slider Kecepatan Template berfungsi dengan benar
+- ✅ Peralihan Mode: Sakelar Radial ↔ Sinkron berfungsi dengan benar
 
-🚧 **Phase 2: Custom Lines Tessellation** - NOT STARTED
-🚧 **Phase 3: Polygons Tessellation** - NOT STARTED
+🚧 **Fase 2: Tessellation Custom Lines** - BELUM DIMULAI
+🚧 **Fase 3: Tessellation Poligon** - BELUM DIMULAI
 
-  **Sequential Mode** (Complex - TBD):
+  **Mode Berurutan** (Kompleks - Akan Ditentukan):
 
-  **Option A: Sequential per Row** 🌊 Wave Pattern
+  **Opsi A: Berurutan per Baris** 🌊 Pola Gelombang
   ```
-  Frame 0-100:   Row 0 semua tile animasi sequential
-                 Tile(0,0): Shape 1→2→3→... (sequential)
-                 Tile(0,1): Shape 1→2→3→... (sequential)
-                 Tile(0,2): Shape 1→2→3→... (sequential)
-                 (Row 0 complete)
+  Frame 0-100:   Baris 0 semua tile animasi berurutan
+                 Tile(0,0): Shape 1→2→3→... (berurutan)
+                 Tile(0,1): Shape 1→2→3→... (berurutan)
+                 Tile(0,2): Shape 1→2→3→... (berurutan)
+                 (Baris 0 selesai)
 
-  Frame 100-200: Row 1 semua tile animasi sequential
-                 Tile(1,0): Shape 1→2→3→... (sequential)
-                 Tile(1,1): Shape 1→2→3→... (sequential)
-                 Tile(1,2): Shape 1→2→3→... (sequential)
-                 (Row 1 complete)
+  Frame 100-200: Baris 1 semua tile animasi berurutan
+                 Tile(1,0): Shape 1→2→3→... (berurutan)
+                 Tile(1,1): Shape 1→2→3→... (berurutan)
+                 Tile(1,2): Shape 1→2→3→... (berurutan)
+                 (Baris 1 selesai)
 
-  Frame 200-300: Row 2 semua tile animasi sequential
+  Frame 200-300: Baris 2 semua tile animasi berurutan
                  ...
 
-  Visual: Pattern "waterfall" dari atas ke bawah
+  Visual: Pola "air terjun" dari atas ke bawah
   ```
-  - **Kelebihan**: Visual menarik seperti wave untaian tasbih
-  - **Kekurangan**: Total duration = (rows × shapeCount) × durationPerShape
-  - **Implementation**: Per-row state management, complexity medium
+  - **Kelebihan**: Visual menarik seperti gelombang untaian tasbih
+  - **Kekurangan**: Durasi total = (baris × jumlahShape) × durasiPerShape
+  - **Implementasi**: Manajemen status per baris, kompleksitas sedang
 
-  **Option B: All Tiles Sequential Together** 🔄 Synchronous Pattern
+  **Opsi B: Semua Tile Berurutan Bersama** 🔄 Pola Sinkron
   ```
   Frame 0-50:    SEMUA tile animasi Shape 1 bersamaan
-                 Tile(0,0): Shape 1 complete
-                 Tile(0,1): Shape 1 complete
-                 Tile(0,2): Shape 1 complete
-                 Tile(1,0): Shape 1 complete
-                 ... (semua tile Shape 1 complete)
+                 Tile(0,0): Shape 1 selesai
+                 Tile(0,1): Shape 1 selesai
+                 Tile(0,2): Shape 1 selesai
+                 Tile(1,0): Shape 1 selesai
+                 ... (semua tile Shape 1 selesai)
 
   Frame 50-100:  SEMUA tile animasi Shape 2 bersamaan
-                 Tile(0,0): Shape 2 complete
-                 Tile(0,1): Shape 2 complete
-                 Tile(0,2): Shape 2 complete
-                 Tile(1,0): Shape 2 complete
-                 ... (semua tile Shape 2 complete)
+                 Tile(0,0): Shape 2 selesai
+                 Tile(0,1): Shape 2 selesai
+                 Tile(0,2): Shape 2 selesai
+                 Tile(1,0): Shape 2 selesai
+                 ... (semua tile Shape 2 selesai)
 
   Frame 100-150: SEMUA tile animasi Shape 3 bersamaan
                  ...
 
-  Visual: Seluruh canvas "berkedip" shape-by-shape synchronous
+  Visual: Seluruh canvas "berkedip" shape-by-shape secara sinkron
   ```
-  - **Kelebihan**: Total duration = shapeCount × durationPerShape (sama dengan single tile!)
-  - **Kekurangan**: Tidak ada "flow" antar tile, kurang dinamis
-  - **Implementation**: Shared template state, simplest sequential option
+  - **Kelebihan**: Durasi total = jumlahShape × durasiPerShape (sama dengan tile tunggal!)
+  - **Kekurangan**: Tidak ada "aliran" antar tile, kurang dinamis
+  - **Implementasi**: Status template bersama, opsi berurutan paling sederhana
 
-  **Option C: True Sequential (One by One)** 📜 Snake Pattern
+  **Opsi C: Berurutan Sejati (Satu per Satu)** 📜 Pola Ular
   ```
-  Frame 0-50:    Tile(0,0) complete (Shape 1→2→3→...)
+  Frame 0-50:    Tile(0,0) selesai (Shape 1→2→3→...)
 
-  Frame 50-100:  Tile(0,1) complete (Shape 1→2→3→...)
+  Frame 50-100:  Tile(0,1) selesai (Shape 1→2→3→...)
 
-  Frame 100-150: Tile(0,2) complete (Shape 1→2→3→...)
+  Frame 100-150: Tile(0,2) selesai (Shape 1→2→3→...)
 
-  Frame 150-200: Tile(1,0) complete (Shape 1→2→3→...)
+  Frame 150-200: Tile(1,0) selesai (Shape 1→2→3→...)
                  ... (bergantian satu per satu)
 
-  Visual: Pattern "ular" atau kursor berjalan melintasi grid
+  Visual: Pola "ular" atau kursor berjalan melintasi grid
   ```
-  - **Kelebihan**: Sangat dramatic, mata user follow tile progression
-  - **Kekurangan**: Total duration = (totalTiles × shapeCount) × durationPerShape (sangat lama!)
-  - **Implementation**: Per-tile state management, highest complexity
+  - **Kelebihan**: Sangat dramatis, mata pengguna mengikuti progresi tile
+  - **Kekurangan**: Durasi total = (totalTile × jumlahShape) × durasiPerShape (sangat lama!)
+  - **Implementasi**: Manajemen status per tile, kompleksitas tertinggi
 
-  **Option D: Snake/Zigzag per Row** 🐍 Enhanced Wave Pattern
+  **Opsi D: Snake/Zigzag per Baris** 🐍 Pola Gelombang Ditingkatkan
   ```
-  Frame 0-100:   Row 0 LEFT→RIGHT
-                 Tile(0,0) → Tile(0,1) → Tile(0,2) → ... (sequential)
+  Frame 0-100:   Baris 0 KIRI→KANAN
+                 Tile(0,0) → Tile(0,1) → Tile(0,2) → ... (berurutan)
 
-  Frame 100-200: Row 1 RIGHT→LEFT (zigzag!)
-                 Tile(1,5) → Tile(1,4) → Tile(1,3) → ... (sequential reverse)
+  Frame 100-200: Baris 1 KANAN→KIRI (zigzag!)
+                 Tile(1,5) → Tile(1,4) → Tile(1,3) → ... (berurutan terbalik)
 
-  Frame 200-300: Row 2 LEFT→RIGHT
-                 Tile(2,0) → Tile(2,1) → Tile(2,2) → ... (sequential)
+  Frame 200-300: Baris 2 KIRI→KANAN
+                 Tile(2,0) → Tile(2,1) → Tile(2,2) → ... (berurutan)
 
-  Visual: Pattern "snaking" seperti mengisi formir zigzag
+  Visual: Pola "snaking" seperti mengisi formulir zigzag
   ```
-  - **Kelebihan**: Lebih dinamis dari Option A, continuous flow
-  - **Kekurangan**: Total duration = (rows × cols) × shapeCount × durationPerShape
-  - **Implementation**: Direction-aware row state, complexity high
+  - **Kelebihan**: Lebih dinamis dari Opsi A, aliran berkelanjutan
+  - **Kekurangan**: Durasi total = (baris × kolom) × jumlahShape × durasiPerShape
+  - **Implementasi**: Status baris sadar arah, kompleksitas tinggi
 
-  **Recommendation for Islamic Geometry:**
-  - **Option B** (All Tiles Sequential Together) untuk **initial implementation**
-    - Simple, predictable duration
-    - Masuskan dengan symmetric nature Islamic pattern
-    - Efficient implementation
-  - **Option A** atau **Option D** untuk **future enhancement**
-    - Lebih artistic dan visually pleasing
-    - Cocok untuk showcase/presentation
+  **Rekomendasi untuk Geometri Islam:**
+  - **Opsi B** (Semua Tile Berurutan Bersama) untuk **implementasi awal**
+    - Sederhana, durasi dapat diprediksi
+    - Cocok dengan sifat simetris pola Islam
+    - Implementasi efisien
+  - **Opsi A** atau **Opsi D** untuk **peningkatan masa depan**
+    - Lebih artistik dan menarik secara visual
+    - Cocok untuk showcase/presentasi
 
-  **To Be Determined**: User akan memilih pattern yang sesuai vision
+  **Akan Ditentukan**: Pengguna akan memilih pola yang sesuai dengan visi mereka
 
-- **Implementation Status:**
-  - ✅ TessellationManager class created
-  - ✅ Square grid calculation (generateGrid)
-  - 🚧 Draw logic untuk tessellation instances (in progress)
-  - 🚧 Custom lines tessellation (pending)
-  - 🚧 Polygons tessellation (pending)
-  - 🚧 Sequential mode pattern selection (pending)
+- **Status Implementasi:**
+  - ✅ Kelas TessellationManager dibuat
+  - ✅ Kalkulasi grid persegi (generateGrid)
+  - 🚧 Logika gambar untuk instance tessellation (sedang berjalan)
+  - 🚧 Tessellation custom lines (menunggu)
+  - 🚧 Tessellation poligon (menunggu)
+  - 🚧 Pemilihan pola mode berurutan (menunggu)
 
 ### Transform Canvas System
 - **Canvas Transform Controls** - Transform slider di SacredGeometry panel:
