@@ -1484,10 +1484,19 @@ void ofApp::draw() {
       // ⚡ SYNCHRONOUS MODE: Semua tiles animate bersamaan
       const auto& grid = tessellationManager->grid;
 
-      // ⭐ Update progress untuk animasi grow
+      // ⭐ Calculate draw speed mengikuti custom line speed slider (sama seperti customLines biasa)
+      float speedMultiplier = 1.0f;
+      if (currentTemplate) {
+        speedMultiplier = currentTemplate->customLineSpeedMultiplier;
+      }
+      float baseSpeed = 1.2f; // Default speed dari CustomLine.cpp
+      float drawSpeed = baseSpeed * speedMultiplier;
+
+      // ⭐ Update progress untuk animasi grow dengan speed yang benar
       float deltaTime = ofGetLastFrameTime();
       for (auto &line : tessellationCustomLines) {
         if (line.getProgress() < 1.0f) {
+          line.setSpeed(drawSpeed);  // ⭐ Set speed sesuai slider
           line.updateProgress(deltaTime);
         }
       }
@@ -3306,23 +3315,8 @@ void ofApp::buildTessellatedCustomLinesMesh() {
   batchedTessellatedCustomLinesMesh.clear();
   batchedTessellatedCustomLinesMesh.setMode(OF_PRIMITIVE_LINES);
 
-  int lineCount = 0;
-  int vertexCount = 0;
-  int totalSegments = 0;  // Untuk normalisasi texCoord
-
-  // First pass: count total segments untuk texCoord normalization
-  for (const auto &line : tessellationCustomLines) {
-    if (line.getPoints().size() < 2) continue;
-    lineCount++;
-    if (std::abs(line.getCurve()) < 0.001f) {
-      totalSegments += 1;  // 1 segment untuk straight line
-    } else {
-      totalSegments += 100;  // 100 segments untuk curve
-    }
-  }
-
-  // Second pass: build mesh dengan texCoord
-  float currentSegmentOffset = 0.0f;
+  // ⭐ PARALLEL MODE: Setiap line punya texCoord 0.0 - 1.0 INDEPENDEN
+  // Jadi semua lines animate bersamaan, bukan sequential
 
   for (const auto &line : tessellationCustomLines) {
     if (line.getPoints().size() < 2) {
@@ -3333,23 +3327,17 @@ void ofApp::buildTessellatedCustomLinesMesh() {
     const ofColor &color = line.getColor();
 
     if (std::abs(line.getCurve()) < 0.001f) {
-      // Straight line
-      float t0 = currentSegmentOffset / totalSegments;
-      float t1 = (currentSegmentOffset + 1) / totalSegments;
-
+      // Straight line - texCoord 0.0 ke 1.0 untuk setiap line
       batchedTessellatedCustomLinesMesh.addVertex(glm::vec3(points[0].x, points[0].y, 0.0f));
       batchedTessellatedCustomLinesMesh.addColor(color);
-      batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(t0, 0.0f));
+      batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(0.0f, 0.0f));
 
       batchedTessellatedCustomLinesMesh.addVertex(glm::vec3(points[1].x, points[1].y, 0.0f));
       batchedTessellatedCustomLinesMesh.addColor(color);
-      batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(t1, 0.0f));
-
-      currentSegmentOffset += 1;
-      vertexCount += 2;
+      batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(1.0f, 0.0f));
     } else {
       // Curved line - lebih banyak segments untuk smooth
-      int segments = 100;  // Increase untuk smoothness
+      int segments = 100;
       vec2 controlPoint = (points[0] + points[1]) / 2.0f;
       vec2 dir = points[1] - points[0];
       vec2 perp = vec2(-dir.y, dir.x);
@@ -3360,26 +3348,21 @@ void ofApp::buildTessellatedCustomLinesMesh() {
       controlPoint = controlPoint + perp * line.getCurve();
 
       for (int j = 0; j < segments; j++) {
-        float t1 = (float)j / segments;
+        float t1 = (float)j / segments;  // 0.0 - 1.0 untuk setiap line
         float t2 = (float)(j + 1) / segments;
 
         vec2 p1 = points[0] * (1 - t1) * (1 - t1) + controlPoint * 2 * (1 - t1) * t1 + points[1] * t1 * t1;
         vec2 p2 = points[0] * (1 - t2) * (1 - t2) + controlPoint * 2 * (1 - t2) * t2 + points[1] * t2 * t2;
 
-        float texCoord1 = (currentSegmentOffset + j) / totalSegments;
-        float texCoord2 = (currentSegmentOffset + j + 1) / totalSegments;
-
+        // texCoord untuk PARALLEL animation (setiap line 0.0 - 1.0)
         batchedTessellatedCustomLinesMesh.addVertex(glm::vec3(p1.x, p1.y, 0.0f));
         batchedTessellatedCustomLinesMesh.addColor(color);
-        batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(texCoord1, 0.0f));
+        batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(t1, 0.0f));
 
         batchedTessellatedCustomLinesMesh.addVertex(glm::vec3(p2.x, p2.y, 0.0f));
         batchedTessellatedCustomLinesMesh.addColor(color);
-        batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(texCoord2, 0.0f));
+        batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(t2, 0.0f));
       }
-
-      currentSegmentOffset += segments;
-      vertexCount += segments * 2;
     }
   }
 
