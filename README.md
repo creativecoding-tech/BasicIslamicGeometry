@@ -271,10 +271,14 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Settings: Di popup Tessellation Settings, group "Custom Lines Parallel" (di bawah Template Parallel)
   - Only if: loadedFileCustomLinesCount > 0 (ada custom lines di file .nay)
   - Rendering: **Shader-based GPU rendering** dengan geometry shader untuk thick lines
-  - Animation: **Smooth grow animation** (0→100%) dengan progress clipping di GPU
+  - Animation:
+    - **Smooth grow animation** (0→100%) dengan progress clipping di GPU
+    - **Wave animation** (jika Wave Animation Line enabled) dengan auto-stop berdasarkan Wave Duration
   - Speed: Mengikuti **Custom Line Speed slider** dari Playground (sama seperti custom lines biasa)
   - Draw Mode: Mengikuti **Custom Line Mode** (Parallel/No Animation) dari Playground
-  - Wave Animation: Menghormati Wave settings dari Playground (jika enabled) 🚧 WIP
+  - Wave Animation: ✅ IMPLEMENTED - Menghormati Wave settings dari Playground (Amplitude, Frequency, Duration, Speed)
+    - Wave hanya aktif jika: Wave Animation Line enabled + Before Polygon Draw mode + Grow complete
+    - Wave berhenti otomatis setelah Duration habis (kembali ke posisi lurus sesuai file .nay)
 
   **3. Polygons Tessellation** (Priority 3 - Handle Last)
   - Mode: **Synchronous** atau **Radial Expansion** (pilihan terpisah)
@@ -385,24 +389,30 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - ✅ Kontrol Kecepatan: Slider Kecepatan Template berfungsi dengan benar
 - ✅ Peralihan Mode: Sakelar Radial ↔ Sinkron berfungsi dengan benar
 
-✅ **Fase 2: Tessellation Custom Lines (Synchronous Mode)** ✅ **SELESAI** (2026-03-18)
+✅ **Fase 2: Tessellation Custom Lines (Synchronous Mode + Wave Animation)** ✅ **SELESAI** (2026-03-18)
 
 ✅ **Mode Sinkron - Diimplementasikan & Diuji:**
 - **Shader-based GPU Rendering** untuk performance optimal:
   - `bin/data/shaders/line.vert` - Vertex shader (pass position, color, texCoord)
-  - `bin/data/shaders/line.geom` - Geometry shader (expand line → quad dengan aspect ratio correction)
+  - `bin/data/shaders/line.geom` - Geometry shader (expand line → quad dengan aspect ratio correction, wave displacement)
   - `bin/data/shaders/line.frag` - Fragment shader (output color)
 - **Smooth Grow Animation** (0→100%) dengan progress clipping di GPU
 - **Parallel Animation** - semua custom lines tumbuh bersamaan (bukan sequential)
 - **Batch Rendering** - 1 draw call untuk semua tessellation custom lines
 - **Speed Control** - Mengikuti Custom Line Speed slider dari Playground
 - **Draw Mode** - Mengikuti Custom Line Mode (Parallel/No Animation) dari Playground
+- **Wave Animation** ✅ IMPLEMENTED:
+  - Shader-based wave displacement dengan formula sama seperti CPU WaveLineAnimation
+  - Wave hanya aktif jika: Wave Animation Line enabled + Before Polygon Draw mode + Grow complete
+  - Wave parameters: Amplitude, Frequency, Duration (auto-stop), Speed
+  - Wave berhenti otomatis setelah Duration habis (kembali ke posisi lurus sesuai file .nay)
+  - Straight lines menggunakan 50 segments untuk smooth wave animation
 - **Copy & Scale System** - tessellationCustomLines di-copy sebelum clean canvas dan di-scale ke tessellationRadius
 - **File yang Dimodifikasi:**
   - `bin/data/shaders/line.vert` - Added texCoord support
-  - `bin/data/shaders/line.geom` - Added progress uniform untuk grow animation
-  - `src/ofApp.h` - Added tessellationCustomLines, batchedTessellatedCustomLinesMesh, customLineShader
-  - `src/ofApp.cpp` - Added buildTessellatedCustomLinesMesh(), drawBatchedTessellatedCustomLines()
+  - `bin/data/shaders/line.geom` - Added progress uniform untuk grow animation, wave uniforms untuk wave animation
+  - `src/ofApp.h` - Added tessellationCustomLines, batchedTessellatedCustomLinesMesh, customLineShader, wave animation state variables
+  - `src/ofApp.cpp` - Added buildTessellatedCustomLinesMesh(), drawBatchedTessellatedCustomLines(), wave timer logic
 
 🚧 **Fase 2: Tessellation Custom Lines (Radial/Diagonal/Seq Per Row)** - 🚧 WIP
 🚧 **Fase 3: Tessellation Poligon** - BELUM DIMULAI

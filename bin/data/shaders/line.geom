@@ -1,10 +1,15 @@
 #version 330
 
+#define TWO_PI 6.28318530718
+
 layout(lines) in;
 layout(triangle_strip, max_vertices = 4) out;
 
 uniform mat4 modelViewProjectionMatrix;
-uniform float progress;  // 0.0 - 1.0 untuk grow animation
+uniform float progress;       // 0.0 - 1.0 untuk grow animation
+uniform float waveAmplitude;  // Wave amplitude (0 = disable)
+uniform float waveFrequency;  // Wave frequency
+uniform float waveTime;       // Wave time accumulator (0.0 - 1.0 loop)
 
 in VS_OUT {
     vec4 color;
@@ -20,6 +25,27 @@ void main() {
     vec4 p1 = gl_in[1].gl_Position;
     float t0 = gs_in[0].texCoord.x;
     float t1 = gs_in[1].texCoord.x;
+
+    // ⭐ WAVE ANIMATION: Apply wave displacement jika amplitude > 0
+    // Formula SAMA dengan WaveLineAnimation.cpp: sin(frequency * TWO_PI * (t - progress))
+    if (waveAmplitude > 0.001) {
+        // Calculate wave direction (perpendicular ke line)
+        vec2 lineDir = normalize(p1.xy - p0.xy);
+        vec2 perp = vec2(-lineDir.y, lineDir.x);
+
+        // Calculate wave phase menggunakan formula yang sama dengan CPU
+        // WaveLineAnimation: phase = frequency * TWO_PI * (t - progress)
+        float wavePhase0 = waveFrequency * TWO_PI * (t0 - waveTime);
+        float wavePhase1 = waveFrequency * TWO_PI * (t1 - waveTime);
+
+        // Calculate wave magnitude (-1.0 sampai 1.0)
+        float waveMagnitude0 = sin(wavePhase0);
+        float waveMagnitude1 = sin(wavePhase1);
+
+        // Apply wave displacement ke arah perpendicular
+        p0.xy += perp * waveMagnitude0 * waveAmplitude;
+        p1.xy += perp * waveMagnitude1 * waveAmplitude;
+    }
 
     // Convert ke screen space untuk correct thickness
     vec4 sp0 = modelViewProjectionMatrix * p0;

@@ -122,6 +122,12 @@ public:
   bool tessellationCustomLinesDirty = true;  // Flag untuk rebuild copy
   bool tessellationTemplateComplete = false; // Flag untuk template tessellation complete
 
+  // ⭐ NEW: Wave animation state untuk tessellation custom lines
+  float tessellationWaveTime = 0.0f;       // Wave time accumulator (0.0 - 1.0 loop)
+  float tessellationWaveTimer = 0.0f;      // Timer untuk auto-stop (duration)
+  bool tessellationWaveFinished = false;   // Flag untuk stop wave
+  bool tessellationWaveNeedsReset = false; // Flag untuk trigger reset di drawing
+
   // Preset warna untuk polygon
   std::vector<ofColor> polygonPresetColors = {
       ofColor(255, 0, 0, 255),    // 1: Merah (OPAQUE!)
@@ -370,7 +376,7 @@ public:
                             // global center
   void drawUserDots();      // Draw user-created dots dan label
   void drawBatchedTessellatedPolygons(); // ⭐ NEW: Batch tessellated polygons (1 draw call)
-  void drawBatchedTessellatedCustomLines(); // ⭐ NEW: Batch tessellated custom lines (shader-based, 1 draw call)
+  void drawBatchedTessellatedCustomLines(float waveTime = 0.0f, bool growComplete = true); // ⭐ NEW: Batch tessellated custom lines (shader-based, 1 draw call)
   void buildTessellatedCustomLinesMesh(); // ⭐ NEW: Build mesh dari customLines untuk tessellation
 
   // Interactive Line Creation helpers

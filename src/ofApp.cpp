@@ -264,6 +264,14 @@ void ofApp::updateStaggeredLoad() {
       // ⭐ STEP 1.5: Simpan copy dari customLines untuk tessellation SEBELUM clean canvas
       tessellationCustomLines = customLines;  // Copy semua customLines
 
+      // ⭐ RESET wave timer setiap kali tessellation mulai (supaya Draw kedua bisa wave lagi)
+      tessellationWaveTime = 0.0f;
+      tessellationWaveTimer = 0.0f;
+      tessellationWaveFinished = false;
+
+      // ⭐ FLAG untuk reset wave animation di tessellation drawing
+      tessellationWaveNeedsReset = false;  // Jangan reset lagi setelah tessellation mulai
+
       // ⭐ STEP 1.6: Scale tessellationCustomLines dari tessellationOriginalRadius ke tessellationRadius
       // Sama seperti template tessellation yang di-setup ulang dengan radius baru
       float scaleRatio = tessellationRadius / tessellationOriginalRadius;
@@ -1501,12 +1509,58 @@ void ofApp::draw() {
         }
       }
 
+      // ⭐ Hitung average progress untuk cek apakah grow sudah selesai
+      float avgProgress = 1.0f;
+      if (!tessellationCustomLines.empty()) {
+        float totalProgress = 0.0f;
+        for (const auto &line : tessellationCustomLines) {
+          totalProgress += line.getProgress();
+        }
+        avgProgress = totalProgress / tessellationCustomLines.size();
+      }
+
+      // ⭐ WAVE TIME: HANYA update waveTime jika grow animation SUDAH SELESAI (avgProgress >= 1.0f)
+      // Ini SAMA dengan CPU wave yang hanya apply wave setelah progress >= 1.0f
+      bool isWaveMode = (lineAnimationMode == LineAnimationMode::WAVE);
+      bool isBeforePolygonDraw = (currentLineStepAnimationMode ==
+                                  LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
+      bool growComplete = (avgProgress >= 1.0f);
+
+      // ⭐ RESET wave state saat grow MULAI (untuk Draw kedua dengan mode yang sama)
+      if (!growComplete) {
+        tessellationWaveTime = 0.0f;
+        tessellationWaveTimer = 0.0f;
+        tessellationWaveFinished = false;
+      }
+
+      if (isWaveMode && isBeforePolygonDraw && growComplete && !tessellationWaveFinished) {
+        // ⭐ Wave time update sesuai CPU wave animation
+        tessellationWaveTime += lineWaveSpeed * deltaTime;
+        if (tessellationWaveTime > 1.0f) {
+          tessellationWaveTime -= 1.0f;  // Loop back to 0.0 (infinite wave)
+        }
+
+        // ⭐ Update duration timer dari slider lineWaveDuration
+        tessellationWaveTimer += deltaTime;
+        if (tessellationWaveTimer >= lineWaveDuration) {
+          tessellationWaveFinished = true;  // STOP wave
+          tessellationWaveTime = 0.0f;  // Reset wave time
+        }
+      }
+
+      // ⭐ Reset wave state saat wave disabled (mode berubah)
+      if (!isWaveMode || !isBeforePolygonDraw) {
+        tessellationWaveTime = 0.0f;
+        tessellationWaveTimer = 0.0f;
+        tessellationWaveFinished = false;
+      }
+
       for (const auto& gridPos : grid) {
         ofPushMatrix();
         ofTranslate(gridPos.offset.x, gridPos.offset.y);
 
         // ⭐ Draw tessellation custom lines dengan shader-based rendering
-        drawBatchedTessellatedCustomLines();
+        drawBatchedTessellatedCustomLines(tessellationWaveTime, growComplete);
 
         ofPopMatrix();
       }
@@ -3327,14 +3381,26 @@ void ofApp::buildTessellatedCustomLinesMesh() {
     const ofColor &color = line.getColor();
 
     if (std::abs(line.getCurve()) < 0.001f) {
-      // Straight line - texCoord 0.0 ke 1.0 untuk setiap line
-      batchedTessellatedCustomLinesMesh.addVertex(glm::vec3(points[0].x, points[0].y, 0.0f));
-      batchedTessellatedCustomLinesMesh.addColor(color);
-      batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(0.0f, 0.0f));
+      // ⭐ Straight line - pakai multiple segments untuk wave animation!
+      // Tanpa segments, wave hanya akan terlihat di ujung-ujung line
+      int segments = 50;  // Cukup untuk smooth wave
 
-      batchedTessellatedCustomLinesMesh.addVertex(glm::vec3(points[1].x, points[1].y, 0.0f));
-      batchedTessellatedCustomLinesMesh.addColor(color);
-      batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(1.0f, 0.0f));
+      for (int j = 0; j < segments; j++) {
+        float t1 = (float)j / segments;  // 0.0 - 1.0 untuk setiap line
+        float t2 = (float)(j + 1) / segments;
+
+        // Interpolate posisi untuk straight line
+        vec2 p1 = points[0] + (points[1] - points[0]) * t1;
+        vec2 p2 = points[0] + (points[1] - points[0]) * t2;
+
+        batchedTessellatedCustomLinesMesh.addVertex(glm::vec3(p1.x, p1.y, 0.0f));
+        batchedTessellatedCustomLinesMesh.addColor(color);
+        batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(t1, 0.0f));
+
+        batchedTessellatedCustomLinesMesh.addVertex(glm::vec3(p2.x, p2.y, 0.0f));
+        batchedTessellatedCustomLinesMesh.addColor(color);
+        batchedTessellatedCustomLinesMesh.addTexCoord(glm::vec2(t2, 0.0f));
+      }
     } else {
       // Curved line - lebih banyak segments untuk smooth
       int segments = 100;
@@ -3371,7 +3437,7 @@ void ofApp::buildTessellatedCustomLinesMesh() {
 
 //--------------------------------------------------------------
 // ⭐ NEW: Draw tessellated custom lines dengan Shader (GPU rendering)
-void ofApp::drawBatchedTessellatedCustomLines() {
+void ofApp::drawBatchedTessellatedCustomLines(float waveTime, bool growComplete) {
   if (tessellationCustomLines.empty()) {
     return;
   }
@@ -3414,6 +3480,30 @@ void ofApp::drawBatchedTessellatedCustomLines() {
       avgProgress = totalProgress / tessellationCustomLines.size();
     }
     customLineShader.setUniform1f("progress", avgProgress);
+
+    // ⭐ WAVE ANIMATION: Set wave parameters jika mode Wave + Before Polygon Draw aktif di Playground
+    // DAN grow animation SUDAH SELESAI (sama seperti CPU wave yang hanya apply setelah progress >= 1.0f)
+    float waveAmp = 0.0f;
+    float waveFreq = 0.0f;
+    float waveT = 0.0f;
+
+    // Cek apakah wave animation di-enable dan Before Polygon Draw mode DAN grow complete
+    bool isWaveMode = (lineAnimationMode == LineAnimationMode::WAVE);
+    bool isBeforePolygonDraw = (currentLineStepAnimationMode ==
+                                LineStepAnimationMode::STEP_BEFORE_POLYGON_DRAW);
+
+    // ⭐ HANYA apply wave JIKA wave belum finished (duration belum habis)
+    // Setelah duration habis, waveAmp = 0 (tidak ada gelombang, kembali ke posisi semula)
+    if (isWaveMode && isBeforePolygonDraw && growComplete && !tessellationWaveFinished) {
+      waveAmp = lineWaveAmplitude;
+      waveFreq = lineWaveFrequency;
+      waveT = waveTime;  // ⭐ Use looping waveTime dari tessellation drawing
+    }
+
+    // ⭐ KIRIM wave uniforms ke shader
+    customLineShader.setUniform1f("waveAmplitude", waveAmp);
+    customLineShader.setUniform1f("waveFrequency", waveFreq);
+    customLineShader.setUniform1f("waveTime", waveT);
 
     // Draw mesh
     batchedTessellatedCustomLinesMesh.draw();
