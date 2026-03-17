@@ -10,6 +10,7 @@ uniform float progress;       // 0.0 - 1.0 untuk grow animation
 uniform float waveAmplitude;  // Wave amplitude (0 = disable)
 uniform float waveFrequency;  // Wave frequency
 uniform float waveTime;       // Wave time accumulator (0.0 - 1.0 loop)
+uniform float aspectRatio;    // Viewport width / height ratio
 
 in VS_OUT {
     vec4 color;
@@ -69,16 +70,24 @@ void main() {
     // Perpendicular vector
     vec2 perp = vec2(-dir.y, dir.x);
 
-    // Line width (dalam pixels, convert ke NDC)
+    // Line width (dalam pixels)
     float width = gs_in[0].lineWidth;
 
-    // Get viewport aspect ratio
-    float aspect = 1920.0 / 1080.0;  // Width / Height
+    // Convert pixel width ke NDC
+    // NDC range is [-1, 1], so 2.0 units total
+    // For consistent thickness in both orientations, correct for aspect ratio
+    float pixelToNDC = 2.0 / 1080.0;
 
-    // Convert pixel width ke NDC dengan aspect ratio correction
-    float pixelToNDC = (2.0 / 1080.0) * 0.5;
-    vec2 aspectCorrection = vec2(1.0 / aspect, 1.0);
-    vec2 offset = perp * width * pixelToNDC * aspectCorrection;
+    // ⭐ Scale factor untuk mengatur ketebalan overall (0.5 = setengah dari ketebalan asli)
+    float thicknessScale = 0.5;
+    pixelToNDC *= thicknessScale;
+
+    vec2 offset = perp * width * pixelToNDC;
+
+    // ⭐ ASPECT RATIO CORRECTION untuk thickness konsisten di portrait/landscape
+    // Di NDC, X dan Y punya range sama tapi pixel count beda
+    // Kita bagi offset.x dengan aspectRatio untuk kompensasi
+    offset.x /= aspectRatio;
 
     // ⭐ PROGRESS CLIPPING untuk grow animation
     // Jika seluruh line di luar progress, skip

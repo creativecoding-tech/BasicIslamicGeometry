@@ -3511,6 +3511,10 @@ void ofApp::drawBatchedTessellatedCustomLines(float waveTime, bool growComplete)
     // Set lineWidth uniform (untuk reference, actual width set via glLineWidth)
     customLineShader.setUniform1f("lineWidth", lineWidth);
 
+    // Set aspectRatio uniform untuk line thickness konsisten di portrait/landscape
+    float aspectRatio = (float)ofGetWidth() / ofGetHeight();
+    customLineShader.setUniform1f("aspectRatio", aspectRatio);
+
     // ⭐ Set progress uniform untuk grow animation (0.0 - 1.0)
     float avgProgress = 1.0f;
     if (!tessellationCustomLines.empty()) {

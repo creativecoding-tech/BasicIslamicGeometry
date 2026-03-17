@@ -272,6 +272,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Settings: Di popup Tessellation Settings, group "Custom Lines Parallel" (di bawah Template Parallel)
   - Only if: loadedFileCustomLinesCount > 0 (ada custom lines di file .nay)
   - Rendering: **Shader-based GPU rendering** dengan geometry shader untuk thick lines
+    - ⭐ **Aspect Ratio Fix**: Ketebalan garis konsisten di portrait dan landscape (menggunakan `aspectRatio` uniform)
+    - ⭐ **Thickness Scale**: `thicknessScale = 0.5` di geometry shader untuk ketebalan optimal
   - Animation:
     - **Smooth grow animation** (0→100%) dengan progress clipping di GPU
     - **Wave animation** (jika Wave Animation Line enabled) dengan auto-stop berdasarkan Wave Duration
