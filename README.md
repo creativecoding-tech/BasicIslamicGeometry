@@ -267,10 +267,14 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Draw Settings: Menghormati checkbox (Cartesian, Circles, CrossLines, dll)
 
   **2. Custom Lines Tessellation** (Priority 2 - Handle After Template)
-  - Mode: **Synchronous** atau **Radial Expansion** (pilihan terpisah dari template)
+  - Mode: **Synchronous** ✅ IMPLEMENTED, **Radial Expansion** 🚧 WIP (pilihan terpisah dari template)
   - Settings: Di popup Tessellation Settings, group "Custom Lines Parallel" (di bawah Template Parallel)
   - Only if: loadedFileCustomLinesCount > 0 (ada custom lines di file .nay)
-  - Wave Animation: Menghormati Wave settings dari Playground (jika enabled)
+  - Rendering: **Shader-based GPU rendering** dengan geometry shader untuk thick lines
+  - Animation: **Smooth grow animation** (0→100%) dengan progress clipping di GPU
+  - Speed: Mengikuti **Custom Line Speed slider** dari Playground (sama seperti custom lines biasa)
+  - Draw Mode: Mengikuti **Custom Line Mode** (Parallel/No Animation) dari Playground
+  - Wave Animation: Menghormati Wave settings dari Playground (jika enabled) 🚧 WIP
 
   **3. Polygons Tessellation** (Priority 3 - Handle Last)
   - Mode: **Synchronous** atau **Radial Expansion** (pilihan terpisah)
@@ -280,8 +284,8 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
   - Note: Polygons hasil tessellation polygon (isTessellated=true) TIDAK di-tessellate lagi
 
   **Implementation Approach:**
-  - **Phase 1**: Template tessellation (Synchronous + Radial Expansion)
-  - **Phase 2**: Custom lines tessellation (Synchronous + Radial Expansion)
+  - **Phase 1**: Template tessellation (Synchronous + Radial Expansion + Diagonal + Seq Per Row) ✅
+  - **Phase 2**: Custom lines tessellation (Synchronous ✅ + Radial Expansion 🚧)
   - **Phase 3**: Polygons tessellation (Synchronous + Radial Expansion)
   - Each phase independent, bisa dipilih on/off per geometry type
 
@@ -381,7 +385,26 @@ Setiap shape memiliki **animasi drawing** yang halus, label yang dinamis, dot di
 - ✅ Kontrol Kecepatan: Slider Kecepatan Template berfungsi dengan benar
 - ✅ Peralihan Mode: Sakelar Radial ↔ Sinkron berfungsi dengan benar
 
-🚧 **Fase 2: Tessellation Custom Lines** - BELUM DIMULAI
+✅ **Fase 2: Tessellation Custom Lines (Synchronous Mode)** ✅ **SELESAI** (2026-03-18)
+
+✅ **Mode Sinkron - Diimplementasikan & Diuji:**
+- **Shader-based GPU Rendering** untuk performance optimal:
+  - `bin/data/shaders/line.vert` - Vertex shader (pass position, color, texCoord)
+  - `bin/data/shaders/line.geom` - Geometry shader (expand line → quad dengan aspect ratio correction)
+  - `bin/data/shaders/line.frag` - Fragment shader (output color)
+- **Smooth Grow Animation** (0→100%) dengan progress clipping di GPU
+- **Parallel Animation** - semua custom lines tumbuh bersamaan (bukan sequential)
+- **Batch Rendering** - 1 draw call untuk semua tessellation custom lines
+- **Speed Control** - Mengikuti Custom Line Speed slider dari Playground
+- **Draw Mode** - Mengikuti Custom Line Mode (Parallel/No Animation) dari Playground
+- **Copy & Scale System** - tessellationCustomLines di-copy sebelum clean canvas dan di-scale ke tessellationRadius
+- **File yang Dimodifikasi:**
+  - `bin/data/shaders/line.vert` - Added texCoord support
+  - `bin/data/shaders/line.geom` - Added progress uniform untuk grow animation
+  - `src/ofApp.h` - Added tessellationCustomLines, batchedTessellatedCustomLinesMesh, customLineShader
+  - `src/ofApp.cpp` - Added buildTessellatedCustomLinesMesh(), drawBatchedTessellatedCustomLines()
+
+🚧 **Fase 2: Tessellation Custom Lines (Radial/Diagonal/Seq Per Row)** - 🚧 WIP
 🚧 **Fase 3: Tessellation Poligon** - BELUM DIMULAI
 
   **Mode Berurutan** (Kompleks - Akan Ditentukan):
